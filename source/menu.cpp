@@ -486,12 +486,12 @@ static int Home()
     OnScreenKeyboard(mainWindow, save, MAXLEN, 1);
     strcpy(hmpg,save);
 
-    char *url=(char*) malloc (sizeof(save)+10);
-    strcpy(url,"http://"); strcat(url,save);
     char *nurl=NULL;
+    char *url=(char*) malloc (sizeof(save)+10);
+    strcpy(url,"http://");
+    strcat(url,save);
 
     jump:
-
     GuiWindow promptWindow(448,288);
     promptWindow.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
     promptWindow.SetPosition(0, -10);
@@ -521,28 +521,19 @@ static int Home()
     ResumeGui();
 
     #ifdef TIME
-        struct timeval begin, end;
-        gettimeofday(&begin, 0);
+    struct timeval begin, end;
+    gettimeofday(&begin, 0);
     #endif
 
-    // code
     decode_html_entities_utf8(url, NULL);
     struct block HTML;
-    // HTML = downloadfile(curl_handle, url, NULL);
-    // code
-
-    FILE *pFile = fopen ("Follow.htm", "rb");
-    fseek (pFile , 0 , SEEK_END); int size=ftell(pFile); rewind (pFile);
-    HTML.data = (char*) malloc (sizeof(char)*size);
-    if (HTML.data == NULL) exit (2);
-    fread (HTML.data, 1, size, pFile); HTML.size=size; strcpy(HTML.type, "text/html");
-    fclose(pFile);
+    HTML = downloadfile(curl_handle, url, NULL);
 
     #ifdef TIME
-        do {
-            gettimeofday(&end, 0);
-            usleep(100);
-        } while ((end.tv_sec-begin.tv_sec)*1000.0+(end.tv_usec-begin.tv_usec)/1000.0 < 500);
+    do {
+        gettimeofday(&end, 0);
+        usleep(100);
+    } while ((end.tv_sec-begin.tv_sec)*1000.0+(end.tv_usec-begin.tv_usec)/1000.0 < 500);
     #endif
 
     usleep(500*1000);

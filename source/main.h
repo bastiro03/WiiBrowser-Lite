@@ -2,11 +2,11 @@
  * libwiigui Template
  * Tantric 2009
  *
- * main.h
+ * demo.h
  ***************************************************************************/
 
-#ifndef _MAIN_H_
-#define _MAIN_H_
+#ifndef _DEMO_H_
+#define _DEMO_H_
 
 #include "FreeTypeGX.h"
 
@@ -22,9 +22,20 @@ enum {
 	METHOD_SD_SLOTB
 };
 
+struct SSettings {
+    int		AutoLoad;
+    int		AutoSave;
+    int		LoadMethod;
+	int		SaveMethod;
+	char	Folder1[256]; // Path to files
+	char	Folder2[256]; // Path to files
+	char	Folder3[256]; // Path to files
+};
+extern struct SSettings Settings;
+
 void ExitApp();
 extern int ExitRequested;
-extern FreeTypeGX *fontSystem;
+extern FreeTypeGX *fontSystem[];
 
 extern "C" {
     extern void __exception_setreload(int t);

@@ -32,26 +32,26 @@ GuiOptionBrowser::GuiOptionBrowser(int w, int h, OptionList * l)
 	btnSoundOver = new GuiSound(button_over_pcm, button_over_pcm_size, SOUND_PCM);
 	btnSoundClick = new GuiSound(button_click_pcm, button_click_pcm_size, SOUND_PCM);
 
-	bgOptions = new GuiImageData(bg_options_png, bg_options_png_size);
+	bgOptions = new GuiImageData(bg_options_png);
 	bgOptionsImg = new GuiImage(bgOptions);
 	bgOptionsImg->SetParent(this);
 	bgOptionsImg->SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
 
-	bgOptionsEntry = new GuiImageData(bg_options_entry_png, bg_options_entry_png_size);
+	bgOptionsEntry = new GuiImageData(bg_options_entry_png);
 
-	scrollbar = new GuiImageData(scrollbar_png, scrollbar_png_size);
+	scrollbar = new GuiImageData(scrollbar_png);
 	scrollbarImg = new GuiImage(scrollbar);
 	scrollbarImg->SetParent(this);
 	scrollbarImg->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
 	scrollbarImg->SetPosition(0, 30);
 
-	arrowDown = new GuiImageData(scrollbar_arrowdown_png, scrollbar_arrowdown_png_size);
+	arrowDown = new GuiImageData(scrollbar_arrowdown_png);
 	arrowDownImg = new GuiImage(arrowDown);
-	arrowDownOver = new GuiImageData(scrollbar_arrowdown_over_png, scrollbar_arrowdown_over_png_size);
+	arrowDownOver = new GuiImageData(scrollbar_arrowdown_over_png);
 	arrowDownOverImg = new GuiImage(arrowDownOver);
-	arrowUp = new GuiImageData(scrollbar_arrowup_png, scrollbar_arrowup_png_size);
+	arrowUp = new GuiImageData(scrollbar_arrowup_png);
 	arrowUpImg = new GuiImage(arrowUp);
-	arrowUpOver = new GuiImageData(scrollbar_arrowup_over_png, scrollbar_arrowup_over_png_size);
+	arrowUpOver = new GuiImageData(scrollbar_arrowup_over_png);
 	arrowUpOverImg = new GuiImage(arrowUpOver);
 
 	arrowUpBtn = new GuiButton(arrowUpImg->GetWidth(), arrowUpImg->GetHeight());
@@ -133,44 +133,6 @@ GuiOptionBrowser::~GuiOptionBrowser()
 		delete optionBg[i];
 		delete optionBtn[i];
 	}
-}
-
-// overloaded new operator
-void *GuiOptionBrowser::operator new(size_t size)
-{
-	void *p = gui_malloc(size);
-
-	if (!p)
-	{
-		bad_alloc ba;
-		throw ba;
-	}
-	return p;
-}
-
-// overloaded delete operator
-void GuiOptionBrowser::operator delete(void *p)
-{
-	gui_free(p);
-}
-
-// overloaded new operator for arrays
-void *GuiOptionBrowser::operator new[](size_t size)
-{
-	void *p = gui_malloc(size);
-
-	if (!p)
-	{
-		bad_alloc ba;
-		throw ba;
-	}
-	return p;
-}
-
-// overloaded delete operator for arrays
-void GuiOptionBrowser::operator delete[](void *p)
-{
-	gui_free(p);
 }
 
 void GuiOptionBrowser::SetCol1Position(int x)

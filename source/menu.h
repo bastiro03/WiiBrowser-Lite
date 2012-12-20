@@ -15,6 +15,7 @@
 #include <ogcsys.h>
 #include <curl/curl.h>
 #include <update.h>
+#include <string>
 
 void InitGUIThreads();
 void MainMenu (int menuitem);
@@ -27,11 +28,11 @@ enum
 {
 	MENU_EXIT = -1,
 	MENU_NONE,
-	SPLASH,
+	MENU_SPLASH,
 	MENU_SETTINGS,
 	MENU_SETTINGS_FILE,
 	MENU_BROWSE_DEVICE,
-	HOME,
+	MENU_HOME,
 	MENU_DEFAULT
 };
 

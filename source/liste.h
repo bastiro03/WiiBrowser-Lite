@@ -4,14 +4,6 @@
                         PROTOTIPI
 *************************************************************/
 
-ListaDiElem Inizializza( void );
-int ListaVuota( ListaDiElem lista );
-ListaDiElem Inserisci( ListaDiElem lista, TipoElemento elem );
-ListaDiElem InvertiRiusandoRic( ListaDiElem lista );
-
-int DimensioneRic( ListaDiElem lista );
-void DistruggiListaRic( ListaDiElem lista );
-
 ListaDiTesto InitText( void );
 int NoText( ListaDiTesto lista );
 ListaDiTesto InsText( ListaDiTesto lista );

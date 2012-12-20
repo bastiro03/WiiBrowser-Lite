@@ -70,7 +70,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
     string link; int coordX=0, coordY, offset=0;
 
     GuiButton *btndown=NULL, *btnup=NULL;
-    ListaDiElem lista, l1=Inizializza(); ListaDiTesto text=InitText(); ListaDiBottoni bottone, btn=InitButton();
+    Lista l1; Lista::iterator lista; ListaDiTesto text=InitText(); ListaDiBottoni bottone, btn=InitButton();
     Indice first=NULL, last=NULL, ext=NULL, Index=InitIndex();
     threadState=THREAD_RUN; img=InitImg();
 
@@ -80,8 +80,8 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
 
     if (!strcmp(HTML->type, "text/html") || strstr(HTML->type, "application/xhtml"))
     {
-        l1=getTag(l1, (char*)HTML->data);
-        lista=l1;
+        l1=getTag((char*)HTML->data);
+        lista=l1.begin();
         LWP_CreateThread (&thread, DownloadImage, (void*)url, NULL, 0, 70);
 
         unsigned int i; int choice=0;
@@ -106,14 +106,14 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
 				}
 			}
 
-            else if (!ListaVuota(lista) && coordY<screenheight) {
+            else if (coordY<screenheight) {
                 if (lista->name=="title" && !lista->value.empty()) {
                     text=InsText(text);
                     text->txt = new GuiText((char*)lista->value[0].text.c_str(), 30, (GXColor){0, 0, 0, 255});
                     text->txt->SetOffset(&coordX);
                     text->txt->SetAlignment(ALIGN_MIDDLE, ALIGN_TOP);
                     text->txt->SetPosition(coordX+screenwidth/2, coordY);
-                    text->txt->SetMaxWidth(400, WRAP);
+					text->txt->SetWrap(true, 400);
                     text->txt->SetEffect(EFFECT_FADE, 50);
                     HaltGui();
                         mainWindow->Append(text->txt);
@@ -134,7 +134,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                             coordY=Index ? Index->elem->GetYPosition()+Index->screenSize : 40;
                             offset=offset % (screenwidth-90);
                         }
-                        btn->label->SetMaxWidth(screenwidth-90-offset, WRAP);
+                        btn->label->SetWrap(true, screenwidth-90-offset);
                         SetFont(btn->label, lista->value[i].mode);
                         btn->label->SetPosition(0,0);
 
@@ -193,7 +193,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                 }
 
                 else if (lista->name=="form") {
-                    btn=InsButton(btn); btn->refs=lista;
+                    btn=InsButton(btn); btn->refs=&(*lista);
                     GuiImage *TextboxImg=new GuiImage(&Textbox);
                     btn->btn=new GuiButton(TextboxImg->GetWidth(), TextboxImg->GetHeight());
                     btn->btn->SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
@@ -220,19 +220,21 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                 }
 
                 else if (lista->name=="return") {
-                    if (lista->prox && lista->prox->name!="p" && lista->prox->name!="return") {
+                    if ((++lista)!=l1.end() && lista->name!="p" && lista->name!="return") {
                         if (Index)
                             Index->screenSize+=25;
                         offset=0;
                     }
+                    lista--;
                 }
 
                 else if (lista->name=="p") {
-                    if (lista->prox && lista->prox->name!="p" && lista->prox->name!="return") {
+                    if ((++lista)!=l1.end() && lista->name!="p" && lista->name!="return") {
                         if (Index)
                             Index->screenSize+=50;
                         offset=0;
                     }
+                    lista--;
                 }
 
                 else {
@@ -247,7 +249,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                             offset=offset % (screenwidth-90);
                         }
                         text->txt->SetPosition(coordX+40+offset, coordY);
-                        text->txt->SetMaxWidth(screenwidth-90-offset, WRAP);
+                        text->txt->SetWrap(true, screenwidth-90-offset);
                         text->txt->SetEffect(EFFECT_FADE, 50);
                         SetFont(text->txt, lista->value[i].mode);
                         HaltGui();
@@ -258,7 +260,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                         Index->screenSize=(offset/(screenwidth-90))*25;
                     }
                 }
-                lista=lista->prox;
+                lista++;
             }
 
             if (!btnup) {
@@ -279,7 +281,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                 }
             }
         }
-        DistruggiListaRic(l1);
+        l1.clear();
     }
 
     GuiImage *image=NULL;
@@ -352,10 +354,10 @@ void Clear(GuiWindow* mainWindow, Indice Index, Indice *first, Indice *last, Ind
 }
 
 void SetFont(GuiText *text, vector<string> mode) {
-    if (checkTag(mode, "b") || checkTag(mode, "strong"))
+    /*if (checkTag(mode, "b") || checkTag(mode, "strong"))
         text->SetFont(font_bold_ttf, font_bold_ttf_size);
     if (checkTag(mode, "em") || checkTag(mode, "i"))
-        text->SetFont(font_italic_ttf, font_italic_ttf_size);
+        text->SetFont(font_italic_ttf, font_italic_ttf_size);*/
 }
 
 void DrawScroll (GuiWindow * mainWindow, GuiButton **btndown, GuiButton **btnup, GuiSound *btnSoundOver, GuiTrigger *trigA) {

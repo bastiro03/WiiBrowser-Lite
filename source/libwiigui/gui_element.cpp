@@ -13,12 +13,10 @@
 /**
  * Constructor for the Object class.
  */
-mutex_t GuiElement::mutex = LWP_MUTEX_NULL;
 GuiElement::GuiElement()
 {
 	xoffset = 0;
 	yoffset = 0;
-	zoffset = 0;
 	xmin = 0;
 	xmax = 0;
 	ymin = 0;
@@ -64,44 +62,6 @@ GuiElement::~GuiElement()
 {
 }
 
-// overloaded new operator
-void *GuiElement::operator new(size_t size)
-{
-	void *p = gui_malloc(size);
-
-	if (!p)
-	{
-		bad_alloc ba;
-		throw ba;
-	}
-	return p;
-}
-
-// overloaded delete operator
-void GuiElement::operator delete(void *p)
-{
-	gui_free(p);
-}
-
-// overloaded new operator for arrays
-void *GuiElement::operator new[](size_t size)
-{
-	void *p = gui_malloc(size);
-
-	if (!p)
-	{
-		bad_alloc ba;
-		throw ba;
-	}
-	return p;
-}
-
-// overloaded delete operator for arrays
-void GuiElement::operator delete[](void *p)
-{
-	gui_free(p);
-}
-
 void GuiElement::SetParent(GuiElement * e)
 {
 	parentElement = e;
@@ -110,16 +70,6 @@ void GuiElement::SetParent(GuiElement * e)
 GuiElement * GuiElement::GetParent()
 {
 	return parentElement;
-}
-
-int GuiElement::GetZPosition()
-{
-    int zParent = 0;
-
-	if(parentElement)
-        zParent = parentElement->GetZPosition();
-
-	return zParent+zoffset;
 }
 
 int GuiElement::GetLeft()
@@ -639,24 +589,4 @@ bool GuiElement::IsInside(int x, int y)
 	&& unsigned(y - this->GetTop())  < unsigned(height))
 		return true;
 	return false;
-}
-
-void GuiElement::Lock()
-{
-	LWP_MutexLock(mutex);
-}
-
-void GuiElement::Unlock()
-{
-	LWP_MutexUnlock(mutex);
-}
-
-SimpleLock::SimpleLock(GuiElement *e) : element(e)
-{
-	element->Lock();
-}
-
-SimpleLock::~SimpleLock()
-{
-	element->Unlock();
 }

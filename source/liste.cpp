@@ -4,46 +4,6 @@
                      IMPLEMENTAZIONE
 *************************************************************/
 
-ListaDiElem Inizializza( void ) {
-	return NULL;
-}
-
-int ListaVuota( ListaDiElem lista ) {
-    return lista == NULL;
-}
-
-int DimensioneRic( ListaDiElem lista ) {
-    if( ListaVuota(lista) )
-        return 0;
-    return 1 + DimensioneRic(lista->prox);
-}
-
-ListaDiElem Inserisci( ListaDiElem lista, TipoElemento elem ) {
-	ListaDiElem punt;
-    punt=new Tag;
-    punt->name=elem;
-    punt->form.input=NULL;
-    punt->prox=lista;
-	return  punt;
-}
-
-void DistruggiListaRic( ListaDiElem lista ) {
-    if (ListaVuota(lista)) return;
-    DistruggiListaRic(lista->prox);
-    DistruggiInput(lista->form.input);
-    delete (lista);
-}
-
-ListaDiElem InvertiRiusandoRic( ListaDiElem lista ) {
-   ListaDiElem p, ris;
-   if(ListaVuota(lista) || ListaVuota(lista->prox)) return lista;
-   p=lista->prox;
-   ris = InvertiRiusandoRic (lista->prox);
-   p->prox=lista;
-   lista->prox=NULL;
-   return ris;
-}
-
 //Text
 ListaDiTesto InitText( void ) {
 	return NULL;

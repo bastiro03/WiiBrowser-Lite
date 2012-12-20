@@ -12,13 +12,12 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
-#include <fat.h>
 #include <wiiuse/wpad.h>
 
 #include "libwiigui/gui.h"
+#include "liste.h"
 #include "menu.h"
 #include "main.h"
-#include "liste.h"
 #include "input.h"
 #include "filelist.h"
 #include "filebrowser.h"
@@ -33,15 +32,17 @@ extern "C" {
 CURL *curl_handle;
 History history;
 
-// char homepage[]="m.facebook.com/";
 char homepage[]="www.google.it/";
 char hmpg[MAXLEN];
+
 static GuiImageData * pointer[4];
 static GuiImage * bgImg = NULL;
+static GuiSound * bgMusic = NULL;
 static GuiWindow * mainWindow = NULL;
-static GuiSound * bgMusic=NULL;
 static lwp_t guithread = LWP_THREAD_NULL;
+static lwp_t updatethread = LWP_THREAD_NULL;
 static bool guiHalt = true;
+static int updateThreadHalt=0;
 
 using namespace std;
 
@@ -110,6 +111,7 @@ void ResumeGui()
 void HaltGui()
 {
 	guiHalt = true;
+
 	// wait for thread to finish
 	while(!LWP_ThreadIsSuspended(guithread))
 		usleep(THREAD_SLEEP);
@@ -130,12 +132,12 @@ WindowPrompt(const char *title, const char *msg, const char *btn1Label, const ch
 	promptWindow.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
 	promptWindow.SetPosition(0, -10);
 	GuiSound btnSoundOver(button_over_pcm, button_over_pcm_size, SOUND_PCM);
-	GuiImageData btnOutline(button_png, button_png_size);
-	GuiImageData btnOutlineOver(button_over_png, button_over_png_size);
+	GuiImageData btnOutline(button_png);
+	GuiImageData btnOutlineOver(button_over_png);
 	GuiTrigger trigA;
 	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
 
-	GuiImageData dialogBox(dialogue_box_png, dialogue_box_png_size);
+	GuiImageData dialogBox(dialogue_box_png);
 	GuiImage dialogBoxImg(&dialogBox);
 
 	GuiText titleTxt(title, 26, (GXColor){0, 0, 0, 255});
@@ -144,7 +146,7 @@ WindowPrompt(const char *title, const char *msg, const char *btn1Label, const ch
 	GuiText msgTxt(msg, 22, (GXColor){0, 0, 0, 255});
 	msgTxt.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
 	msgTxt.SetPosition(0,-20);
-	msgTxt.SetMaxWidth(400, WRAP);
+	msgTxt.SetWrap(true, 400);
 
 	GuiText btn1Txt(btn1Label, 22, (GXColor){0, 0, 0, 255});
 	GuiImage btn1Img(&btnOutline);
@@ -187,14 +189,13 @@ WindowPrompt(const char *title, const char *msg, const char *btn1Label, const ch
 	promptWindow.Append(&titleTxt);
 	promptWindow.Append(&msgTxt);
 
-	if(btn1Label)
+    if(btn1Label)
         promptWindow.Append(&btn1);
 
 	if(btn2Label)
 		promptWindow.Append(&btn2);
 
 	promptWindow.SetEffect(EFFECT_SLIDE_TOP | EFFECT_SLIDE_IN, 50);
-
 	HaltGui();
 	mainWindow->SetState(STATE_DISABLED);
 	mainWindow->Append(&promptWindow);
@@ -213,7 +214,6 @@ WindowPrompt(const char *title, const char *msg, const char *btn1Label, const ch
 
 	promptWindow.SetEffect(EFFECT_SLIDE_TOP | EFFECT_SLIDE_OUT, 50);
 	while(promptWindow.GetEffect() > 0) usleep(THREAD_SLEEP);
-
 	HaltGui();
 	mainWindow->Remove(&promptWindow);
 	mainWindow->SetState(STATE_DEFAULT);
@@ -226,15 +226,13 @@ WindowPrompt(const char *title, const char *msg, const char *btn1Label, const ch
  *
  * Thread for application auto-update
  ***************************************************************************/
-static lwp_t updatethread = LWP_THREAD_NULL;
-int updateThreadHalt=0;
-
 static void *UpdateThread (void *arg)
 {
+    int appversion = 0;
 	while(1)
 	{
 		LWP_SuspendThread(updatethread);
-		if(updateThreadHalt || !checkUpdate())
+		if(updateThreadHalt || !(appversion=checkUpdate()))
 			return NULL;
         usleep(500*1000);
 
@@ -246,7 +244,7 @@ static void *UpdateThread (void *arg)
 
 		if(installUpdate) {
 			HaltGui();
-			if(downloadUpdate())
+			if(downloadUpdate(appversion))
 				ExitRequested = true;
             ResumeGui();
 		}
@@ -279,6 +277,7 @@ void StopUpdateThread()
 static void *UpdateGUI (void *arg)
 {
 	int i;
+
 	while(1)
 	{
 		if(guiHalt)
@@ -302,12 +301,12 @@ static void *UpdateGUI (void *arg)
 
             if(HWButton)
                 ExitRequested = true; // exit program
-
 			Menu_Render();
 
-			for(i=0; i < 4; i++) {
+			for(i=0; i < 4; i++)
+			{
 				mainWindow->Update(&userInput[i]);
-                if(userInput[i].wpad->btns_d & (WPAD_BUTTON_HOME | WPAD_CLASSIC_BUTTON_HOME))
+				if(userInput[i].wpad->btns_d & (WPAD_BUTTON_HOME | WPAD_CLASSIC_BUTTON_HOME))
                     ExitRequested = true; // exit program
 			}
 
@@ -347,11 +346,12 @@ InitGUIThreads()
 void OnScreenKeyboard(GuiWindow * keyboardWindow, char *var, u16 maxlen, bool autoComplete)
 {
 	int save = -1;
+
 	GuiKeyboard keyboard(var, maxlen);
 
 	GuiSound btnSoundOver(button_over_pcm, button_over_pcm_size, SOUND_PCM);
-	GuiImageData btnOutline(button_png, button_png_size);
-	GuiImageData btnOutlineOver(button_over_png, button_over_png_size);
+	GuiImageData btnOutline(button_png);
+	GuiImageData btnOutlineOver(button_over_png);
 	GuiTrigger trigA;
 	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
 
@@ -390,7 +390,7 @@ void OnScreenKeyboard(GuiWindow * keyboardWindow, char *var, u16 maxlen, bool au
 	keyboard.SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_IN, 30);
 
 	HaltGui();
-	keyboardWindow->SetState(STATE_DISABLED);
+    keyboardWindow->SetState(STATE_DISABLED);
 	keyboardWindow->Append(&keyboard);
 	keyboardWindow->ChangeFocus(&keyboard);
 	ResumeGui();
@@ -398,6 +398,7 @@ void OnScreenKeyboard(GuiWindow * keyboardWindow, char *var, u16 maxlen, bool au
 	while(save == -1)
 	{
 		usleep(THREAD_SLEEP);
+
 		if(okBtn.GetState() == STATE_CLICKED)
 			save = 1;
 		else if(cancelBtn.GetState() == STATE_CLICKED)
@@ -407,29 +408,27 @@ void OnScreenKeyboard(GuiWindow * keyboardWindow, char *var, u16 maxlen, bool au
 	if(save)
 	{
 		snprintf(var, maxlen, "%s", keyboard.kbtextstr);
-    }
+	}
     else
     {
 		if (autoComplete)
             snprintf(var, maxlen, "%s", homepage);
     }
 
-	keyboard.SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_OUT, 50);
+    keyboard.SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_OUT, 50);
 	while(keyboard.GetEffect() > 0) usleep(THREAD_SLEEP);
 
 	HaltGui();
-    keyboardWindow->Remove(&keyboard);
+	keyboardWindow->Remove(&keyboard);
     keyboardWindow->SetState(STATE_DEFAULT);
 	ResumeGui();
 }
 
-// Splash screen function, runs while initiating network functions. Should create a splash image and may show text in the top-left corner
+// Splash screen function, runs while initiating network functions.
 static int Splash()
 {
-    GuiImage Splash;
-    static GuiImageData * SplashImage;
-    SplashImage = new GuiImageData(wiixplore_png, wiixplore_png_size);
-    Splash = GuiImage(SplashImage->GetImage(), 452, 228);
+    GuiImageData SplashImage(wiixplore_png);
+    GuiImage Splash(&SplashImage);
     Splash.SetAlignment(2,5);
     Splash.SetPosition(0,0);
     GuiText init("Initialising...", 20, (GXColor){225, 225, 225, 255});
@@ -444,7 +443,7 @@ static int Splash()
     ResumeGui();
 
     char myIP[16]; s32 ip;
-    int conn=0, menu=HOME;
+    int conn=0, menu=MENU_HOME;
     while ((ip = net_init()) == -EAGAIN) {
         usleep(100 * 1000); // 100ms
     }
@@ -505,7 +504,7 @@ static int Home()
     GuiText msgTxt("Loading...please wait.", 22, (GXColor){0, 0, 0, 255});
     msgTxt.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
     msgTxt.SetPosition(0,-20);
-    msgTxt.SetMaxWidth(400, WRAP);
+    msgTxt.SetWrap(true, 400);
 
     promptWindow.Append(&dialogBoxImg);
     promptWindow.Append(&title);
@@ -530,16 +529,23 @@ static int Home()
     HTML = downloadfile(curl_handle, url, NULL);
 
     #ifdef DEBUG
-    FILE *pFile = fopen ("Google.htm", "rb");
-    fseek (pFile , 0 , SEEK_END); int size=ftell(pFile); rewind (pFile);
+    FILE *pFile = fopen ("Wikipedia.htm", "rb");
+    fseek (pFile, 0, SEEK_END);
+    int size = ftell(pFile);
+    rewind (pFile);
+
     HTML.data = (char*) malloc (sizeof(char)*size);
     if (HTML.data == NULL) exit (2);
-    fread (HTML.data, 1, size, pFile); HTML.size=size; strcpy(HTML.type, "text/html");
+    fread (HTML.data, 1, size, pFile);
+
+    HTML.size = size;
+    strcpy(HTML.type, "text/html");
     fclose(pFile);
     #endif
 
     #ifdef TIME
-    do {
+    do
+    {
         gettimeofday(&end, 0);
         usleep(100);
     } while ((end.tv_sec-begin.tv_sec)*1000.0+(end.tv_usec-begin.tv_usec)/1000.0 < 500);
@@ -554,13 +560,20 @@ static int Home()
     mainWindow->SetState(STATE_DEFAULT);
     ResumeGui();
 
-    if (CURLE_OK==curl_easy_getinfo(curl_handle, CURLINFO_EFFECTIVE_URL, &nurl)) {
-        url=(char*)realloc(url,strlen(nurl)+1);
+    if (CURLE_OK == curl_easy_getinfo(curl_handle, CURLINFO_EFFECTIVE_URL, &nurl))
+    {
+        url = (char*) realloc (url,strlen(nurl)+1);
         strcpy(url, nurl);
     }
 
-    if (HTML.size==0) { WindowPrompt("WiiXplore", "Failed", "Ok", NULL); return HOME;}
-    if (!history || strcmp(history->url.c_str(),url)) history=InsUrl(history,url);
+    if (HTML.size == 0)
+    {
+        WindowPrompt("WiiXplore", "Failed", "Ok", NULL);
+        return MENU_HOME;
+    }
+
+    if (!history || strcmp(history->url.c_str(),url))
+        history=InsUrl(history,url);
     sleep(1);
 
     GuiWindow childWindow(screenwidth, screenheight);
@@ -573,7 +586,8 @@ static int Home()
     mainWindow->ChangeFocus(&childWindow);
     ResumeGui();
 
-    string link=DisplayHTML(&HTML, mainWindow, &childWindow, url);
+    string link;
+	link = DisplayHTML(&HTML, mainWindow, &childWindow, url);
     free(HTML.data);
 
     HaltGui();
@@ -581,18 +595,19 @@ static int Home()
     mainWindow->SetState(STATE_DEFAULT);
     ResumeGui();
 
-    if (link.length()>0) {
-        link=parseUrl(link, url);
-        url=(char*)realloc(url,strlen(link.c_str())+1);
-        strcpy(url, (char*)link.c_str());
+    if (link.length()>0)
+    {
+        link = parseUrl(link, url);
+        url = (char*) realloc (url,strlen(link.c_str())+1);
+        strcpy(url,(char*)link.c_str());
         goto jump;
     }
     free(url);
 
-    int close=WindowPrompt("Homepage", "Do you want to exit?", "Ok", "Cancel");
+    int close = WindowPrompt("Homepage", "Do you want to exit?", "Ok", "Cancel");
     if (close)
         return MENU_EXIT;
-    return HOME;
+    return MENU_HOME;
 }
 
 /****************************************************************************
@@ -602,36 +617,37 @@ void MainMenu(int menu)
 {
 	int currentMenu = menu;
     memset(hmpg, 0, sizeof(hmpg));
-    history=InitHistory();
+    history = InitHistory();
 
-    if(curl_global_init(CURL_GLOBAL_ALL)) ExitRequested=1;
-    curl_handle=curl_easy_init();
+    if(curl_global_init(CURL_GLOBAL_ALL))
+        ExitRequested=1;
+    curl_handle = curl_easy_init();
 
 	#ifdef HW_RVL
-	pointer[0] = new GuiImageData(player1_point_png, player1_point_png_size);
-	pointer[1] = new GuiImageData(player2_point_png, player2_point_png_size);
-	pointer[2] = new GuiImageData(player3_point_png, player3_point_png_size);
-	pointer[3] = new GuiImageData(player4_point_png, player4_point_png_size);
+	pointer[0] = new GuiImageData(player1_point_png);
+	pointer[1] = new GuiImageData(player2_point_png);
+	pointer[2] = new GuiImageData(player3_point_png);
+	pointer[3] = new GuiImageData(player4_point_png);
 	#endif
 
 	mainWindow = new GuiWindow(screenwidth, screenheight);
-	GuiTrigger trigA;
+    GuiTrigger trigA;
 	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
 	ResumeGui();
 
-    bgMusic= new GuiSound (bg_music_ogg, bg_music_ogg_size, SOUND_OGG);
+	bgMusic = new GuiSound(bg_music_ogg, bg_music_ogg_size, SOUND_OGG);
 	bgMusic->SetVolume(50);
-    bgMusic->SetLoop(true);
+	bgMusic->SetLoop(true);
 	bgMusic->Play(); // startup music
 
-	while(currentMenu != MENU_EXIT)
+    while(currentMenu != MENU_EXIT)
 	{
 		switch (currentMenu)
 		{
-			case SPLASH:
+			case MENU_SPLASH:
 				currentMenu = Splash();
 				break;
-			case HOME:
+			case MENU_HOME:
 				currentMenu = Home();
 				break;
 			default: // unrecognized menu
@@ -642,10 +658,13 @@ void MainMenu(int menu)
 
 	ResumeGui();
 	ExitRequested = 1;
+	while(1) usleep(THREAD_SLEEP);
+
 	HaltGui();
 
 	bgMusic->Stop();
 	delete bgMusic;
+	delete bgImg;
 	delete mainWindow;
 
 	delete pointer[0];
@@ -653,7 +672,7 @@ void MainMenu(int menu)
 	delete pointer[2];
 	delete pointer[3];
 
-    curl_easy_cleanup(curl_handle);
+	curl_easy_cleanup(curl_handle);
     curl_global_cleanup();
 	mainWindow = NULL;
 }

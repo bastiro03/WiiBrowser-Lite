@@ -16,27 +16,37 @@
 #include <wiiuse/wpad.h>
 #include <fat.h>
 
-#include "utils/mem2_manager.h"
+#include "FreeTypeGX.h"
 #include "video.h"
 #include "audio.h"
 #include "menu.h"
 #include "input.h"
 #include "filelist.h"
 #include "main.h"
-#include "liste.h"
-#include "FreeTypeGX.h"
 
+struct SSettings Settings;
 int ExitRequested = 0;
 
 void ExitApp()
 {
 	ShutoffRumble();
 	StopGX();
-	FreeHistory(history);
 	StopUpdateThread();
 	if (HWButton)
         SYS_ResetSystem(HWButton, 0, 0);
 	exit(0);
+}
+
+void
+DefaultSettings()
+{
+	Settings.LoadMethod = METHOD_AUTO;
+	Settings.SaveMethod = METHOD_AUTO;
+	sprintf (Settings.Folder1,"libwiigui/first folder");
+	sprintf (Settings.Folder2,"libwiigui/second folder");
+	sprintf (Settings.Folder3,"libwiigui/third folder");
+	Settings.AutoLoad = 1;
+	Settings.AutoSave = 1;
 }
 
 u8 HWButton;
@@ -44,25 +54,20 @@ void WiiResetPressed() { HWButton = SYS_RETURNTOMENU; }
 void WiiPowerPressed() { HWButton = SYS_POWEROFF_STANDBY; }
 void WiimotePowerPressed(s32 chan) { HWButton = SYS_POWEROFF_STANDBY; }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
 	SYS_SetResetCallback(WiiResetPressed);
 	SYS_SetPowerCallback(WiiPowerPressed);
 	WPAD_SetPowerButtonCallback(WiimotePowerPressed);
 
+	InitVideo(); // Initialize video
 	SetupPads(); // Initialize input
-	InitVideo(); // Initialise video
 	InitAudio(); // Initialize audio
 	fatInitDefault(); // Initialize file system
+	InitFreeType((u8*)font_regular_ttf, font_regular_ttf_size); // Initialize font system
+	InitGUIThreads(); // Initialize GUI
 
-	// read wiimote accelerometer and IR data
-	WPAD_SetDataFormat(WPAD_CHAN_ALL,WPAD_FMT_BTNS_ACC_IR);
-	WPAD_SetVRes(WPAD_CHAN_ALL, screenwidth, screenheight);
-    AddMem2Area (15*1024*1024, MEM2_GUI);
-    AddMem2Area (5*1024*1024, MEM2_OTHER); // vars + ttf
-
-    fontSystem = new FreeTypeGX(font_regular_ttf, font_regular_ttf_size);   // Initialize font system
     __exception_setreload(10);
-
-	InitGUIThreads();
-	MainMenu(SPLASH);
+	DefaultSettings();
+	MainMenu(MENU_SPLASH);
 }

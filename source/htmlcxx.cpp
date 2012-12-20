@@ -73,7 +73,7 @@ int checkchr (string value)
 {
     unsigned int i;
     for (i=0; i<value.length(); i++)
-        if (value[i]!='\n' && value[i]!=' ')
+        if (value[i]!='\n' && value[i]!=' ' /*&& value[i]!='\t'*/)
             return 1;
     return 0;
 }
@@ -139,14 +139,15 @@ tree<HTML::Node>::iterator thtml(tree<HTML::Node>::iterator it, tree<HTML::Node>
 typedef struct
 {
     bool open;
-    Tag *p;
+    Lista::reverse_iterator p;
 } last;
 
-ListaDiElem getTag(ListaDiElem l1, char * buffer)
+Lista getTag(char * buffer)
 {
     bool parse_css=true;
     string css_code;
     tree<HTML::Node> dom;
+    Lista l1;
 
     try
     {
@@ -161,7 +162,7 @@ ListaDiElem getTag(ListaDiElem l1, char * buffer)
         tree<HTML::Node>::iterator end = dom.end();
 
         vector<string> parent;
-        last open[all]= { {false,NULL},{false,NULL},{false,NULL},{false,NULL} };
+        last open[all]= { {false},{false},{false},{false} };
         it=thtml(it,end,"html");
         Value out;
 
@@ -201,10 +202,10 @@ ListaDiElem getTag(ListaDiElem l1, char * buffer)
                     {
                         if (checkchr(out.text))
                         {
-                            l1=Inserisci(l1, "text");
+                            l1.push_back({"text"});
                             open[text].open=true;
-                            open[text].p=l1;
-                            l1->value.push_back(out);
+                            open[text].p=l1.rbegin();
+                            l1.rbegin()->value.push_back(out);
                         }
                     }
                 }
@@ -272,37 +273,37 @@ ListaDiElem getTag(ListaDiElem l1, char * buffer)
                 if (isContainer(it->tagName()))
                 {
                     if (it->tagName()=="p")
-                        l1=Inserisci(l1, "p");
-                    else l1=Inserisci(l1, "return");
+                        l1.push_back({"p"});
+                    else l1.push_back({"return"});
                     open[text].open=false;
                 }
                 if (it->tagName() == "title")
                 {
-                    l1=Inserisci(l1, "title");
+                    l1.push_back({"title"});
                     open[title].open=true;
-                    open[title].p=l1;
+                    open[title].p=l1.rbegin();
                 }
                 else if (it->tagName() == "a")
                 {
-                    l1=Inserisci(l1, "a");
-                    l1->attribute.append (it->attribute("href").second);
+                    l1.push_back({"a"});
+                    l1.rbegin()->attribute.append (it->attribute("href").second);
                     open[a].open=true;
-                    open[a].p=l1;
+                    open[a].p=l1.rbegin();
                     open[text].open=false;
                 }
                 else if (it->tagName() == "img")
                 {
-                    l1=Inserisci(l1, "img");
-                    l1->value.push_back ( {it->attribute("src").second});
-                    l1->attribute.append (it->attribute("height").second);
+                    l1.push_back({"img"});
+                    l1.rbegin()->value.push_back ({it->attribute("src").second});
+                    l1.rbegin()->attribute.append (it->attribute("height").second);
                 }
                 else if (it->tagName() == "form")
                 {
-                    l1=Inserisci(l1, "form");
-                    l1->form.action.append (it->attribute("action").second);
-                    l1->form.method.append (it->attribute("method").second);
+                    l1.push_back({"form"});
+                    l1.rbegin()->form.action.append (it->attribute("action").second);
+                    l1.rbegin()->form.method.append (it->attribute("method").second);
                     open[form].open=true;
-                    open[form].p=l1;
+                    open[form].p=l1.rbegin();
                 }
                 else if (it->tagName() == "input")
                 {
@@ -314,9 +315,9 @@ ListaDiElem getTag(ListaDiElem l1, char * buffer)
                 }
                 else if (it->tagName() == "meta")
                 {
-                    l1=Inserisci(l1, "meta");
-                    l1->value.push_back ( {it->attribute("http-equiv").second});
-                    l1->attribute.append (it->attribute("content").second);
+                    l1.push_back({"meta"});
+                    l1.rbegin()->value.push_back ({it->attribute("http-equiv").second});
+                    l1.rbegin()->attribute.append (it->attribute("content").second);
                 }
             }
 
@@ -328,7 +329,7 @@ ListaDiElem getTag(ListaDiElem l1, char * buffer)
                     if (it->tagName()=="a")
                     {
                         if (open[a].p->value.size()==0)
-                            open[a].p->value.push_back( {"LINK"});
+                            open[a].p->value.push_back ({"LINK"});
                         open[a].open=false;
                     }
                     else if (it->tagName()=="title")
@@ -339,8 +340,8 @@ ListaDiElem getTag(ListaDiElem l1, char * buffer)
                 if (isContainer(it->tagName()))
                 {
                     if (it->tagName()=="p")
-                        l1=Inserisci(l1, "p");
-                    else l1=Inserisci(l1, "return");
+                        l1.push_back({"p"});
+                    else l1.push_back({"return"});
                     open[text].open=false;
                 }
                 else if (it->tagName()=="a")
@@ -358,7 +359,5 @@ ListaDiElem getTag(ListaDiElem l1, char * buffer)
     {
         cerr << "Unknow exception caught " << endl;
     }
-
-    l1=InvertiRiusandoRic(l1);
     return l1;
 }

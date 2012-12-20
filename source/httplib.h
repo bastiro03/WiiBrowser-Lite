@@ -42,7 +42,7 @@
 #define TCP_BLOCK_SEND_TIMEOUT 4000
 #define HTTP_TIMEOUT 300000
 
-#define APPNAME			"WiiXplore"
+#define APPNAME			"WiiBrowser"
 #define APPVERSION		"0.02"
 
 struct block

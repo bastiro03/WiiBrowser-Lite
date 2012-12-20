@@ -1,5 +1,6 @@
 #include "libwiigui/gui.h"
 #include <iostream>
+#include <list>
 #define LEN 15
 
 extern "C" {
@@ -35,7 +36,6 @@ typedef struct Tag {
   TipoElemento attribute;
   vector<Value> value;
   struct Form form;
-  struct Tag *prox;
 } Tag;
 
 typedef struct Text {
@@ -72,12 +72,13 @@ typedef struct Url {
   struct Url *prox;
 } Url;
 
-typedef Tag * ListaDiElem;
 typedef Text * ListaDiTesto;
 typedef Image * ListaDiImg;
 typedef Button * ListaDiBottoni;
 typedef Input * ListaDiInput;
 
+typedef list<Tag> Lista;
+typedef Tag * ListaDiElem;
 typedef Index * Indice;
 typedef Url * History;
 
@@ -86,7 +87,7 @@ extern enum html {HTML,HEAD,BODY,META,TITLE,FORM,P,A,DIV,BR,IMG,H1,H2,H3,H4,H5,H
 extern char tags [END][LEN];
 extern History history;
 
-extern ListaDiElem getTag(ListaDiElem l1, char * buffer);
+extern Lista getTag(char * buffer);
 extern void OnScreenKeyboard(GuiWindow * keyboardWindow, char *var, u16 maxlen, bool autoComplete);
 extern int checkTag(vector<string> tag, string name);
 

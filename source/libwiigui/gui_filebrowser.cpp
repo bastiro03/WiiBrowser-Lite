@@ -35,31 +35,31 @@ GuiFileBrowser::GuiFileBrowser(int w, int h)
 	btnSoundOver = new GuiSound(button_over_pcm, button_over_pcm_size, SOUND_PCM);
 	btnSoundClick = new GuiSound(button_click_pcm, button_click_pcm_size, SOUND_PCM);
 
-	bgFileSelection = new GuiImageData(bg_file_selection_png, bg_file_selection_png_size);
+	bgFileSelection = new GuiImageData(bg_file_selection_png);
 	bgFileSelectionImg = new GuiImage(bgFileSelection);
 	bgFileSelectionImg->SetParent(this);
 	bgFileSelectionImg->SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
 
-	bgFileSelectionEntry = new GuiImageData(bg_file_selection_entry_png, bg_file_selection_entry_png_size);
-	fileFolder = new GuiImageData(folder_png, folder_png_size);
+	bgFileSelectionEntry = new GuiImageData(bg_file_selection_entry_png);
+	fileFolder = new GuiImageData(folder_png);
 
-	scrollbar = new GuiImageData(scrollbar_png, scrollbar_png_size);
+	scrollbar = new GuiImageData(scrollbar_png);
 	scrollbarImg = new GuiImage(scrollbar);
 	scrollbarImg->SetParent(this);
 	scrollbarImg->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
 	scrollbarImg->SetPosition(0, 30);
 
-	arrowDown = new GuiImageData(scrollbar_arrowdown_png, scrollbar_arrowdown_png_size);
+	arrowDown = new GuiImageData(scrollbar_arrowdown_png);
 	arrowDownImg = new GuiImage(arrowDown);
-	arrowDownOver = new GuiImageData(scrollbar_arrowdown_over_png, scrollbar_arrowdown_over_png_size);
+	arrowDownOver = new GuiImageData(scrollbar_arrowdown_over_png);
 	arrowDownOverImg = new GuiImage(arrowDownOver);
-	arrowUp = new GuiImageData(scrollbar_arrowup_png, scrollbar_arrowup_png_size);
+	arrowUp = new GuiImageData(scrollbar_arrowup_png);
 	arrowUpImg = new GuiImage(arrowUp);
-	arrowUpOver = new GuiImageData(scrollbar_arrowup_over_png, scrollbar_arrowup_over_png_size);
+	arrowUpOver = new GuiImageData(scrollbar_arrowup_over_png);
 	arrowUpOverImg = new GuiImage(arrowUpOver);
-	scrollbarBox = new GuiImageData(scrollbar_box_png, scrollbar_box_png_size);
+	scrollbarBox = new GuiImageData(scrollbar_box_png);
 	scrollbarBoxImg = new GuiImage(scrollbarBox);
-	scrollbarBoxOver = new GuiImageData(scrollbar_box_over_png, scrollbar_box_over_png_size);
+	scrollbarBoxOver = new GuiImageData(scrollbar_box_over_png);
 	scrollbarBoxOverImg = new GuiImage(scrollbarBoxOver);
 
 	arrowUpBtn = new GuiButton(arrowUpImg->GetWidth(), arrowUpImg->GetHeight());
@@ -162,44 +162,6 @@ GuiFileBrowser::~GuiFileBrowser()
 		delete fileListBg[i];
 		delete fileListFolder[i];
 	}
-}
-
-// overloaded new operator
-void *GuiFileBrowser::operator new(size_t size)
-{
-	void *p = gui_malloc(size);
-
-	if (!p)
-	{
-		bad_alloc ba;
-		throw ba;
-	}
-	return p;
-}
-
-// overloaded delete operator
-void GuiFileBrowser::operator delete(void *p)
-{
-	gui_free(p);
-}
-
-// overloaded new operator for arrays
-void *GuiFileBrowser::operator new[](size_t size)
-{
-	void *p = gui_malloc(size);
-
-	if (!p)
-	{
-		bad_alloc ba;
-		throw ba;
-	}
-	return p;
-}
-
-// overloaded delete operator for arrays
-void GuiFileBrowser::operator delete[](void *p)
-{
-	gui_free(p);
 }
 
 void GuiFileBrowser::SetFocus(int f)

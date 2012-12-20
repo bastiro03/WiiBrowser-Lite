@@ -12,7 +12,7 @@
 #include <ogc/lwp_watchdog.h>
 #include <gctypes.h>
 
-static u64 prevs[4];
+static u64 prev[4];
 static u64 now[4];
 static u32 delay[4];
 
@@ -32,44 +32,6 @@ GuiTrigger::GuiTrigger()
  */
 GuiTrigger::~GuiTrigger()
 {
-}
-
-// overloaded new operator
-void *GuiTrigger::operator new(size_t size)
-{
-	void *p = gui_malloc(size);
-
-	if (!p)
-	{
-		bad_alloc ba;
-		throw ba;
-	}
-	return p;
-}
-
-// overloaded delete operator
-void GuiTrigger::operator delete(void *p)
-{
-	gui_free(p);
-}
-
-// overloaded new operator for arrays
-void *GuiTrigger::operator new[](size_t size)
-{
-	void *p = gui_malloc(size);
-
-	if (!p)
-	{
-		bad_alloc ba;
-		throw ba;
-	}
-	return p;
-}
-
-// overloaded delete operator for arrays
-void GuiTrigger::operator delete[](void *p)
-{
-	gui_free(p);
 }
 
 /**
@@ -203,17 +165,17 @@ bool GuiTrigger::Left()
 		if(wpad->btns_d & (wiibtn | WPAD_CLASSIC_BUTTON_LEFT)
 			|| pad.btns_d & PAD_BUTTON_LEFT)
 		{
-			prevs[chan] = gettime();
+			prev[chan] = gettime();
 			delay[chan] = SCROLL_DELAY_INITIAL; // reset scroll delay
 			return true;
 		}
 
 		now[chan] = gettime();
 
-		if(diff_usec(prevs[chan], now[chan]) > delay[chan])
+		if(diff_usec(prev[chan], now[chan]) > delay[chan])
 		{
-			prevs[chan] = now[chan];
-
+			prev[chan] = now[chan];
+			
 			if(delay[chan] == SCROLL_DELAY_INITIAL)
 				delay[chan] = SCROLL_DELAY_LOOP;
 			else if(delay[chan] > SCROLL_DELAY_DECREASE)
@@ -236,17 +198,17 @@ bool GuiTrigger::Right()
 		if(wpad->btns_d & (wiibtn | WPAD_CLASSIC_BUTTON_RIGHT)
 			|| pad.btns_d & PAD_BUTTON_RIGHT)
 		{
-			prevs[chan] = gettime();
+			prev[chan] = gettime();
 			delay[chan] = SCROLL_DELAY_INITIAL; // reset scroll delay
 			return true;
 		}
 
 		now[chan] = gettime();
 
-		if(diff_usec(prevs[chan], now[chan]) > delay[chan])
+		if(diff_usec(prev[chan], now[chan]) > delay[chan])
 		{
-			prevs[chan] = now[chan];
-
+			prev[chan] = now[chan];
+			
 			if(delay[chan] == SCROLL_DELAY_INITIAL)
 				delay[chan] = SCROLL_DELAY_LOOP;
 			else if(delay[chan] > SCROLL_DELAY_DECREASE)
@@ -269,17 +231,17 @@ bool GuiTrigger::Up()
 		if(wpad->btns_d & (wiibtn | WPAD_CLASSIC_BUTTON_UP)
 			|| pad.btns_d & PAD_BUTTON_UP)
 		{
-			prevs[chan] = gettime();
+			prev[chan] = gettime();
 			delay[chan] = SCROLL_DELAY_INITIAL; // reset scroll delay
 			return true;
 		}
 
 		now[chan] = gettime();
 
-		if(diff_usec(prevs[chan], now[chan]) > delay[chan])
+		if(diff_usec(prev[chan], now[chan]) > delay[chan])
 		{
-			prevs[chan] = now[chan];
-
+			prev[chan] = now[chan];
+			
 			if(delay[chan] == SCROLL_DELAY_INITIAL)
 				delay[chan] = SCROLL_DELAY_LOOP;
 			else if(delay[chan] > SCROLL_DELAY_DECREASE)
@@ -302,17 +264,17 @@ bool GuiTrigger::Down()
 		if(wpad->btns_d & (wiibtn | WPAD_CLASSIC_BUTTON_DOWN)
 			|| pad.btns_d & PAD_BUTTON_DOWN)
 		{
-			prevs[chan] = gettime();
+			prev[chan] = gettime();
 			delay[chan] = SCROLL_DELAY_INITIAL; // reset scroll delay
 			return true;
 		}
 
 		now[chan] = gettime();
 
-		if(diff_usec(prevs[chan], now[chan]) > delay[chan])
+		if(diff_usec(prev[chan], now[chan]) > delay[chan])
 		{
-			prevs[chan] = now[chan];
-
+			prev[chan] = now[chan];
+			
 			if(delay[chan] == SCROLL_DELAY_INITIAL)
 				delay[chan] = SCROLL_DELAY_LOOP;
 			else if(delay[chan] > SCROLL_DELAY_DECREASE)

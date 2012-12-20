@@ -9,7 +9,7 @@
 #ifndef _UPDATE_H_
 #define _UPDATE_H_
 
-extern bool downloadUpdate();
-extern bool checkUpdate();
+extern bool downloadUpdate(int appversion);
+extern int checkUpdate();
 
 #endif

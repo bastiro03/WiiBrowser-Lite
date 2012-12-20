@@ -102,7 +102,7 @@ GuiKeyboard::GuiKeyboard(char * t, u32 max)
 	};
 	memcpy(keys, thekeys, sizeof(thekeys));
 
-	keyTextbox = new GuiImageData(keyboard_textbox_png, keyboard_textbox_png_size);
+	keyTextbox = new GuiImageData(keyboard_textbox_png);
 	keyTextboxImg = new GuiImage(keyTextbox);
 	keyTextboxImg->SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	keyTextboxImg->SetPosition(0, 0);
@@ -113,12 +113,12 @@ GuiKeyboard::GuiKeyboard(char * t, u32 max)
 	kbText->SetPosition(0, 13);
 	this->Append(kbText);
 
-	key = new GuiImageData(keyboard_key_png, keyboard_key_png_size);
-	keyOver = new GuiImageData(keyboard_key_over_png, keyboard_key_over_png_size);
-	keyMedium = new GuiImageData(keyboard_mediumkey_png, keyboard_mediumkey_png_size);
-	keyMediumOver = new GuiImageData(keyboard_mediumkey_over_png, keyboard_mediumkey_over_png_size);
-	keyLarge = new GuiImageData(keyboard_largekey_png, keyboard_largekey_png_size);
-	keyLargeOver = new GuiImageData(keyboard_largekey_over_png, keyboard_largekey_over_png_size);
+	key = new GuiImageData(keyboard_key_png);
+	keyOver = new GuiImageData(keyboard_key_over_png);
+	keyMedium = new GuiImageData(keyboard_mediumkey_png);
+	keyMediumOver = new GuiImageData(keyboard_mediumkey_over_png);
+	keyLarge = new GuiImageData(keyboard_largekey_png);
+	keyLargeOver = new GuiImageData(keyboard_largekey_over_png);
 
 	keySoundOver = new GuiSound(button_over_pcm, button_over_pcm_size, SOUND_PCM);
 	keySoundClick = new GuiSound(button_click_pcm, button_click_pcm_size, SOUND_PCM);
@@ -266,44 +266,6 @@ GuiKeyboard::~GuiKeyboard()
 	}
 }
 
-// overloaded new operator
-void *GuiKeyboard::operator new(size_t size)
-{
-	void *p = gui_malloc(size);
-
-	if (!p)
-	{
-		bad_alloc ba;
-		throw ba;
-	}
-	return p;
-}
-
-// overloaded delete operator
-void GuiKeyboard::operator delete(void *p)
-{
-	gui_free(p);
-}
-
-// overloaded new operator for arrays
-void *GuiKeyboard::operator new[](size_t size)
-{
-	void *p = gui_malloc(size);
-
-	if (!p)
-	{
-		bad_alloc ba;
-		throw ba;
-	}
-	return p;
-}
-
-// overloaded delete operator for arrays
-void GuiKeyboard::operator delete[](void *p)
-{
-	gui_free(p);
-}
-
 void GuiKeyboard::Update(GuiTrigger * t)
 {
 	if(_elements.size() == 0 || (state == STATE_DISABLED && parentElement))
@@ -329,7 +291,7 @@ void GuiKeyboard::Update(GuiTrigger * t)
 	else if(keyBack->GetState() == STATE_CLICKED)
 	{
 		if(strlen(kbtextstr) > 0)
-		{
+		{	
 			kbtextstr[strlen(kbtextstr)-1] = 0;
 			kbText->SetText(GetDisplayText(kbtextstr));
 		}

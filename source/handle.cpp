@@ -72,7 +72,8 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
             button->btn=new GuiButton(ButtonImg->GetWidth(), ButtonImg->GetHeight());
             button->label=new GuiText((char*)lista->value.c_str(), 20, (GXColor){0, 0, 255, 255});
             button->label->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-            button->label->SetMaxWidth(ButtonImg->GetWidth()-5, SCROLL_HORIZONTAL);
+            button->label->SetMaxWidth(ButtonImg->GetWidth()-5);
+			button->label->SetScroll(SCROLL_HORIZONTAL);
 
             button->btn->SetLabel(button->label);
             button->btn->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
@@ -100,7 +101,8 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
                 button->label=new GuiText((char*)lista->label.c_str(), 20, (GXColor){0, 0, 255, 255});
                 button->label->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
                 button->label->SetPosition(0,-25);
-                button->label->SetMaxWidth(TextboxImg->GetWidth()-5, SCROLL_HORIZONTAL);
+                button->label->SetMaxWidth(TextboxImg->GetWidth()-5);
+				button->label->SetScroll(SCROLL_HORIZONTAL);
                 button->btn->SetLabel(button->label);
                 offset+=25;
             }

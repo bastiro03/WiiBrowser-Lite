@@ -42,42 +42,22 @@
 #include <asndlib.h>
 #include <wiiuse/wpad.h>
 
+#include "../utils/pngu.h"
 #include "FreeTypeGX.h"
 #include "video.h"
 #include "filelist.h"
 #include "input.h"
 #include "oggplayer.h"
 
-/*
-#define gui_malloc malloc
-#define gui_free free
-#define gui_memalign memalign
-#define gui_strdup strdup
-*/
+extern FreeTypeGX *fontSystem[];
 
-#include "../utils/mem2_manager.h"
-#define gui_malloc(x) mem2_malloc(x,MEM2_GUI)
-#define gui_realloc(x,y) mem2_realloc(x,y,MEM2_GUI)
-#define gui_memalign(x,y) mem2_memalign(x,y,MEM2_GUI)
-#define gui_free(x) mem2_free(x,MEM2_GUI)
-#define gui_strdup(x) mem2_strdup(x,MEM2_GUI)
-
-using namespace std;
-extern FreeTypeGX *fontSystem;
-
-#define SCROLL_INITIAL_DELAY 	20
-#define SCROLL_LOOP_DELAY 		3
-#define SCROLL_DELAY_INITIAL 	200000
-#define SCROLL_DELAY_LOOP 		30000
-
-#define PAGESIZE	 			8
-#define MAX_KEYBOARD_DISPLAY	40  //32
-#define MAX_LINES_TO_DRAW	    24
-
+#define SCROLL_DELAY_INITIAL	200000
+#define SCROLL_DELAY_LOOP		30000
 #define SCROLL_DELAY_DECREASE	300
 #define FILE_PAGESIZE 			8
+#define PAGESIZE 				8
 #define MAX_OPTIONS 			150
-#define N_LABEL	                10
+#define MAX_KEYBOARD_DISPLAY	32
 
 typedef void (*UpdateCallback)(void * e);
 
@@ -123,10 +103,14 @@ enum
 
 enum
 {
-	WRAP,
-	DOTTED,
-	SCROLL_HORIZONTAL,
-	SCROLL_NONE
+	SCROLL_NONE,
+	SCROLL_HORIZONTAL
+};
+
+enum textSets
+{
+    NORMAL=0,
+    ANCHOR
 };
 
 typedef struct _paddata {
@@ -151,6 +135,8 @@ typedef struct _paddata {
 #define EFFECT_SCALE				128
 #define EFFECT_COLOR_TRANSITION		256
 
+#include "document.h"
+
 //!Sound conversion and playback. A wrapper for other sound libraries - ASND, libmad, ltremor, etc
 class GuiSound
 {
@@ -162,11 +148,6 @@ class GuiSound
 		GuiSound(const u8 * s, s32 l, int t);
 		//!Destructor
 		~GuiSound();
-        //!Operator overload: new, delete, new[] and delete[]
-        void *operator new(size_t size);
-		void operator delete(void *p);
-		void *operator new[](size_t size);
-		void operator delete[](void *p);
 		//!Start sound playback
 		void Play();
 		//!Stop sound playback
@@ -201,11 +182,6 @@ class GuiTrigger
 		GuiTrigger();
 		//!Destructor
 		~GuiTrigger();
-        //!Operator overload: new, delete, new[] and delete[]
-        void *operator new(size_t size);
-		void operator delete(void *p);
-		void *operator new[](size_t size);
-		void operator delete[](void *p);
 		//!Sets a simple trigger. Requires: element is selected, and trigger button is pressed
 		//!\param ch Controller channel number
 		//!\param wiibtns Wii controller trigger button(s) - classic controller buttons are considered separately
@@ -269,11 +245,6 @@ class GuiElement
 		GuiElement();
 		//!Destructor
 		~GuiElement();
-        //!Operator overload: new, delete, new[] and delete[]
-        void *operator new(size_t size);
-		void operator delete(void *p);
-		void *operator new[](size_t size);
-		void operator delete[](void *p);
 		//!Set the element's parent
 		//!\param e Pointer to parent element
 		void SetParent(GuiElement * e);
@@ -294,8 +265,6 @@ class GuiElement
 		//!Considers vertical alignment, y offset, height, and parent element's GetTop() / GetHeight() values
 		//!\return top coordinate
 		int GetTop();
-		//!Gets the current Z coordinate of the element
-		int GetZPosition();
 		//!Sets the minimum y offset of the element
 		//!\param y Y offset
 		void SetMinY(int y);
@@ -461,11 +430,6 @@ class GuiElement
 		//!Called constantly to redraw the element's tooltip
 		virtual void DrawTooltip();
 	protected:
-		void Lock();
-		void Unlock();
-		static mutex_t mutex;
-		friend class SimpleLock;
-
 		GuiTrigger * trigger[3]; //!< GuiTriggers (input actions) that this element responds to
 		UpdateCallback updateCB; //!< Callback function to call when this element is updated
 		GuiElement * parentElement; //!< Parent element
@@ -474,7 +438,6 @@ class GuiElement
 		int height; //!< Element height
 		int xoffset; //!< Element X offset
 		int yoffset; //!< Element Y offset
-		int zoffset; //!< Element Z offset
 		int ymin; //!< Element's min Y offset allowed
 		int ymax; //!< Element's max Y offset allowed
 		int xmin; //!< Element's min X offset allowed
@@ -503,20 +466,6 @@ class GuiElement
 		bool rumble; //!< Wiimote rumble (on/off) - set to on when this element requests a rumble event
 };
 
-class SimpleLock
-{
-    public:
-        SimpleLock(GuiElement *e);
-        ~SimpleLock();
-    private:
-        GuiElement *element;
-};
-
-#define LOCK(e) SimpleLock MutexLock(e)
-
-#include "document.h"
-#include "gui_text.h"
-
 //!Allows GuiElements to be grouped together into a "window"
 class GuiWindow : public GuiElement
 {
@@ -529,11 +478,6 @@ class GuiWindow : public GuiElement
 		GuiWindow(int w, int h);
 		//!Destructor
 		~GuiWindow();
-        //!Operator overload: new, delete, new[] and delete[]
-        void *operator new(size_t size);
-		void operator delete(void *p);
-		void *operator new[](size_t size);
-		void operator delete[](void *p);
 		//!Appends a GuiElement to the GuiWindow
 		//!\param e The GuiElement to append. If it is already in the GuiWindow, it is removed first
 		void Append(GuiElement* e);
@@ -608,28 +552,11 @@ class GuiImageData
 		//!Constructor
 		//!Converts the image data to RGBA8 - expects PNG format
 		//!\param i Image data
-		GuiImageData(const u8 * i);
-		//!\overload
-		//!\param i Image data
-		//!\param s Image data size
-		//!\param f Target image format
-		GuiImageData(const u8 * i, int s, u8 f = GX_TF_RGBA8);
+		//!\param w Max image width (0 = not set)
+		//!\param h Max image height (0 = not set)
+		GuiImageData(const u8 * i, int w=0, int h=0);
 		//!Destructor
 		~GuiImageData();
-
-		//!Operator overload: new, delete, new[] and delete[]
-		void *operator new(size_t size);
-		void operator delete(void *p);
-		void *operator new[](size_t size);
-		void operator delete[](void *p);
-		//!Sets the data pointer for the GuiImageData object
-		//!\param i Image data pointer
-		void SetData(u8 * d);
-		//!Sets the GuiImageData to a new image (assumes the same dimensions)
-		//!\param i Image data
-		//!\param s Image data size
-		//!\param f Target image format
-		void SetImage(const u8 * i, int s = 0);
 		//!Gets a pointer to the image data
 		//!\return pointer to image data
 		u8 * GetImage();
@@ -639,16 +566,8 @@ class GuiImageData
 		//!Gets the image height
 		//!\return image height
 		int GetHeight();
-		//!Gets the image texture format
-		//!\return texture format
-		u8 GetFormat();
 	protected:
-		void LoadPNG(const u8 *i); //!< Load a PNG
-		void LoadBMP(const u8 *i, int s); //!< Load a BMP
-		void LoadJPEG(const u8 *i, int s); //!< Load a JPEG
-		void LoadGIF(const u8 *i, int s); //!< Load a GIF
 		u8 * data; //!< Image data
-		u8 format; //!< Texture format
 		int height; //!< Height of image
 		int width; //!< Width of image
 };
@@ -676,11 +595,6 @@ class GuiImage : public GuiElement
 		GuiImage(int w, int h, GXColor c);
 		//!Destructor
 		~GuiImage();
-        //!Operator overload: new, delete, new[] and delete[]
-        void *operator new(size_t size);
-		void operator delete(void *p);
-		void *operator new[](size_t size);
-		void operator delete[](void *p);
 		//!Sets the image rotation angle for drawing
 		//!\param a Angle (in degrees)
 		void SetAngle(float a);
@@ -725,6 +639,104 @@ class GuiImage : public GuiElement
 		int stripe; //!< Alpha value (0-255) to apply a stripe effect to the texture
 };
 
+//!Display, manage, and manipulate text in the GUI
+class GuiText : public GuiElement, public Document
+{
+	public:
+		//!Constructor
+		//!\param t Text
+		//!\param s Font size
+		//!\param c Font color
+		GuiText(const char * t, int s, GXColor c);
+        //!\overload
+		//!\param t Text
+		//!\param s Font size
+		//!\param c Font color
+		GuiText(const wchar_t * t, int s, GXColor c);
+		//!\overload
+		//!Assumes SetPresets() has been called to setup preferred text attributes
+		//!\param t Text
+		GuiText(const char * t);
+		//!Destructor
+		~GuiText();
+		//!Sets the text of the GuiText element
+		//!\param t Text
+		void SetText(const char * t);
+		//!Sets the text of the GuiText element
+		//!\param t UTF-8 Text
+		void SetWText(wchar_t * t);
+		//!Gets the translated text length of the GuiText element
+		int GetLength();
+        //!Gets the total line number
+		int GetLinesCount();
+        //!Change the font
+		//!\param font bufferblock
+		//!\param font filesize
+		bool SetFont(const u8 *font, const u32 filesize);
+		//!use spaces?
+		void SetSpace(bool space);
+		//!Sets up preset values to be used by GuiText(t)
+		//!Useful when printing multiple text elements, all with the same attributes set
+		//!\param sz Font size
+		//!\param c Font color
+		//!\param w Maximum width of texture image (for text wrapping)
+		//!\param s Font size
+		//!\param h Text alignment (horizontal)
+		//!\param v Text alignment (vertical)
+		void SetPresets(int sz, GXColor c, int w, u16 s, int h, int v);
+		//!Sets the font size
+		//!\param s Font size
+		void SetFontSize(int s);
+		//!Sets the maximum width of the drawn texture image
+		//!\param w Maximum width
+		void SetMaxWidth(int w);
+		//!Gets the width of the text when rendered
+		int GetTextWidth();
+		//!Enables/disables text scrolling
+		//!\param s Scrolling on/off
+		void SetScroll(int s);
+		//!Enables/disables text wrapping
+		//!\param w Wrapping on/off
+		//!\param width Maximum width (0 to disable)
+		void SetWrap(bool w, int width = 0);
+        //!Returns cursor position
+		bool IsOver(int x, int y);
+		//!Sets the text type
+		void SetModel(int model);
+		//!Sets the font color
+		//!\param c Font color
+		void SetColor(GXColor c);
+		//!Sets the FreeTypeGX style attributes
+		//!\param s Style attributes
+		void SetStyle(u16 s);
+		//!Sets the text alignment
+		//!\param hor Horizontal alignment (ALIGN_LEFT, ALIGN_RIGHT, ALIGN_CENTRE)
+		//!\param vert Vertical alignment (ALIGN_TOP, ALIGN_BOTTOM, ALIGN_MIDDLE)
+		void SetAlignment(int hor, int vert);
+		//!Updates the text to the selected language
+		void ResetText();
+		//!Constantly called to draw the text
+		void Draw();
+		//!Constantly called to respond to user input
+		void Select(GuiTrigger * t);
+	protected:
+		GXColor color; //!< Font color
+		wchar_t* text; //!< Translated Unicode text value
+		wchar_t *textDyn[50]; //!< Text value, if max width, scrolling, or wrapping enabled
+		int textDynNum; //!< Number of text lines
+		char * origText; //!< Original text data (English)
+		int size; //!< Font size
+		int maxWidth; //!< Maximum width of the generated text object (for text wrapping)
+		int textScroll; //!< Scrolling toggle
+		int textScrollPos; //!< Current starting index of text string for scrolling
+		int textScrollInitialDelay; //!< Delay to wait before starting to scroll
+		int textScrollDelay; //!< Scrolling speed
+		int textModel;
+		u16 style; //!< FreeTypeGX style attributes
+		bool wrap; //!< Wrapping toggle
+		bool usespace;
+};
+
 //!Display, manage, and manipulate tooltips in the GUI
 class GuiTooltip : public GuiElement
 {
@@ -734,11 +746,6 @@ class GuiTooltip : public GuiElement
 		GuiTooltip(const char *t);
 		//!Destructor
 		~GuiTooltip();
-        //!Operator overload: new, delete, new[] and delete[]
-        void *operator new(size_t size);
-		void operator delete(void *p);
-		void *operator new[](size_t size);
-		void operator delete[](void *p);
 		//!Gets the element's current scale
 		float GetScale();
 		//!Sets the text of the GuiTooltip element
@@ -766,14 +773,6 @@ class GuiButton : public GuiElement
 		GuiButton(int w = 0, int h = 0);
 		//!Destructor
 		~GuiButton();
-        //!Operator overload: new, delete, new[] and delete[]
-        void *operator new(size_t size);
-		void operator delete(void *p);
-		void *operator new[](size_t size);
-		void operator delete[](void *p);
-		//!Sets the button's dimensions
-		//!\param i Pointer to GuiImage object
-		void SetDimension(int w, int h);
 		//!Sets the button's image
 		//!\param i Pointer to GuiImage object
 		void SetImage(GuiImage* i);
@@ -844,10 +843,10 @@ class GuiButton : public GuiElement
 		GuiImage * iconOver; //!< Button icon for STATE_SELECTED
 		GuiImage * iconHold; //!< Button icon for STATE_HELD
 		GuiImage * iconClick; //!< Button icon for STATE_CLICKED
-		GuiText * label[N_LABEL]; //!< Label(s) to display (default)
-		GuiText * labelOver[N_LABEL]; //!< Label(s) to display for STATE_SELECTED
-		GuiText * labelHold[N_LABEL]; //!< Label(s) to display for STATE_HELD
-		GuiText * labelClick[N_LABEL]; //!< Label(s) to display for STATE_CLICKED
+		GuiText * label[3]; //!< Label(s) to display (default)
+		GuiText * labelOver[3]; //!< Label(s) to display for STATE_SELECTED
+		GuiText * labelHold[3]; //!< Label(s) to display for STATE_HELD
+		GuiText * labelClick[3]; //!< Label(s) to display for STATE_CLICKED
 		GuiSound * soundOver; //!< Sound to play for STATE_SELECTED
 		GuiSound * soundHold; //!< Sound to play for STATE_HELD
 		GuiSound * soundClick; //!< Sound to play for STATE_CLICKED
@@ -864,10 +863,6 @@ class GuiKeyboard : public GuiWindow
 	public:
 		GuiKeyboard(char * t, u32 m);
 		~GuiKeyboard();
-        void *operator new(size_t size);
-		void operator delete(void *p);
-		void *operator new[](size_t size);
-		void operator delete[](void *p);
 		void Update(GuiTrigger * t);
 		char kbtextstr[256];
 	protected:
@@ -921,10 +916,6 @@ class GuiOptionBrowser : public GuiElement
 	public:
 		GuiOptionBrowser(int w, int h, OptionList * l);
 		~GuiOptionBrowser();
-        void *operator new(size_t size);
-		void operator delete(void *p);
-		void *operator new[](size_t size);
-		void operator delete[](void *p);
 		void SetCol1Position(int x);
 		void SetCol2Position(int x);
 		int FindMenuItem(int c, int d);
@@ -978,10 +969,6 @@ class GuiFileBrowser : public GuiElement
 	public:
 		GuiFileBrowser(int w, int h);
 		~GuiFileBrowser();
-        void *operator new(size_t size);
-		void operator delete(void *p);
-		void *operator new[](size_t size);
-		void operator delete[](void *p);
 		void ResetState();
 		void SetFocus(int f);
 		void Draw();

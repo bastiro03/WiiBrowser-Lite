@@ -26,7 +26,7 @@ GuiButton::GuiButton(int w, int h)
 	iconHold = NULL;
 	iconClick = NULL;
 
-	for(int i=0; i<N_LABEL; i++)
+	for(int i=0; i < 3; i++)
 	{
 		label[i] = NULL;
 		labelOver[i] = NULL;
@@ -48,49 +48,6 @@ GuiButton::GuiButton(int w, int h)
  */
 GuiButton::~GuiButton()
 {
-}
-
-// overloaded new operator
-void *GuiButton::operator new(size_t size)
-{
-	void *p = gui_malloc(size);
-
-	if (!p)
-	{
-		bad_alloc ba;
-		throw ba;
-	}
-	return p;
-}
-
-// overloaded delete operator
-void GuiButton::operator delete(void *p)
-{
-	gui_free(p);
-}
-
-// overloaded new operator for arrays
-void *GuiButton::operator new[](size_t size)
-{
-	void *p = gui_malloc(size);
-
-	if (!p)
-	{
-		bad_alloc ba;
-		throw ba;
-	}
-	return p;
-}
-
-// overloaded delete operator for arrays
-void GuiButton::operator delete[](void *p)
-{
-	gui_free(p);
-}
-
-void GuiButton::SetDimension(int w, int h) {
-	width = w;
-	height = h;
 }
 
 void GuiButton::SetImage(GuiImage* img)
@@ -193,13 +150,20 @@ void GuiButton::Draw()
 			icon->Draw();
 
 		// draw text
-		for(int i=0; i < N_LABEL; i++)
-		{
-            if(labelOver[i])
-                labelOver[i]->Draw();
-            else if(label[i])
-                label[i]->Draw();
-		}
+		if(labelOver[0])
+			labelOver[0]->Draw();
+		else if(label[0])
+			label[0]->Draw();
+
+		if(labelOver[1])
+			labelOver[1]->Draw();
+		else if(label[1])
+			label[1]->Draw();
+
+		if(labelOver[2])
+			labelOver[2]->Draw();
+		else if(label[2])
+			label[2]->Draw();
 	}
 	else
 	{
@@ -209,11 +173,12 @@ void GuiButton::Draw()
 			icon->Draw();
 
 		// draw text
-        for(int i=0; i<N_LABEL; i++)
-		{
-            if(label[i])
-                label[i]->Draw();
-		}
+		if(label[0])
+			label[0]->Draw();
+		if(label[1])
+			label[1]->Draw();
+		if(label[2])
+			label[2]->Draw();
 	}
 
 	this->UpdateEffects();
@@ -227,7 +192,7 @@ void GuiButton::DrawTooltip()
 
 void GuiButton::ResetText()
 {
-	for(int i=0; i<N_LABEL; i++)
+	for(int i=0; i<3; i++)
 	{
 		if(label[i])
 			label[i]->ResetText();
@@ -245,7 +210,7 @@ void GuiButton::Update(GuiTrigger * t)
 	else if(parentElement && parentElement->GetState() == STATE_DISABLED)
 		return;
 
-    for(int i=0; i<N_LABEL; i++)
+    for(int i=0; i<3; i++)
     {
         if(label[i])
             label[i]->Select(t);

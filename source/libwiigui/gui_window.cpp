@@ -28,44 +28,6 @@ GuiWindow::~GuiWindow()
 {
 }
 
-// overloaded new operator
-void *GuiWindow::operator new(size_t size)
-{
-	void *p = gui_malloc(size);
-
-	if (!p)
-	{
-		bad_alloc ba;
-		throw ba;
-	}
-	return p;
-}
-
-// overloaded delete operator
-void GuiWindow::operator delete(void *p)
-{
-	gui_free(p);
-}
-
-// overloaded new operator for arrays
-void *GuiWindow::operator new[](size_t size)
-{
-	void *p = gui_malloc(size);
-
-	if (!p)
-	{
-		bad_alloc ba;
-		throw ba;
-	}
-	return p;
-}
-
-// overloaded delete operator for arrays
-void GuiWindow::operator delete[](void *p)
-{
-	gui_free(p);
-}
-
 void GuiWindow::Append(GuiElement* e)
 {
 	if (e == NULL)
@@ -341,7 +303,7 @@ void GuiWindow::MoveSelectionHor(int dir)
 		top = _elements.at(selected)->GetTop();
 	}
 
-
+	
 	// look for a button on the same row, to the left/right
 	for (i = 0; i < elemSize; ++i)
 	{

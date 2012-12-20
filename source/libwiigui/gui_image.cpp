@@ -87,44 +87,6 @@ GuiImage::~GuiImage()
 		free(image);
 }
 
-// overloaded new operator
-void *GuiImage::operator new(size_t size)
-{
-	void *p = gui_malloc(size);
-
-	if (!p)
-	{
-		bad_alloc ba;
-		throw ba;
-	}
-	return p;
-}
-
-// overloaded delete operator
-void GuiImage::operator delete(void *p)
-{
-	gui_free(p);
-}
-
-// overloaded new operator for arrays
-void *GuiImage::operator new[](size_t size)
-{
-	void *p = gui_malloc(size);
-
-	if (!p)
-	{
-		bad_alloc ba;
-		throw ba;
-	}
-	return p;
-}
-
-// overloaded delete operator for arrays
-void GuiImage::operator delete[](void *p)
-{
-	gui_free(p);
-}
-
 u8 * GuiImage::GetImage()
 {
 	return image;
@@ -198,7 +160,7 @@ void GuiImage::ColorStripe(int shift)
 	GXColor color;
 	int x, y=0;
 	int alt = 0;
-
+	
 	int thisHeight =  this->GetHeight();
 	int thisWidth =  this->GetWidth();
 

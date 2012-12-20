@@ -34,44 +34,6 @@ GuiSound::~GuiSound()
 	#endif
 }
 
-// overloaded new operator
-void *GuiSound::operator new(size_t size)
-{
-	void *p = gui_malloc(size);
-
-	if (!p)
-	{
-		bad_alloc ba;
-		throw ba;
-	}
-	return p;
-}
-
-// overloaded delete operator
-void GuiSound::operator delete(void *p)
-{
-	gui_free(p);
-}
-
-// overloaded new operator for arrays
-void *GuiSound::operator new[](size_t size)
-{
-	void *p = gui_malloc(size);
-
-	if (!p)
-	{
-		bad_alloc ba;
-		throw ba;
-	}
-	return p;
-}
-
-// overloaded delete operator for arrays
-void GuiSound::operator delete[](void *p)
-{
-	gui_free(p);
-}
-
 void GuiSound::Play()
 {
 	#ifndef NO_SOUND

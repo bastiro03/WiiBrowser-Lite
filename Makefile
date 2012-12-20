@@ -19,15 +19,15 @@ include $(DEVKITPPC)/wii_rules
 #---------------------------------------------------------------------------------
 TARGET		:=	boot
 BUILD		:=	build
-SOURCES		:=	source source/html source/css source/ImageOperations source/libwiigui source/images source/fonts source/sounds source/utils \ source/lang
-INCLUDES	:=	source ./include
-
+SOURCES		:=	source source/html source/css source/libwiigui source/images source/fonts source/sounds \
+				source/lang source/utils
+INCLUDES	:=	source
 
 #---------------------------------------------------------------------------------
 # options for code generation
 #---------------------------------------------------------------------------------
 
-CFLAGS		=	-g -O2 -Wall $(MACHDEP) $(INCLUDE) -Wno-char-subscripts -Wno-multichar -Wno-deprecated
+CFLAGS		=	-g -O2 -Wall $(MACHDEP) $(INCLUDE)
 CXXFLAGS	=	-std=gnu++0x $(CFLAGS)
 LDFLAGS		=	-g $(MACHDEP) -Wl,-Map,$(notdir $@).map
 
@@ -35,7 +35,6 @@ LDFLAGS		=	-g $(MACHDEP) -Wl,-Map,$(notdir $@).map
 # any extra libraries we wish to link with the project
 #---------------------------------------------------------------------------------
 LIBS :=	-lpng -ljpeg -lcurl -lcyassl -lnetport -lz -lfat -lwiiuse -lbte -lasnd -logc -lvorbisidec -lfreetype
-# LIBS :=	-lgd -ltiff -lpng -ljpeg -lcurl -lcyassl -lnetport -lmetaphrasis -lz -lfat -lwiiuse -lbte -lasnd -logc -lvorbisidec -lfreetype
 
 #---------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level containing
@@ -85,7 +84,6 @@ export OFILES	:=	$(CPPFILES:.cpp=.o) $(CFILES:.c=.o) \
 					$(OGGFILES:.ogg=.ogg.o) $(PCMFILES:.pcm=.pcm.o) \
 					$(JPGFILES:.jpg=.jpg.o) \
 					$(GIFFILES:.gif=.gif.o)
-
 
 #---------------------------------------------------------------------------------
 # build a list of include paths
@@ -155,7 +153,7 @@ $(OUTPUT).elf: $(OFILES)
 %.gif.o : %.gif
 	@echo $(notdir $<)
 	$(bin2o)
-
+	
 %.ogg.o : %.ogg
 	@echo $(notdir $<)
 	$(bin2o)

@@ -1,17 +1,23 @@
-/********************************************************************************************
-*
-* PNGU
-* 
-* Original author: frontier (http://frontier-dev.net)
-* Modified by Tantric, 2009-2010
-*
-********************************************************************************************/
+/****************************************************************************
+ *
+ * PNGU
+ * 
+ * Original author: frontier (http://frontier-dev.net)
+ * Modified by Tantric, 2009-2012
+ *
+ ***************************************************************************/
 
 #include <stdio.h>
 #include <malloc.h>
-#include <gccore.h>
-#include "pngu.h"
 #include <png.h>
+#include "pngu.h"
+
+#include "video.h"
+
+//only texture in mem2, internal memory managed by gcc
+#define png_malloc malloc
+#define png_free free
+#define png_memalign memalign
 
 // Constants
 #define PNGU_SOURCE_BUFFER				1
@@ -43,12 +49,12 @@ struct _IMGCTX
 	int source;
 	void *buffer;
 	char *filename;
-	PNGU_u32 cursor;
+	u32 cursor;
 
-	PNGU_u32 propRead;
+	u32 propRead;
 	PNGUPROP prop;
 
-	PNGU_u32 infoRead;
+	u32 infoRead;
 	png_structp png_ptr;
 	png_infop info_ptr;
 	FILE *fd;
@@ -227,7 +233,7 @@ static int pngu_info (IMGCTX ctx)
 				if(png_get_tRNS (ctx->png_ptr, ctx->info_ptr, &trans, (int *) &(ctx->prop.numTrans), &trans_values)){
 					ctxNumTrans = ctx->prop.numTrans;
 					if(ctxNumTrans){
-						ctx->prop.trans = malloc (sizeof (PNGUCOLOR) * ctxNumTrans);
+						ctx->prop.trans = png_malloc (sizeof (PNGUCOLOR) * ctxNumTrans);
 						if (ctx->prop.trans)
 							for (i = 0; i < ctxNumTrans; i++)
 							{
@@ -260,7 +266,7 @@ static int pngu_info (IMGCTX ctx)
 				if(png_get_tRNS (ctx->png_ptr, ctx->info_ptr, &trans, (int *) &(ctx->prop.numTrans), &trans_values)){
 					ctxNumTrans = ctx->prop.numTrans;
 					if(ctxNumTrans){
-						ctx->prop.trans = malloc (sizeof (PNGUCOLOR) * ctxNumTrans);
+						ctx->prop.trans = png_malloc (sizeof (PNGUCOLOR) * ctxNumTrans);
 						if (ctx->prop.trans)
 							for (i = 0; i < ctxNumTrans; i++)
 								ctx->prop.trans[i].r = 
@@ -294,7 +300,7 @@ static int pngu_info (IMGCTX ctx)
 	return PNGU_OK;
 }
 
-static int pngu_decode (IMGCTX ctx, PNGU_u32 width, PNGU_u32 height, PNGU_u32 stripAlpha)
+static int pngu_decode (IMGCTX ctx, u32 width, u32 height, u32 stripAlpha)
 {
 	png_uint_32 rowbytes;
 	png_uint_32 i, propImgHeight;
@@ -340,17 +346,17 @@ static int pngu_decode (IMGCTX ctx, PNGU_u32 width, PNGU_u32 height, PNGU_u32 st
 	if (rowbytes & 3)
 		rowbytes = ((rowbytes >> 2) + 1) << 2; // Add extra padding so each row starts in a 4 byte boundary
 
-	ctx->img_data = malloc (rowbytes * ctx->prop.imgHeight);
+	ctx->img_data = png_malloc (rowbytes * ctx->prop.imgHeight);
 	if (!ctx->img_data)
 	{
 		pngu_free_info (ctx);
 		return PNGU_LIB_ERROR;
 	}
 
-	ctx->row_pointers = malloc (sizeof (png_bytep) * ctx->prop.imgHeight);
+	ctx->row_pointers = png_malloc (sizeof (png_bytep) * ctx->prop.imgHeight);
 	if (!ctx->row_pointers)
 	{
-		free (ctx->img_data);
+		png_free (ctx->img_data);
 		pngu_free_info (ctx);
 		return PNGU_LIB_ERROR;
 	}
@@ -369,14 +375,14 @@ static int pngu_decode (IMGCTX ctx, PNGU_u32 width, PNGU_u32 height, PNGU_u32 st
 	return PNGU_OK;
 }
 
-static inline PNGU_u32 coordsRGBA8(PNGU_u32 x, PNGU_u32 y, PNGU_u32 w)
+static inline u32 coordsRGBA8(u32 x, u32 y, u32 w)
 {
 	return ((((y >> 2) * (w >> 2) + (x >> 2)) << 5) + ((y & 3) << 2) + (x & 3)) << 1;
 }
 
-static u8 * PNGU_DecodeTo4x4RGBA8 (IMGCTX ctx, PNGU_u32 width, PNGU_u32 height, int * dstWidth, int * dstHeight, int maxWidth, int maxHeight)
+static u8 * PNGU_DecodeTo4x4RGBA8 (IMGCTX ctx, u32 width, u32 height, int * dstWidth, int * dstHeight, u8 *dstPtr)
 {
-	PNGU_u8 default_alpha = 255;
+	u8 default_alpha = 255;
 	u8 *dst;
 	int x, y, x2, y2, offset;
 	int xRatio = 0, yRatio = 0;
@@ -388,17 +394,19 @@ static u8 * PNGU_DecodeTo4x4RGBA8 (IMGCTX ctx, PNGU_u32 width, PNGU_u32 height, 
 	int newWidth = width;
 	int newHeight = height;
 
-	if((maxWidth > 0 && width > maxWidth) || (maxHeight > 0 && height > maxHeight))
+	if(width > MAX_TEX_WIDTH || height > MAX_TEX_HEIGHT)
 	{
 		float ratio = (float)width/(float)height;
-
-		newWidth = maxWidth;
-		newHeight = maxWidth/ratio;
-
-		if(newHeight > maxHeight)
+		
+		if(ratio > (float)MAX_TEX_WIDTH/(float)MAX_TEX_HEIGHT)
 		{
-			newWidth = maxHeight*ratio;
-			newHeight = maxHeight;
+			newWidth = MAX_TEX_WIDTH;
+			newHeight = MAX_TEX_WIDTH/ratio;
+		}
+		else
+		{
+			newWidth = MAX_TEX_HEIGHT*ratio;
+			newHeight = MAX_TEX_HEIGHT;
 		}
 		xRatio = (int)((width<<16)/newWidth)+1;
 		yRatio = (int)((height<<16)/newHeight)+1;
@@ -412,7 +420,10 @@ static u8 * PNGU_DecodeTo4x4RGBA8 (IMGCTX ctx, PNGU_u32 width, PNGU_u32 height, 
 	int len = (padWidth * padHeight) << 2;
 	if(len%32) len += (32-len%32);
 
-	dst = memalign (32, len);
+	if(dstPtr)
+		dst = dstPtr; // use existing allocation
+	else
+		dst = memalign (32, len);
 
 	if(!dst)
 		return NULL;
@@ -468,8 +479,8 @@ static u8 * PNGU_DecodeTo4x4RGBA8 (IMGCTX ctx, PNGU_u32 width, PNGU_u32 height, 
 	}
 
 	// Free resources
-	free (ctx->img_data);
-	free (ctx->row_pointers);
+	png_free (ctx->img_data);
+	png_free (ctx->row_pointers);
 
 	*dstWidth = padWidth;
 	*dstHeight = padHeight;
@@ -484,7 +495,7 @@ IMGCTX PNGU_SelectImageFromBuffer (const void *buffer)
 	if (!buffer)
 		return NULL;
 
-	ctx = malloc (sizeof (struct _IMGCTX));
+	ctx = png_malloc (sizeof (struct _IMGCTX));
 	if (!ctx)
 		return NULL;
 
@@ -505,7 +516,7 @@ IMGCTX PNGU_SelectImageFromDevice (const char *filename)
 	if (!filename)
 		return NULL;
 
-	ctx = malloc (sizeof (struct _IMGCTX));
+	ctx = png_malloc (sizeof (struct _IMGCTX));
 	if (!ctx)
 		return NULL;
 
@@ -513,10 +524,10 @@ IMGCTX PNGU_SelectImageFromDevice (const char *filename)
 	ctx->source = PNGU_SOURCE_DEVICE;
 	ctx->cursor = 0;
 
-	ctx->filename = malloc (strlen (filename) + 1);
+	ctx->filename = png_malloc (strlen (filename) + 1);
 	if (!ctx->filename)
 	{
-		free (ctx);
+		png_free (ctx);
 		return NULL;
 	}
 	strcpy(ctx->filename, filename);
@@ -533,13 +544,13 @@ void PNGU_ReleaseImageContext (IMGCTX ctx)
 		return;
 
 	if (ctx->filename)
-		free (ctx->filename);
+		png_free (ctx->filename);
 
 	if ((ctx->propRead) && (ctx->prop.trans))
-		free (ctx->prop.trans);
+		png_free (ctx->prop.trans);
 
 	pngu_free_info (ctx);
-	free (ctx);
+	png_free (ctx);
 }
 
 int PNGU_GetImageProperties (IMGCTX ctx, PNGUPROP *imgprop)
@@ -557,7 +568,7 @@ int PNGU_GetImageProperties (IMGCTX ctx, PNGUPROP *imgprop)
 	return PNGU_OK;
 }
 
-PNGU_u8 * DecodePNG(const PNGU_u8 *src, int * width, int * height, int maxwidth, int maxheight)
+u8 * DecodePNG(const u8 *src, int * width, int * height, u8 *dstPtr)
 {
 	PNGUPROP imgProp;
 	IMGCTX ctx = PNGU_SelectImageFromBuffer(src);
@@ -567,16 +578,16 @@ PNGU_u8 * DecodePNG(const PNGU_u8 *src, int * width, int * height, int maxwidth,
 		return NULL;
 
 	if(PNGU_GetImageProperties(ctx, &imgProp) == PNGU_OK)
-		dst = PNGU_DecodeTo4x4RGBA8 (ctx, imgProp.imgWidth, imgProp.imgHeight, width, height, maxwidth, maxheight);
+		dst = PNGU_DecodeTo4x4RGBA8 (ctx, imgProp.imgWidth, imgProp.imgHeight, width, height, dstPtr);
 
 	PNGU_ReleaseImageContext (ctx);
 	return dst;
 }
 
-int PNGU_EncodeFromRGB (IMGCTX ctx, PNGU_u32 width, PNGU_u32 height, void *buffer, PNGU_u32 stride)
+int PNGU_EncodeFromRGB (IMGCTX ctx, u32 width, u32 height, void *buffer, u32 stride)
 {
 	png_uint_32 rowbytes;
-	PNGU_u32 y;
+	u32 y;
 
 	// Erase from the context any readed info
 	pngu_free_info (ctx);
@@ -633,10 +644,9 @@ int PNGU_EncodeFromRGB (IMGCTX ctx, PNGU_u32 width, PNGU_u32 height, void *buffe
 	rowbytes = width * 3;
 	if (rowbytes % 4)
 		rowbytes = ((rowbytes >>2) + 1) <<2; // Add extra padding so each row starts in a 4 byte boundary
-		
-	ctx->img_data = malloc(rowbytes * height);
-	memset(ctx->img_data, 0, rowbytes * height);
-	
+
+	ctx->img_data = png_malloc(rowbytes * height);
+
 	if (!ctx->img_data)
 	{
 		png_destroy_write_struct (&(ctx->png_ptr), (png_infopp)NULL);
@@ -645,9 +655,9 @@ int PNGU_EncodeFromRGB (IMGCTX ctx, PNGU_u32 width, PNGU_u32 height, void *buffe
 		return PNGU_LIB_ERROR;
 	}
 
-	ctx->row_pointers = malloc (sizeof (png_bytep) * height);
-	memset(ctx->row_pointers, 0, sizeof (png_bytep) * height);
-	
+	memset(ctx->img_data, 0, rowbytes * height);
+	ctx->row_pointers = png_malloc (sizeof (png_bytep) * height);
+
 	if (!ctx->row_pointers)
 	{
 		png_destroy_write_struct (&(ctx->png_ptr), (png_infopp)NULL);
@@ -655,6 +665,8 @@ int PNGU_EncodeFromRGB (IMGCTX ctx, PNGU_u32 width, PNGU_u32 height, void *buffe
 			fclose (ctx->fd);
 		return PNGU_LIB_ERROR;
 	}
+
+	memset(ctx->row_pointers, 0, sizeof (png_bytep) * height);
 
 	for (y = 0; y < height; ++y)
 	{
@@ -671,8 +683,8 @@ int PNGU_EncodeFromRGB (IMGCTX ctx, PNGU_u32 width, PNGU_u32 height, void *buffe
 	png_write_end (ctx->png_ptr, (png_infop) NULL);
 
 	// Free resources
-	free (ctx->img_data);
-	free (ctx->row_pointers);
+	png_free (ctx->img_data);
+	png_free (ctx->row_pointers);
 	png_destroy_write_struct (&(ctx->png_ptr), &(ctx->info_ptr));
 	if (ctx->source == PNGU_SOURCE_DEVICE)
 		fclose (ctx->fd);
@@ -681,13 +693,17 @@ int PNGU_EncodeFromRGB (IMGCTX ctx, PNGU_u32 width, PNGU_u32 height, void *buffe
 	return ctx->cursor;
 }
 
-int PNGU_EncodeFromGXTexture (IMGCTX ctx, PNGU_u32 width, PNGU_u32 height, void *buffer, PNGU_u32 stride)
+int PNGU_EncodeFromGXTexture (IMGCTX ctx, u32 width, u32 height, void *buffer, u32 stride)
 {
 	int res;
-	PNGU_u32 x,y, tmpy1, tmpy2, tmpyWid, tmpxy;
+	u32 x, y, tmpy1, tmpy2, tmpyWid, tmpxy;
 
 	unsigned char * ptr = (unsigned char*)buffer;
-	unsigned char * tmpbuffer = (unsigned char *)malloc(width*height*3);
+	unsigned char * tmpbuffer = png_malloc(width*height*3);
+
+	if(!tmpbuffer)
+		return PNGU_LIB_ERROR;
+
 	memset(tmpbuffer, 0, width*height*3);
 	png_uint_32 offset;
 	
@@ -709,6 +725,6 @@ int PNGU_EncodeFromGXTexture (IMGCTX ctx, PNGU_u32 width, PNGU_u32 height, void 
 	}
 	
 	res = PNGU_EncodeFromRGB (ctx, width, height, tmpbuffer, stride);
-	free(tmpbuffer);
+	png_free(tmpbuffer);
 	return res;
 }

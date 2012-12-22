@@ -41,8 +41,8 @@
 #include <math.h>
 #include <asndlib.h>
 #include <wiiuse/wpad.h>
+#include <ogc/lwp_watchdog.h>
 
-#include "../utils/pngu.h"
 #include "FreeTypeGX.h"
 #include "video.h"
 #include "filelist.h"
@@ -134,6 +134,7 @@ typedef struct _paddata {
 #define EFFECT_FADE					64
 #define EFFECT_SCALE				128
 #define EFFECT_COLOR_TRANSITION		256
+#define EFFECT_ROTATE				512
 
 #include "document.h"
 
@@ -552,11 +553,22 @@ class GuiImageData
 		//!Constructor
 		//!Converts the image data to RGBA8 - expects PNG format
 		//!\param i Image data
-		//!\param w Max image width (0 = not set)
-		//!\param h Max image height (0 = not set)
-		GuiImageData(const u8 * i, int w=0, int h=0);
+		GuiImageData(const u8 * i);
+		//!\overload
+		//!\param i Image data
+		//!\param s Image data size
+		//!\param f Target image format
+		GuiImageData(const u8 * i, int s, u8 f = GX_TF_RGBA8);
 		//!Destructor
 		~GuiImageData();
+		//!Sets the data pointer for the GuiImageData object
+		//!\param i Image data pointer
+		void SetData(u8 * d);
+		//!Sets the GuiImageData to a new image (assumes the same dimensions)
+		//!\param i Image data
+		//!\param s Image data size
+		//!\param f Target image format
+		void SetImage(const u8 * i, int s = 0);
 		//!Gets a pointer to the image data
 		//!\return pointer to image data
 		u8 * GetImage();
@@ -566,8 +578,16 @@ class GuiImageData
 		//!Gets the image height
 		//!\return image height
 		int GetHeight();
+		//!Gets the image texture format
+		//!\return texture format
+		u8 GetFormat();
 	protected:
+		void LoadPNG(const u8 *i); //!< Load a PNG
+		void LoadBMP(const u8 *i, int s); //!< Load a BMP
+		void LoadJPEG(const u8 *i, int s); //!< Load a JPEG
+		void LoadGIF(const u8 *i, int s); //!< Load a GIF
 		u8 * data; //!< Image data
+		u8 format; //!< Texture format
 		int height; //!< Height of image
 		int width; //!< Width of image
 };
@@ -601,6 +621,9 @@ class GuiImage : public GuiElement
 		//!Sets the number of times to draw the image horizontally
 		//!\param t Number of times to draw the image
 		void SetTile(int t);
+		//!Sets the number of times to draw the image vertically
+		//!\param t Number of times to draw the image
+		void SetTileVertical(int t);
 		//!Constantly called to draw the image
 		void Draw();
 		//!Gets the image data
@@ -634,8 +657,10 @@ class GuiImage : public GuiElement
 	protected:
 		int imgType; //!< Type of image data (IMAGE_TEXTURE, IMAGE_COLOR, IMAGE_DATA)
 		u8 * image; //!< Poiner to image data. May be shared with GuiImageData data
+		u8 format; //!< Texture format
 		f32 imageangle; //!< Angle to draw the image
 		int tile; //!< Number of times to draw (tile) the image horizontally
+		int tileVertical; //!< Number of times to draw (tile) the image vertically
 		int stripe; //!< Alpha value (0-255) to apply a stripe effect to the texture
 };
 

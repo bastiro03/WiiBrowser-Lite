@@ -1,7 +1,7 @@
 /****************************************************************************
  * libwiigui
  *
- * Tantric 2009
+ * Tantric 2009-2012
  *
  * gui_image.cpp
  *
@@ -9,6 +9,10 @@
  ***************************************************************************/
 
 #include "gui.h"
+
+static u64 prev;
+static u64 now;
+
 /**
  * Constructor for the GuiImage class.
  */
@@ -19,8 +23,10 @@ GuiImage::GuiImage()
 	height = 0;
 	imageangle = 0;
 	tile = -1;
+	tileVertical = -1;
 	stripe = 0;
 	imgType = IMAGE_DATA;
+	format = GX_TF_RGBA8;
 }
 
 GuiImage::GuiImage(GuiImageData * img)
@@ -33,22 +39,27 @@ GuiImage::GuiImage(GuiImageData * img)
 		image = img->GetImage();
 		width = img->GetWidth();
 		height = img->GetHeight();
+		format = img->GetFormat();
 	}
 	imageangle = 0;
 	tile = -1;
+	tileVertical = -1;
 	stripe = 0;
 	imgType = IMAGE_DATA;
 }
 
 GuiImage::GuiImage(u8 * img, int w, int h)
 {
+	if(img) DCFlushRange(img, w*h*4);
 	image = img;
 	width = w;
 	height = h;
 	imageangle = 0;
 	tile = -1;
+	tileVertical = -1;
 	stripe = 0;
 	imgType = IMAGE_TEXTURE;
+	format = GX_TF_RGBA8;
 }
 
 GuiImage::GuiImage(int w, int h, GXColor c)
@@ -58,8 +69,10 @@ GuiImage::GuiImage(int w, int h, GXColor c)
 	height = h;
 	imageangle = 0;
 	tile = -1;
+	tileVertical = -1;
 	stripe = 0;
 	imgType = IMAGE_COLOR;
+	format = GX_TF_RGBA8;
 
 	if(!image)
 		return;
@@ -102,16 +115,25 @@ void GuiImage::SetImage(GuiImageData * img)
 		image = img->GetImage();
 		width = img->GetWidth();
 		height = img->GetHeight();
+		format = img->GetFormat();
 	}
 	imgType = IMAGE_DATA;
 }
 
 void GuiImage::SetImage(u8 * img, int w, int h)
 {
-	image = img;
-	width = w;
-	height = h;
-	imgType = IMAGE_TEXTURE;
+	image = NULL;
+	width = 0;
+	height = 0;
+	if(img)
+	{
+		DCFlushRange(img, w*h*4);
+		image = img;
+		width = w;
+		height = h;
+		imgType = IMAGE_TEXTURE;
+		format = GX_TF_RGBA8;
+	}
 }
 
 void GuiImage::SetAngle(float a)
@@ -122,6 +144,11 @@ void GuiImage::SetAngle(float a)
 void GuiImage::SetTile(int t)
 {
 	tile = t;
+}
+
+void GuiImage::SetTileVertical(int t)
+{
+	tileVertical = t;
 }
 
 GXColor GuiImage::GetPixel(int x, int y)
@@ -160,7 +187,7 @@ void GuiImage::ColorStripe(int shift)
 	GXColor color;
 	int x, y=0;
 	int alt = 0;
-	
+
 	int thisHeight =  this->GetHeight();
 	int thisWidth =  this->GetWidth();
 
@@ -223,25 +250,32 @@ void GuiImage::ColorStripe(int shift)
  */
 void GuiImage::Draw()
 {
-	if(!image || !this->IsVisible() || tile == 0)
+	if(!image || width == 0 || height == 0 || !this->IsVisible() || tile == 0)
 		return;
 
 	float currScaleX = this->GetScaleX();
 	float currScaleY = this->GetScaleY();
 	int currLeft = this->GetLeft();
-	int thisTop = this->GetTop();
+	int currTop = this->GetTop();
+	int alpha = this->GetAlpha();
 
-	if(tile > 0)
+	if(tile >= 0)
 	{
-		int alpha = this->GetAlpha();
 		for(int i=0; i<tile; ++i)
 		{
-			Menu_DrawImg(currLeft+width*i, thisTop, width, height, image, imageangle, currScaleX, currScaleY, alpha);
+			Menu_DrawImg(currLeft+width*i, currTop, width, height, image, imageangle, currScaleX, currScaleY, alpha, format);
+		}
+	}
+	else if(tileVertical >= 0)
+	{
+		for(int i=0; i<tileVertical; ++i)
+		{
+			Menu_DrawImg(currLeft, currTop+height*i, width, height, image, imageangle, currScaleX, currScaleY, alpha, format);
 		}
 	}
 	else
 	{
-		Menu_DrawImg(currLeft, thisTop, width, height, image, imageangle, currScaleX, currScaleY, this->GetAlpha());
+		Menu_DrawImg(currLeft, currTop, width, height, image, imageangle, currScaleX, currScaleY, alpha, format);
 	}
 
 	if(stripe > 0)
@@ -249,7 +283,28 @@ void GuiImage::Draw()
 		int thisHeight = this->GetHeight();
 		int thisWidth = this->GetWidth();
 		for(int y=0; y < thisHeight; y+=6)
-			Menu_DrawRectangle(currLeft,thisTop+y,thisWidth,3,(GXColor){0, 0, 0, (u8)stripe},1);
+			Menu_DrawRectangle(currLeft,currTop+y,thisWidth,3,(GXColor){0, 0, 0, (u8)stripe},1);
 	}
 	this->UpdateEffects();
+
+	if(effects & EFFECT_ROTATE)
+	{
+		if(effectAmount == 0)
+		{
+			effects = 0;
+			imageangle = 0;
+			return;
+		}
+
+		now = gettime();
+
+		if(diff_usec(prev, now) > (u32)(effectAmount*1000))
+		{
+			prev = now;
+
+			imageangle+=45.0f;
+			if(imageangle >= 360.0f)
+				imageangle = 0;
+		}
+	}
 }

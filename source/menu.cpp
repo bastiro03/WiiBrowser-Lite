@@ -294,7 +294,7 @@ static void *UpdateGUI (void *arg)
 			{
 				if(userInput[i].wpad->ir.valid)
 					Menu_DrawImg(userInput[i].wpad->ir.x-48, userInput[i].wpad->ir.y-48,
-						96, 96, pointer[i]->GetImage(), userInput[i].wpad->ir.angle, 1, 1, 255);
+						96, 96, pointer[i]->GetImage(), userInput[i].wpad->ir.angle, 1, 1, 255, GX_TF_RGBA8);
 				DoRumble(i);
 			}
 			#endif

@@ -474,7 +474,7 @@ static int Splash()
     if (conn == IP_ERR)
         WindowPrompt("Error reading IP address", "Application exiting. Please check connection settings", "Ok", NULL);
 
-    // ResumeUpdateThread();
+    ResumeUpdateThread();
     return menu;
 }
 

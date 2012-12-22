@@ -94,7 +94,7 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
         }
         else if (inputType(lista)==TEXT) {
             button=InsButton(button);
-            button->refs=(ListaDiElem)button;   //Dummy Assignment
+            button->refs=(Tag*)button;   //Dummy Assignment
             GuiImage *TextboxImg=new GuiImage(&Textbox);
             button->btn=new GuiButton(TextboxImg->GetWidth(), TextboxImg->GetHeight());
             if (lista->label!="noLabel") {

@@ -511,7 +511,7 @@ static int Home()
     promptWindow.Append(&msgTxt);
 
     promptWindow.SetEffect(EFFECT_SLIDE_TOP | EFFECT_SLIDE_IN, 50);
-    // save_mem(url);
+    save_mem(url);
 
     HaltGui();
     mainWindow->SetState(STATE_DISABLED);
@@ -529,7 +529,7 @@ static int Home()
     HTML = downloadfile(curl_handle, url, NULL);
 
     #ifdef DEBUG
-    FILE *pFile = fopen ("Wikipedia.htm", "rb");
+    FILE *pFile = fopen ("Google.htm", "rb");
     fseek (pFile, 0, SEEK_END);
     int size = ftell(pFile);
     rewind (pFile);

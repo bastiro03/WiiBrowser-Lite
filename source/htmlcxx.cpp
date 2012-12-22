@@ -139,7 +139,7 @@ tree<HTML::Node>::iterator thtml(tree<HTML::Node>::iterator it, tree<HTML::Node>
 typedef struct
 {
     bool open;
-    Lista::reverse_iterator p;
+    Tag* p;
 } last;
 
 Lista getTag(char * buffer)
@@ -204,7 +204,7 @@ Lista getTag(char * buffer)
                         {
                             l1.push_back({"text"});
                             open[text].open=true;
-                            open[text].p=l1.rbegin();
+                            open[text].p=&(*l1.rbegin());
                             l1.rbegin()->value.push_back(out);
                         }
                     }
@@ -258,7 +258,7 @@ Lista getTag(char * buffer)
                         skip=true;
                     }
 
-                    if (skip)
+                    if (skip && !open[form].open)
                     {
                         it.skip_children();
                         continue;
@@ -281,14 +281,14 @@ Lista getTag(char * buffer)
                 {
                     l1.push_back({"title"});
                     open[title].open=true;
-                    open[title].p=l1.rbegin();
+                    open[title].p=&(*l1.rbegin());
                 }
                 else if (it->tagName() == "a")
                 {
                     l1.push_back({"a"});
                     l1.rbegin()->attribute.append (it->attribute("href").second);
                     open[a].open=true;
-                    open[a].p=l1.rbegin();
+                    open[a].p=&(*l1.rbegin());
                     open[text].open=false;
                 }
                 else if (it->tagName() == "img")
@@ -303,7 +303,7 @@ Lista getTag(char * buffer)
                     l1.rbegin()->form.action.append (it->attribute("action").second);
                     l1.rbegin()->form.method.append (it->attribute("method").second);
                     open[form].open=true;
-                    open[form].p=l1.rbegin();
+                    open[form].p=&(*l1.rbegin());
                 }
                 else if (it->tagName() == "input")
                 {

@@ -106,7 +106,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
 				}
 			}
 
-            else if (coordY<screenheight) {
+            else if (lista!=l1.end() && coordY<screenheight) {
                 if (lista->name=="title" && !lista->value.empty()) {
                     text=InsText(text);
                     text->txt = new GuiText((char*)lista->value[0].text.c_str(), 30, (GXColor){0, 0, 0, 255});
@@ -270,7 +270,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                 ResumeGui();
             }
                 HandleHtmlPad(&coordX, btnup, btndown, ext, Index, mainWindow);
-                HandleMenuBar(&link, &choice, 0, mainWindow, parentWindow);
+                // HandleMenuBar(&link, &choice, 0, mainWindow, parentWindow);
 
             for (bottone=btn; !NoButton(bottone); bottone=bottone->prox) {
                 if(bottone->btn->GetState() == STATE_CLICKED) {

@@ -78,7 +78,6 @@ typedef Button * ListaDiBottoni;
 typedef Input * ListaDiInput;
 
 typedef list<Tag> Lista;
-typedef Tag * ListaDiElem;
 typedef Index * Indice;
 typedef Url * History;
 

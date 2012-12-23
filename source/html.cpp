@@ -270,7 +270,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                 ResumeGui();
             }
                 HandleHtmlPad(&coordX, btnup, btndown, ext, Index, mainWindow);
-                // HandleMenuBar(&link, &choice, 0, mainWindow, parentWindow);
+                HandleMenuBar(&link, &choice, 0, mainWindow, parentWindow);
 
             for (bottone=btn; !NoButton(bottone); bottone=bottone->prox) {
                 if(bottone->btn->GetState() == STATE_CLICKED) {

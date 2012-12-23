@@ -419,15 +419,15 @@ void HandleMenuBar(string *link, int *choice, int img, GuiWindow *mainWindow, Gu
         hideBar(mainWindow, parentWindow);
     }
 
-    if (btnFav->GetState() == STATE_CLICKED) {
+    if (btnFav && btnFav->GetState() == STATE_CLICKED) {
         btnFav->ResetState();
     }
-    if (btnWWW->GetState() == STATE_CLICKED) {
+    if (btnWWW && btnWWW->GetState() == STATE_CLICKED) {
         btnWWW->ResetState();
         *choice=1;
     }
 
-    if (btnBack->GetState() == STATE_CLICKED) {
+    if (btnBack && btnBack->GetState() == STATE_CLICKED) {
         btnBack->ResetState();
         if (history->prec) {
             history=history->prec;
@@ -436,7 +436,7 @@ void HandleMenuBar(string *link, int *choice, int img, GuiWindow *mainWindow, Gu
         }
     }
 
-    if (btnForward->GetState() == STATE_CLICKED) {
+    if (btnForward && btnForward->GetState() == STATE_CLICKED) {
         btnForward->ResetState();
         if (history->prox) {
             history=history->prox;

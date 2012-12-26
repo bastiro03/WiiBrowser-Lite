@@ -323,6 +323,7 @@ static void *UpdateGUI (void *arg)
 		{
 			UpdatePads();
 			mainWindow->Draw();
+			mainWindow->DrawTooltip();
 
 			#ifdef HW_RVL
 			for(i=3; i >= 0; i--) // so that player 1's cursor appears on top!
@@ -473,8 +474,8 @@ static int Splash()
     Init.SetEffect(EFFECT_FADE, 50);
 
     Splash.SetAlignment(2,5);
-    Splash.SetPosition(15,-30);
-    Splash.SetScale(0.80);
+    Splash.SetPosition(10,-40);
+    Splash.SetScale(0.75);
     Splash.SetEffect(EFFECT_FADE, 50);
 
     HaltGui();
@@ -573,7 +574,7 @@ static int Home()
     HTML = downloadfile(curl_handle, url, NULL);
 
     #ifdef DEBUG
-    FILE *pFile = fopen ("Wikipedia.htm", "rb");
+    FILE *pFile = fopen ("Gmail.htm", "rb");
     fseek (pFile, 0, SEEK_END);
     int size = ftell(pFile);
     rewind (pFile);

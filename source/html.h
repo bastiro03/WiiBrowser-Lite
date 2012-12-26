@@ -53,6 +53,7 @@ typedef struct Image {
 typedef struct Button {
   GuiButton *btn;
   GuiText *label;
+  GuiTooltip *tooltip;
   TipoElemento url;
   struct Tag *refs;
   struct Button *prox;

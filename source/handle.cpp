@@ -1,35 +1,41 @@
 #include "handle.h"
+#include "gettext.h"
 
-GuiWindow *statusBar=NULL;
-GuiImageData *imgToolbar=NULL;
-GuiSound *btnSound=NULL;
-GuiTrigger *trigA=NULL;
+GuiWindow *statusBar = NULL;
+GuiImageData *imgToolbar = NULL;
+GuiSound *btnSound = NULL;
+GuiTrigger *trigA = NULL;
 
-GuiImageData *imgWWW=NULL;
-GuiImageData *imgWWWOver=NULL;
-GuiImageData *imgFav=NULL;
-GuiImageData *imgFavOver=NULL;
+GuiImageData *imgWWW = NULL;
+GuiImageData *imgWWWOver = NULL;
+GuiImageData *imgFav = NULL;
+GuiImageData *imgFavOver = NULL;
 
-GuiImageData *imgBack=NULL;
-GuiImageData *imgBackOver=NULL;
-GuiImageData *imgForward=NULL;
-GuiImageData *imgForwardOver=NULL;
+GuiImageData *imgBack = NULL;
+GuiImageData *imgBackOver = NULL;
+GuiImageData *imgForward = NULL;
+GuiImageData *imgForwardOver = NULL;
 
-GuiImage *Toolbar=NULL;
-GuiImage *Back=NULL;
-GuiImage *BackOver=NULL;
-GuiImage *Forward=NULL;
-GuiImage *ForwardOver=NULL;
+GuiImage *Toolbar = NULL;
+GuiImage *Back = NULL;
+GuiImage *BackOver = NULL;
+GuiImage *Forward = NULL;
+GuiImage *ForwardOver = NULL;
 
-GuiImage *WWW=NULL;
-GuiImage *WWWOver=NULL;
-GuiImage *Favorites=NULL;
-GuiImage *FavoritesOver=NULL;
+GuiImage *WWW = NULL;
+GuiImage *WWWOver = NULL;
+GuiImage *Favorites = NULL;
+GuiImage *FavoritesOver = NULL;
 
-GuiButton *btnBack=NULL;
-GuiButton *btnForward=NULL;
-GuiButton *btnWWW=NULL;
-GuiButton *btnFav=NULL;
+GuiButton *btnBack = NULL;
+GuiButton *btnForward = NULL;
+GuiButton *btnWWW = NULL;
+GuiButton *btnFav = NULL;
+
+GuiTooltip *BackTooltip = NULL;
+GuiTooltip *ForwardTooltip = NULL;
+GuiTooltip *WWWTooltip = NULL;
+GuiTooltip *FavTooltip = NULL;
 
 void MoveWind (int up, int dir, int line, GuiImage * image);
 void MoveText (int up, int dir, int line, Indice Index);
@@ -280,37 +286,47 @@ int noSubmit(ListaDiBottoni btn) {
 
 void showBar(GuiWindow *mainWindow, GuiWindow *parentWindow) {
     if (!statusBar) {
-        imgToolbar=new GuiImageData(toolbar_png, toolbar_png_size);
-        btnSound=new GuiSound(button_over_pcm, button_over_pcm_size, SOUND_PCM);
-        trigA=new GuiTrigger();
+        imgToolbar = new GuiImageData(toolbar_png, toolbar_png_size);
+        btnSound = new GuiSound(button_over_pcm, button_over_pcm_size, SOUND_PCM);
+        trigA = new GuiTrigger();
 
-        imgWWW=new GuiImageData(www_png, www_png_size);
-        imgWWWOver=new GuiImageData(www_over_png, www_over_png_size);
-        imgFav=new GuiImageData(favorites_png, favorites_png_size);
-        imgFavOver=new GuiImageData(favorites_over_png, favorites_over_png_size);
+        imgWWW = new GuiImageData(www_png, www_png_size);
+        imgWWWOver = new GuiImageData(www_over_png, www_over_png_size);
+        imgFav = new GuiImageData(favorites_png, favorites_png_size);
+        imgFavOver = new GuiImageData(favorites_over_png, favorites_over_png_size);
 
-        imgBack=new GuiImageData(toolbar_return_png, toolbar_return_png_size);
-        imgBackOver=new GuiImageData(toolbar_return_over_png, toolbar_return_over_png_size);
-        imgForward=new GuiImageData(toolbar_advance_png, toolbar_advance_png_size);
-        imgForwardOver=new GuiImageData(toolbar_advance_over_png, toolbar_advance_over_png_size);
+        imgBack = new GuiImageData(toolbar_return_png, toolbar_return_png_size);
+        imgBackOver = new GuiImageData(toolbar_return_over_png, toolbar_return_over_png_size);
+        imgForward = new GuiImageData(toolbar_advance_png, toolbar_advance_png_size);
+        imgForwardOver = new GuiImageData(toolbar_advance_over_png, toolbar_advance_over_png_size);
 
-        Toolbar=new GuiImage(imgToolbar);
-        Back=new GuiImage(imgBack);
-        BackOver=new GuiImage(imgBackOver);
-        Forward=new GuiImage(imgForward);
-        ForwardOver=new GuiImage(imgForwardOver);
+        Toolbar = new GuiImage(imgToolbar);
+        Back = new GuiImage(imgBack);
+        BackOver = new GuiImage(imgBackOver);
+        Forward = new GuiImage(imgForward);
+        ForwardOver = new GuiImage(imgForwardOver);
 
-        WWW=new GuiImage(imgWWW);
-        WWWOver=new GuiImage(imgWWWOver);
-        Favorites=new GuiImage(imgFav);
-        FavoritesOver=new GuiImage(imgFavOver);
+        WWW = new GuiImage(imgWWW);
+        WWWOver = new GuiImage(imgWWWOver);
+        Favorites = new GuiImage(imgFav);
+        FavoritesOver = new GuiImage(imgFavOver);
 
-        btnBack=new GuiButton(Back->GetWidth(), Back->GetHeight());
-        btnForward=new GuiButton(Forward->GetWidth(), Forward->GetHeight());
-        btnWWW=new GuiButton(WWW->GetWidth(), WWW->GetHeight());
-        btnFav=new GuiButton(Favorites->GetWidth(), Favorites->GetHeight());
+        btnBack = new GuiButton(Back->GetWidth(), Back->GetHeight());
+        btnForward = new GuiButton(Forward->GetWidth(), Forward->GetHeight());
+        btnWWW = new GuiButton(WWW->GetWidth(), WWW->GetHeight());
+        btnFav = new GuiButton(Favorites->GetWidth(), Favorites->GetHeight());
 
-        statusBar=new GuiWindow(screenwidth, Back->GetHeight());
+        BackTooltip = new GuiTooltip(gettext("Go back"));
+        ForwardTooltip = new GuiTooltip(gettext("Go forward"));
+        WWWTooltip = new GuiTooltip(gettext("Homepage"));
+        FavTooltip = new GuiTooltip(gettext("Favorites"));
+
+        FavTooltip->SetOffset(-55, -35);
+        WWWTooltip->SetOffset(-55, -35);
+        ForwardTooltip->SetOffset(15, -35);
+        BackTooltip->SetOffset(55, -35);
+
+        statusBar = new GuiWindow(screenwidth, Back->GetHeight());
         statusBar->SetAlignment(ALIGN_CENTRE, ALIGN_BOTTOM);
         statusBar->SetPosition(0, -40);
         trigA->SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
@@ -319,9 +335,9 @@ void showBar(GuiWindow *mainWindow, GuiWindow *parentWindow) {
         btnBack->SetImageOver(BackOver);
         btnBack->SetSoundOver(btnSound);
         btnBack->SetTrigger(trigA);
-        btnBack->SetState(STATE_SELECTED);
         btnBack->SetEffectGrow();
         btnBack->SetPosition(20,20);
+        btnBack->SetTooltip(BackTooltip);
 
         btnForward->SetImage(Forward);
         btnForward->SetImageOver(ForwardOver);
@@ -329,13 +345,16 @@ void showBar(GuiWindow *mainWindow, GuiWindow *parentWindow) {
         btnForward->SetTrigger(trigA);
         btnForward->SetEffectGrow();
         btnForward->SetPosition(20+Back->GetWidth(),20);
+        btnForward->SetTooltip(ForwardTooltip);
 
         btnWWW->SetImage(WWW);
         btnWWW->SetImageOver(WWWOver);
         btnWWW->SetSoundOver(btnSound);
+        btnWWW->SetState(STATE_SELECTED);
         btnWWW->SetTrigger(trigA);
         btnWWW->SetEffectGrow();
         btnWWW->SetPosition(screenwidth-WWW->GetWidth()-20,20);
+        btnWWW->SetTooltip(WWWTooltip);
 
         btnFav->SetImage(Favorites);
         btnFav->SetImageOver(FavoritesOver);
@@ -343,6 +362,7 @@ void showBar(GuiWindow *mainWindow, GuiWindow *parentWindow) {
         btnFav->SetTrigger(trigA);
         btnFav->SetEffectGrow();
         btnFav->SetPosition(50+screenwidth/2,20);
+        btnFav->SetTooltip(FavTooltip);
 
         Toolbar->SetPosition(0,0);
         statusBar->Append(Toolbar);
@@ -409,6 +429,11 @@ void delAllElements()
     delete(btnForward);
     delete(btnWWW);
     delete(btnFav);
+
+    delete(BackTooltip);
+    delete(ForwardTooltip);
+    delete(WWWTooltip);
+    delete(FavTooltip);
 }
 
 void HandleMenuBar(string *link, int *choice, int img, GuiWindow *mainWindow, GuiWindow *parentWindow) {

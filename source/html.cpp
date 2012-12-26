@@ -138,6 +138,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                         SetFont(btn->label, lista->value[i].mode);
                         btn->label->SetPosition(0,0);
 
+                        btn->tooltip=new GuiTooltip(lista->attribute.c_str());
                         btn->btn=new GuiButton(btn->label->GetTextWidth(), 20);
                         btn->btn->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
                         btn->btn->SetPosition(coordX+40+offset, coordY);
@@ -146,6 +147,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                         btn->btn->SetSoundOver(btnSoundOver);
                         btn->btn->SetTrigger(trigA);
                         btn->url.assign(lista->attribute);
+                        btn->btn->SetTooltip(btn->tooltip);
                         btn->btn->SetEffect(EFFECT_FADE, 50);
 
                         HaltGui();

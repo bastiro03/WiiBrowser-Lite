@@ -715,6 +715,8 @@ class GuiText : public GuiElement, public Document
 		//!Sets the maximum width of the drawn texture image
 		//!\param w Maximum width
 		void SetMaxWidth(int w);
+		//!Gets the max width of the text
+		int GetMaxWidth();
 		//!Gets the width of the text when rendered
 		int GetTextWidth();
 		//!Enables/disables text scrolling
@@ -773,12 +775,15 @@ class GuiTooltip : public GuiElement
 		~GuiTooltip();
 		//!Gets the element's current scale
 		float GetScale();
+		//!Sets the element's relative position
+		void SetOffset(int hOff, int vOff);
 		//!Sets the text of the GuiTooltip element
 		//!\param t Text
 		void SetText(const char * t);
 		//!Constantly called to draw the GuiTooltip
 		void DrawTooltip();
-
+		//!Resets the text for all contained elements
+		void ResetText();
 		time_t time1, time2; //!< Tooltip times
 
 	protected:
@@ -786,6 +791,8 @@ class GuiTooltip : public GuiElement
 		GuiImage tileImage; //!< Tooltip tile image
 		GuiImage rightImage; //!< Tooltip right image
 		GuiText *text; //!< Tooltip text
+		int offsetHr;
+		int offsetVr;
 };
 
 //!Display, manage, and manipulate buttons in the GUI. Buttons can have images, icons, text, and sound set (all of which are optional)

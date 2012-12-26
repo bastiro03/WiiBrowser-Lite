@@ -8,6 +8,7 @@
  * GUI class definitions
  ***************************************************************************/
 
+#include "main.h"
 #include "gui.h"
 /**
  * Constructor for the GuiButton class.
@@ -186,6 +187,8 @@ void GuiButton::Draw()
 
 void GuiButton::DrawTooltip()
 {
+	if (!Settings.ShowTooltip)
+        return;
 	if(tooltip)
 		tooltip->DrawTooltip();
 }
@@ -205,7 +208,7 @@ void GuiButton::ResetText()
 
 void GuiButton::Update(GuiTrigger * t)
 {
-	if(state == STATE_CLICKED || state == STATE_DISABLED || !t)
+	if(state == STATE_CLICKED /*|| state == STATE_DISABLED*/ || !t)
 		return;
 	else if(parentElement && parentElement->GetState() == STATE_DISABLED)
 		return;

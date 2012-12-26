@@ -8,6 +8,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include "main.h"
 #include "html.h"
 
 bool downloadUpdate(int appversion) {
@@ -37,6 +38,11 @@ bool downloadUpdate(int appversion) {
             remove(updateFile); // delete update file
 		}
 	}
+	if (result)
+	{
+	    Settings.Revision = appversion;
+	    Settings.Save();
+	}
 
 	curl_easy_cleanup(curl_upd);
 	return result;
@@ -49,10 +55,6 @@ int checkUpdate() {
     char url[] = "https://dl.dropbox.com/s/wp0xh4gloks9i2p/wiibrowser.cfg?dl=1";
     struct block HTML;
 
-	FILE *file = fopen("wiibrowser.cfg", "r");
-	if (!file)
-        return 0;
-
     CURL *curl_upd = curl_easy_init();
 	FILE *hfile = fopen(updateFile, "wb");
 
@@ -63,14 +65,11 @@ int checkUpdate() {
 		{
             int old_v, new_v;
             hfile = fopen(updateFile, "r");
-            fscanf (file, "APPVERSION: R%d", &old_v);
+            old_v = Settings.Revision;
             fscanf (hfile, "APPVERSION: R%d", &new_v);
 
-            if (new_v>old_v) {
-                remove("wiibrowser.cfg");
-                rename(updateFile, "wiibrowser.cfg");
+            if (new_v>old_v)
                 result = new_v;
-            }
 		}
         fclose(hfile);
         remove(updateFile); // delete update file

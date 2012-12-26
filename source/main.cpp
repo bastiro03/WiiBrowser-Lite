@@ -26,7 +26,7 @@
 #include "filelist.h"
 #include "main.h"
 
-struct SSettings Settings;
+SSettings Settings;
 int ExitRequested = 0;
 
 void ExitApp()
@@ -38,17 +38,6 @@ void ExitApp()
 	if (HWButton)
         SYS_ResetSystem(HWButton, 0, 0);
 	exit(0);
-}
-
-void
-DefaultSettings()
-{
-	Settings.LoadMethod = METHOD_AUTO;
-	Settings.SaveMethod = METHOD_AUTO;
-	sprintf (Settings.Folder,"libwiigui/folder");
-	Settings.Language = LANG_ENGLISH;
-	Settings.AutoLoad = 1;
-	Settings.AutoSave = 1;
 }
 
 u8 HWButton;
@@ -70,7 +59,7 @@ int main(int argc, char *argv[])
 	InitGUIThreads(); // Initialize GUI
 
     __exception_setreload(10);
-	DefaultSettings();
+	Settings.Load();
 	LoadLanguage();
 	MainMenu(MENU_SPLASH);
 }

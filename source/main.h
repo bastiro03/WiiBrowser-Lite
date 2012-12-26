@@ -9,54 +9,9 @@
 #define _MAIN_H_
 
 #include "FreeTypeGX.h"
+#include "Settings.h"
 
-enum {
-	METHOD_AUTO,
-	METHOD_SD,
-	METHOD_USB,
-	METHOD_DVD,
-	METHOD_SMB,
-	METHOD_MC_SLOTA,
-	METHOD_MC_SLOTB,
-	METHOD_SD_SLOTA,
-	METHOD_SD_SLOTB
-};
-
-enum {
-	LANG_JAPANESE = 0,
-	LANG_ENGLISH,
-	LANG_GERMAN,
-	LANG_FRENCH,
-	LANG_SPANISH,
-	LANG_ITALIAN,
-	LANG_DUTCH,
-	LANG_SIMP_CHINESE,
-	LANG_TRAD_CHINESE,
-	LANG_KOREAN,
-	LANG_ROMANIAN,
-	LANG_ESTONIAN,
-	LANG_BRAZILIAN_PORTUGUESE,
-	LANG_HUNGARIAN,
-	LANG_POLISH,
-	LANG_RUSSIAN,
-	LANG_PORTUGUESE,
-	LANG_SLOVAK,
-	LANG_TAMIL,
-	LANG_SWEDISH,
-	LANG_DANISH,
-	LANG_BULGARIAN,
-	LANG_LENGTH
-};
-
-struct SSettings {
-    int		AutoLoad;
-    int		AutoSave;
-    int		LoadMethod;
-	int		SaveMethod;
-	int		Language;
-	char	Folder[256]; // Path to files
-};
-extern struct SSettings Settings;
+extern SSettings Settings;
 
 void ExitApp();
 extern int ExitRequested;

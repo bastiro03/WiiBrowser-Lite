@@ -159,6 +159,15 @@ extern const u32	www_png_size;
 extern const u8		www_over_png[];
 extern const u32	www_over_png_size;
 
+extern const u8		tooltip_tile_png[];
+extern const u32	tooltip_tile_png_size;
+
+extern const u8		tooltip_right_png[];
+extern const u32	tooltip_right_png_size;
+
+extern const u8		tooltip_left_png[];
+extern const u32	tooltip_left_png_size;
+
 extern const u8		logo_png[];
 extern const u32	logo_png_size;
 

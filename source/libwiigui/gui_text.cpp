@@ -241,6 +241,11 @@ void GuiText::SetMaxWidth(int width)
 	textDynNum = 0;
 }
 
+int GuiText::GetMaxWidth()
+{
+    return maxWidth;
+}
+
 int GuiText::GetTextWidth()
 {
 	if(!text)

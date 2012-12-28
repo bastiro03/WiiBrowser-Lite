@@ -27,13 +27,12 @@ extern "C" {
 }
 
 #define THREAD_SLEEP 100
-#define MAXLEN 100
+#define MAXLEN 256
 
 CURL *curl_handle;
 History history;
 
-char homepage[]="www.google.it/";
-char hmpg[MAXLEN];
+static char page[MAXLEN];
 
 static GuiImageData * pointer[4];
 static GuiImage * bgImg = NULL;
@@ -52,7 +51,7 @@ using namespace std;
 /****************************************************************************
  * Adjust urls
  ***************************************************************************/
-char * getHost(char *url) {
+char *getHost(char *url) {
     char *p=strchr (url, '/')+2;
     char *c=strchr (p, '/');
     return strndup(url,(c+1)-url);
@@ -308,7 +307,6 @@ void StopLoadThread()
  *
  * Primary thread to allow GUI to respond to state changes, and draws GUI
  ***************************************************************************/
-
 static void *UpdateGUI (void *arg)
 {
 	int i;
@@ -379,7 +377,7 @@ InitGUIThreads()
  * Opens an on-screen keyboard window, with the data entered being stored
  * into the specified variable.
  ***************************************************************************/
-void OnScreenKeyboard(GuiWindow * keyboardWindow, char *var, u16 maxlen, bool autoComplete)
+void OnScreenKeyboard(GuiWindow *keyboardWindow, char *var, u16 maxlen, bool autoComplete)
 {
 	int save = -1;
 
@@ -448,7 +446,7 @@ void OnScreenKeyboard(GuiWindow * keyboardWindow, char *var, u16 maxlen, bool au
     else
     {
 		if (autoComplete)
-            snprintf(var, maxlen, "%s", homepage);
+            snprintf(var, maxlen, "%s", Settings.Homepage);
     }
 
     keyboard.SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_OUT, 50);
@@ -460,8 +458,133 @@ void OnScreenKeyboard(GuiWindow * keyboardWindow, char *var, u16 maxlen, bool au
 	ResumeGui();
 }
 
-// Splash screen function, runs while initiating network functions.
-static int Splash()
+/****************************************************************************
+ * MenuSettings
+ ***************************************************************************/
+static int MenuSettings()
+{
+	int menu = MENU_NONE;
+	int ret, i = 0;
+	bool firstRun = true;
+	OptionList options;
+	sprintf(options.name[i++], "Homepage");
+	sprintf(options.name[i++], "Save Folder");
+	sprintf(options.name[i++], "Show Tooltips");
+	sprintf(options.name[i++], "Autoupdate");
+	sprintf(options.name[i++], "Language");
+	options.length = i;
+
+	GuiText titleTxt("Settings", 28, (GXColor){0, 0, 0, 255});
+	titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+	titleTxt.SetPosition(50,50);
+
+	GuiSound btnSoundOver(button_over_pcm, button_over_pcm_size, SOUND_PCM);
+	GuiImageData btnOutline(button_png);
+	GuiImageData btnOutlineOver(button_over_png);
+
+	GuiTrigger trigA;
+	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
+
+	GuiText backBtnTxt("Go Back", 22, (GXColor){0, 0, 0, 255});
+	GuiImage backBtnImg(&btnOutline);
+	GuiImage backBtnImgOver(&btnOutlineOver);
+	GuiButton backBtn(btnOutline.GetWidth(), btnOutline.GetHeight());
+	backBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
+	backBtn.SetPosition(50, -35);
+	backBtn.SetLabel(&backBtnTxt);
+	backBtn.SetImage(&backBtnImg);
+	backBtn.SetImageOver(&backBtnImgOver);
+	backBtn.SetSoundOver(&btnSoundOver);
+	backBtn.SetTrigger(&trigA);
+	backBtn.SetEffectGrow();
+
+	GuiOptionBrowser optionBrowser(552, 248, &options);
+	optionBrowser.SetPosition(0, 108);
+	optionBrowser.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
+	optionBrowser.SetCol2Position(185);
+
+	GuiWindow w(screenwidth, screenheight);
+    w.Append(&backBtn);
+    w.Append(&optionBrowser);
+    w.Append(&titleTxt);
+    w.SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_IN, 30);
+
+	HaltGui();
+	mainWindow->Append(&w);
+	ResumeGui();
+
+	while(menu == MENU_NONE)
+	{
+		usleep(THREAD_SLEEP);
+		ret = optionBrowser.GetClickedOption();
+
+		switch (ret)
+		{
+			case 0:
+				OnScreenKeyboard(mainWindow, Settings.Homepage, 256, false);
+				break;
+
+			case 1:
+				OnScreenKeyboard(mainWindow, Settings.DefaultFolder, 256, false);
+				break;
+
+			case 2:
+				Settings.ShowTooltip = !Settings.ShowTooltip;
+				break;
+
+            case 3:
+				Settings.Autoupdate = !Settings.Autoupdate;
+				break;
+
+			case 4:
+				Settings.Language++;
+				if (Settings.Language >= LANG_LENGTH)
+					Settings.Language = 0;
+				break;
+		}
+
+		if(ret >= 0 || firstRun)
+		{
+			firstRun = false;
+			if (Settings.Language > LANG_GERMAN)
+                Settings.Language = LANG_JAPANESE;
+
+			snprintf (options.value[0], 256, "%s", Settings.Homepage);
+			snprintf (options.value[1], 256, "%s", Settings.DefaultFolder);
+
+            if (Settings.ShowTooltip == 0) sprintf (options.value[2],"Hide");
+			else if (Settings.ShowTooltip == 1) sprintf (options.value[2],"Show");
+            if (Settings.Autoupdate == 0) sprintf (options.value[3],"Disabled");
+			else if (Settings.Autoupdate == 1) sprintf (options.value[3],"Enabled");
+
+            if (Settings.Language == LANG_JAPANESE) sprintf (options.value[4],"Japanese");
+			else if (Settings.Language == LANG_ENGLISH) sprintf (options.value[4],"English");
+			else if (Settings.Language == LANG_GERMAN) sprintf (options.value[4],"German");
+
+			optionBrowser.TriggerUpdate();
+		}
+
+		if(backBtn.GetState() == STATE_CLICKED)
+		{
+			Settings.Save();
+			menu = MENU_HOME;
+		}
+	}
+
+	w.SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_OUT, 30);
+	while(w.GetEffect() > 0) usleep(THREAD_SLEEP);
+
+	HaltGui();
+	mainWindow->Remove(&w);
+	return menu;
+}
+
+/****************************************************************************
+ * MenuSplash
+ *
+ * Splash screen function, runs while initiating network functions.
+ ***************************************************************************/
+static int MenuSplash()
 {
     GuiImageData SplashImage(logo_png);
     GuiImage Splash(&SplashImage);
@@ -519,16 +642,20 @@ static int Splash()
     if (conn == IP_ERR)
         WindowPrompt("Error reading IP address", "Application exiting. Please check connection settings", "Ok", NULL);
 
-    ResumeUpdateThread();
+    if(Settings.Autoupdate)
+        ResumeUpdateThread();
     return menu;
 }
 
-static int Home()
+/****************************************************************************
+ * MenuHome
+ ***************************************************************************/
+static int MenuHome()
 {
     char save[MAXLEN];
-    strcpy(save,hmpg);
+    strcpy(save,page);
     OnScreenKeyboard(mainWindow, save, MAXLEN, 1);
-    strcpy(hmpg,save);
+    strcpy(page,save);
 
     char *nurl=NULL;
     char *url=(char*) malloc (sizeof(save)+10);
@@ -574,7 +701,7 @@ static int Home()
     HTML = downloadfile(curl_handle, url, NULL);
 
     #ifdef DEBUG
-    FILE *pFile = fopen ("Gmail.htm", "rb");
+    FILE *pFile = fopen ("Google.htm", "rb");
     fseek (pFile, 0, SEEK_END);
     int size = ftell(pFile);
     rewind (pFile);
@@ -661,7 +788,7 @@ static int Home()
 void MainMenu(int menu)
 {
 	int currentMenu = menu;
-    memset(hmpg, 0, sizeof(hmpg));
+    memset(page, 0, sizeof(page));
     history = InitHistory();
 
     if(curl_global_init(CURL_GLOBAL_ALL))
@@ -698,13 +825,16 @@ void MainMenu(int menu)
 		switch (currentMenu)
 		{
 			case MENU_SPLASH:
-				currentMenu = Splash();
+				currentMenu = MenuSplash();
 				break;
 			case MENU_HOME:
-				currentMenu = Home();
+				currentMenu = MenuHome();
+				break;
+            case MENU_SETTINGS:
+				currentMenu = MenuSettings();
 				break;
 			default: // unrecognized menu
-				currentMenu = Home();
+				currentMenu = MenuHome();
 				break;
 		}
 	}

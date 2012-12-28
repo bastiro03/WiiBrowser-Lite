@@ -34,6 +34,7 @@
 #include "Settings.h"
 
 #define DEFAULT_APP_PATH    "apps/Wiibrowser/"
+#define DEFAULT_HOMEPAGE    "www.google.com/"
 #define CONFIGPATH          "apps/Wiibrowser/"
 #define CONFIGNAME          "wiibrowser.cfg"
 
@@ -51,7 +52,9 @@ void SSettings::SetDefault()
     Language = LANG_ENGLISH;
     Revision = 0;
     ShowTooltip = true;
+    Autoupdate = true;
     sprintf(DefaultFolder, DEFAULT_APP_PATH);
+    sprintf(Homepage, DEFAULT_HOMEPAGE);
 }
 
 bool SSettings::Save()
@@ -74,8 +77,10 @@ bool SSettings::Save()
 	fprintf(file, "# Main Settings\r\n\r\n");
 	fprintf(file, "Language = %d\r\n", Language);
 	fprintf(file, "Revision = %d\r\n", Revision);
+	fprintf(file, "Autoupdate = %d\r\n", Autoupdate);
 	fprintf(file, "ShowTooltip = %d\r\n", ShowTooltip);
 	fprintf(file, "DefaultFolder = %s\r\n", DefaultFolder);
+	fprintf(file, "Homepage = %s\r\n", Homepage);
 
     fclose(file);
     return true;
@@ -159,7 +164,13 @@ bool SSettings::SetSetting(char *name, char *value)
 		}
 		return true;
 	}
-    else if (strcmp(name, "ShowTooltip") == 0) {
+    else if (strcmp(name, "Autoupdate") == 0) {
+		if (sscanf(value, "%d", &i) == 1) {
+			Autoupdate = i;
+		}
+		return true;
+	}
+	else if (strcmp(name, "ShowTooltip") == 0) {
 		if (sscanf(value, "%d", &i) == 1) {
 			ShowTooltip = i;
 		}
@@ -169,6 +180,10 @@ bool SSettings::SetSetting(char *name, char *value)
         strncpy(DefaultFolder, value, sizeof(DefaultFolder));
 		return true;
 	}
+    else if (strcmp(name, "Homepage") == 0) {
+        strncpy(Homepage, value, sizeof(Homepage));
+		return true;
+	}
 
     return false;
 }
@@ -176,13 +191,11 @@ bool SSettings::SetSetting(char *name, char *value)
 void SSettings::ParseLine(char *line)
 {
     char temp[1024], name[1024], value[1024];
-
     strncpy(temp, line, sizeof(temp));
 
     char * eq = strchr(temp, '=');
-
-    if(!eq) return;
-
+    if(!eq)
+        return;
     *eq = 0;
 
     this->TrimLine(name, temp, sizeof(name));
@@ -219,6 +232,8 @@ bool SSettings::CheckIntegrity(const char *path)
     if(file != NULL)
     {
         fgets(line, sizeof(line), file);
+        if (!strncmp(line, "APPVERSION",10))
+            sscanf(line, "APPVERSION: R%d", &Revision);
         if (!strncmp(line, "# WiiBrowser Settingsfile",25))
             found = true;
     }

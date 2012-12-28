@@ -75,7 +75,7 @@ const struct block emptyblock = {NULL, 0};
 // -----------------------------------------------------------
 
 void debugInt(u32 msg);
-void save(char *buffer, u32 size, char *type, FILE *hfile);
+void save(struct block *b, FILE *hfile);
 
 char * adjustUrl(const char* link, char* url);
 char * getHost(char *url);
@@ -104,12 +104,6 @@ WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp)
     memcpy(&(mem->memory[mem->size]), contents, realsize);
     mem->memory[mem->size+=realsize] = 0;
     return realsize;
-}
-
-bool knownType(char type[]) {
-    if (strstr(type, "html") || strstr(type, "text") || strstr(type, "image"))
-        return true;
-    return false;
 }
 
 struct block downloadfile(CURL *curl_handle, const char *url, FILE *hfile)
@@ -167,8 +161,8 @@ struct block downloadfile(CURL *curl_handle, const char *url, FILE *hfile)
 	b.size = chunk.size;
     strcpy(b.type, findChr(ct, ';'));
 
-    if (!knownType(b.type) || hfile)
-        save(b.data, b.size, b.type, hfile);    //Debug(b.type);
+    if (hfile)
+        save(&b, hfile);
 	return b;
 }
 #else
@@ -750,22 +744,22 @@ void debugInt(u32 msg)
     #endif
 }
 
-void save(char *buffer, u32 size, char *type, FILE *hfile)
+void save(struct block *b, FILE *hfile)
 {
     char page[20]="page";
-    const char *c;
-    if (!(c=mime2ext(type)))
+    const char *c, *ext;
+    if (!(c=mime2ext(b->type)))
     {
-        type=strchr(type, '/')+1;
+        ext=strchr(b->type, '/')+1;
         strcat(page, ".");
-        strncat(page, type, 10);
+        strncat(page, ext, 10);
     }
     else
         strncat(page, c, 10);
     FILE *f = hfile;
     if (!f)
         f = fopen (page, "wb");
-    fwrite (buffer, size, 1, f);
+    fwrite (b->data, b->size, 1, f);
     fclose(f);
 }
 

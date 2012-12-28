@@ -37,6 +37,7 @@ GuiText::GuiText(const char * t, int s, GXColor c)
 	usespace = true;
 	textModel = NORMAL;
 	wrap = false;
+	font = 0;
 	textDynNum = 0;
 	textScroll = SCROLL_NONE;
 	textScrollPos = 0;
@@ -66,6 +67,7 @@ GuiText::GuiText(const wchar_t * t, int s, GXColor c)
 	alpha = c.a;
 	style = FTGX_JUSTIFY_CENTER | FTGX_ALIGN_MIDDLE;
 	maxWidth = 0;
+	font = 0;
 	usespace = true;
 	wrap = false;
 	textModel = NORMAL;
@@ -109,6 +111,7 @@ GuiText::GuiText(const char * t)
     usespace = true;
 	textModel = NORMAL;
 	textDynNum = 0;
+	font = 0;
 	textScroll = SCROLL_NONE;
 	textScrollPos = 0;
 	textScrollInitialDelay = TEXT_SCROLL_INITIAL_DELAY;
@@ -253,14 +256,9 @@ int GuiText::GetTextWidth()
 
 	if(currentSize != size)
 	{
-		ChangeFontSize(size);
-
-		if(!fontSystem[size])
-			fontSystem[size] = new FreeTypeGX(size);
-
 		currentSize = size;
 	}
-	return fontSystem[size]->getWidth(text);
+	return fontSystem[size][font]->getWidth(text);
 }
 
 void GuiText::SetWrap(bool w, int width)
@@ -381,12 +379,21 @@ void GuiText::SetModel(int model)
     textModel = model;
 }
 
+bool GuiText::SetFont(int s)
+{
+    if (s > FONTS)
+        return false;
+
+    font = s;
+    return true;
+}
+
 /**
  * Update the text on screen
  */
 bool GuiText::IsOver(int x, int y)
 {
-	if(unsigned(x - this->GetLeft())  < unsigned(fontSystem[currentSize]->getWidth(text))
+	if(unsigned(x - this->GetLeft())  < unsigned(fontSystem[currentSize][font]->getWidth(text))
 	&& unsigned(y - this->GetTop())  < unsigned(size/**GetLinesCount()*/))
 		return true;
 	return false;
@@ -431,15 +438,12 @@ void GuiText::Draw()
 
 	if(newSize != currentSize)
 	{
-		ChangeFontSize(newSize);
-		if(!fontSystem[newSize])
-			fontSystem[newSize] = new FreeTypeGX(newSize);
 		currentSize = newSize;
 	}
 
 	if(maxWidth == 0)
 	{
-		fontSystem[currentSize]->drawText(this->GetLeft(), this->GetTop(), text, c, style);
+		fontSystem[currentSize][font]->drawText(this->GetLeft(), this->GetTop(), text, c, style);
 		this->UpdateEffects();
 		return;
 	}
@@ -465,7 +469,7 @@ void GuiText::Draw()
 
 				// if(text[ch] == ' ' || ch == textlen-1)
 				{
-					if(fontSystem[currentSize]->getWidth(textDyn[linenum]) > ((linenum == 0 || (style & FTGX_JUSTIFY_MASK) != FTGX_JUSTIFY_LEFT) ? maxWidth : screenwidth-90))
+					if(fontSystem[currentSize][font]->getWidth(textDyn[linenum]) > ((linenum == 0 || (style & FTGX_JUSTIFY_MASK) != FTGX_JUSTIFY_LEFT) ? maxWidth : screenwidth-90))
 					{
 						if(lastSpace >= 0)
 						{
@@ -505,8 +509,8 @@ void GuiText::Draw()
 
 		for(int i=0; i < textDynNum; ++i) {
 		    if (i == 0)
-                fontSystem[currentSize]->drawText(left, top+i*lineheight, textDyn[i], c, style);
-			else fontSystem[currentSize]->drawText(leftPoint, top+i*lineheight, textDyn[i], c, style);
+                fontSystem[currentSize][font]->drawText(left, top+i*lineheight, textDyn[i], c, style);
+			else fontSystem[currentSize][font]->drawText(leftPoint, top+i*lineheight, textDyn[i], c, style);
 		}
 	}
 	else
@@ -517,13 +521,13 @@ void GuiText::Draw()
 			textDyn[0] = wcsdup(text);
 			int len = wcslen(textDyn[0]);
 
-			while(fontSystem[currentSize]->getWidth(textDyn[0]) > maxWidth)
+			while(fontSystem[currentSize][font]->getWidth(textDyn[0]) > maxWidth)
 				textDyn[0][--len] = 0;
 		}
 
 		if(textScroll == SCROLL_HORIZONTAL)
 		{
-			if(fontSystem[currentSize]->getWidth(text) > maxWidth && (FrameTimer % textScrollDelay == 0))
+			if(fontSystem[currentSize][font]->getWidth(text) > maxWidth && (FrameTimer % textScrollDelay == 0))
 			{
 				if(textScrollInitialDelay)
 				{
@@ -549,22 +553,22 @@ void GuiText::Draw()
 						dynlen += 2;
 					}
 
-					if(fontSystem[currentSize]->getWidth(textDyn[0]) > maxWidth)
+					if(fontSystem[currentSize][font]->getWidth(textDyn[0]) > maxWidth)
 					{
-						while(fontSystem[currentSize]->getWidth(textDyn[0]) > maxWidth)
+						while(fontSystem[currentSize][font]->getWidth(textDyn[0]) > maxWidth)
 							textDyn[0][--dynlen] = 0;
 					}
 					else
 					{
 						int i = 0;
 
-						while(fontSystem[currentSize]->getWidth(textDyn[0]) < maxWidth && dynlen+1 < textlen)
+						while(fontSystem[currentSize][font]->getWidth(textDyn[0]) < maxWidth && dynlen+1 < textlen)
 						{
 							textDyn[0][dynlen] = text[i++];
 							textDyn[0][++dynlen] = 0;
 						}
 
-						if(fontSystem[currentSize]->getWidth(textDyn[0]) > maxWidth)
+						if(fontSystem[currentSize][font]->getWidth(textDyn[0]) > maxWidth)
 							textDyn[0][dynlen-2] = 0;
 						else
 							textDyn[0][dynlen-1] = 0;
@@ -572,7 +576,7 @@ void GuiText::Draw()
 				}
 			}
 		}
-		fontSystem[currentSize]->drawText(this->GetLeft(), this->GetTop(), textDyn[0], c, style);
+		fontSystem[currentSize][font]->drawText(this->GetLeft(), this->GetTop(), textDyn[0], c, style);
 	}
 	this->UpdateEffects();
 }

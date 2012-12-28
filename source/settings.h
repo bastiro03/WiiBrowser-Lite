@@ -29,7 +29,7 @@
 #ifndef _SETTINGS_H_
 #define _SETTINGS_H_
 
-#include <string>
+#include <string.h>
 #include <stdio.h>
 #include <gctypes.h>
 
@@ -88,6 +88,9 @@ class SSettings
         int Language;
         int Revision;
         bool ShowTooltip;
+        bool Autoupdate;
+
+        char Homepage[256];
         char DefaultFolder[256];
         char ConfigPath[256];
 

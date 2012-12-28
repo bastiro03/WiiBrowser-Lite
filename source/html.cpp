@@ -59,6 +59,12 @@ static void *DownloadImage (void *arg) {
     return NULL;
 }
 
+bool knownType(char type[]) {
+    if (strstr(type, "html") || strstr(type, "text") || strstr(type, "image"))
+        return true;
+    return false;
+}
+
 string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainWindow, char *url)
 {
     GuiWindow *scrollWindow = new GuiWindow(50, screenheight-80);
@@ -68,6 +74,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
 
     GuiImageData Textbox (keyboard_textbox_png, keyboard_textbox_png_size);
     string link; int coordX=0, coordY, offset=0;
+    GuiImage *image=NULL;
 
     GuiButton *btndown=NULL, *btnup=NULL;
     Lista l1; Lista::iterator lista; ListaDiTesto text=InitText(); ListaDiBottoni bottone, btn=InitButton();
@@ -286,8 +293,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
         l1.clear();
     }
 
-    GuiImage *image=NULL;
-    if (strstr(HTML->type, "image")!=NULL) {
+    else if (strstr(HTML->type, "image")!=NULL) {
         GuiImageData image_data((u8*)HTML->data, HTML->size);
         image = new GuiImage(&image_data);
         image->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
@@ -312,6 +318,10 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
             mainWindow->Remove(image);
         ResumeGui();
         delete(image);
+    }
+
+    else if (!knownType(HTML->type)) {
+        save(HTML, NULL);
     }
 
     threadState=THREAD_EXIT;
@@ -356,10 +366,10 @@ void Clear(GuiWindow* mainWindow, Indice Index, Indice *first, Indice *last, Ind
 }
 
 void SetFont(GuiText *text, vector<string> mode) {
-    /*if (checkTag(mode, "b") || checkTag(mode, "strong"))
-        text->SetFont(font_bold_ttf, font_bold_ttf_size);
+    if (checkTag(mode, "b") || checkTag(mode, "strong"))
+        text->SetFont(FONT_BOLD);
     if (checkTag(mode, "em") || checkTag(mode, "i"))
-        text->SetFont(font_italic_ttf, font_italic_ttf_size);*/
+        text->SetFont(FONT_ITALIC);
 }
 
 void DrawScroll (GuiWindow * mainWindow, GuiButton **btndown, GuiButton **btnup, GuiSound *btnSoundOver, GuiTrigger *trigA) {

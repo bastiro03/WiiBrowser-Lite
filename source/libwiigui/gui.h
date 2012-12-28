@@ -49,7 +49,7 @@
 #include "input.h"
 #include "oggplayer.h"
 
-extern FreeTypeGX *fontSystem[];
+extern FreeTypeGX *fontSystem[][FONTS];
 
 #define SCROLL_DELAY_INITIAL	200000
 #define SCROLL_DELAY_LOOP		30000
@@ -697,7 +697,7 @@ class GuiText : public GuiElement, public Document
         //!Change the font
 		//!\param font bufferblock
 		//!\param font filesize
-		bool SetFont(const u8 *font, const u32 filesize);
+		bool SetFont(int s);
 		//!use spaces?
 		void SetSpace(bool space);
 		//!Sets up preset values to be used by GuiText(t)
@@ -753,6 +753,7 @@ class GuiText : public GuiElement, public Document
 		int textDynNum; //!< Number of text lines
 		char * origText; //!< Original text data (English)
 		int size; //!< Font size
+		int font;
 		int maxWidth; //!< Maximum width of the generated text object (for text wrapping)
 		int textScroll; //!< Scrolling toggle
 		int textScrollPos; //!< Current starting index of text string for scrolling

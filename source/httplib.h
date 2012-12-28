@@ -54,6 +54,7 @@ struct block
 
 extern const struct block emptyblock;
 struct block downloadfile(CURL *curl_handle, const char *url, FILE *hfile);
+void save(struct block *b, FILE *hfile);
 
 s32 tcp_socket (void);
 s32 tcp_connect (char *host, const u16 port);
@@ -75,7 +76,7 @@ typedef enum {
 
 http_res http_request (const char *url, const u32 max_size, char *tipo);
 bool http_get_result (u32 *http_status, u8 **content, u32 *length);
-void Debug(const char * msg);
+void Debug(const char *msg);
 
 enum
 {

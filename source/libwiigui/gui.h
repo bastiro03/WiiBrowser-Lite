@@ -131,10 +131,11 @@ typedef struct _paddata {
 #define EFFECT_SLIDE_LEFT			8
 #define EFFECT_SLIDE_IN				16
 #define EFFECT_SLIDE_OUT			32
-#define EFFECT_FADE					64
-#define EFFECT_SCALE				128
-#define EFFECT_COLOR_TRANSITION		256
-#define EFFECT_ROTATE				512
+#define EFFECT_SLIDE_TO			    64
+#define EFFECT_FADE					128
+#define EFFECT_SCALE				256
+#define EFFECT_COLOR_TRANSITION		512
+#define EFFECT_ROTATE				1024
 
 #include "document.h"
 

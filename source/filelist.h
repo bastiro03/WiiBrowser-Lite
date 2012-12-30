@@ -36,6 +36,27 @@ extern const u8		button_click_pcm[];
 extern const u32	button_click_pcm_size;
 
 // Images
+extern const u8		loading_png[];
+extern const u32	loading_png_size;
+
+extern const u8		link_settings_png[];
+extern const u32	link_settings_png_size;
+
+extern const u8		link_settings_over_png[];
+extern const u32	link_settings_over_png_size;
+
+extern const u8		btn_check_png[];
+extern const u32	btn_check_png_size;
+
+extern const u8		btn_check_over_png[];
+extern const u32	btn_check_over_png_size;
+
+extern const u8		btn_cancel_png[];
+extern const u32	btn_cancel_png_size;
+
+extern const u8		btn_cancel_over_png[];
+extern const u32	btn_cancel_over_png_size;
+
 extern const u8		button_png[];
 extern const u32	button_png_size;
 

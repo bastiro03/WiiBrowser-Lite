@@ -427,9 +427,20 @@ void GuiElement::SetEffectGrow()
 
 void GuiElement::UpdateEffects()
 {
-	if(effects & (EFFECT_SLIDE_IN | EFFECT_SLIDE_OUT))
+	if(effects & (EFFECT_SLIDE_IN | EFFECT_SLIDE_OUT | EFFECT_SLIDE_TO))
 	{
-		if(effects & EFFECT_SLIDE_IN)
+		if(effects & EFFECT_SLIDE_TO)
+		{
+            if(this->GetScale() >= 0.1)
+            {
+                xscale -= 0.01;
+                yscale -= 0.01;
+            }
+            if(this->GetYPosition() >= effectTarget)
+                yoffset -= effectAmount;
+            else effects = 0;
+		}
+		else if(effects & EFFECT_SLIDE_IN)
 		{
 			if(effects & EFFECT_SLIDE_LEFT)
 			{

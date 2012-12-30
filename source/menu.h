@@ -10,7 +10,7 @@
 #define _MENU_H_
 
 #undef TIME
-#define DEBUG
+#undef DEBUG
 
 #include <ogcsys.h>
 #include <curl/curl.h>
@@ -30,7 +30,7 @@ enum
 	MENU_NONE,
 	MENU_SPLASH,
 	MENU_SETTINGS,
-	MENU_BROWSE_DEVICE,
+	MENU_BROWSE,
 	MENU_HOME,
 	MENU_DEFAULT
 };

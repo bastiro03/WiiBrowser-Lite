@@ -32,12 +32,15 @@ extern "C" {
 CURL *curl_handle;
 History history;
 
-static char page[MAXLEN];
+static char prev_page[MAXLEN];
+static char new_page[MAXLEN];
 
 static GuiImageData * pointer[4];
 static GuiImage * bgImg = NULL;
 static GuiSound * bgMusic = NULL;
 static GuiWindow * mainWindow = NULL;
+static GuiImageData * SplashImage = NULL;
+static GuiImage * Splash = NULL;
 
 static lwp_t guithread = LWP_THREAD_NULL;
 static lwp_t updatethread = LWP_THREAD_NULL;
@@ -586,9 +589,9 @@ static int MenuSettings()
  ***************************************************************************/
 static int MenuSplash()
 {
-    GuiImageData SplashImage(logo_png);
-    GuiImage Splash(&SplashImage);
-    GuiImageData InitData(wiibrowser_png);
+    SplashImage = new GuiImageData(logo_png);
+    Splash = new GuiImage(SplashImage);
+    GuiImageData InitData(loading_png);
     GuiImage Init(&InitData);
 
     Init.SetAlignment(2,4);
@@ -596,13 +599,13 @@ static int MenuSplash()
     Init.SetPosition(0,-50);
     Init.SetEffect(EFFECT_FADE, 50);
 
-    Splash.SetAlignment(2,5);
-    Splash.SetPosition(10,-40);
-    Splash.SetScale(0.75);
-    Splash.SetEffect(EFFECT_FADE, 50);
+    Splash->SetAlignment(2,5);
+    Splash->SetPosition(10,-40);
+    Splash->SetScale(0.75);
+    Splash->SetEffect(EFFECT_FADE, 50);
 
     HaltGui();
-    mainWindow->Append(&Splash);
+    mainWindow->Append(Splash);
     mainWindow->Append(&Init);
     ResumeGui();
 
@@ -627,15 +630,20 @@ static int MenuSplash()
     #endif
     StopLoadThread();
 
+    if(menu == MENU_EXIT)
+        Splash->SetEffect(EFFECT_FADE, -50);
+
     Init.SetEffect(EFFECT_FADE, -50);
-    Splash.SetEffect(EFFECT_FADE, -50);
-    while(Splash.GetEffect() > 0) usleep(THREAD_SLEEP);
+    while(Init.GetEffect() > 0) usleep(THREAD_SLEEP);
     usleep(500*1000);
 
     HaltGui();
-    mainWindow->Remove(&Splash);
     mainWindow->Remove(&Init);
     ResumeGui();
+
+    Splash->SetEffect(EFFECT_SLIDE_TO, 4, -140);
+    while(Splash->GetEffect() > 0)
+        usleep(THREAD_SLEEP);
 
     if (conn == NET_ERR)
         WindowPrompt("Connection failure", "Please check network settings, exiting...", "Ok", NULL);
@@ -652,15 +660,140 @@ static int MenuSplash()
  ***************************************************************************/
 static int MenuHome()
 {
-    char save[MAXLEN];
-    strcpy(save,page);
-    OnScreenKeyboard(mainWindow, save, MAXLEN, 1);
-    strcpy(page,save);
+	GuiTrigger trigA;
+	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
+	strcpy(new_page,prev_page);
 
+    GuiSound btnSoundOver(button_over_pcm, button_over_pcm_size, SOUND_PCM);
+    GuiImageData Textbox(keyboard_textbox_png, keyboard_textbox_png_size);
+    GuiImage TextboxImg(&Textbox);
+    GuiButton InsertURL(TextboxImg.GetWidth(), TextboxImg.GetHeight());
+    GuiText URL(new_page, 20, (GXColor){0, 0, 0, 255});
+
+    InsertURL.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
+    InsertURL.SetPosition(0,-50);
+    InsertURL.SetLabel(&URL);
+    InsertURL.SetImage(&TextboxImg);
+    InsertURL.SetSoundOver(&btnSoundOver);
+    InsertURL.SetTrigger(&trigA);
+    InsertURL.SetEffectGrow();
+
+    GuiImageData SettingsData(link_settings_png, link_settings_png_size);
+    GuiImage SettingsImg(&SettingsData);
+    GuiButton Settings(SettingsData.GetWidth(), SettingsData.GetHeight());
+    GuiText Sett("Settings", 20, (GXColor){0, 0, 0, 255});
+    Sett.SetPosition(70,0);
+
+    Settings.SetAlignment(ALIGN_RIGHT, ALIGN_BOTTOM);
+    Settings.SetPosition(-100,-20);
+    Settings.SetLabel(&Sett);
+    Settings.SetImage(&SettingsImg);
+    Settings.SetSoundOver(&btnSoundOver);
+    Settings.SetTrigger(&trigA);
+    Settings.SetEffectGrow();
+
+    GuiImageData btnCheck(btn_check_png);
+	GuiImageData btnCheckOver(btn_check_over_png);
+    GuiImageData btnCanc(btn_cancel_png);
+	GuiImageData btnCancOver(btn_cancel_over_png);
+
+	GuiImage btnGoImg(&btnCheck);
+	GuiImage btnGoImgOver(&btnCheckOver);
+    GuiImage btnExitImg(&btnCanc);
+	GuiImage btnExitImgOver(&btnCancOver);
+
+	GuiButton btnGo(btnCheck.GetWidth(), btnCheck.GetHeight());
+    btnGo.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
+    btnGo.SetPosition(-130,50);
+    btnGo.SetImage(&btnGoImg);
+    btnGo.SetImageOver(&btnGoImgOver);
+    btnGo.SetSoundOver(&btnSoundOver);
+    btnGo.SetTrigger(&trigA);
+    btnGo.SetScale(0.5);
+    btnGo.SetEffectGrow();
+
+	GuiButton btnExit(btnCanc.GetWidth(), btnCanc.GetHeight());
+    btnExit.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
+    btnExit.SetPosition(130,50);
+    btnExit.SetImage(&btnExitImg);
+    btnExit.SetImageOver(&btnExitImgOver);
+    btnExit.SetSoundOver(&btnSoundOver);
+    btnExit.SetTrigger(&trigA);
+    btnExit.SetScale(0.5);
+    btnExit.SetEffectGrow();
+
+    if(Splash->GetAlpha() == 0)
+        Splash->SetEffect(EFFECT_FADE, 50);
+    InsertURL.SetEffect(EFFECT_FADE, 50);
+    Settings.SetEffect(EFFECT_FADE, 50);
+    btnGo.SetEffect(EFFECT_FADE, 50);
+    btnExit.SetEffect(EFFECT_FADE, 50);
+
+    HaltGui();
+    mainWindow->Append(Splash);
+    mainWindow->Append(&InsertURL);
+    mainWindow->Append(&btnGo);
+    mainWindow->Append(&btnExit);
+    mainWindow->Append(&Settings);
+    ResumeGui();
+
+    int choice = 0;
+    while(!choice)
+	{
+        if(strlen(new_page) > 0)
+            btnGo.SetState(STATE_DEFAULT);
+        else btnGo.SetState(STATE_DISABLED);
+
+		usleep(THREAD_SLEEP);
+
+		if(InsertURL.GetState() == STATE_CLICKED)
+        {
+            OnScreenKeyboard(mainWindow, new_page, MAXLEN, 1);
+            strcpy(prev_page,new_page);
+            URL.SetText(new_page);
+        }
+
+        else if(Settings.GetState() == STATE_CLICKED)
+            choice = MENU_SETTINGS;
+
+        else if(btnGo.GetState() == STATE_CLICKED)
+            choice = MENU_BROWSE;
+
+        else if(btnExit.GetState() == STATE_CLICKED)
+        {
+            int close = WindowPrompt("Homepage", "Do you want to exit?", "Ok", "Cancel");
+            if (close)
+                choice = MENU_EXIT;
+        }
+	}
+
+    btnGo.SetEffect(EFFECT_FADE, -50);
+    btnExit.SetEffect(EFFECT_FADE, -50);
+
+    Splash->SetEffect(EFFECT_FADE, -50);
+    Settings.SetEffect(EFFECT_FADE, -50);
+    InsertURL.SetEffect(EFFECT_FADE, -50);
+    while(InsertURL.GetEffect() > 0) usleep(THREAD_SLEEP);
+
+    HaltGui();
+    mainWindow->Remove(Splash);
+    mainWindow->Remove(&InsertURL);
+    mainWindow->Remove(&btnGo);
+    mainWindow->Remove(&btnExit);
+    mainWindow->Remove(&Settings);
+    ResumeGui();
+    return choice;
+}
+
+/****************************************************************************
+ * MenuBrowse
+ ***************************************************************************/
+static int MenuBrowse()
+{
     char *nurl=NULL;
-    char *url=(char*) malloc (sizeof(save)+10);
+    char *url=(char*) malloc (sizeof(new_page)+10);
     strcpy(url,"http://");
-    strcat(url,save);
+    strcat(url,new_page);
 
     jump:
     GuiWindow promptWindow(448,288);
@@ -670,7 +803,7 @@ static int MenuHome()
     GuiImageData dialogBox(dialogue_box_png, dialogue_box_png_size);
     GuiImage dialogBoxImg(&dialogBox);
 
-    GuiText title("WiiXplore", 26, (GXColor){0, 0, 0, 255});
+    GuiText title("WiiBrowser", 26, (GXColor){0, 0, 0, 255});
     title.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
     title.SetPosition(0,40);
     GuiText msgTxt("Loading...please wait.", 22, (GXColor){0, 0, 0, 255});
@@ -701,7 +834,7 @@ static int MenuHome()
     HTML = downloadfile(curl_handle, url, NULL);
 
     #ifdef DEBUG
-    FILE *pFile = fopen ("Google.htm", "rb");
+    FILE *pFile = fopen ("Pagina.htm", "rb");
     fseek (pFile, 0, SEEK_END);
     int size = ftell(pFile);
     rewind (pFile);
@@ -740,7 +873,7 @@ static int MenuHome()
 
     if (HTML.size == 0)
     {
-        WindowPrompt("WiiXplore", "Failed", "Ok", NULL);
+        WindowPrompt("WiiBrowser", "Failed", "Ok", NULL);
         return MENU_HOME;
     }
 
@@ -774,11 +907,8 @@ static int MenuHome()
         strcpy(url,(char*)link.c_str());
         goto jump;
     }
-    free(url);
 
-    int close = WindowPrompt("Homepage", "Do you want to exit?", "Ok", "Cancel");
-    if (close)
-        return MENU_EXIT;
+    free(url);
     return MENU_HOME;
 }
 
@@ -788,7 +918,7 @@ static int MenuHome()
 void MainMenu(int menu)
 {
 	int currentMenu = menu;
-    memset(page, 0, sizeof(page));
+    memset(prev_page, 0, sizeof(prev_page));
     history = InitHistory();
 
     if(curl_global_init(CURL_GLOBAL_ALL))
@@ -833,6 +963,9 @@ void MainMenu(int menu)
             case MENU_SETTINGS:
 				currentMenu = MenuSettings();
 				break;
+            case MENU_BROWSE:
+				currentMenu = MenuBrowse();
+				break;
 			default: // unrecognized menu
 				currentMenu = MenuHome();
 				break;
@@ -844,11 +977,14 @@ void MainMenu(int menu)
 	while(1) usleep(THREAD_SLEEP);
 
 	HaltGui();
-
 	bgMusic->Stop();
+
 	delete bgMusic;
 	delete bgImg;
 	delete mainWindow;
+
+	delete SplashImage;
+	delete Splash;
 
 	delete pointer[0];
 	delete pointer[1];

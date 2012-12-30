@@ -199,8 +199,8 @@ GuiKeyboard::GuiKeyboard(char * t, u32 max)
 				keyImg[i][j] = new GuiImage(key);
 				keyImgOver[i][j] = new GuiImage(keyOver);
 				keyTxt[i][j] = new GuiText(txt, 20, (GXColor){0, 0, 0, 0xff});
-				keyTxt[i][j]->SetAlignment(ALIGN_CENTRE, ALIGN_BOTTOM);
-				keyTxt[i][j]->SetPosition(0, -10);
+				keyTxt[i][j]->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
+				// keyTxt[i][j]->SetPosition(0, -10);
 				keyBtn[i][j] = new GuiButton(key->GetWidth(), key->GetHeight());
 				keyBtn[i][j]->SetImage(keyImg[i][j]);
 				keyBtn[i][j]->SetImageOver(keyImgOver[i][j]);
@@ -291,7 +291,7 @@ void GuiKeyboard::Update(GuiTrigger * t)
 	else if(keyBack->GetState() == STATE_CLICKED)
 	{
 		if(strlen(kbtextstr) > 0)
-		{	
+		{
 			kbtextstr[strlen(kbtextstr)-1] = 0;
 			kbText->SetText(GetDisplayText(kbtextstr));
 		}

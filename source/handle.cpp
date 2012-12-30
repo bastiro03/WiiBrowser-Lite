@@ -317,14 +317,11 @@ void showBar(GuiWindow *mainWindow, GuiWindow *parentWindow) {
         btnFav = new GuiButton(Favorites->GetWidth(), Favorites->GetHeight());
 
         BackTooltip = new GuiTooltip(gettext("Go back"));
+        BackTooltip->SetOffset(-15,-50);
+
         ForwardTooltip = new GuiTooltip(gettext("Go forward"));
         WWWTooltip = new GuiTooltip(gettext("Homepage"));
         FavTooltip = new GuiTooltip(gettext("Favorites"));
-
-        FavTooltip->SetOffset(-55, -35);
-        WWWTooltip->SetOffset(-55, -35);
-        ForwardTooltip->SetOffset(15, -35);
-        BackTooltip->SetOffset(55, -35);
 
         statusBar = new GuiWindow(screenwidth, Back->GetHeight());
         statusBar->SetAlignment(ALIGN_CENTRE, ALIGN_BOTTOM);

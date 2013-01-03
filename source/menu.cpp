@@ -312,9 +312,9 @@ void StopLoadThread()
  ***************************************************************************/
 static void *UpdateGUI (void *arg)
 {
-	int i;
+	int i, guiRun = 1;
 
-	while(1)
+	while(guiRun)
 	{
 		if(guiHalt)
 		{
@@ -324,7 +324,7 @@ static void *UpdateGUI (void *arg)
 		{
 			UpdatePads();
 			mainWindow->Draw();
-			mainWindow->DrawTooltip();
+            mainWindow->DrawTooltip();
 
 			#ifdef HW_RVL
 			for(i=3; i >= 0; i--) // so that player 1's cursor appears on top!
@@ -347,16 +347,18 @@ static void *UpdateGUI (void *arg)
                     ExitRequested = true; // exit program
 			}
 
-			if(ExitRequested)
+			if(ExitRequested || GuiShutdown)
 			{
-				for(i = 0; i <= 255; i += 15)
+				for(i = guiRun = 0; i <= 255; i += 15)
 				{
 					mainWindow->Draw();
 					Menu_DrawRectangle(0,0,screenwidth,screenheight,(GXColor){0, 0, 0, (u8)i},1);
 					Menu_Render();
 				}
-				ExitApp();
 			}
+
+			if (ExitRequested)
+                ExitApp();
 		}
 	}
 	return NULL;
@@ -635,7 +637,7 @@ static int MenuSplash()
 
     Init.SetEffect(EFFECT_FADE, -50);
     while(Init.GetEffect() > 0) usleep(THREAD_SLEEP);
-    usleep(500*1000);
+    usleep(200*1000);
 
     HaltGui();
     mainWindow->Remove(&Init);
@@ -922,7 +924,7 @@ void MainMenu(int menu)
     history = InitHistory();
 
     if(curl_global_init(CURL_GLOBAL_ALL))
-        ExitRequested=1;
+        ExitRequested = 1;
     curl_handle = curl_easy_init();
 
 	#ifdef HW_RVL
@@ -972,19 +974,18 @@ void MainMenu(int menu)
 		}
 	}
 
+	GuiShutdown = 1;
 	ResumeGui();
-	ExitRequested = 1;
-	while(1) usleep(THREAD_SLEEP);
 
-	HaltGui();
+	LWP_JoinThread(guithread, NULL);
 	bgMusic->Stop();
 
 	delete bgMusic;
 	delete bgImg;
-	delete mainWindow;
 
 	delete SplashImage;
 	delete Splash;
+	delete mainWindow;
 
 	delete pointer[0];
 	delete pointer[1];

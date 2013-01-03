@@ -1,3 +1,6 @@
+#ifndef _HTML_H_
+#define _HTML_H_
+
 #include "libwiigui/gui.h"
 #include <iostream>
 #include <list>
@@ -87,16 +90,20 @@ extern enum html {HTML,HEAD,BODY,META,TITLE,FORM,P,A,DIV,BR,IMG,H1,H2,H3,H4,H5,H
 extern char tags [END][LEN];
 extern History history;
 
-extern Lista getTag(char * buffer);
-extern void OnScreenKeyboard(GuiWindow * keyboardWindow, char *var, u16 maxlen, bool autoComplete);
+extern Lista getTag(char *buffer);
 extern int checkTag(vector<string> tag, string name);
+
+extern void OnScreenKeyboard(GuiWindow *keyboardWindow, char *var, u16 maxlen, bool autoComplete);
+extern int WindowPrompt(const char *title, const char *msg, const char *btn1Label, const char *btn2Label);
 
 extern void save_mem(string str);
 extern void save_mem_int(float str);
 
-extern string DisplayHTML(struct block *HTML, GuiWindow * parentWindow, GuiWindow *mainWindow, char *url);
+extern string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainWindow, char *url);
 extern string adjustUrl(string link, const char* url);
-extern char * getHost(char *url);
+extern char *getHost(char *url);
 
 extern void HaltGui();
 extern void ResumeGui();
+
+#endif

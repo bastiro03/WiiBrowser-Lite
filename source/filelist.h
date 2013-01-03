@@ -42,8 +42,11 @@ extern const u32	loading_png_size;
 extern const u8		link_settings_png[];
 extern const u32	link_settings_png_size;
 
-extern const u8		link_settings_over_png[];
-extern const u32	link_settings_over_png_size;
+extern const u8		btn_save_png[];
+extern const u32	btn_save_png_size;
+
+extern const u8		btn_save_over_png[];
+extern const u32	btn_save_over_png_size;
 
 extern const u8		btn_check_png[];
 extern const u32	btn_check_png_size;
@@ -191,8 +194,5 @@ extern const u32	tooltip_left_png_size;
 
 extern const u8		logo_png[];
 extern const u32	logo_png_size;
-
-extern const u8		wiibrowser_png[];
-extern const u32	wiibrowser_png_size;
 
 #endif

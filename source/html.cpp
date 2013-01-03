@@ -73,7 +73,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
     static lwp_t thread = LWP_THREAD_NULL;
 
     GuiImageData Textbox (keyboard_textbox_png, keyboard_textbox_png_size);
-    string link; int coordX=0, coordY, offset=0;
+    string link; int coordX=0, coordY, offset=0, choice=0;
     GuiImage *image=NULL;
 
     GuiButton *btndown=NULL, *btnup=NULL;
@@ -91,7 +91,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
         lista=l1.begin();
         LWP_CreateThread (&thread, DownloadImage, (void*)url, NULL, 0, 70);
 
-        unsigned int i; int choice=0;
+        unsigned int i;
         while (!choice && !(userInput[0].wpad->btns_d & WPAD_BUTTON_B)) {
             Clear(mainWindow, Index, &first, &last, ext);
             coordY=Index ? Index->elem->GetYPosition()+Index->screenSize : 40;
@@ -308,7 +308,6 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
             mainWindow->Append(scrollWindow);
         ResumeGui();
 
-        int choice=0;
         while (!choice && !(userInput[0].wpad->btns_d & WPAD_BUTTON_B)) {
             HandleMenuBar(&link, &choice, 1, mainWindow, parentWindow);
             HandleImgPad(btnup, btndown, image);
@@ -320,8 +319,15 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
         delete(image);
     }
 
-    else if (!knownType(HTML->type)) {
-        save(HTML, NULL);
+    if (!knownType(HTML->type) || choice == 2) {
+        if (choice != 2)
+            choice = WindowPrompt("Download", "Do you want to save the file?", "Yes", "No");
+        /*if (choice)
+        {
+            FILE *file = SelectFile();
+            save(HTML, file);
+        }*/
+        usleep(100*1000);
     }
 
     threadState=THREAD_EXIT;

@@ -10,7 +10,7 @@
 #define _MENU_H_
 
 #undef TIME
-#undef DEBUG
+#define DEBUG
 
 #include <ogcsys.h>
 #include <curl/curl.h>

@@ -2,7 +2,7 @@
  * libwiigui Template
  * Tantric 2009
  *
- * demo.h
+ * main.h
  ***************************************************************************/
 
 #ifndef _MAIN_H_
@@ -15,6 +15,7 @@ extern SSettings Settings;
 
 void ExitApp();
 extern int ExitRequested;
+extern int GuiShutdown;
 extern FreeTypeGX *fontSystem[][FONTS];
 
 extern "C" {

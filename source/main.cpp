@@ -27,14 +27,17 @@
 #include "main.h"
 
 SSettings Settings;
-int ExitRequested = 0;
+int ExitRequested = 0,
+    GuiShutdown = 0;
 
 void ExitApp()
 {
+    Settings.Save();
 	ShutoffRumble();
 	StopGX();
+	ShutdownAudio();
+	DeinitFreeType();
 	FreeHistory(history);
-	Settings.Save();
 	StopUpdateThread();
 	if (HWButton)
         SYS_ResetSystem(HWButton, 0, 0);
@@ -63,4 +66,5 @@ int main(int argc, char *argv[])
 	Settings.Load();
 	LoadLanguage();
 	MainMenu(MENU_SPLASH);
+	ExitApp();
 }

@@ -42,6 +42,12 @@ extern const u32	loading_png_size;
 extern const u8		link_settings_png[];
 extern const u32	link_settings_png_size;
 
+extern const u8		btn_home_png[];
+extern const u32	btn_home_png_size;
+
+extern const u8		btn_home_over_png[];
+extern const u32	btn_home_over_png_size;
+
 extern const u8		btn_save_png[];
 extern const u32	btn_save_png_size;
 

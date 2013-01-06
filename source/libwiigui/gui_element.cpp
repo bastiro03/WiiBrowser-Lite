@@ -408,9 +408,17 @@ void GuiElement::SetEffect(int eff, int amount, int target)
 			alphaDyn = alpha;
 	}
 
+	if(eff & EFFECT_SCALE_TO)
+    {
+        effectAmountTo = amount;
+        effectTargetTo = target;
+    }
+    else
+    {
+        effectAmount = amount;
+        effectTarget = target;
+    }
 	effects |= eff;
-	effectAmount = amount;
-	effectTarget = target;
 }
 
 void GuiElement::SetEffectOnOver(int eff, int amount, int target)
@@ -431,13 +439,12 @@ void GuiElement::UpdateEffects()
 	{
 		if(effects & EFFECT_SLIDE_TO)
 		{
-            if(this->GetScale() >= 0.1)
+            if(abs(this->GetYPosition() - effectTarget) >= effectAmount)
             {
-                xscale -= 0.01;
-                yscale -= 0.01;
+                if(this->GetYPosition() > effectTarget)
+                    yoffset -= effectAmount;
+                else yoffset += effectAmount;
             }
-            if(this->GetYPosition() >= effectTarget)
-                yoffset -= effectAmount;
             else effects = 0;
 		}
 		else if(effects & EFFECT_SLIDE_IN)
@@ -522,12 +529,12 @@ void GuiElement::UpdateEffects()
 		if(effectAmount < 0 && alphaDyn <= 0)
 		{
 			alphaDyn = 0;
-			effects = 0; // shut off effect
+			effects &= (~EFFECT_FADE); // shut off effect
 		}
 		else if(effectAmount > 0 && alphaDyn >= alpha)
 		{
 			alphaDyn = alpha;
-			effects = 0; // shut off effect
+			effects &= (~EFFECT_FADE); // shut off effect
 		}
 	}
 	if(effects & EFFECT_SCALE)
@@ -539,9 +546,19 @@ void GuiElement::UpdateEffects()
 			|| (effectAmount > 0 && scaleDyn >= effTar100))
 		{
 			scaleDyn = effTar100;
-			effects = 0; // shut off effect
+			effects &= (~EFFECT_SCALE); // shut off effect
 		}
 	}
+    if(effects & EFFECT_SCALE_TO)
+    {
+        if(fabs(this->GetScale() - effectTargetTo*0.01) > effectAmountTo*0.01)
+        {
+            if(this->GetScale() > effectTargetTo*0.01)
+                this->SetScale(this->GetScale() - effectAmountTo*0.01);
+            else this->SetScale(this->GetScale() + effectAmountTo*0.01);
+        }
+        else effects &= (~EFFECT_SCALE_TO);
+    }
 }
 
 void GuiElement::Update(GuiTrigger * t)

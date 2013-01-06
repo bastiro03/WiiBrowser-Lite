@@ -52,6 +52,7 @@ void SSettings::SetDefault()
     Language = LANG_ENGLISH;
     Revision = 0;
     ShowTooltip = true;
+    Music = true;
     Autoupdate = true;
     sprintf(DefaultFolder, DEFAULT_APP_PATH);
     sprintf(Homepage, DEFAULT_HOMEPAGE);
@@ -79,6 +80,7 @@ bool SSettings::Save()
 	fprintf(file, "Revision = %d\r\n", Revision);
 	fprintf(file, "Autoupdate = %d\r\n", Autoupdate);
 	fprintf(file, "ShowTooltip = %d\r\n", ShowTooltip);
+	fprintf(file, "Music = %d\r\n", Music);
 	fprintf(file, "DefaultFolder = %s\r\n", DefaultFolder);
 	fprintf(file, "Homepage = %s\r\n", Homepage);
 
@@ -173,6 +175,12 @@ bool SSettings::SetSetting(char *name, char *value)
 	else if (strcmp(name, "ShowTooltip") == 0) {
 		if (sscanf(value, "%d", &i) == 1) {
 			ShowTooltip = i;
+		}
+		return true;
+	}
+	else if (strcmp(name, "Music") == 0) {
+		if (sscanf(value, "%d", &i) == 1) {
+			Music = i;
 		}
 		return true;
 	}

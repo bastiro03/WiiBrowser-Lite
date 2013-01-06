@@ -2,11 +2,6 @@
 #include "html/utils.h"
 #include "html/wincstring.h"
 #include "css/parser_pp.h"
-#ifndef WIN32
-#include "config.h"
-#else
-#define VERSION "0.6"
-#endif
 
 #include <cstdlib>
 #include <fstream>
@@ -15,7 +10,8 @@
 
 #include "liste.h"
 #include "main.h"
-#include "wingetopt.h"
+
+#define VERSION "0.6"
 
 extern "C" {
 #include "entities.h"

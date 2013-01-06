@@ -17,6 +17,10 @@
 #include <update.h>
 #include <string>
 
+extern "C" {
+#include "entities.h"
+}
+
 void InitGUIThreads();
 void MainMenu (int menuitem);
 void StopUpdateThread();

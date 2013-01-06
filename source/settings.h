@@ -89,6 +89,7 @@ class SSettings
         int Revision;
         bool ShowTooltip;
         bool Autoupdate;
+        bool Music;
 
         char Homepage[256];
         char DefaultFolder[256];

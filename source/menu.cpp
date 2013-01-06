@@ -382,7 +382,7 @@ InitGUIThreads()
  * Opens an on-screen keyboard window, with the data entered being stored
  * into the specified variable.
  ***************************************************************************/
-void OnScreenKeyboard(GuiWindow *keyboardWindow, char *var, u16 maxlen, bool autoComplete)
+void OnScreenKeyboard(GuiWindow *keyboardWindow, char *var, u16 maxlen)
 {
 	int save = -1;
 
@@ -410,8 +410,6 @@ void OnScreenKeyboard(GuiWindow *keyboardWindow, char *var, u16 maxlen, bool aut
 	okBtn.SetEffectGrow();
 
 	GuiText cancelBtnTxt("Cancel", 22, (GXColor){0, 0, 0, 255});
-	if (autoComplete)
-        cancelBtnTxt.SetText("Homepage");
 	GuiImage cancelBtnImg(&btnOutline);
 	GuiImage cancelBtnImgOver(&btnOutlineOver);
 	GuiButton cancelBtn(btnOutline.GetWidth(), btnOutline.GetHeight());
@@ -448,11 +446,6 @@ void OnScreenKeyboard(GuiWindow *keyboardWindow, char *var, u16 maxlen, bool aut
 	{
 		snprintf(var, maxlen, "%s", keyboard.kbtextstr);
 	}
-    else
-    {
-		if (autoComplete)
-            snprintf(var, maxlen, "%s", Settings.Homepage);
-    }
 
     keyboard.SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_OUT, 50);
 	while(keyboard.GetEffect() > 0) usleep(THREAD_SLEEP);
@@ -477,6 +470,7 @@ static int MenuSettings()
 	sprintf(options.name[i++], "Show Tooltips");
 	sprintf(options.name[i++], "Autoupdate");
 	sprintf(options.name[i++], "Language");
+	sprintf(options.name[i++], "Music");
 	options.length = i;
 
 	GuiText titleTxt("Settings", 28, (GXColor){0, 0, 0, 255});
@@ -526,11 +520,11 @@ static int MenuSettings()
 		switch (ret)
 		{
 			case 0:
-				OnScreenKeyboard(mainWindow, Settings.Homepage, 256, false);
+				OnScreenKeyboard(mainWindow, Settings.Homepage, 256);
 				break;
 
 			case 1:
-				OnScreenKeyboard(mainWindow, Settings.DefaultFolder, 256, false);
+				OnScreenKeyboard(mainWindow, Settings.DefaultFolder, 256);
 				break;
 
 			case 2:
@@ -545,6 +539,10 @@ static int MenuSettings()
 				Settings.Language++;
 				if (Settings.Language >= LANG_LENGTH)
 					Settings.Language = 0;
+				break;
+
+            case 5:
+				Settings.Music = !Settings.Music;
 				break;
 		}
 
@@ -565,6 +563,9 @@ static int MenuSettings()
             if (Settings.Language == LANG_JAPANESE) sprintf (options.value[4],"Japanese");
 			else if (Settings.Language == LANG_ENGLISH) sprintf (options.value[4],"English");
 			else if (Settings.Language == LANG_GERMAN) sprintf (options.value[4],"German");
+
+			if (Settings.Music == 0) sprintf (options.value[5],"Off");
+			else if (Settings.Music == 1) sprintf (options.value[5],"On");
 
 			optionBrowser.TriggerUpdate();
 		}
@@ -644,6 +645,7 @@ static int MenuSplash()
     ResumeGui();
 
     Splash->SetEffect(EFFECT_SLIDE_TO, 4, -140);
+    Splash->SetEffect(EFFECT_SCALE_TO, 1, 40);
     while(Splash->GetEffect() > 0)
         usleep(THREAD_SLEEP);
 
@@ -711,7 +713,6 @@ static int MenuHome()
     btnGo.SetImageOver(&btnGoImgOver);
     btnGo.SetSoundOver(&btnSoundOver);
     btnGo.SetTrigger(&trigA);
-    btnGo.SetScale(0.5);
     btnGo.SetEffectGrow();
 
 	GuiButton btnExit(btnCanc.GetWidth(), btnCanc.GetHeight());
@@ -721,7 +722,6 @@ static int MenuHome()
     btnExit.SetImageOver(&btnExitImgOver);
     btnExit.SetSoundOver(&btnSoundOver);
     btnExit.SetTrigger(&trigA);
-    btnExit.SetScale(0.5);
     btnExit.SetEffectGrow();
 
     if(Splash->GetAlpha() == 0)
@@ -750,7 +750,7 @@ static int MenuHome()
 
 		if(InsertURL.GetState() == STATE_CLICKED)
         {
-            OnScreenKeyboard(mainWindow, new_page, MAXLEN, 1);
+            OnScreenKeyboard(mainWindow, new_page, MAXLEN);
             strcpy(prev_page,new_page);
             URL.SetText(new_page);
         }
@@ -950,7 +950,8 @@ void MainMenu(int menu)
 	bgMusic = new GuiSound(bg_music_ogg, bg_music_ogg_size, SOUND_OGG);
 	bgMusic->SetVolume(50);
 	bgMusic->SetLoop(true);
-	bgMusic->Play(); // startup music
+	if(Settings.Music)
+        bgMusic->Play(); // startup music
 
     while(currentMenu != MENU_EXIT)
 	{

@@ -1,20 +1,11 @@
 #include <stdio.h>
+#include "html.h"
 #define LEN 15
-
-#include "FreeTypeGX.h"
-#include "handle.h"
-#include "menu.h"
-#include "filelist.h"
 
 enum html htm;
 char tags [END][LEN]={"html","head","body","meta","title","form","p","a","div",
                         "br","img","h1","h2","h3","h4","h5","h6","b","big","blockquote","td","dd","dt",/*"center",*/"li","cite","font"};
 enum { THREAD_EXIT=0, THREAD_SUSPEND, THREAD_RUN };
-
-void DrawScroll (GuiWindow *mainWindow, GuiButton **btndown, GuiButton **btnup, GuiSound *btnSoundOver, GuiTrigger *trigA);
-void Clear(GuiWindow *mainWindow, Indice Index, Indice *first, Indice *last, Indice ext);
-void FreeMem(GuiWindow *mainWindow, ListaDiTesto text, ListaDiBottoni btn, ListaDiImg img, Indice Index);
-void SetFont(GuiText *text, vector<string> mode);
 
 static int threadState; bool isRunning=false;
 static ListaDiImg img;
@@ -322,11 +313,11 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
     if (!knownType(HTML->type) || choice == 2) {
         if (choice != 2)
             choice = WindowPrompt("Download", "Do you want to save the file?", "Yes", "No");
-        /*if (choice)
-        {
-            FILE *file = SelectFile();
-            save(HTML, file);
-        }*/
+        if (choice) {
+            FILE *file = SelectFile(parentWindow, HTML->type);
+            if (file)
+                save(HTML, file);
+        }
         usleep(100*1000);
     }
 

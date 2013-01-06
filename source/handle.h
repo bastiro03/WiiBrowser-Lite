@@ -1,6 +1,6 @@
 #include <unistd.h>
 #include "liste.h"
-#define MAXLEN 100
+#define MAXLEN 256
 
 extern "C" {
 #include "urlcode.h"
@@ -14,7 +14,6 @@ void HandleMenuBar(string *link, int *choice, int img, GuiWindow *mainWindow, Gu
 
 void showBar(GuiWindow *mainWindow, GuiWindow *parentWindow);
 void hideBar(GuiWindow *mainWindow, GuiWindow *parentWindow);
-void delAllElements();
 
 extern GuiWindow *statusBar;
 extern bool hidden;

@@ -113,6 +113,13 @@ enum textSets
     ANCHOR
 };
 
+enum BUTTONS
+{
+    NONE,
+    NAVIGATION,
+    HOMEPAGE,
+};
+
 typedef struct _paddata {
 	u16 btns_d;
 	u16 btns_u;
@@ -134,8 +141,9 @@ typedef struct _paddata {
 #define EFFECT_SLIDE_TO			    64
 #define EFFECT_FADE					128
 #define EFFECT_SCALE				256
-#define EFFECT_COLOR_TRANSITION		512
+#define EFFECT_SCALE_TO				512
 #define EFFECT_ROTATE				1024
+#define EFFECT_COLOR_TRANSITION		2048
 
 #include "document.h"
 
@@ -454,6 +462,8 @@ class GuiElement
 		int effects; //!< Currently enabled effect(s). 0 when no effects are enabled
 		int effectAmount; //!< Effect amount. Used by different effects for different purposes
 		int effectTarget; //!< Effect target amount. Used by different effects for different purposes
+		int effectAmountTo; //!< Effect amount. Used by different effects for different purposes
+		int effectTargetTo; //!< Effect target amount. Used by different effects for different purposes
 		int effectsOver; //!< Effects to enable when wiimote cursor is over this element. Copied to effects variable on over event
 		int effectAmountOver; //!< EffectAmount to set when wiimote cursor is over this element
 		int effectTargetOver; //!< EffectTarget to set when wiimote cursor is over this element
@@ -936,6 +946,53 @@ class GuiKeyboard : public GuiWindow
 		GuiTrigger * trigA;
 		GuiTrigger * trig2;
 		Key keys[4][11]; // two chars = less space than one pointer
+};
+
+//!App bar
+class GuiToolbar : public GuiWindow
+{
+	public:
+		GuiToolbar(int set);
+		~GuiToolbar();
+		void GetClickedOption();
+		void Update(GuiTrigger * t);
+
+        GuiImageData *imgToolbar;
+        GuiSound *btnSound;
+        GuiTrigger *trigA;
+
+        GuiImageData *imgWWW;
+        GuiImageData *imgWWWOver;
+        GuiImageData *imgSave;
+        GuiImageData *imgSaveOver;
+
+        GuiImageData *imgBack;
+        GuiImageData *imgBackOver;
+        GuiImageData *imgForward;
+        GuiImageData *imgForwardOver;
+
+        GuiImage *Toolbar;
+        GuiImage *Back;
+        GuiImage *BackOver;
+        GuiImage *Forward;
+        GuiImage *ForwardOver;
+
+        GuiImage *WWW;
+        GuiImage *WWWOver;
+        GuiImage *Save;
+        GuiImage *SaveOver;
+
+        GuiButton *btnBack;
+        GuiButton *btnForward;
+        GuiButton *btnWWW;
+        GuiButton *btnSave;
+
+        GuiTooltip *BackTooltip;
+        GuiTooltip *ForwardTooltip;
+        GuiTooltip *WWWTooltip;
+        GuiTooltip *SaveTooltip;
+    protected:
+        int buttons;
 };
 
 typedef struct _optionlist {

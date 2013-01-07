@@ -10,9 +10,6 @@
 
 #include "gui.h"
 
-static u64 prev;
-static u64 now;
-
 /**
  * Constructor for the GuiImage class.
  */

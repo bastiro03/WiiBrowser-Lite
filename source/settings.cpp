@@ -24,7 +24,7 @@
  * Settings.cpp
  *
  * Settings Class
- * for WiiXplorer 2009
+ * for WiiBrowser 2012
  ***************************************************************************/
 #include <ogcsys.h>
 #include <stdio.h>
@@ -56,6 +56,12 @@ void SSettings::SetDefault()
     Autoupdate = true;
     sprintf(DefaultFolder, DEFAULT_APP_PATH);
     sprintf(Homepage, DEFAULT_HOMEPAGE);
+
+    for(int i = 0; i < N; i++)
+    {
+        Favorites[i] = new char[256];
+        memset(Favorites[i], 0, sizeof(Favorites[i]));
+    }
 }
 
 bool SSettings::Save()
@@ -83,6 +89,10 @@ bool SSettings::Save()
 	fprintf(file, "Music = %d\r\n", Music);
 	fprintf(file, "DefaultFolder = %s\r\n", DefaultFolder);
 	fprintf(file, "Homepage = %s\r\n", Homepage);
+
+	fprintf(file, "\r\n# Favorites\r\n\r\n");
+	for(int i = 0; i < N; i++)
+        fprintf(file, "Favorite(%d) = %s\r\n", i, Favorites[i]);
 
     fclose(file);
     return true;
@@ -184,12 +194,18 @@ bool SSettings::SetSetting(char *name, char *value)
 		}
 		return true;
 	}
-    else if (strcmp(name, "DefaultFolder") == 0) {
+	else if (strcmp(name, "DefaultFolder") == 0) {
         strncpy(DefaultFolder, value, sizeof(DefaultFolder));
 		return true;
 	}
     else if (strcmp(name, "Homepage") == 0) {
         strncpy(Homepage, value, sizeof(Homepage));
+		return true;
+	}
+    else if (strncmp(name, "Favorite", 8) == 0) {
+        if (sscanf(name, "Favorite(%d)", &i) == 1) {
+            strncpy(Favorites[i], value, sizeof(Favorites[i]));
+        }
 		return true;
 	}
 
@@ -247,4 +263,11 @@ bool SSettings::CheckIntegrity(const char *path)
     }
     fclose(file);
     return found;
+}
+
+char *SSettings::GetUrl(int f)
+{
+    if(f < 0 || f >= N)
+        return NULL;
+    return Favorites[f];
 }

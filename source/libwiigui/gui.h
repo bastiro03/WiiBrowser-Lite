@@ -142,8 +142,9 @@ typedef struct _paddata {
 #define EFFECT_FADE					128
 #define EFFECT_SCALE				256
 #define EFFECT_SCALE_TO				512
-#define EFFECT_ROTATE				1024
-#define EFFECT_COLOR_TRANSITION		2048
+#define EFFECT_MOVE 				1024
+#define EFFECT_ROTATE				2048
+#define EFFECT_COLOR_TRANSITION		4096
 
 #include "document.h"
 
@@ -443,6 +444,7 @@ class GuiElement
 		GuiTrigger * trigger[3]; //!< GuiTriggers (input actions) that this element responds to
 		UpdateCallback updateCB; //!< Callback function to call when this element is updated
 		GuiElement * parentElement; //!< Parent element
+		u64 prev, now;
 		int focus; //!< Element focus (-1 = focus disabled, 0 = not focused, 1 = focused)
 		int width; //!< Element width
 		int height; //!< Element height
@@ -822,13 +824,13 @@ class GuiButton : public GuiElement
 		void SetImage(GuiImage* i);
 		//!Sets the button's image on over
 		//!\param i Pointer to GuiImage object
-		void SetImageOver(GuiImage* i);
+		void SetImageOver(GuiImage* i, int p = 0);
 		//!Sets the button's image on hold
 		//!\param i Pointer to GuiImage object
 		void SetImageHold(GuiImage* i);
 		//!Sets the button's image on click
 		//!\param i Pointer to GuiImage object
-		void SetImageClick(GuiImage* i);
+		void SetImageClick(GuiImage* i, int p = 0);
 		//!Sets the button's icon
 		//!\param i Pointer to GuiImage object
 		void SetIcon(GuiImage* i);
@@ -880,9 +882,9 @@ class GuiButton : public GuiElement
 		void Update(GuiTrigger * t);
 	protected:
 		GuiImage * image; //!< Button image (default)
-		GuiImage * imageOver; //!< Button image for STATE_SELECTED
+		GuiImage * imageOver[2]; //!< Button image for STATE_SELECTED
 		GuiImage * imageHold; //!< Button image for STATE_HELD
-		GuiImage * imageClick; //!< Button image for STATE_CLICKED
+		GuiImage * imageClick[2]; //!< Button image for STATE_CLICKED
 		GuiImage * icon; //!< Button icon (drawn after button image)
 		GuiImage * iconOver; //!< Button icon for STATE_SELECTED
 		GuiImage * iconHold; //!< Button icon for STATE_HELD
@@ -954,7 +956,6 @@ class GuiToolbar : public GuiWindow
 	public:
 		GuiToolbar(int set);
 		~GuiToolbar();
-		void GetClickedOption();
 		void Update(GuiTrigger * t);
 
         GuiImageData *imgToolbar;
@@ -993,6 +994,31 @@ class GuiToolbar : public GuiWindow
         GuiTooltip *SaveTooltip;
     protected:
         int buttons;
+};
+
+//!Switch buttons
+class GuiSwitch : public GuiWindow
+{
+	public:
+		GuiSwitch(int d);
+		~GuiSwitch();
+		void Update(GuiTrigger * t);
+
+        GuiSound *btnSound;
+        GuiTrigger *trigA;
+
+        GuiImageData *dataDef;
+        GuiImageData *dataSel;
+        GuiImageData *dataMore;
+
+        GuiImage *imgDef;
+        GuiImage *imgSel;
+        GuiImage *imgMore;
+
+        GuiButton *Button;
+        GuiTooltip *Tooltip;
+    protected:
+        int direction;
 };
 
 typedef struct _optionlist {

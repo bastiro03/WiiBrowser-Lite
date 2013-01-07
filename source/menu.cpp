@@ -28,12 +28,20 @@ extern "C" {
 
 #define THREAD_SLEEP 100
 #define MAXLEN 256
+#define N 9
 
 CURL *curl_handle;
 History history;
 
 static char prev_page[MAXLEN];
 static char new_page[MAXLEN];
+static int fadeAnim;
+static int prevMenu;
+
+static GuiSwitch * Right = NULL;
+static GuiSwitch * Left = NULL;
+static GuiToolbar * App = NULL;
+static GuiTrigger * trigA = NULL;
 
 static GuiImageData * pointer[4];
 static GuiImage * bgImg = NULL;
@@ -139,8 +147,6 @@ WindowPrompt(const char *title, const char *msg, const char *btn1Label, const ch
 	GuiSound btnSoundOver(button_over_pcm, button_over_pcm_size, SOUND_PCM);
 	GuiImageData btnOutline(button_png);
 	GuiImageData btnOutlineOver(button_over_png);
-	GuiTrigger trigA;
-	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
 
 	GuiImageData dialogBox(dialogue_box_png);
 	GuiImage dialogBoxImg(&dialogBox);
@@ -173,7 +179,7 @@ WindowPrompt(const char *title, const char *msg, const char *btn1Label, const ch
 	btn1.SetImage(&btn1Img);
 	btn1.SetImageOver(&btn1ImgOver);
 	btn1.SetSoundOver(&btnSoundOver);
-	btn1.SetTrigger(&trigA);
+	btn1.SetTrigger(trigA);
 	btn1.SetState(STATE_SELECTED);
 	btn1.SetEffectGrow();
 
@@ -187,7 +193,7 @@ WindowPrompt(const char *title, const char *msg, const char *btn1Label, const ch
 	btn2.SetImage(&btn2Img);
 	btn2.SetImageOver(&btn2ImgOver);
 	btn2.SetSoundOver(&btnSoundOver);
-	btn2.SetTrigger(&trigA);
+	btn2.SetTrigger(trigA);
 	btn2.SetEffectGrow();
 
 	promptWindow.Append(&dialogBoxImg);
@@ -391,8 +397,6 @@ void OnScreenKeyboard(GuiWindow *keyboardWindow, char *var, u16 maxlen)
 	GuiSound btnSoundOver(button_over_pcm, button_over_pcm_size, SOUND_PCM);
 	GuiImageData btnOutline(button_png);
 	GuiImageData btnOutlineOver(button_over_png);
-	GuiTrigger trigA;
-	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
 
 	GuiText okBtnTxt("OK", 22, (GXColor){0, 0, 0, 255});
 	GuiImage okBtnImg(&btnOutline);
@@ -406,7 +410,7 @@ void OnScreenKeyboard(GuiWindow *keyboardWindow, char *var, u16 maxlen)
 	okBtn.SetImage(&okBtnImg);
 	okBtn.SetImageOver(&okBtnImgOver);
 	okBtn.SetSoundOver(&btnSoundOver);
-	okBtn.SetTrigger(&trigA);
+	okBtn.SetTrigger(trigA);
 	okBtn.SetEffectGrow();
 
 	GuiText cancelBtnTxt("Cancel", 22, (GXColor){0, 0, 0, 255});
@@ -419,7 +423,7 @@ void OnScreenKeyboard(GuiWindow *keyboardWindow, char *var, u16 maxlen)
 	cancelBtn.SetImage(&cancelBtnImg);
 	cancelBtn.SetImageOver(&cancelBtnImgOver);
 	cancelBtn.SetSoundOver(&btnSoundOver);
-	cancelBtn.SetTrigger(&trigA);
+	cancelBtn.SetTrigger(trigA);
 	cancelBtn.SetEffectGrow();
 
 	keyboard.Append(&okBtn);
@@ -457,6 +461,52 @@ void OnScreenKeyboard(GuiWindow *keyboardWindow, char *var, u16 maxlen)
 }
 
 /****************************************************************************
+ * SetupGui
+ *
+ * Called once
+ ***************************************************************************/
+void SetupGui()
+{
+    bgImg = new GuiImage(screenwidth, screenheight, (GXColor){225, 225, 225, 255});
+    bgImg->SetEffect(EFFECT_FADE, 50);
+    trigA = new GuiTrigger();
+	trigA->SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
+
+    mainWindow = new GuiWindow(screenwidth, screenheight);
+    mainWindow->Append(bgImg);
+    fadeAnim = EFFECT_FADE;
+    prevMenu = MENU_HOME;
+
+	bgMusic = new GuiSound(bg_music_ogg, bg_music_ogg_size, SOUND_OGG);
+	bgMusic->SetVolume(50);
+	bgMusic->SetLoop(true);
+	if(Settings.Music)
+        bgMusic->Play(); // startup music
+
+    #ifdef HW_RVL
+	pointer[0] = new GuiImageData(player1_point_png);
+	pointer[1] = new GuiImageData(player2_point_png);
+	pointer[2] = new GuiImageData(player3_point_png);
+	pointer[3] = new GuiImageData(player4_point_png);
+	#endif
+
+    Right = new GuiSwitch(0);
+    Left = new GuiSwitch(1);
+    App = new GuiToolbar(HOMEPAGE);
+
+    SplashImage = new GuiImageData(logo_png);
+    Splash = new GuiImage(SplashImage);
+
+    Splash->SetAlignment(2,5);
+    Splash->SetPosition(10,-140);
+    Splash->SetScale(0.4);
+
+    Right->SetPosition(15,-30);
+    Left->SetPosition(0,-30);
+    ResumeGui();
+}
+
+/****************************************************************************
  * MenuSettings
  ***************************************************************************/
 static int MenuSettings()
@@ -464,6 +514,7 @@ static int MenuSettings()
 	int menu = MENU_NONE;
 	int ret, i = 0;
 	bool firstRun = true;
+
 	OptionList options;
 	sprintf(options.name[i++], "Homepage");
 	sprintf(options.name[i++], "Save Folder");
@@ -481,9 +532,6 @@ static int MenuSettings()
 	GuiImageData btnOutline(button_png);
 	GuiImageData btnOutlineOver(button_over_png);
 
-	GuiTrigger trigA;
-	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
-
 	GuiText backBtnTxt("Go Back", 22, (GXColor){0, 0, 0, 255});
 	GuiImage backBtnImg(&btnOutline);
 	GuiImage backBtnImgOver(&btnOutlineOver);
@@ -494,7 +542,7 @@ static int MenuSettings()
 	backBtn.SetImage(&backBtnImg);
 	backBtn.SetImageOver(&backBtnImgOver);
 	backBtn.SetSoundOver(&btnSoundOver);
-	backBtn.SetTrigger(&trigA);
+	backBtn.SetTrigger(trigA);
 	backBtn.SetEffectGrow();
 
 	GuiOptionBrowser optionBrowser(552, 248, &options);
@@ -573,7 +621,7 @@ static int MenuSettings()
 		if(backBtn.GetState() == STATE_CLICKED)
 		{
 			Settings.Save();
-			menu = MENU_HOME;
+			menu = prevMenu;
 		}
 	}
 
@@ -592,23 +640,14 @@ static int MenuSettings()
  ***************************************************************************/
 static int MenuSplash()
 {
-    SplashImage = new GuiImageData(logo_png);
-    Splash = new GuiImage(SplashImage);
     GuiImageData InitData(loading_png);
     GuiImage Init(&InitData);
 
-    Init.SetAlignment(2,4);
-    Init.SetScale(0.50);
-    Init.SetPosition(0,-50);
+    Init.SetAlignment(2,5);
+    Init.SetScale(0.60);
     Init.SetEffect(EFFECT_FADE, 50);
 
-    Splash->SetAlignment(2,5);
-    Splash->SetPosition(10,-40);
-    Splash->SetScale(0.75);
-    Splash->SetEffect(EFFECT_FADE, 50);
-
     HaltGui();
-    mainWindow->Append(Splash);
     mainWindow->Append(&Init);
     ResumeGui();
 
@@ -633,9 +672,6 @@ static int MenuSplash()
     #endif
     StopLoadThread();
 
-    if(menu == MENU_EXIT)
-        Splash->SetEffect(EFFECT_FADE, -50);
-
     Init.SetEffect(EFFECT_FADE, -50);
     while(Init.GetEffect() > 0) usleep(THREAD_SLEEP);
     usleep(200*1000);
@@ -643,11 +679,6 @@ static int MenuSplash()
     HaltGui();
     mainWindow->Remove(&Init);
     ResumeGui();
-
-    Splash->SetEffect(EFFECT_SLIDE_TO, 4, -140);
-    Splash->SetEffect(EFFECT_SCALE_TO, 1, 40);
-    while(Splash->GetEffect() > 0)
-        usleep(THREAD_SLEEP);
 
     if (conn == NET_ERR)
         WindowPrompt("Connection failure", "Please check network settings, exiting...", "Ok", NULL);
@@ -664,12 +695,11 @@ static int MenuSplash()
  ***************************************************************************/
 static int MenuHome()
 {
-	GuiTrigger trigA;
-	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
 	strcpy(new_page,prev_page);
+	prevMenu = MENU_HOME;
 
     GuiSound btnSoundOver(button_over_pcm, button_over_pcm_size, SOUND_PCM);
-    GuiImageData Textbox(keyboard_textbox_png, keyboard_textbox_png_size);
+    GuiImageData Textbox(addressbar_textbox_png);
     GuiImage TextboxImg(&Textbox);
     GuiButton InsertURL(TextboxImg.GetWidth(), TextboxImg.GetHeight());
     GuiText URL(new_page, 20, (GXColor){0, 0, 0, 255});
@@ -679,22 +709,8 @@ static int MenuHome()
     InsertURL.SetLabel(&URL);
     InsertURL.SetImage(&TextboxImg);
     InsertURL.SetSoundOver(&btnSoundOver);
-    InsertURL.SetTrigger(&trigA);
+    InsertURL.SetTrigger(trigA);
     InsertURL.SetEffectGrow();
-
-    GuiImageData SettingsData(link_settings_png, link_settings_png_size);
-    GuiImage SettingsImg(&SettingsData);
-    GuiButton Settings(SettingsData.GetWidth(), SettingsData.GetHeight());
-    GuiText Sett("Settings", 20, (GXColor){0, 0, 0, 255});
-    Sett.SetPosition(70,0);
-
-    Settings.SetAlignment(ALIGN_RIGHT, ALIGN_BOTTOM);
-    Settings.SetPosition(-100,-20);
-    Settings.SetLabel(&Sett);
-    Settings.SetImage(&SettingsImg);
-    Settings.SetSoundOver(&btnSoundOver);
-    Settings.SetTrigger(&trigA);
-    Settings.SetEffectGrow();
 
     GuiImageData btnCheck(btn_check_png);
 	GuiImageData btnCheckOver(btn_check_over_png);
@@ -712,7 +728,7 @@ static int MenuHome()
     btnGo.SetImage(&btnGoImg);
     btnGo.SetImageOver(&btnGoImgOver);
     btnGo.SetSoundOver(&btnSoundOver);
-    btnGo.SetTrigger(&trigA);
+    btnGo.SetTrigger(trigA);
     btnGo.SetEffectGrow();
 
 	GuiButton btnExit(btnCanc.GetWidth(), btnCanc.GetHeight());
@@ -721,22 +737,28 @@ static int MenuHome()
     btnExit.SetImage(&btnExitImg);
     btnExit.SetImageOver(&btnExitImgOver);
     btnExit.SetSoundOver(&btnSoundOver);
-    btnExit.SetTrigger(&trigA);
+    btnExit.SetTrigger(trigA);
     btnExit.SetEffectGrow();
 
-    if(Splash->GetAlpha() == 0)
-        Splash->SetEffect(EFFECT_FADE, 50);
-    InsertURL.SetEffect(EFFECT_FADE, 50);
-    Settings.SetEffect(EFFECT_FADE, 50);
-    btnGo.SetEffect(EFFECT_FADE, 50);
-    btnExit.SetEffect(EFFECT_FADE, 50);
+    InsertURL.SetEffect(fadeAnim, 50);
+    btnGo.SetEffect(fadeAnim, 50);
+    btnExit.SetEffect(fadeAnim, 50);
+
+    if (fadeAnim == EFFECT_FADE)
+        App->SetEffect(fadeAnim, 50);
+    Splash->SetEffect(fadeAnim, 50);
+    Right->SetEffect(EFFECT_FADE, 50);
+    Left->Button->SetState(STATE_SELECTED);
+    Left->SetEffect(EFFECT_FADE, -50);
 
     HaltGui();
+    mainWindow->Remove(Left);
+    mainWindow->Append(Right);
     mainWindow->Append(Splash);
+    mainWindow->Append(App);
     mainWindow->Append(&InsertURL);
     mainWindow->Append(&btnGo);
     mainWindow->Append(&btnExit);
-    mainWindow->Append(&Settings);
     ResumeGui();
 
     int choice = 0;
@@ -755,11 +777,32 @@ static int MenuHome()
             URL.SetText(new_page);
         }
 
-        else if(Settings.GetState() == STATE_CLICKED)
+        else if(App->btnSave->GetState() == STATE_CLICKED)
+        {
+            fadeAnim = EFFECT_FADE;
             choice = MENU_SETTINGS;
+            App->btnSave->ResetState();
+        }
+
+        else if(App->btnWWW->GetState() == STATE_CLICKED)
+        {
+			sprintf(new_page,Settings.Homepage);
+            strcpy(prev_page,new_page);
+            URL.SetText(new_page);
+			App->btnWWW->ResetState();
+        }
 
         else if(btnGo.GetState() == STATE_CLICKED)
+        {
+            fadeAnim = EFFECT_FADE;
             choice = MENU_BROWSE;
+        }
+
+        else if(Right->Button->GetState() == STATE_CLICKED)
+        {
+            fadeAnim = EFFECT_SLIDE_OUT | EFFECT_SLIDE_LEFT;
+            choice = MENU_FAVORITES;
+        }
 
         else if(btnExit.GetState() == STATE_CLICKED)
         {
@@ -769,12 +812,10 @@ static int MenuHome()
         }
 	}
 
-    btnGo.SetEffect(EFFECT_FADE, -50);
-    btnExit.SetEffect(EFFECT_FADE, -50);
-
-    Splash->SetEffect(EFFECT_FADE, -50);
-    Settings.SetEffect(EFFECT_FADE, -50);
-    InsertURL.SetEffect(EFFECT_FADE, -50);
+    btnGo.SetEffect(fadeAnim, -50);
+    btnExit.SetEffect(fadeAnim, -50);
+    Splash->SetEffect(fadeAnim, -50);
+    InsertURL.SetEffect(fadeAnim, -50);
     while(InsertURL.GetEffect() > 0) usleep(THREAD_SLEEP);
 
     HaltGui();
@@ -782,8 +823,20 @@ static int MenuHome()
     mainWindow->Remove(&InsertURL);
     mainWindow->Remove(&btnGo);
     mainWindow->Remove(&btnExit);
-    mainWindow->Remove(&Settings);
     ResumeGui();
+
+    if(choice != MENU_FAVORITES)
+    {
+        App->SetEffect(EFFECT_SLIDE_OUT | EFFECT_SLIDE_BOTTOM, 50);
+        Right->SetEffect(EFFECT_FADE, -50);
+        while(App->GetEffect() > 0) usleep(THREAD_SLEEP);
+
+        HaltGui();
+        mainWindow->Remove(App);
+        mainWindow->Remove(Right);
+        ResumeGui();
+    }
+
     return choice;
 }
 
@@ -915,6 +968,122 @@ static int MenuBrowse()
 }
 
 /****************************************************************************
+ * MenuFavorites
+ ***************************************************************************/
+static int MenuFavorites()
+{
+	strcpy(new_page,prev_page);
+	prevMenu = MENU_HOME;
+    GuiSound btnSoundOver(button_over_pcm, button_over_pcm_size, SOUND_PCM);
+
+    fadeAnim = EFFECT_SLIDE_IN | EFFECT_SLIDE_LEFT;
+    Right->Button->SetState(STATE_SELECTED);
+    Right->SetEffect(EFFECT_FADE, -50);
+
+    GuiImageData BlockData(button_large_png);
+    GuiImageData BlockDataOver(button_large_over_png);
+    prevMenu = MENU_FAVORITES;
+
+    GuiImage *BlockImg[N];
+    GuiImage *BlockImgOver[N];
+    GuiButton *Block[N];
+
+    for (int i = 0, xpos = 40, ypos = 20; i< N; i++)
+    {
+        BlockImg[i] = new GuiImage(&BlockData);
+        BlockImgOver[i] = new GuiImage(&BlockDataOver);
+        Block[i] = new GuiButton(BlockData.GetWidth(), BlockData.GetHeight());
+        Block[i]->SetImage(BlockImg[i]);
+        Block[i]->SetImageOver(BlockImgOver[i]);
+        Block[i]->SetPosition(xpos,ypos);
+        Block[i]->SetSoundOver(&btnSoundOver);
+        Block[i]->SetTrigger(trigA);
+        Block[i]->SetEffectGrow();
+        Block[i]->SetEffect(EFFECT_SLIDE_IN | EFFECT_SLIDE_RIGHT, 50);
+
+        xpos += BlockData.GetWidth()+35;
+        if(xpos > screenwidth-90)
+        {
+            ypos += BlockData.GetHeight()+15;
+            xpos = 40;
+        }
+    }
+
+    HaltGui();
+    for (int i = 0; i < N; i++)
+        mainWindow->Append(Block[i]);
+    ResumeGui();
+
+    Left->SetEffect(EFFECT_FADE, 50);
+    HaltGui();
+    mainWindow->Append(App);
+    mainWindow->Append(Left);
+    ResumeGui();
+
+    int choice = 0;
+    while(!choice)
+	{
+		usleep(THREAD_SLEEP);
+
+        if(App->btnSave->GetState() == STATE_CLICKED)
+        {
+            choice = MENU_SETTINGS;
+            App->btnSave->ResetState();
+        }
+
+        else if(App->btnWWW->GetState() == STATE_CLICKED)
+        {
+			sprintf(new_page,Settings.Homepage);
+            strcpy(prev_page,new_page);
+			App->btnWWW->ResetState();
+        }
+
+        else if(Left->Button->GetState() == STATE_CLICKED)
+            choice = MENU_HOME;
+
+        for (int i = 0; i < N; i++)
+        {
+            if(Block[i]->GetState() == STATE_CLICKED &&
+                Left->Button->GetState() == STATE_DEFAULT)
+            {
+                sprintf(new_page,Settings.GetUrl(i));
+                strcpy(prev_page,new_page);
+                Block[i]->ResetState();
+            }
+        }
+	}
+
+    for (int i = 0; i < N; i++)
+        Block[i]->SetEffect(EFFECT_SLIDE_OUT | EFFECT_SLIDE_RIGHT, 50);
+    while(Block[N-1]->GetEffect() > 0) usleep(THREAD_SLEEP);
+
+    HaltGui();
+    for (int i = 0; i < N; i++)
+        mainWindow->Remove(Block[i]);
+    ResumeGui();
+
+    if(choice != MENU_HOME)
+    {
+        App->SetEffect(EFFECT_SLIDE_OUT | EFFECT_SLIDE_BOTTOM, 50);
+        Left->SetEffect(EFFECT_FADE, -50);
+        while(App->GetEffect() > 0) usleep(THREAD_SLEEP);
+
+        HaltGui();
+        mainWindow->Remove(App);
+        mainWindow->Remove(Left);
+        ResumeGui();
+    }
+
+    for (int i = 0; i < N; i++)
+    {
+        delete(BlockImg[i]);
+        delete(Block[i]);
+    }
+
+    return choice;
+}
+
+/****************************************************************************
  * MainMenu
  ***************************************************************************/
 void MainMenu(int menu)
@@ -927,31 +1096,8 @@ void MainMenu(int menu)
         ExitRequested = 1;
     curl_handle = curl_easy_init();
 
-	#ifdef HW_RVL
-	pointer[0] = new GuiImageData(player1_point_png);
-	pointer[1] = new GuiImageData(player2_point_png);
-	pointer[2] = new GuiImageData(player3_point_png);
-	pointer[3] = new GuiImageData(player4_point_png);
-	#endif
-
-	mainWindow = new GuiWindow(screenwidth, screenheight);
-    GuiTrigger trigA;
-	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
-	ResumeGui();
-
-    bgImg = new GuiImage(screenwidth, screenheight, (GXColor){225, 225, 225, 255});
-    bgImg->SetEffect(EFFECT_FADE, 50);
     remove("debug.txt");
-
-    HaltGui();
-    mainWindow->Append(bgImg);
-    ResumeGui();
-
-	bgMusic = new GuiSound(bg_music_ogg, bg_music_ogg_size, SOUND_OGG);
-	bgMusic->SetVolume(50);
-	bgMusic->SetLoop(true);
-	if(Settings.Music)
-        bgMusic->Play(); // startup music
+    SetupGui();
 
     while(currentMenu != MENU_EXIT)
 	{
@@ -965,6 +1111,9 @@ void MainMenu(int menu)
 				break;
             case MENU_SETTINGS:
 				currentMenu = MenuSettings();
+				break;
+            case MENU_FAVORITES:
+				currentMenu = MenuFavorites();
 				break;
             case MENU_BROWSE:
 				currentMenu = MenuBrowse();
@@ -981,12 +1130,17 @@ void MainMenu(int menu)
 	LWP_JoinThread(guithread, NULL);
 	bgMusic->Stop();
 
+	delete trigA;
 	delete bgMusic;
 	delete bgImg;
 
 	delete SplashImage;
 	delete Splash;
-	delete mainWindow;
+    delete mainWindow;
+
+	delete Right;
+	delete Left;
+	delete App;
 
 	delete pointer[0];
 	delete pointer[1];

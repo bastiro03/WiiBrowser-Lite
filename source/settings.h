@@ -33,6 +33,8 @@
 #include <stdio.h>
 #include <gctypes.h>
 
+#define N 9
+
 enum {
 	LANG_JAPANESE = 0,
 	LANG_ENGLISH,
@@ -76,6 +78,8 @@ class SSettings
         bool CheckFile(const char* path);
         //!Check file integrity
         bool CheckIntegrity(const char *path);
+        //!Return favorite
+        char *GetUrl(int f);
         //!Save Settings
         bool Save();
 		//!Reset Settings
@@ -94,6 +98,7 @@ class SSettings
         char Homepage[256];
         char DefaultFolder[256];
         char ConfigPath[256];
+        char *Favorites[N];
 
     protected:
         void ParseLine(char *line);

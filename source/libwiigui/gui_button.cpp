@@ -19,9 +19,11 @@ GuiButton::GuiButton(int w, int h)
 	width = w;
 	height = h;
 	image = NULL;
-	imageOver = NULL;
+	imageOver[0] = NULL;
+	imageOver[1] = NULL;
 	imageHold = NULL;
-	imageClick = NULL;
+	imageClick[0] = NULL;
+	imageClick[1] = NULL;
 	icon = NULL;
 	iconOver = NULL;
 	iconHold = NULL;
@@ -56,9 +58,9 @@ void GuiButton::SetImage(GuiImage* img)
 	image = img;
 	if(img) img->SetParent(this);
 }
-void GuiButton::SetImageOver(GuiImage* img)
+void GuiButton::SetImageOver(GuiImage* img, int p)
 {
-	imageOver = img;
+	imageOver[p] = img;
 	if(img) img->SetParent(this);
 }
 void GuiButton::SetImageHold(GuiImage* img)
@@ -66,9 +68,9 @@ void GuiButton::SetImageHold(GuiImage* img)
 	imageHold = img;
 	if(img) img->SetParent(this);
 }
-void GuiButton::SetImageClick(GuiImage* img)
+void GuiButton::SetImageClick(GuiImage* img, int p)
 {
-	imageClick = img;
+	imageClick[p] = img;
 	if(img) img->SetParent(this);
 }
 void GuiButton::SetIcon(GuiImage* img)
@@ -138,10 +140,56 @@ void GuiButton::Draw()
 	if(!this->IsVisible())
 		return;
 
-	if(state == STATE_SELECTED || state == STATE_HELD)
+	if(state == STATE_CLICKED)
 	{
-		if(imageOver)
-			imageOver->Draw();
+        if(imageOver[0] || (imageOver[1]))
+		{
+            if(imageOver[0])
+                imageOver[0]->Draw();
+            if(imageOver[1])
+                imageOver[1]->Draw();
+		}
+		else if(image) // draw image
+			image->Draw();
+
+        if(imageClick[0] || (imageClick[1]))
+		{
+            if(imageClick[0])
+                imageClick[0]->Draw();
+            if(imageClick[1])
+                imageClick[1]->Draw();
+		}
+
+		if(iconOver)
+			iconOver->Draw();
+		else if(icon) // draw icon
+			icon->Draw();
+
+		// draw text
+		if(labelOver[0])
+			labelOver[0]->Draw();
+		else if(label[0])
+			label[0]->Draw();
+
+		if(labelOver[1])
+			labelOver[1]->Draw();
+		else if(label[1])
+			label[1]->Draw();
+
+		if(labelOver[2])
+			labelOver[2]->Draw();
+		else if(label[2])
+			label[2]->Draw();
+	}
+	else if(state == STATE_SELECTED || state == STATE_HELD)
+	{
+		if(imageOver[0] || (imageOver[1]))
+		{
+            if(imageOver[0])
+                imageOver[0]->Draw();
+            if(imageOver[1])
+                imageOver[1]->Draw();
+		}
 		else if(image) // draw image
 			image->Draw();
 
@@ -223,7 +271,8 @@ void GuiButton::Update(GuiTrigger * t)
 	// cursor
 	if(t->wpad->ir.valid && t->chan >= 0)
 	{
-		if(this->IsInside(t->wpad->ir.x, t->wpad->ir.y))
+		if((imageOver[1] && state == STATE_SELECTED) ?
+            imageOver[1]->IsInside(t->wpad->ir.x, t->wpad->ir.y) : this->IsInside(t->wpad->ir.x, t->wpad->ir.y))
 		{
 			if(state == STATE_DEFAULT) // we weren't on the button before!
 			{
@@ -286,7 +335,8 @@ void GuiButton::Update(GuiTrigger * t)
 					{
 						if(state == STATE_SELECTED)
 						{
-							if(!t->wpad->ir.valid ||	this->IsInside(t->wpad->ir.x, t->wpad->ir.y))
+							if(!t->wpad->ir.valid || (imageOver[1] && state == STATE_SELECTED) ?
+                                imageOver[1]->IsInside(t->wpad->ir.x, t->wpad->ir.y) : this->IsInside(t->wpad->ir.x, t->wpad->ir.y))
 							{
 								this->SetState(STATE_CLICKED, t->chan);
 

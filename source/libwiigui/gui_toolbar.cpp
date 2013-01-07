@@ -20,13 +20,56 @@ GuiToolbar::GuiToolbar(int set)
 	focus = 0; // allow focus
 	selectable = true;
     this->SetAlignment(ALIGN_CENTRE, ALIGN_BOTTOM);
-    this->SetPosition(0, 60);
 
-    imgToolbar = new GuiImageData(toolbar_png, toolbar_png_size);
+    if (buttons == HOMEPAGE)
+    {
+        imgToolbar = new GuiImageData(background_png, background_png_size);
+        this->SetPosition(0,0);
+    }
+
+    if (buttons == NAVIGATION)
+    {
+        imgToolbar = new GuiImageData(toolbar_png, toolbar_png_size);
+        this->SetPosition(0,60);
+    }
+
     btnSound = new GuiSound(button_over_pcm, button_over_pcm_size, SOUND_PCM);
     Toolbar = new GuiImage(imgToolbar);
     trigA = new GuiTrigger();
     trigA->SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
+
+    if (buttons == HOMEPAGE)
+    {
+        imgWWW = new GuiImageData(menu_button_png);
+        imgWWWOver = new GuiImageData(menu_button_over_png);
+        imgSave = new GuiImageData(settings_button_png);
+        imgSaveOver = new GuiImageData(settings_button_over_png);
+
+        WWW = new GuiImage(imgWWW);
+        WWWOver = new GuiImage(imgWWWOver);
+        Save = new GuiImage(imgSave);
+        SaveOver = new GuiImage(imgSaveOver);
+
+        btnWWW = new GuiButton(WWW->GetWidth(), WWW->GetHeight());
+        btnSave = new GuiButton(Save->GetWidth(), Save->GetHeight());
+
+        btnWWW->SetImage(WWW);
+        btnWWW->SetImageOver(WWWOver);
+        btnWWW->SetSoundOver(btnSound);
+        btnWWW->SetState(STATE_SELECTED);
+        btnWWW->SetTrigger(trigA);
+        btnWWW->SetAlignment(ALIGN_RIGHT,ALIGN_MIDDLE);
+        btnWWW->SetEffectGrow();
+        btnWWW->SetPosition(-60,0);
+
+        btnSave->SetImage(Save);
+        btnSave->SetImageOver(SaveOver);
+        btnSave->SetSoundOver(btnSound);
+        btnSave->SetTrigger(trigA);
+        btnSave->SetEffectGrow();
+        btnSave->SetAlignment(ALIGN_LEFT,ALIGN_MIDDLE);
+        btnSave->SetPosition(60,0);
+    }
 
     if (buttons == NAVIGATION)
     {
@@ -102,6 +145,12 @@ GuiToolbar::GuiToolbar(int set)
 
     this->Append(Toolbar);
 
+    if (buttons == HOMEPAGE)
+    {
+        this->Append(btnWWW);
+        this->Append(btnSave);
+    }
+
     if (buttons == NAVIGATION)
     {
         this->Append(btnWWW);
@@ -121,13 +170,21 @@ GuiToolbar::~GuiToolbar()
     delete(trigA);
     delete(Toolbar);
 
+    delete(imgWWW);
+    delete(imgWWWOver);
+    delete(imgSave);
+    delete(imgSaveOver);
+
+    delete(WWW);
+    delete(WWWOver);
+    delete(Save);
+    delete(SaveOver);
+
+    delete(btnWWW);
+    delete(btnSave);
+
     if (buttons == NAVIGATION)
     {
-        delete(imgWWW);
-        delete(imgWWWOver);
-        delete(imgSave);
-        delete(imgSaveOver);
-
         delete(imgBack);
         delete(imgBackOver);
         delete(imgForward);
@@ -138,15 +195,8 @@ GuiToolbar::~GuiToolbar()
         delete(Forward);
         delete(ForwardOver);
 
-        delete(WWW);
-        delete(WWWOver);
-        delete(Save);
-        delete(SaveOver);
-
         delete(btnBack);
         delete(btnForward);
-        delete(btnWWW);
-        delete(btnSave);
 
         delete(BackTooltip);
         delete(ForwardTooltip);

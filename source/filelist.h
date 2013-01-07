@@ -36,6 +36,39 @@ extern const u8		button_click_pcm[];
 extern const u32	button_click_pcm_size;
 
 // Images
+extern const u8		addressbar_textbox_png[];
+extern const u32	addressbar_textbox_png_size;
+
+extern const u8		more_png[];
+extern const u32	more_png_size;
+
+extern const u8		background_png[];
+extern const u32	background_png_size;
+
+extern const u8		arrow_r_png[];
+extern const u32	arrow_r_png_size;
+
+extern const u8		arrow_l_png[];
+extern const u32	arrow_l_png_size;
+
+extern const u8		arrow_l_over_png[];
+extern const u32	arrow_l_over_png_size;
+
+extern const u8		arrow_r_over_png[];
+extern const u32	arrow_r_over_size;
+
+extern const u8		menu_button_png[];
+extern const u32	menu_button_png_size;
+
+extern const u8		menu_button_over_png[];
+extern const u32	menu_button_over_png_size;
+
+extern const u8		settings_button_png[];
+extern const u32	settings_button_png_size;
+
+extern const u8		settings_button_over_png[];
+extern const u32	settings_button_over_png_size;
+
 extern const u8		loading_png[];
 extern const u32	loading_png_size;
 

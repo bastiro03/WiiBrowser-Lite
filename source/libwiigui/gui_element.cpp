@@ -437,6 +437,8 @@ void GuiElement::UpdateEffects()
 {
 	if(effects & (EFFECT_SLIDE_IN | EFFECT_SLIDE_OUT | EFFECT_SLIDE_TO))
 	{
+	    effectAmount = abs(effectAmount);
+
 		if(effects & EFFECT_SLIDE_TO)
 		{
             if(abs(this->GetYPosition() - effectTarget) >= effectAmount)
@@ -558,6 +560,19 @@ void GuiElement::UpdateEffects()
             else this->SetScale(this->GetScale() + effectAmountTo*0.01);
         }
         else effects &= (~EFFECT_SCALE_TO);
+    }
+    if(effects & EFFECT_MOVE)
+    {
+        now = gettime();
+
+        if(diff_usec(prev, now) > (u32)(100*1000))
+		{
+		    prev = now;
+            if(this->GetXPosition() > effectTarget ||
+                this->GetXPosition() < -effectTarget)
+                effectAmount = -effectAmount;
+            xoffset += effectAmount;
+        }
     }
 }
 

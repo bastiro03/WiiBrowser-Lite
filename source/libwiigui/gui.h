@@ -117,6 +117,7 @@ enum BUTTONS
 {
     NONE,
     NAVIGATION,
+    FAVORITES,
     HOMEPAGE,
 };
 
@@ -143,8 +144,9 @@ typedef struct _paddata {
 #define EFFECT_SCALE				256
 #define EFFECT_SCALE_TO				512
 #define EFFECT_MOVE 				1024
-#define EFFECT_ROTATE				2048
-#define EFFECT_COLOR_TRANSITION		4096
+#define EFFECT_RUMBLE 				2048
+#define EFFECT_ROTATE				4096
+#define EFFECT_COLOR_TRANSITION		8192
 
 #include "document.h"
 
@@ -384,6 +386,9 @@ class GuiElement
 		//!\param a Amount of the effect (usage varies on effect)
 		//!\param t Target amount of the effect (usage varies on effect)
 		void SetEffect(int e, int a, int t=0);
+		//!Stop an effect for the element
+		//!\param e Effect to disable
+		void StopEffect(int e);
 		//!Sets an effect to be enabled on wiimote cursor over
 		//!\param e Effect to enable
 		//!\param a Amount of the effect (usage varies on effect)
@@ -828,6 +833,9 @@ class GuiButton : public GuiElement
 		//!Sets the button's image on hold
 		//!\param i Pointer to GuiImage object
 		void SetImageHold(GuiImage* i);
+        //!Sets the button's disabled image
+		//!\param i Pointer to GuiImage object
+		void SetImageDisabled(GuiImage* i);
 		//!Sets the button's image on click
 		//!\param i Pointer to GuiImage object
 		void SetImageClick(GuiImage* i, int p = 0);
@@ -882,6 +890,7 @@ class GuiButton : public GuiElement
 		void Update(GuiTrigger * t);
 	protected:
 		GuiImage * image; //!< Button image (default)
+		GuiImage * imageFlat; //!< Button image (default)
 		GuiImage * imageOver[2]; //!< Button image for STATE_SELECTED
 		GuiImage * imageHold; //!< Button image for STATE_HELD
 		GuiImage * imageClick[2]; //!< Button image for STATE_CLICKED
@@ -965,33 +974,65 @@ class GuiToolbar : public GuiWindow
         GuiImageData *imgWWW;
         GuiImageData *imgWWWOver;
         GuiImageData *imgSave;
+        GuiImageData *imgSaveFlat;
         GuiImageData *imgSaveOver;
 
+        GuiImageData *imgSett;
+        GuiImageData *imgSettFlat;
+        GuiImageData *imgSettOver;
+
+        GuiImageData *imgHome;
+        GuiImageData *imgHomeOver;
+        GuiImageData *imgReload;
+        GuiImageData *imgReloadFlat;
+        GuiImageData *imgReloadOver;
+
         GuiImageData *imgBack;
+        GuiImageData *imgBackFlat;
         GuiImageData *imgBackOver;
         GuiImageData *imgForward;
+        GuiImageData *imgForwardFlat;
         GuiImageData *imgForwardOver;
 
         GuiImage *Toolbar;
         GuiImage *Back;
         GuiImage *BackOver;
+        GuiImage *BackFlat;
         GuiImage *Forward;
         GuiImage *ForwardOver;
+        GuiImage *ForwardFlat;
 
         GuiImage *WWW;
         GuiImage *WWWOver;
         GuiImage *Save;
         GuiImage *SaveOver;
+        GuiImage *SaveFlat;
+
+        GuiImage *Sett;
+        GuiImage *SettOver;
+        GuiImage *SettFlat;
+
+        GuiImage *Home;
+        GuiImage *HomeOver;
+        GuiImage *Reload;
+        GuiImage *ReloadOver;
+        GuiImage *ReloadFlat;
 
         GuiButton *btnBack;
         GuiButton *btnForward;
         GuiButton *btnWWW;
         GuiButton *btnSave;
+        GuiButton *btnHome;
+        GuiButton *btnReload;
+        GuiButton *btnSett;
 
         GuiTooltip *BackTooltip;
         GuiTooltip *ForwardTooltip;
+        GuiTooltip *SettTooltip;
         GuiTooltip *WWWTooltip;
         GuiTooltip *SaveTooltip;
+        GuiTooltip *HomeTooltip;
+        GuiTooltip *ReloadTooltip;
     protected:
         int buttons;
 };
@@ -1019,6 +1060,37 @@ class GuiSwitch : public GuiWindow
         GuiTooltip *Tooltip;
     protected:
         int direction;
+};
+
+//!Favorite buttons
+class GuiFavorite : public GuiWindow
+{
+	public:
+		GuiFavorite();
+		~GuiFavorite();
+
+		void Update(GuiTrigger * t);
+		void SetEditing(bool e);
+		int GetDataWidth();
+		int GetDataHeight();
+
+        GuiSound *btnSound;
+        GuiTrigger *trigA;
+
+        GuiImageData *BlockData;
+        GuiImageData *BlockDataOver;
+        GuiImageData *RemoveData;
+        GuiImageData *RemoveDataOver;
+
+        GuiImage *RemoveImg;
+        GuiImage *RemoveImgOver;
+        GuiButton *Remove;
+
+        GuiImage *BlockImg;
+        GuiImage *BlockImgOver;
+        GuiButton *Block;
+    protected:
+        bool editing;
 };
 
 typedef struct _optionlist {

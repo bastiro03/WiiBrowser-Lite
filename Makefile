@@ -20,7 +20,7 @@ include $(DEVKITPPC)/wii_rules
 TARGET		:=	boot
 BUILD		:=	build
 SOURCES		:=	source source/html source/css source/libwiigui source/images source/fonts source/sounds \
-				source/lang source/utils
+				source/lang source/utils source/images/appbar
 INCLUDES	:=	source
 
 #---------------------------------------------------------------------------------

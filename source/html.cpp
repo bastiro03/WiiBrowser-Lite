@@ -270,7 +270,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                 ResumeGui();
             }
                 HandleHtmlPad(&coordX, btnup, btndown, ext, Index, mainWindow);
-                HandleMenuBar(&link, &choice, 0, mainWindow, parentWindow);
+                HandleMenuBar(&link, url, &choice, 0, mainWindow, parentWindow);
 
             for (bottone=btn; !NoButton(bottone); bottone=bottone->prox) {
                 if(bottone->btn->GetState() == STATE_CLICKED) {
@@ -300,7 +300,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
         ResumeGui();
 
         while (!choice && !(userInput[0].wpad->btns_d & WPAD_BUTTON_B)) {
-            HandleMenuBar(&link, &choice, 1, mainWindow, parentWindow);
+            HandleMenuBar(&link, url, &choice, 1, mainWindow, parentWindow);
             HandleImgPad(btnup, btndown, image);
         }
 

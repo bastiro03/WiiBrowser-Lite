@@ -382,6 +382,19 @@ InitGUIThreads()
 	LWP_CreateThread (&updatethread, UpdateThread, NULL, NULL, 0, 60);
 }
 
+void ToggleButtons(GuiToolbar *toolbar)
+{
+    if (!toolbar)
+        return;
+
+    if (!history->prec)
+        toolbar->btnBack->SetState(STATE_DISABLED);
+    else toolbar->btnBack->SetState(STATE_DEFAULT);
+    if (!history->prox)
+        toolbar->btnForward->SetState(STATE_DISABLED);
+    else toolbar->btnForward->SetState(STATE_DEFAULT);
+}
+
 /****************************************************************************
  * OnScreenKeyboard
  *
@@ -695,11 +708,11 @@ static int MenuSplash()
  ***************************************************************************/
 static int MenuHome()
 {
-	strcpy(new_page,prev_page);
+    strcpy(new_page,prev_page);
 	prevMenu = MENU_HOME;
 
     GuiSound btnSoundOver(button_over_pcm, button_over_pcm_size, SOUND_PCM);
-    GuiImageData Textbox(addressbar_textbox_png);
+    GuiImageData Textbox(keyboard_textbox_png);
     GuiImage TextboxImg(&Textbox);
     GuiButton InsertURL(TextboxImg.GetWidth(), TextboxImg.GetHeight());
     GuiText URL(new_page, 20, (GXColor){0, 0, 0, 255});
@@ -768,28 +781,53 @@ static int MenuHome()
             btnGo.SetState(STATE_DEFAULT);
         else btnGo.SetState(STATE_DISABLED);
 
+		ToggleButtons(App);
 		usleep(THREAD_SLEEP);
 
-		if(InsertURL.GetState() == STATE_CLICKED)
+		if(InsertURL.GetState() == STATE_CLICKED ||
+            App->btnWWW->GetState() == STATE_CLICKED)
         {
             OnScreenKeyboard(mainWindow, new_page, MAXLEN);
             strcpy(prev_page,new_page);
             URL.SetText(new_page);
+            App->btnWWW->ResetState();
         }
 
-        else if(App->btnSave->GetState() == STATE_CLICKED)
+        else if(App->btnSett->GetState() == STATE_CLICKED)
         {
             fadeAnim = EFFECT_FADE;
             choice = MENU_SETTINGS;
-            App->btnSave->ResetState();
+            App->btnSett->ResetState();
         }
 
-        else if(App->btnWWW->GetState() == STATE_CLICKED)
+        else if(App->btnHome->GetState() == STATE_CLICKED)
         {
 			sprintf(new_page,Settings.Homepage);
             strcpy(prev_page,new_page);
             URL.SetText(new_page);
-			App->btnWWW->ResetState();
+			App->btnHome->ResetState();
+        }
+
+        if (App->btnBack->GetState() == STATE_CLICKED)
+        {
+            App->btnBack->ResetState();
+            if (history->prec) {
+                history=history->prec;
+                snprintf(new_page,256,history->url.c_str());
+                strcpy(prev_page,new_page);
+                URL.SetText(new_page);
+            }
+        }
+
+        if (App->btnForward->GetState() == STATE_CLICKED)
+        {
+            App->btnForward->ResetState();
+            if (history->prox) {
+                history=history->prox;
+                snprintf(new_page,256,history->url.c_str());
+                strcpy(prev_page,new_page);
+                URL.SetText(new_page);
+            }
         }
 
         else if(btnGo.GetState() == STATE_CLICKED)
@@ -972,6 +1010,7 @@ static int MenuBrowse()
  ***************************************************************************/
 static int MenuFavorites()
 {
+	bool editing = false;
 	strcpy(new_page,prev_page);
 	prevMenu = MENU_HOME;
     GuiSound btnSoundOver(button_over_pcm, button_over_pcm_size, SOUND_PCM);
@@ -980,39 +1019,29 @@ static int MenuFavorites()
     Right->Button->SetState(STATE_SELECTED);
     Right->SetEffect(EFFECT_FADE, -50);
 
-    GuiImageData BlockData(button_large_png);
-    GuiImageData BlockDataOver(button_large_over_png);
+    GuiFavorite Block[N];
     prevMenu = MENU_FAVORITES;
-
-    GuiImage *BlockImg[N];
-    GuiImage *BlockImgOver[N];
-    GuiButton *Block[N];
 
     for (int i = 0, xpos = 40, ypos = 20; i< N; i++)
     {
-        BlockImg[i] = new GuiImage(&BlockData);
-        BlockImgOver[i] = new GuiImage(&BlockDataOver);
-        Block[i] = new GuiButton(BlockData.GetWidth(), BlockData.GetHeight());
-        Block[i]->SetImage(BlockImg[i]);
-        Block[i]->SetImageOver(BlockImgOver[i]);
-        Block[i]->SetPosition(xpos,ypos);
-        Block[i]->SetSoundOver(&btnSoundOver);
-        Block[i]->SetTrigger(trigA);
-        Block[i]->SetEffectGrow();
-        Block[i]->SetEffect(EFFECT_SLIDE_IN | EFFECT_SLIDE_RIGHT, 50);
+        Block[i].SetPosition(xpos,ypos);
+        Block[i].SetEffect(EFFECT_SLIDE_IN | EFFECT_SLIDE_RIGHT, 50);
 
-        xpos += BlockData.GetWidth()+35;
+        xpos += Block[i].GetDataWidth()+35;
         if(xpos > screenwidth-90)
         {
-            ypos += BlockData.GetHeight()+15;
+            ypos += Block[i].GetDataHeight()+15;
             xpos = 40;
         }
     }
 
     HaltGui();
     for (int i = 0; i < N; i++)
-        mainWindow->Append(Block[i]);
+        mainWindow->Append(&Block[i]);
     ResumeGui();
+
+    App->btnBack->SetState(STATE_DISABLED);
+    App->btnForward->SetState(STATE_DISABLED);
 
     Left->SetEffect(EFFECT_FADE, 50);
     HaltGui();
@@ -1025,41 +1054,60 @@ static int MenuFavorites()
 	{
 		usleep(THREAD_SLEEP);
 
-        if(App->btnSave->GetState() == STATE_CLICKED)
+        if(App->btnSett->GetState() == STATE_CLICKED)
         {
-            choice = MENU_SETTINGS;
-            App->btnSave->ResetState();
+            editing = !editing;
+            for (int i = 0; i<N; i++)
+                Block[i].SetEditing(editing);
+            App->btnSett->ResetState();
         }
 
-        else if(App->btnWWW->GetState() == STATE_CLICKED)
+        else if(App->btnHome->GetState() == STATE_CLICKED)
         {
 			sprintf(new_page,Settings.Homepage);
             strcpy(prev_page,new_page);
-			App->btnWWW->ResetState();
+			App->btnHome->ResetState();
         }
 
-        else if(Left->Button->GetState() == STATE_CLICKED)
+        else if(Left->Button->GetState() == STATE_CLICKED ||
+            App->btnWWW->GetState() == STATE_CLICKED)
+        {
+            App->btnWWW->ResetState();
             choice = MENU_HOME;
+        }
 
         for (int i = 0; i < N; i++)
         {
-            if(Block[i]->GetState() == STATE_CLICKED &&
-                Left->Button->GetState() == STATE_DEFAULT)
+            if(Block[i].Block->GetState() == STATE_CLICKED &&
+                Left->Button->GetState() == STATE_DEFAULT && !editing)
             {
                 sprintf(new_page,Settings.GetUrl(i));
                 strcpy(prev_page,new_page);
-                Block[i]->ResetState();
+                Block[i].Block->ResetState();
+            }
+
+            else if(Block[i].Remove->GetState() == STATE_CLICKED)
+            {
+                bzero(Settings.Favorites[i],256);
+                Block[i].Remove->ResetState();
             }
         }
 	}
 
+    if(editing)
+    {
+        for (int i = 0; i < N; i++)
+            Block[i].Remove->SetEffect(EFFECT_FADE, -50);
+        while(Block[N-1].Remove->GetEffect() > 0) usleep(THREAD_SLEEP);
+    }
+
     for (int i = 0; i < N; i++)
-        Block[i]->SetEffect(EFFECT_SLIDE_OUT | EFFECT_SLIDE_RIGHT, 50);
-    while(Block[N-1]->GetEffect() > 0) usleep(THREAD_SLEEP);
+        Block[i].SetEffect(EFFECT_SLIDE_OUT | EFFECT_SLIDE_RIGHT, 50);
+    while(Block[N-1].GetEffect() > 0) usleep(THREAD_SLEEP);
 
     HaltGui();
     for (int i = 0; i < N; i++)
-        mainWindow->Remove(Block[i]);
+        mainWindow->Remove(&Block[i]);
     ResumeGui();
 
     if(choice != MENU_HOME)
@@ -1072,12 +1120,6 @@ static int MenuFavorites()
         mainWindow->Remove(App);
         mainWindow->Remove(Left);
         ResumeGui();
-    }
-
-    for (int i = 0; i < N; i++)
-    {
-        delete(BlockImg[i]);
-        delete(Block[i]);
     }
 
     return choice;

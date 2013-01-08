@@ -36,20 +36,23 @@ extern const u8		button_click_pcm[];
 extern const u32	button_click_pcm_size;
 
 // Images
-extern const u8		addressbar_textbox_png[];
-extern const u32	addressbar_textbox_png_size;
-
-extern const u8		more_png[];
-extern const u32	more_png_size;
-
-extern const u8		background_png[];
-extern const u32	background_png_size;
-
 extern const u8		arrow_r_png[];
 extern const u32	arrow_r_png_size;
 
 extern const u8		arrow_l_png[];
 extern const u32	arrow_l_png_size;
+
+extern const u8		remove_png[];
+extern const u32	remove_png_size;
+
+extern const u8		remove_over_png[];
+extern const u32	remove_over_png_size;
+
+extern const u8		wiimote_poweroff_png[];
+extern const u32	wiimote_poweroff_png_size;
+
+extern const u8		wiimote_poweroff_over_png[];
+extern const u32	wiimote_poweroff_over_png_size;
 
 extern const u8		arrow_l_over_png[];
 extern const u32	arrow_l_over_png_size;
@@ -57,23 +60,17 @@ extern const u32	arrow_l_over_png_size;
 extern const u8		arrow_r_over_png[];
 extern const u32	arrow_r_over_size;
 
-extern const u8		menu_button_png[];
-extern const u32	menu_button_png_size;
-
-extern const u8		menu_button_over_png[];
-extern const u32	menu_button_over_png_size;
-
-extern const u8		settings_button_png[];
-extern const u32	settings_button_png_size;
-
-extern const u8		settings_button_over_png[];
-extern const u32	settings_button_over_png_size;
-
 extern const u8		loading_png[];
 extern const u32	loading_png_size;
 
-extern const u8		link_settings_png[];
-extern const u32	link_settings_png_size;
+extern const u8		settings_png[];
+extern const u32	settings_png_size;
+
+extern const u8		settings_flat_png[];
+extern const u32	settings_flat_png_size;
+
+extern const u8		settings_over_png[];
+extern const u32	settings_over_png_size;
 
 extern const u8		btn_home_png[];
 extern const u32	btn_home_png_size;
@@ -83,6 +80,9 @@ extern const u32	btn_home_over_png_size;
 
 extern const u8		btn_save_png[];
 extern const u32	btn_save_png_size;
+
+extern const u8		btn_save_flat_png[];
+extern const u32	btn_save_flat_png_size;
 
 extern const u8		btn_save_over_png[];
 extern const u32	btn_save_over_png_size;
@@ -128,6 +128,9 @@ extern const u32	bg_file_selection_png_size;
 
 extern const u8		bg_file_selection_entry_png[];
 extern const u32	bg_file_selection_entry_png_size;
+
+extern const u8		more_png[];
+extern const u32	more_png_size;
 
 extern const u8		scrollbar_png[];
 extern const u32	scrollbar_png_size;
@@ -198,17 +201,44 @@ extern const u32	player4_grab_png_size;
 extern const u8		toolbar_advance_png[];
 extern const u32	toolbar_advance_png_size;
 
+extern const u8		toolbar_advance_flat_png[];
+extern const u32	toolbar_advance_flat_png_size;
+
 extern const u8		toolbar_advance_over_png[];
 extern const u32	toolbar_advance_over_png_size;
 
 extern const u8		toolbar_return_png[];
 extern const u32	toolbar_return_png_size;
 
+extern const u8		toolbar_return_flat_png[];
+extern const u32	toolbar_return_flat_png_size;
+
 extern const u8		toolbar_return_over_png[];
 extern const u32	toolbar_return_over_png_size;
 
 extern const u8		toolbar_png[];
 extern const u32	toolbar_png_size;
+
+extern const u8		edit_png[];
+extern const u32	edit_png_size;
+
+extern const u8		edit_over_png[];
+extern const u32	edit_over_png_size;
+
+extern const u8		trash_png[];
+extern const u32	trash_png_size;
+
+extern const u8		trash_over_png[];
+extern const u32	trash_over_png_size;
+
+extern const u8		reload_png[];
+extern const u32	reload_png_size;
+
+extern const u8		reload_flat_png[];
+extern const u32	reload_flat_png_size;
+
+extern const u8		reload_over_png[];
+extern const u32	reload_over_png_size;
 
 extern const u8		favorites_png[];
 extern const u32	favorites_png_size;

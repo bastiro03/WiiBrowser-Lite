@@ -19,93 +19,85 @@ GuiToolbar::GuiToolbar(int set)
     buttons = set;
 	focus = 0; // allow focus
 	selectable = true;
+
+    imgToolbar = new GuiImageData(toolbar_png, toolbar_png_size);
+    this->SetPosition(0,60);
     this->SetAlignment(ALIGN_CENTRE, ALIGN_BOTTOM);
-
-    if (buttons == HOMEPAGE)
-    {
-        imgToolbar = new GuiImageData(background_png, background_png_size);
-        this->SetPosition(0,0);
-    }
-
-    if (buttons == NAVIGATION)
-    {
-        imgToolbar = new GuiImageData(toolbar_png, toolbar_png_size);
-        this->SetPosition(0,60);
-    }
 
     btnSound = new GuiSound(button_over_pcm, button_over_pcm_size, SOUND_PCM);
     Toolbar = new GuiImage(imgToolbar);
     trigA = new GuiTrigger();
     trigA->SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
 
-    if (buttons == HOMEPAGE)
+    if (buttons == NAVIGATION || buttons == HOMEPAGE)
     {
-        imgWWW = new GuiImageData(menu_button_png);
-        imgWWWOver = new GuiImageData(menu_button_over_png);
-        imgSave = new GuiImageData(settings_button_png);
-        imgSaveOver = new GuiImageData(settings_button_over_png);
+        imgWWW = new GuiImageData(www_png);
+        imgWWWOver = new GuiImageData(www_over_png);
+        imgSave = new GuiImageData(btn_save_png);
+        imgSaveOver = new GuiImageData(btn_save_over_png);
+        imgSaveFlat = new GuiImageData(btn_save_flat_png);
 
-        WWW = new GuiImage(imgWWW);
-        WWWOver = new GuiImage(imgWWWOver);
-        Save = new GuiImage(imgSave);
-        SaveOver = new GuiImage(imgSaveOver);
+        imgSett = new GuiImageData(settings_png);
+        imgSettOver = new GuiImageData(settings_over_png);
+        imgSettFlat = new GuiImageData(settings_flat_png);
 
-        btnWWW = new GuiButton(WWW->GetWidth(), WWW->GetHeight());
-        btnSave = new GuiButton(Save->GetWidth(), Save->GetHeight());
+        imgHome = new GuiImageData(btn_home_png);
+        imgHomeOver = new GuiImageData(btn_home_over_png);
+        imgReload = new GuiImageData(reload_png);
+        imgReloadOver = new GuiImageData(reload_over_png);
+        imgReloadFlat = new GuiImageData(reload_flat_png);
 
-        btnWWW->SetImage(WWW);
-        btnWWW->SetImageOver(WWWOver);
-        btnWWW->SetSoundOver(btnSound);
-        btnWWW->SetState(STATE_SELECTED);
-        btnWWW->SetTrigger(trigA);
-        btnWWW->SetAlignment(ALIGN_RIGHT,ALIGN_MIDDLE);
-        btnWWW->SetEffectGrow();
-        btnWWW->SetPosition(-60,0);
-
-        btnSave->SetImage(Save);
-        btnSave->SetImageOver(SaveOver);
-        btnSave->SetSoundOver(btnSound);
-        btnSave->SetTrigger(trigA);
-        btnSave->SetEffectGrow();
-        btnSave->SetAlignment(ALIGN_LEFT,ALIGN_MIDDLE);
-        btnSave->SetPosition(60,0);
-    }
-
-    if (buttons == NAVIGATION)
-    {
-        imgWWW = new GuiImageData(www_png, www_png_size);
-        imgWWWOver = new GuiImageData(www_over_png, www_over_png_size);
-        imgSave = new GuiImageData(btn_save_png, btn_save_png_size);
-        imgSaveOver = new GuiImageData(btn_save_over_png, btn_save_over_png_size);
-
-        imgBack = new GuiImageData(toolbar_return_png, toolbar_return_png_size);
-        imgBackOver = new GuiImageData(toolbar_return_over_png, toolbar_return_over_png_size);
-        imgForward = new GuiImageData(toolbar_advance_png, toolbar_advance_png_size);
-        imgForwardOver = new GuiImageData(toolbar_advance_over_png, toolbar_advance_over_png_size);
+        imgBack = new GuiImageData(toolbar_return_png);
+        imgBackFlat = new GuiImageData(toolbar_return_flat_png);
+        imgBackOver = new GuiImageData(toolbar_return_over_png);
+        imgForward = new GuiImageData(toolbar_advance_png);
+        imgForwardFlat = new GuiImageData(toolbar_advance_flat_png);
+        imgForwardOver = new GuiImageData(toolbar_advance_over_png);
 
         Back = new GuiImage(imgBack);
+        BackFlat = new GuiImage(imgBackFlat);
         BackOver = new GuiImage(imgBackOver);
         Forward = new GuiImage(imgForward);
+        ForwardFlat = new GuiImage(imgForwardFlat);
         ForwardOver = new GuiImage(imgForwardOver);
 
         WWW = new GuiImage(imgWWW);
         WWWOver = new GuiImage(imgWWWOver);
         Save = new GuiImage(imgSave);
         SaveOver = new GuiImage(imgSaveOver);
+        SaveFlat = new GuiImage(imgSaveFlat);
+
+        Sett = new GuiImage(imgSett);
+        SettOver = new GuiImage(imgSettOver);
+        SettFlat = new GuiImage(imgSettFlat);
+
+        Home = new GuiImage(imgHome);
+        HomeOver = new GuiImage(imgHomeOver);
+        Reload = new GuiImage(imgReload);
+        ReloadOver = new GuiImage(imgReloadOver);
+        ReloadFlat = new GuiImage(imgReloadFlat);
 
         btnBack = new GuiButton(Back->GetWidth(), Back->GetHeight());
         btnForward = new GuiButton(Forward->GetWidth(), Forward->GetHeight());
         btnWWW = new GuiButton(WWW->GetWidth(), WWW->GetHeight());
         btnSave = new GuiButton(Save->GetWidth(), Save->GetHeight());
+        btnHome = new GuiButton(Home->GetWidth(), Home->GetHeight());
+        btnReload = new GuiButton(Reload->GetWidth(), Reload->GetHeight());
+        btnSett = new GuiButton(Sett->GetWidth(), Sett->GetHeight());
 
         BackTooltip = new GuiTooltip(gettext("Go back"));
-        BackTooltip->SetOffset(-15,-50);
+        BackTooltip->SetOffset(15,-50);
+        WWWTooltip = new GuiTooltip(gettext("Browse"));
+        WWWTooltip->SetOffset(-15,-50);
 
         ForwardTooltip = new GuiTooltip(gettext("Go forward"));
-        WWWTooltip = new GuiTooltip(gettext("Homepage"));
         SaveTooltip = new GuiTooltip(gettext("Download"));
+        HomeTooltip = new GuiTooltip(gettext("Homepage"));
+        ReloadTooltip = new GuiTooltip(gettext("Refresh"));
+        SettTooltip = new GuiTooltip(gettext("Settings"));
 
         btnBack->SetImage(Back);
+        btnBack->SetImageDisabled(BackFlat);
         btnBack->SetImageOver(BackOver);
         btnBack->SetSoundOver(btnSound);
         btnBack->SetTrigger(trigA);
@@ -114,6 +106,7 @@ GuiToolbar::GuiToolbar(int set)
         btnBack->SetTooltip(BackTooltip);
 
         btnForward->SetImage(Forward);
+        btnForward->SetImageDisabled(ForwardFlat);
         btnForward->SetImageOver(ForwardOver);
         btnForward->SetSoundOver(btnSound);
         btnForward->SetTrigger(trigA);
@@ -130,13 +123,51 @@ GuiToolbar::GuiToolbar(int set)
         btnWWW->SetPosition(screenwidth-WWW->GetWidth()-20,20);
         btnWWW->SetTooltip(WWWTooltip);
 
+        btnSett->SetImage(Sett);
+        btnSett->SetImageOver(SettOver);
+        btnSett->SetImageDisabled(SettFlat);
+        btnSett->SetSoundOver(btnSound);
+        btnSett->SetTrigger(trigA);
+        btnSett->SetEffectGrow();
+        btnSett->SetPosition(WWW->GetLeft()-Sett->GetWidth()-10,20);
+        btnSett->SetTooltip(SettTooltip);
+
+        btnHome->SetImage(Home);
+        btnHome->SetImageOver(HomeOver);
+        btnHome->SetSoundOver(btnSound);
+        btnHome->SetTrigger(trigA);
+        btnHome->SetEffectGrow();
+        btnHome->SetPosition(Sett->GetLeft()-Home->GetWidth()-10,20);
+        btnHome->SetTooltip(HomeTooltip);
+
         btnSave->SetImage(Save);
+        btnSave->SetImageDisabled(SaveFlat);
         btnSave->SetImageOver(SaveOver);
         btnSave->SetSoundOver(btnSound);
         btnSave->SetTrigger(trigA);
         btnSave->SetEffectGrow();
-        btnSave->SetPosition(WWW->GetLeft()-Save->GetWidth()-15,20);
+        btnSave->SetPosition(Home->GetLeft()-Save->GetWidth()-10,20);
         btnSave->SetTooltip(SaveTooltip);
+
+        btnReload->SetImage(Reload);
+        btnReload->SetImageDisabled(ReloadFlat);
+        btnReload->SetImageOver(ReloadOver);
+        btnReload->SetSoundOver(btnSound);
+        btnReload->SetTrigger(trigA);
+        btnReload->SetEffectGrow();
+        btnReload->SetPosition(Save->GetLeft()-Reload->GetWidth()-10,20);
+        btnReload->SetTooltip(ReloadTooltip);
+    }
+
+    if (buttons == HOMEPAGE)
+    {
+        btnReload->SetState(STATE_DISABLED);
+        btnSave->SetState(STATE_DISABLED);
+    }
+
+    if (buttons == NAVIGATION)
+    {
+        btnSett->SetState(STATE_DISABLED);
     }
 
     width = screenwidth;
@@ -145,18 +176,15 @@ GuiToolbar::GuiToolbar(int set)
 
     this->Append(Toolbar);
 
-    if (buttons == HOMEPAGE)
+    if (buttons == NAVIGATION || buttons == HOMEPAGE)
     {
         this->Append(btnWWW);
-        this->Append(btnSave);
-    }
-
-    if (buttons == NAVIGATION)
-    {
-        this->Append(btnWWW);
+        this->Append(btnSett);
         this->Append(btnSave);
         this->Append(btnBack);
         this->Append(btnForward);
+        this->Append(btnHome);
+        this->Append(btnReload);
     }
 }
 
@@ -173,31 +201,63 @@ GuiToolbar::~GuiToolbar()
     delete(imgWWW);
     delete(imgWWWOver);
     delete(imgSave);
+    delete(imgSaveFlat);
     delete(imgSaveOver);
 
     delete(WWW);
     delete(WWWOver);
     delete(Save);
+    delete(SaveFlat);
     delete(SaveOver);
 
     delete(btnWWW);
     delete(btnSave);
 
-    if (buttons == NAVIGATION)
+    if (buttons == NAVIGATION || buttons == HOMEPAGE)
     {
         delete(imgBack);
+        delete(imgBackFlat);
         delete(imgBackOver);
         delete(imgForward);
+        delete(imgForwardFlat);
         delete(imgForwardOver);
 
+        delete(imgHome);
+        delete(imgHomeOver);
+        delete(imgReload);
+        delete(imgReloadFlat);
+        delete(imgReloadOver);
+
+        delete(imgSett);
+        delete(imgSettFlat);
+        delete(imgSettOver);
+
         delete(Back);
+        delete(BackFlat);
         delete(BackOver);
         delete(Forward);
+        delete(ForwardFlat);
         delete(ForwardOver);
+
+        delete(Sett);
+        delete(SettFlat);
+        delete(SettOver);
+
+        delete(Home);
+        delete(HomeOver);
+        delete(Reload);
+        delete(ReloadFlat);
+        delete(ReloadOver);
 
         delete(btnBack);
         delete(btnForward);
+        delete(btnHome);
+        delete(btnReload);
+        delete(btnSett);
 
+        delete(HomeTooltip);
+        delete(ReloadTooltip);
+        delete(SettTooltip);
         delete(BackTooltip);
         delete(ForwardTooltip);
         delete(WWWTooltip);

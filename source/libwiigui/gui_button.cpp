@@ -19,6 +19,7 @@ GuiButton::GuiButton(int w, int h)
 	width = w;
 	height = h;
 	image = NULL;
+	imageFlat = NULL;
 	imageOver[0] = NULL;
 	imageOver[1] = NULL;
 	imageHold = NULL;
@@ -56,6 +57,11 @@ GuiButton::~GuiButton()
 void GuiButton::SetImage(GuiImage* img)
 {
 	image = img;
+	if(img) img->SetParent(this);
+}
+void GuiButton::SetImageDisabled(GuiImage* img)
+{
+	imageFlat = img;
 	if(img) img->SetParent(this);
 }
 void GuiButton::SetImageOver(GuiImage* img, int p)
@@ -140,7 +146,25 @@ void GuiButton::Draw()
 	if(!this->IsVisible())
 		return;
 
-	if(state == STATE_CLICKED)
+	if(state == STATE_DISABLED)
+	{
+        if(imageFlat)
+            imageFlat->Draw();
+		else if(image) // draw image
+			image->Draw();
+
+		if(icon) // draw icon
+			icon->Draw();
+
+        		// draw text
+		if(label[0])
+			label[0]->Draw();
+		if(label[1])
+			label[1]->Draw();
+		if(label[2])
+			label[2]->Draw();
+	}
+	else if(state == STATE_CLICKED)
 	{
         if(imageOver[0] || (imageOver[1]))
 		{

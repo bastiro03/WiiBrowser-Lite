@@ -421,6 +421,11 @@ void GuiElement::SetEffect(int eff, int amount, int target)
 	effects |= eff;
 }
 
+void GuiElement::StopEffect(int eff)
+{
+    effects &= (~eff); // shut off effect
+}
+
 void GuiElement::SetEffectOnOver(int eff, int amount, int target)
 {
 	effectsOver |= eff;

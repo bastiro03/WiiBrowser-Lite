@@ -31,12 +31,13 @@ GuiTooltip::GuiTooltip(const char *t)
 	rightImage.SetImage(tooltipRight);
 
 	height = leftImage.GetHeight();
-    offsetHr = -20;
+    offsetHr = 0;
 	offsetVr = -50;
 
 	text = NULL;
 	if(t)
 		SetText(t);
+    this->SetAlignment(ALIGN_CENTRE,ALIGN_TOP);
 
 	leftImage.SetParent(this);
 	tileImage.SetParent(this);

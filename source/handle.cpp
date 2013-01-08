@@ -1,4 +1,5 @@
 #include "handle.h"
+#include "main.h"
 
 GuiToolbar *Toolbar = NULL;
 
@@ -252,10 +253,7 @@ int noSubmit(ListaDiBottoni btn) {
 void showBar(GuiWindow *mainWindow, GuiWindow *parentWindow) {
     if (!Toolbar)
         Toolbar = new GuiToolbar(NAVIGATION);
-    if (!history->prec) Toolbar->btnBack->SetState(STATE_DISABLED);
-    else Toolbar->btnBack->SetState(STATE_DEFAULT);
-    if (!history->prox) Toolbar->btnForward->SetState(STATE_DISABLED);
-    else Toolbar->btnForward->SetState(STATE_DEFAULT);
+    ToggleButtons(Toolbar);
     Toolbar->SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_IN, 20);
     hidden=false;
     HaltGui();
@@ -278,7 +276,7 @@ void hideBar(GuiWindow *mainWindow, GuiWindow *parentWindow) {
     hidden=true;
 }
 
-void HandleMenuBar(string *link, int *choice, int img, GuiWindow *mainWindow, GuiWindow *parentWindow) {
+void HandleMenuBar(string *link, char* url, int *choice, int img, GuiWindow *mainWindow, GuiWindow *parentWindow) {
     if ((img ? userInput[0].wpad->btns_d & WPAD_BUTTON_1 : userInput[0].wpad->btns_d & WPAD_BUTTON_PLUS) && hidden) {
         showBar(mainWindow, parentWindow);
     }
@@ -295,6 +293,17 @@ void HandleMenuBar(string *link, int *choice, int img, GuiWindow *mainWindow, Gu
         if (Toolbar->btnSave->GetState() == STATE_CLICKED) {
             Toolbar->btnSave->ResetState();
             *choice=2;
+        }
+
+        if (Toolbar->btnHome->GetState() == STATE_CLICKED) {
+            Toolbar->btnHome->ResetState();
+            link->assign(Settings.Homepage);
+            *choice=1;
+        }
+        if (Toolbar->btnReload->GetState() == STATE_CLICKED) {
+            Toolbar->btnReload->ResetState();
+            link->assign(url);
+            *choice=1;
         }
 
         if (Toolbar->btnBack->GetState() == STATE_CLICKED) {

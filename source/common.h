@@ -95,6 +95,7 @@ extern int checkTag(vector<string> tag, string name);
 
 extern void OnScreenKeyboard(GuiWindow *keyboardWindow, char *var, u16 maxlen);
 extern int WindowPrompt(const char *title, const char *msg, const char *btn1Label, const char *btn2Label);
+extern void ToggleButtons(GuiToolbar *toolbar);
 
 extern void save_mem(string str);
 extern void save_mem_int(float str);

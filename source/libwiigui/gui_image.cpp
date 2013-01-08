@@ -304,4 +304,18 @@ void GuiImage::Draw()
 				imageangle = 0;
 		}
 	}
+
+    if(effects & EFFECT_RUMBLE)
+    {
+        now = gettime();
+
+        if(diff_usec(prev, now) > (u32)(100))
+		{
+		    prev = now;
+            if(imageangle > effectTarget ||
+                imageangle < -effectTarget)
+                effectAmount = -effectAmount;
+            imageangle += effectAmount*0.1;
+        }
+    }
 }

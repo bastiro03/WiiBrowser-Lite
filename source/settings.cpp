@@ -60,7 +60,7 @@ void SSettings::SetDefault()
     for(int i = 0; i < N; i++)
     {
         Favorites[i] = new char[256];
-        memset(Favorites[i], 0, sizeof(Favorites[i]));
+        memset(Favorites[i], 0, 256);
     }
 }
 
@@ -204,7 +204,7 @@ bool SSettings::SetSetting(char *name, char *value)
 	}
     else if (strncmp(name, "Favorite", 8) == 0) {
         if (sscanf(name, "Favorite(%d)", &i) == 1) {
-            strncpy(Favorites[i], value, sizeof(Favorites[i]));
+            strncpy(Favorites[i], value, 256);
         }
 		return true;
 	}

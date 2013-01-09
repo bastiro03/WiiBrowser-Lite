@@ -19,8 +19,8 @@ static int presetAlignmentHor = 0;
 static int presetAlignmentVert = 0;
 static u16 presetStyle = 0;
 
-#define TEXT_SCROLL_DELAY			8
-#define	TEXT_SCROLL_INITIAL_DELAY	6
+#define TEXT_SCROLL_DELAY			10
+#define	TEXT_SCROLL_INITIAL_DELAY	8
 
 /**
  * Constructor for the GuiText class.

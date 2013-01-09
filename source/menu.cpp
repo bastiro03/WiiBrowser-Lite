@@ -387,12 +387,19 @@ void ToggleButtons(GuiToolbar *toolbar)
     if (!toolbar)
         return;
 
-    if (!history->prec)
-        toolbar->btnBack->SetState(STATE_DISABLED);
-    else toolbar->btnBack->SetState(STATE_DEFAULT);
-    if (!history->prox)
-        toolbar->btnForward->SetState(STATE_DISABLED);
-    else toolbar->btnForward->SetState(STATE_DEFAULT);
+    if (toolbar->btnBack->GetState() != STATE_SELECTED)
+    {
+        if (!history->prec)
+            toolbar->btnBack->SetState(STATE_DISABLED);
+        else toolbar->btnBack->SetState(STATE_DEFAULT);
+    }
+
+    if (toolbar->btnForward->GetState() != STATE_SELECTED)
+    {
+        if (!history->prox)
+            toolbar->btnForward->SetState(STATE_DISABLED);
+        else toolbar->btnForward->SetState(STATE_DEFAULT);
+    }
 }
 
 /****************************************************************************
@@ -715,7 +722,10 @@ static int MenuHome()
     GuiImageData Textbox(keyboard_textbox_png);
     GuiImage TextboxImg(&Textbox);
     GuiButton InsertURL(TextboxImg.GetWidth(), TextboxImg.GetHeight());
+
     GuiText URL(new_page, 20, (GXColor){0, 0, 0, 255});
+    URL.SetMaxWidth(TextboxImg.GetWidth()-20);
+    URL.SetScroll(SCROLL_HORIZONTAL);
 
     InsertURL.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
     InsertURL.SetPosition(0,-50);
@@ -777,9 +787,12 @@ static int MenuHome()
     int choice = 0;
     while(!choice)
 	{
-        if(strlen(new_page) > 0)
-            btnGo.SetState(STATE_DEFAULT);
-        else btnGo.SetState(STATE_DISABLED);
+        if (btnGo.GetState() != STATE_SELECTED)
+        {
+            if(strlen(new_page) > 0)
+                btnGo.SetState(STATE_DEFAULT);
+            else btnGo.SetState(STATE_DISABLED);
+        }
 
 		ToggleButtons(App);
 		usleep(THREAD_SLEEP);
@@ -787,9 +800,11 @@ static int MenuHome()
 		if(InsertURL.GetState() == STATE_CLICKED ||
             App->btnWWW->GetState() == STATE_CLICKED)
         {
+            URL.SetScroll(SCROLL_NONE);
             OnScreenKeyboard(mainWindow, new_page, MAXLEN);
             strcpy(prev_page,new_page);
             URL.SetText(new_page);
+            URL.SetScroll(SCROLL_HORIZONTAL);
             App->btnWWW->ResetState();
         }
 
@@ -885,7 +900,10 @@ static int MenuBrowse()
 {
     char *nurl=NULL;
     char *url=(char*) malloc (sizeof(new_page)+10);
-    strcpy(url,"http://");
+    bzero(url, sizeof(new_page)+10);
+
+    if (strncmp(new_page,"http",4))
+        strcpy(url,"http://");
     strcat(url,new_page);
 
     jump:
@@ -1013,7 +1031,6 @@ static int MenuFavorites()
 	bool editing = false;
 	strcpy(new_page,prev_page);
 	prevMenu = MENU_HOME;
-    GuiSound btnSoundOver(button_over_pcm, button_over_pcm_size, SOUND_PCM);
 
     fadeAnim = EFFECT_SLIDE_IN | EFFECT_SLIDE_LEFT;
     Right->Button->SetState(STATE_SELECTED);

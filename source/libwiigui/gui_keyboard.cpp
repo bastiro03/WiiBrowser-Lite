@@ -22,7 +22,7 @@ static char * GetDisplayText(char * t)
 	if(len < MAX_KEYBOARD_DISPLAY)
 		return t;
 
-	strncpy(tmptxt, &t[len-MAX_KEYBOARD_DISPLAY], MAX_KEYBOARD_DISPLAY);
+	strncpy(tmptxt, &t[len-MAX_KEYBOARD_DISPLAY+1], MAX_KEYBOARD_DISPLAY);
 	tmptxt[MAX_KEYBOARD_DISPLAY-1] = 0;
 	return &tmptxt[0];
 }

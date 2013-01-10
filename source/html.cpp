@@ -33,12 +33,13 @@ static void *DownloadImage (void *arg) {
             usleep(100);
             for (lista=img;!NoImg(lista);lista=lista->prox) {
                 if (threadState==THREAD_EXIT || threadState==THREAD_SUSPEND) break;
-                if (!lista->imgdata->GetImage()) {
-                    string tmp=adjustUrl(lista->url, (char*)arg);
+                if (!lista->imgdata->GetImage() && lista->tag) {
+                    string tmp=adjustUrl(lista->tag->value[0].text, (char*)arg);
                     struct block THREAD = downloadfile(curl_handle, tmp.c_str(), NULL);
                     if(THREAD.size>0 && strstr(THREAD.type, "image")) {
                         lista->imgdata=new GuiImageData ((u8*)THREAD.data, THREAD.size);
                         lista->img->SetImage(lista->imgdata);
+                        lista->img->SetScale(screenwidth-80, atoi(lista->tag->attribute.c_str()));
                         lista->img->SetEffect(EFFECT_FADE, 50);
                     }
                     free(THREAD.data);
@@ -128,11 +129,11 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                         btn->label->SetSpace(false);
                         btn->label->SetModel(ANCHOR);
                         btn->label->SetOffset(&coordX);
-                        if (offset >= (screenwidth-90)) {
+                        if (offset >= (screenwidth-80)) {
                             coordY=Index ? Index->elem->GetYPosition()+Index->screenSize : 40;
-                            offset=offset % (screenwidth-90);
+                            offset=offset % (screenwidth-80);
                         }
-                        btn->label->SetWrap(true, screenwidth-90-offset);
+                        btn->label->SetWrap(true, screenwidth-80-offset);
                         SetFont(btn->label, lista->value[i].mode);
                         btn->label->SetPosition(0,0);
 
@@ -153,7 +154,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                         ResumeGui();
                         Index=InsIndex(Index); Index->elem=btn->btn;
 						offset+=btn->label->GetTextWidth();
-                        Index->screenSize=(offset/(screenwidth-90))*25;
+                        Index->screenSize=(offset/(screenwidth-80))*25;
                     }
                 }
 
@@ -161,25 +162,24 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                     string tmp=adjustUrl(lista->value[0].text, url);
                     if (lista->attribute.length()!=0) {
                         img=InsImg(img);
-                        img->imgdata=new GuiImageData (NULL, 0);
-                        img->img=new GuiImage (img->imgdata);
-                        img->url=lista->value[0].text;
+                        img->imgdata=new GuiImageData(NULL, 0);
+                        img->img=new GuiImage(img->imgdata);
                         img->img->SetPosition(coordX+40, coordY);
+                        img->tag=&(*lista);
                         HaltGui();
                             mainWindow->Append(img->img);
                         ResumeGui();
                         Index=InsIndex(Index); Index->elem=img->img;
-                        Index->screenSize=atoi(lista->attribute.c_str())+10;
+                        Index->screenSize=atoi(lista->attribute.c_str())+5;
                         Index->content=null;
                     }
                     else {
                         HaltThread(thread);
-                            struct block IMAGE = downloadfile(curl_handle, tmp.c_str(), NULL);
-                        ResumeThread(thread);
+                        struct block IMAGE = downloadfile(curl_handle, tmp.c_str(), NULL);
                         if(IMAGE.size>0 && strstr(IMAGE.type, "image")) {
                             img=InsImg(img);
-                            img->imgdata=new GuiImageData ((u8*)IMAGE.data, IMAGE.size);
-                            img->img=new GuiImage (img->imgdata);
+                            img->imgdata=new GuiImageData((u8*)IMAGE.data, IMAGE.size);
+                            img->img=new GuiImage(img->imgdata);
                             img->img->SetPosition(coordX+40, coordY);
                             img->img->SetEffect(EFFECT_FADE, 50);
                             HaltGui();
@@ -189,6 +189,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                             Index->screenSize=img->img->GetHeight()+10;
                         }
                         free(IMAGE.data);
+                        ResumeThread(thread);
                     }
                 }
 
@@ -244,12 +245,12 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                         text->txt->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
                         text->txt->SetSpace(false);
                         text->txt->SetOffset(&coordX);
-                        if (offset >= (screenwidth-90)) {
+                        if (offset >= (screenwidth-80)) {
                             coordY=Index ? Index->elem->GetYPosition()+Index->screenSize : 40;
-                            offset=offset % (screenwidth-90);
+                            offset=offset % (screenwidth-80);
                         }
                         text->txt->SetPosition(coordX+40+offset, coordY);
-                        text->txt->SetWrap(true, screenwidth-90-offset);
+                        text->txt->SetWrap(true, screenwidth-80-offset);
                         text->txt->SetEffect(EFFECT_FADE, 50);
                         SetFont(text->txt, lista->value[i].mode);
                         HaltGui();
@@ -257,7 +258,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                         ResumeGui();
                         offset+=text->txt->GetTextWidth();
                         Index=InsIndex(Index); Index->elem=text->txt;
-                        Index->screenSize=(offset/(screenwidth-90))*25;
+                        Index->screenSize=(offset/(screenwidth-80))*25;
                     }
                 }
                 lista++;

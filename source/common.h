@@ -49,7 +49,7 @@ typedef struct Text {
 typedef struct Image {
   GuiImageData *imgdata;
   GuiImage *img;
-  TipoElemento url;
+  struct Tag *tag;
   struct Image *prox;
 } Image;
 

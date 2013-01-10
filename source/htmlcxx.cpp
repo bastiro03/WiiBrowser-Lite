@@ -69,7 +69,7 @@ int checkchr (string value)
 {
     unsigned int i;
     for (i=0; i<value.length(); i++)
-        if (value[i]!='\n' && value[i]!=' ' /*&& value[i]!='\t'*/)
+        if (value[i]>32)
             return 1;
     return 0;
 }

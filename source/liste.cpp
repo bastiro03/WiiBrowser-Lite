@@ -93,6 +93,7 @@ int NoImg( ListaDiImg lista ) {
 ListaDiImg InsImg( ListaDiImg lista ) {
 	ListaDiImg punt;
     punt=new Image;
+    punt->tag = NULL;
     punt->prox = lista;
 	return  punt;
 }

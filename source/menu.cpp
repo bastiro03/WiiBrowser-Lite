@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include <wiiuse/wpad.h>
 
 #include "libwiigui/gui.h"
@@ -851,7 +852,8 @@ static int MenuHome()
             choice = MENU_BROWSE;
         }
 
-        else if(Right->Button->GetState() == STATE_CLICKED)
+        else if(Right->Button->GetState() == STATE_CLICKED ||
+                userInput[0].wpad->btns_d & WPAD_BUTTON_PLUS)
         {
             fadeAnim = EFFECT_SLIDE_OUT | EFFECT_SLIDE_LEFT;
             choice = MENU_FAVORITES;
@@ -1023,6 +1025,35 @@ static int MenuBrowse()
     return MENU_HOME;
 }
 
+bool Held(GuiFavorite *Block)
+{
+    for (int i=0; i<N; i++)
+    {
+        if(Block[i].Block->GetState() == STATE_HELD)
+            return true;
+    }
+    return false;
+}
+
+void SwapPos(GuiFavorite *Block, int i, int j)
+{
+    int xtemp = Block[i].xpos;
+    int ytemp = Block[i].ypos;
+
+    Block[i].SetInit(Block[j].xpos, Block[j].ypos);
+    Block[i].SetPosition(Block[j].xpos, Block[j].ypos);
+    Block[j].SetInit(xtemp, ytemp);
+    Block[j].SetPosition(xtemp, ytemp);
+}
+
+void SwapUrls(int i, int j)
+{
+    char utemp[256];
+    strcpy(utemp, Settings.GetUrl(i));
+    strcpy(Settings.Favorites[i], Settings.Favorites[j]);
+    strcpy(Settings.Favorites[j], utemp);
+}
+
 /****************************************************************************
  * MenuFavorites
  ***************************************************************************/
@@ -1037,12 +1068,18 @@ static int MenuFavorites()
     Right->SetEffect(EFFECT_FADE, -50);
 
     GuiFavorite Block[N];
+    GuiText *Label[N];
     prevMenu = MENU_FAVORITES;
 
     for (int i = 0, xpos = 40, ypos = 20; i< N; i++)
     {
-        Block[i].SetPosition(xpos,ypos);
+        Label[i] = new GuiText(Settings.GetUrl(i), 20, (GXColor){0, 0, 0, 255});
+        Label[i]->SetMaxWidth(Block[i].GetDataWidth() - 25);
+
+        Block[i].SetInit(xpos, ypos);
         Block[i].SetEffect(EFFECT_SLIDE_IN | EFFECT_SLIDE_RIGHT, 50);
+        Block[i].SetPosition(xpos,ypos);
+        Block[i].Block->SetLabel(Label[i]);
 
         xpos += Block[i].GetDataWidth()+35;
         if(xpos > screenwidth-90)
@@ -1087,7 +1124,7 @@ static int MenuFavorites()
         }
 
         else if(Left->Button->GetState() == STATE_CLICKED ||
-            App->btnWWW->GetState() == STATE_CLICKED)
+            App->btnWWW->GetState() == STATE_CLICKED || userInput[0].wpad->btns_d & WPAD_BUTTON_MINUS)
         {
             App->btnWWW->ResetState();
             choice = MENU_HOME;
@@ -1095,6 +1132,10 @@ static int MenuFavorites()
 
         for (int i = 0; i < N; i++)
         {
+            if(Block[i].Block->GetState() == STATE_SELECTED)
+				Label[i]->SetScroll(SCROLL_HORIZONTAL);
+			else Label[i]->SetScroll(SCROLL_NONE);
+
             if(Block[i].Block->GetState() == STATE_CLICKED &&
                 Left->Button->GetState() == STATE_DEFAULT && !editing)
             {
@@ -1107,6 +1148,22 @@ static int MenuFavorites()
             {
                 bzero(Settings.Favorites[i],256);
                 Block[i].Remove->ResetState();
+            }
+
+            if(editing && !Held(Block))
+            {
+                for (int j = 0; j < N; j++)
+                {
+                    if (j == i)
+                        continue;
+
+                    if(userInput[0].wpad->ir.valid && Block[i].Block->IsInside(userInput[0].wpad->ir.x, userInput[0].wpad->ir.y) &&
+                            Block[j].Block->IsInside(userInput[0].wpad->ir.x, userInput[0].wpad->ir.y))
+                    {
+                        SwapPos(Block, i, j);
+                        SwapUrls(i, j);
+                    }
+                }
             }
         }
 	}
@@ -1126,6 +1183,9 @@ static int MenuFavorites()
     for (int i = 0; i < N; i++)
         mainWindow->Remove(&Block[i]);
     ResumeGui();
+
+    for (int i = 0; i < N; i++)
+        delete(Label[i]);
 
     if(choice != MENU_HOME)
     {

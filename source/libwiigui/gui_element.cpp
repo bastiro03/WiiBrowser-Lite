@@ -354,8 +354,14 @@ int GuiElement::IsFocused()
 	return focus;
 }
 
-void GuiElement::SetTrigger(GuiTrigger * t)
+void GuiElement::SetTrigger(GuiTrigger * t, int s)
 {
+	if (s >= 0 && s < 3)
+	{
+	    trigger[s] = t;
+	    return;
+	}
+
 	if(!trigger[0])
 		trigger[0] = t;
 	else if(!trigger[1])

@@ -370,7 +370,7 @@ class GuiElement
 		float GetScaleY();
 		//!Set a new GuiTrigger for the element
 		//!\param t Pointer to GuiTrigger
-		void SetTrigger(GuiTrigger * t);
+		void SetTrigger(GuiTrigger * t, int s = -1);
 		//!\overload
 		//!\param i Index of trigger array to set
 		//!\param t Pointer to GuiTrigger
@@ -1071,11 +1071,15 @@ class GuiFavorite : public GuiWindow
 
 		void Update(GuiTrigger * t);
 		void SetEditing(bool e);
+		void SetInit(int x, int y);
+
 		int GetDataWidth();
 		int GetDataHeight();
+        int xpos, ypos;
 
         GuiSound *btnSound;
         GuiTrigger *trigA;
+        GuiTrigger *trigH;
 
         GuiImageData *BlockData;
         GuiImageData *BlockDataOver;

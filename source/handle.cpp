@@ -297,7 +297,9 @@ void HandleMenuBar(string *link, char* url, int *choice, int img, GuiWindow *mai
 
         if (Toolbar->btnHome->GetState() == STATE_CLICKED) {
             Toolbar->btnHome->ResetState();
-            link->assign(Settings.Homepage);
+            if (strncmp(Settings.Homepage,"http",4))
+                link->assign("http://");
+            link->append(Settings.Homepage);
             *choice=1;
         }
         if (Toolbar->btnReload->GetState() == STATE_CLICKED) {

@@ -17,9 +17,14 @@
 GuiFavorite::GuiFavorite()
 {
     editing = 0;
+    xpos = 0;
+    ypos = 0;
+
     btnSound = new GuiSound(button_over_pcm, button_over_pcm_size, SOUND_PCM);
     trigA = new GuiTrigger();
     trigA->SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
+    trigH = new GuiTrigger();
+    trigH->SetHeldTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
 
     BlockData = new GuiImageData(button_large_png);
     BlockDataOver = new GuiImageData(button_large_over_png);
@@ -29,6 +34,7 @@ GuiFavorite::GuiFavorite()
     BlockImg = new GuiImage(BlockData);
     BlockImgOver = new GuiImage(BlockDataOver);
     Block = new GuiButton(BlockData->GetWidth(), BlockData->GetHeight());
+    Block->SetHoldable(true);
     Block->SetImage(BlockImg);
     Block->SetImageOver(BlockImgOver);
     Block->SetSoundOver(btnSound);
@@ -57,6 +63,7 @@ GuiFavorite::~GuiFavorite()
 {
     delete(btnSound);
     delete(trigA);
+    delete(trigH);
 
     delete(BlockData);
     delete(BlockDataOver);
@@ -79,16 +86,24 @@ void GuiFavorite::SetEditing(bool e)
 
     if(editing)
     {
+        this->Block->SetTrigger(trigH, 0);
         this->Remove->SetEffect(EFFECT_FADE, 30);
         this->BlockImg->SetEffect(EFFECT_RUMBLE,2,5);
     }
 
     else
     {
+        this->Block->SetTrigger(trigA, 0);
         this->Remove->SetEffect(EFFECT_FADE, -30);
         this->BlockImg->StopEffect(EFFECT_RUMBLE);
         this->BlockImg->SetAngle(0);
     }
+}
+
+void GuiFavorite::SetInit(int x, int y)
+{
+    xpos = x;
+    ypos = y;
 }
 
 int GuiFavorite::GetDataWidth()
@@ -113,6 +128,15 @@ void GuiFavorite::Update(GuiTrigger * t)
 	}
 
 	this->ToggleFocus(t);
+
+	if (editing && this->Block->GetState() == STATE_HELD)
+	{
+	    int xpos = t->wpad->ir.x - this->GetDataWidth()/2;
+	    int ypos = t->wpad->ir.y - this->GetDataHeight()/2;
+
+	    if(t->wpad->ir.valid)
+            this->SetPosition(xpos, ypos);
+	}
 
 	if(focus) // only send actions to this window if it's in focus
 	{

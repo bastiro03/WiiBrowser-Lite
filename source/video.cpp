@@ -20,12 +20,33 @@
 #define DEFAULT_FIFO_SIZE 256 * 1024
 static unsigned int *xfb[2] = { NULL, NULL }; // Double buffered
 static int whichfb = 0; // Switch
-static GXRModeObj *vmode; // Menu video mode
 static unsigned char gp_fifo[DEFAULT_FIFO_SIZE] ATTRIBUTE_ALIGN (32);
 static Mtx GXmodelView2D;
+
 int screenheight;
 int screenwidth;
 u32 FrameTimer = 0;
+
+GXRModeObj *vmode; // Menu video mode
+u8 *videoScreenshot = NULL;
+
+/****************************************************************************
+ * TakeScreenshot
+ *
+ * Copies the current screen into a GX texture
+ ***************************************************************************/
+void TakeScreenshot()
+{
+	videoScreenshot = (u8 *)memalign(32, vmode->fbWidth * vmode->efbHeight * 4);
+	if(!videoScreenshot)
+        return;
+
+	GX_SetTexCopySrc(0, 0, vmode->fbWidth, vmode->efbHeight);
+	GX_SetTexCopyDst(vmode->fbWidth, vmode->efbHeight, GX_TF_RGBA8, GX_FALSE);
+	DCInvalidateRange(videoScreenshot, vmode->fbWidth * vmode->efbHeight * 4);
+	GX_CopyTex(videoScreenshot, GX_FALSE);
+	GX_PixModeSync();
+}
 
 /****************************************************************************
  * ResetVideo_Menu

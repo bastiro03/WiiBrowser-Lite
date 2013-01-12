@@ -45,6 +45,9 @@ static GuiToolbar * App = NULL;
 static GuiTrigger * trigA = NULL;
 
 static GuiImageData * pointer[4];
+static const u8 * pointerImg[4];
+static const u8 * pointerGrabImg[4];
+
 static GuiImage * bgImg = NULL;
 static GuiSound * bgMusic = NULL;
 static GuiWindow * mainWindow = NULL;
@@ -390,16 +393,16 @@ void ToggleButtons(GuiToolbar *toolbar)
 
     if (toolbar->btnBack->GetState() != STATE_SELECTED)
     {
-        if (!history->prec)
-            toolbar->btnBack->SetState(STATE_DISABLED);
-        else toolbar->btnBack->SetState(STATE_DEFAULT);
+        if (history && history->prec)
+            toolbar->btnBack->SetState(STATE_DEFAULT);
+        else toolbar->btnBack->SetState(STATE_DISABLED);
     }
 
     if (toolbar->btnForward->GetState() != STATE_SELECTED)
     {
-        if (!history->prox)
-            toolbar->btnForward->SetState(STATE_DISABLED);
-        else toolbar->btnForward->SetState(STATE_DEFAULT);
+        if (history && history->prox)
+            toolbar->btnForward->SetState(STATE_DEFAULT);
+        else toolbar->btnForward->SetState(STATE_DISABLED);
     }
 }
 
@@ -486,6 +489,25 @@ void OnScreenKeyboard(GuiWindow *keyboardWindow, char *var, u16 maxlen)
  *
  * Called once
  ***************************************************************************/
+ static void DragCallback(void *ptr)
+{
+	GuiButton *b = (GuiButton *) ptr;
+	int chan = b->GetStateChan();
+	if (chan < 0)
+		return;
+
+	if (b->GetState() == STATE_HELD)
+	{
+		pointer[chan]->SetImage(pointerGrabImg[chan]);
+		if (!userInput[chan].wpad->ir.valid)
+			return;
+	}
+	else
+	{
+		pointer[chan]->SetImage(pointerImg[chan]);
+	}
+}
+
 void SetupGui()
 {
     bgImg = new GuiImage(screenwidth, screenheight, (GXColor){225, 225, 225, 255});
@@ -504,11 +526,21 @@ void SetupGui()
 	if(Settings.Music)
         bgMusic->Play(); // startup music
 
+
+    pointerImg[0] = player1_point_png;
+	pointerImg[1] = player2_point_png;
+	pointerImg[2] = player3_point_png;
+	pointerImg[3] = player4_point_png;
+	pointerGrabImg[0] = player1_grab_png;
+	pointerGrabImg[1] = player2_grab_png;
+	pointerGrabImg[2] = player3_grab_png;
+	pointerGrabImg[3] = player4_grab_png;
+
     #ifdef HW_RVL
-	pointer[0] = new GuiImageData(player1_point_png);
-	pointer[1] = new GuiImageData(player2_point_png);
-	pointer[2] = new GuiImageData(player3_point_png);
-	pointer[3] = new GuiImageData(player4_point_png);
+	pointer[0] = new GuiImageData(pointerImg[0]);
+	pointer[1] = new GuiImageData(pointerImg[1]);
+	pointer[2] = new GuiImageData(pointerImg[2]);
+	pointer[3] = new GuiImageData(pointerImg[3]);
 	#endif
 
     Right = new GuiSwitch(0);
@@ -1080,6 +1112,7 @@ static int MenuFavorites()
         Block[i].SetEffect(EFFECT_SLIDE_IN | EFFECT_SLIDE_RIGHT, 50);
         Block[i].SetPosition(xpos,ypos);
         Block[i].Block->SetLabel(Label[i]);
+        Block[i].Block->SetUpdateCallback(DragCallback);
 
         xpos += Block[i].GetDataWidth()+35;
         if(xpos > screenwidth-90)

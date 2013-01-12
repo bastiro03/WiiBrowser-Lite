@@ -16,7 +16,7 @@ extern SSettings Settings;
 void ExitApp();
 extern int ExitRequested;
 extern int GuiShutdown;
-extern FreeTypeGX *fontSystem[][FONTS];
+extern FreeTypeGX *fontSystem[];
 
 extern "C" {
     extern void __exception_setreload(int t);

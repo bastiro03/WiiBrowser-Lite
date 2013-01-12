@@ -364,10 +364,10 @@ void Clear(GuiWindow* mainWindow, Indice Index, Indice *first, Indice *last, Ind
 }
 
 void SetFont(GuiText *text, vector<string> mode) {
-    if (checkTag(mode, "b") || checkTag(mode, "strong"))
+    /*if (checkTag(mode, "b") || checkTag(mode, "strong"))
         text->SetFont(FONT_BOLD);
     if (checkTag(mode, "em") || checkTag(mode, "i"))
-        text->SetFont(FONT_ITALIC);
+        text->SetFont(FONT_ITALIC);*/
 }
 
 void DrawScroll (GuiWindow * mainWindow, GuiButton **btndown, GuiButton **btnup, GuiSound *btnSoundOver, GuiTrigger *trigA) {

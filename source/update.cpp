@@ -16,7 +16,7 @@ bool downloadUpdate(int appversion) {
 	sprintf(updateFile, "update.dol");
     bool result = false;
 
-    char url[30];
+    char url[50];
 	sprintf(url, "http://wiibrowser.googlecode.com/files/R%d.dol", appversion);
     struct block HTML;
 

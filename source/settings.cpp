@@ -1,6 +1,7 @@
- /****************************************************************************
+/****************************************************************************
  * Copyright (C) 2009
  * by Dimok
+ * modified by gave92
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any
@@ -33,13 +34,15 @@
 
 #include "Settings.h"
 
-#define DEFAULT_APP_PATH    "apps/Wiibrowser/"
+#define DEFAULT_APP_PATH    "sd:/apps/wiibrowser/"
 #define DEFAULT_HOMEPAGE    "www.google.com/"
-#define CONFIGPATH          "apps/Wiibrowser/"
+#define CONFIGPATH          "apps/wiibrowser/"
 #define CONFIGNAME          "wiibrowser.cfg"
 
 SSettings::SSettings()
 {
+    strcpy(BootDevice, "sd:/");
+    snprintf(ConfigPath, sizeof(ConfigPath), "%s%s%s", BootDevice, CONFIGPATH, CONFIGNAME);
     this->SetDefault();
 }
 
@@ -101,17 +104,45 @@ bool SSettings::Save()
 bool SSettings::FindConfig()
 {
     bool found = false;
-    snprintf(ConfigPath, sizeof(ConfigPath), "%s%s", CONFIGPATH, CONFIGNAME);
-    found = CheckFile(ConfigPath);
+
+    for(int i = SD; i <= USB8; i++)
+    {
+        if(!found)
+        {
+            snprintf(BootDevice, sizeof(BootDevice), "%s:/", DeviceName[i]);
+            snprintf(ConfigPath, sizeof(ConfigPath), "%s:/apps/WiiBrowser/%s", DeviceName[i], CONFIGNAME);
+            found = CheckFile(ConfigPath);
+        }
+        if(!found)
+        {
+            snprintf(BootDevice, sizeof(BootDevice), "%s:/", DeviceName[i]);
+            snprintf(ConfigPath, sizeof(ConfigPath), "%s:/%s%s", DeviceName[i], CONFIGPATH, CONFIGNAME);
+            found = CheckFile(ConfigPath);
+        }
+    }
 
     if(!found)
     {
         //! No existing config so try to find a place where we can write it too
-        FILE * newFp = fopen(ConfigPath, "wb");
-        found = (newFp != NULL);
-        fclose(newFp);
-        if (found)
-            this->Save();
+        for(int i = SD; i <= USB8; i++)
+        {
+            if(!found)
+            {
+                snprintf(BootDevice, sizeof(BootDevice), "%s:/", DeviceName[i]);
+                snprintf(ConfigPath, sizeof(ConfigPath), "%s:/apps/WiiBrowser/%s", DeviceName[i], CONFIGNAME);
+                FILE * testFp = fopen(ConfigPath, "wb");
+                found = (testFp != NULL);
+                fclose(testFp);
+            }
+            if(!found)
+            {
+                snprintf(BootDevice, sizeof(BootDevice), "%s:/", DeviceName[i]);
+                snprintf(ConfigPath, sizeof(ConfigPath), "%s:/%s%s", DeviceName[i], CONFIGPATH, CONFIGNAME);
+                FILE * testFp = fopen(ConfigPath, "wb");
+                found = (testFp != NULL);
+                fclose(testFp);
+            }
+        }
     }
 
     return found;
@@ -122,7 +153,7 @@ bool SSettings::Load()
     if(!FindConfig())
         return false;
 
-	char line[1024];
+    char line[1024];
     char filepath[300];
     snprintf(filepath, sizeof(filepath), "%s", ConfigPath);
 
@@ -162,7 +193,7 @@ bool SSettings::Reset()
 
 bool SSettings::SetSetting(char *name, char *value)
 {
-    int i = 0;
+    int i = 0, off;
 
     if (strcmp(name, "Language") == 0) {
 		if (sscanf(value, "%d", &i) == 1) {
@@ -194,10 +225,6 @@ bool SSettings::SetSetting(char *name, char *value)
 		}
 		return true;
 	}
-	else if (strcmp(name, "DefaultFolder") == 0) {
-        strncpy(DefaultFolder, value, sizeof(DefaultFolder));
-		return true;
-	}
     else if (strcmp(name, "Homepage") == 0) {
         strncpy(Homepage, value, sizeof(Homepage));
 		return true;
@@ -206,6 +233,14 @@ bool SSettings::SetSetting(char *name, char *value)
         if (sscanf(name, "Favorite(%d)", &i) == 1) {
             strncpy(Favorites[i], value, 256);
         }
+		return true;
+	}
+    else if (strcmp(name, "DefaultFolder") == 0) {
+        off = CheckFolder(value);
+
+	    if(off != ABSOLUTE)
+            snprintf(DefaultFolder, sizeof(DefaultFolder), "%s%s", BootDevice, value + off);
+        else strncpy(DefaultFolder, value, sizeof(DefaultFolder));
 		return true;
 	}
 
@@ -237,6 +272,20 @@ void SSettings::TrimLine(char *dest, char *src, int size)
 	if (len >= size) len = size-1;
 	strncpy(dest, src, len);
 	dest[len] = 0;
+}
+
+int SSettings::CheckFolder(const char *folder)
+{
+    if(folder[0] == '/')
+        return RELATIVE;
+
+    for(int i = SD; i <= USB8; i++)
+    {
+        if(!strncmp(folder, DeviceName[i], strlen(DeviceName[i])))
+            return ABSOLUTE;
+    }
+
+    return FILENAME;
 }
 
 bool SSettings::CheckFile(const char *path)

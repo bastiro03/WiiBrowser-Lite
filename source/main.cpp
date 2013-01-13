@@ -36,7 +36,7 @@ void ExitApp()
 	ShutoffRumble();
 	StopGX();
 	ShutdownAudio();
-	DeinitFreeType();
+	ClearFontData();
 	FreeHistory(history);
 	StopUpdateThread();
 	if (HWButton)
@@ -59,8 +59,7 @@ int main(int argc, char *argv[])
 	SetupPads(); // Initialize input
 	InitAudio(); // Initialize audio
 	fatInitDefault(); // Initialize file system
-
-	InitFreeType((u8*)font_regular_ttf, font_regular_ttf_size); // Initialize font system
+	InitFreeType(); // Initialize font system
 	InitGUIThreads(); // Initialize GUI
 
     __exception_setreload(10);

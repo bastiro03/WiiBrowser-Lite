@@ -702,6 +702,8 @@ class GuiText : public GuiElement, public Document
 		GuiText(const char * t);
 		//!Destructor
 		~GuiText();
+		//!Clear textDyn
+		void ClearDynamicText();
 		//!Sets the text of the GuiText element
 		//!\param t Text
 		void SetText(const char * t);
@@ -715,7 +717,7 @@ class GuiText : public GuiElement, public Document
         //!Change the font
 		//!\param font bufferblock
 		//!\param font filesize
-		bool SetFont(int s);
+		bool SetFont(const u8 *fontbuffer, const u32 filesize);
 		//!use spaces?
 		void SetSpace(bool space);
 		//!Sets up preset values to be used by GuiText(t)
@@ -766,17 +768,19 @@ class GuiText : public GuiElement, public Document
 		void Select(GuiTrigger * t);
 	protected:
 		GXColor color; //!< Font color
+		FreeTypeGX *font; //!< Font type
 		wchar_t* text; //!< Translated Unicode text value
 		wchar_t *textDyn[50]; //!< Text value, if max width, scrolling, or wrapping enabled
 		int textDynNum; //!< Number of text lines
 		char * origText; //!< Original text data (English)
 		int size; //!< Font size
-		int font;
+		int currentSize;
 		int maxWidth; //!< Maximum width of the generated text object (for text wrapping)
 		int textScroll; //!< Scrolling toggle
 		int textScrollPos; //!< Current starting index of text string for scrolling
 		int textScrollInitialDelay; //!< Delay to wait before starting to scroll
 		int textScrollDelay; //!< Scrolling speed
+		int textWidth;
 		int textModel;
 		u16 style; //!< FreeTypeGX style attributes
 		bool wrap; //!< Wrapping toggle

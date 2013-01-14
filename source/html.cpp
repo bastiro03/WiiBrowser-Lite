@@ -186,7 +186,8 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                                 mainWindow->Append(img->img);
                             ResumeGui();
                             Index=InsIndex(Index); Index->elem=img->img;
-                            Index->screenSize=img->img->GetHeight()+10;
+                            Index->screenSize=img->img->GetHeight()+5;
+                            Index->content=null;
                         }
                         free(IMAGE.data);
                         ResumeThread(thread);

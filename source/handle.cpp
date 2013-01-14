@@ -90,9 +90,13 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
             ResumeGui();
             offset+=60;
         }
+        else if (inputType(lista)==UNKNOWN) {
+            button=InsButton(button);
+            button->btn=NULL;
+        }
         button->url.assign(lista->name);
         button->url.append("=");
-        if (lista->value.length()>0) {
+        if (button->url.length()>1 && lista->value.length()>0) {
             encode=url_encode((char*)lista->value.c_str());
             button->url.append(encode);
             free(encode);
@@ -123,9 +127,12 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
 
     for (bottone=button; !NoButton(bottone); bottone=bottone->prox) {
         if (!bottone->btn || bottone->refs || bottone==choice) {
-            btn->url.append(bottone->url);
-            if (!NoButton(bottone->prox))
-                btn->url.append("&");
+            if (bottone->url.length()>1)
+            {
+                btn->url.append(bottone->url);
+                if (!NoButton(bottone->prox))
+                    btn->url.append("&");
+            }
         }
     }
 
@@ -235,7 +242,7 @@ void MoveText (int up, int dir, int line, Indice Index) {
 }
 
 int inputType(ListaDiInput lista) {
-    if (lista->type=="submit") return BUTTON;
+    if (lista->type=="submit" /*|| lista->type=="reset"*/) return BUTTON;
     if (lista->type=="hidden") return HIDDEN;
     if (lista->type=="text" || lista->type=="email" || lista->type=="password" || lista->type=="search" || lista->type.length()==0) return TEXT;
     return UNKNOWN;

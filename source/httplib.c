@@ -167,7 +167,7 @@ void save(struct block *b, FILE *hfile)
 // -----------------------------------------------------------
 
 char *findChr (const char *str, char chr) {
-    char *c=strchr(str, chr);
+    char *c=strrchr(str, chr);
     if (c!=NULL)
         *c='\0';
     return (char*)str;

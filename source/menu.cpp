@@ -27,9 +27,9 @@ extern "C" {
 #include "entities.h"
 }
 
-#define THREAD_SLEEP 100
-#define MAXLEN 256
-#define N 9
+#define THREAD_SLEEP    100
+#define MAXLEN          256
+#define N               9
 
 CURL *curl_handle;
 History history;
@@ -69,7 +69,9 @@ using namespace std;
 char *getHost(char *url) {
     char *p=strchr (url, '/')+2;
     char *c=strchr (p, '/');
-    return strndup(url,(c+1)-url);
+    if (c != NULL)
+        return strndup(url,(c+1)-url);
+    return url;
 }
 
 string getRoot(char *url) {
@@ -84,8 +86,9 @@ string adjustUrl(string link, const char* url) {
     else if (link.at(0)=='/' && link.at(1)=='/')
         result.assign("http:"); // https?
     else if (link.at(0)=='/') {
-        link.erase(link.begin());
         result=getHost((char*)url);
+        if (*result.rbegin()=='/')
+            link.erase(link.begin());
     }
     else result=getRoot((char*)url);
     result.append(link);
@@ -979,7 +982,7 @@ static int MenuBrowse()
     HTML = downloadfile(curl_handle, url, NULL);
 
     #ifdef DEBUG
-    FILE *pFile = fopen ("Pagina.htm", "rb");
+    FILE *pFile = fopen ("Login.htm", "rb");
     fseek (pFile, 0, SEEK_END);
     int size = ftell(pFile);
     rewind (pFile);
@@ -1181,6 +1184,7 @@ static int MenuFavorites()
             {
                 bzero(Settings.Favorites[i],256);
                 Block[i].Remove->ResetState();
+                Label[i]->SetText(Settings.GetUrl(i));
             }
 
             if(editing && !Held(Block))

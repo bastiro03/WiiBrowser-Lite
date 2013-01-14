@@ -91,7 +91,7 @@ string findText(tree<HTML::Node>::iterator it)
     ++ends;
     for (; begin != ends; ++begin)
     {
-        if (!it->isTag() && !it->isClosing() && !it->isComment())
+        if (!begin->isTag() && !begin->isClosing() && !begin->isComment())
         {
             char *decode=(char*)malloc(begin->text().length()+1);
             decode_html_entities_utf8(strcpy(decode, begin->text().c_str()),NULL);
@@ -102,7 +102,7 @@ string findText(tree<HTML::Node>::iterator it)
     return text;
 }
 
-string search(string id, tree<HTML::Node>::iterator it, string *html)
+string search(string id, tree<HTML::Node>::iterator it)
 {
     tree<HTML::Node>::iterator begin, ends;
     begin = it;
@@ -305,7 +305,10 @@ Lista getTag(char * buffer)
                 {
                     if (open[form].open)
                     {
-                        string label=search(it->attribute("id").second, dom.parent(it), &html);
+                        tree<HTML::Node>::iterator k = it;
+                        while (k->tagName() != "form" && k != dom.begin())
+                            k = dom.parent(k);
+                        string label=search(it->attribute("id").second, k);
                         open[form].p->form.input=InsInFondo(open[form].p->form.input, it->attribute("name").second, it->attribute("type").second, it->attribute("value").second, label);
                     }
                 }

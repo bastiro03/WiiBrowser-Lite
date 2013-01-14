@@ -536,26 +536,23 @@ void GuiText::Draw()
 				// currentWidth += (font ? font : fontSystem[currentSize])->getCharWidth(text[ch]);
 				currentWidth = (font ? font : fontSystem[currentSize])->getWidth(textDyn[linenum]);
 
-				// if(text[ch] == ' ' || ch == textlen-1)
-				{
-					if(currentWidth > ((linenum == 0 || (style & FTGX_JUSTIFY_MASK) != FTGX_JUSTIFY_LEFT) ? maxWidth : screenwidth-80))
-					{
-						if(lastSpace >= 0)
-						{
-							textDyn[linenum][lastSpaceIndex] = 0; // discard space, and everything after
-							ch = lastSpace; // go backwards to the last space
-							lastSpace = -1; // we have used this space
-							lastSpaceIndex = -1;
-						}
-						++linenum;
-						n = -1;
-					}
-					else if(ch == textlen-1)
-					{
-						++linenum;
-					}
-				}
-				if(usespace && text[ch] == ' ' && n >= 0)
+                if(currentWidth > ((linenum == 0 || (style & FTGX_JUSTIFY_MASK) != FTGX_JUSTIFY_LEFT) ? maxWidth : screenwidth-80))
+                {
+                    if(lastSpace >= 0)
+                    {
+                        textDyn[linenum][lastSpaceIndex] = 0; // discard space, and everything after
+                        ch = lastSpace; // go backwards to the last space
+                        lastSpace = -1; // we have used this space
+                        lastSpaceIndex = -1;
+                    }
+                    ++linenum;
+                    n = -1;
+                }
+                else if(ch == textlen-1)
+                {
+                    ++linenum;
+                }
+				else if(usespace && text[ch] == ' ' && n >= 0)
 				{
 					lastSpace = ch;
 					lastSpaceIndex = n;

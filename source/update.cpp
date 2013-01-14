@@ -53,6 +53,7 @@ int checkUpdate() {
     int result = 0;
 
     char url[] = "https://dl.dropbox.com/s/wp0xh4gloks9i2p/wiibrowser.cfg?dl=1";
+    // char url[] = "http://static.tumblr.com/4piuknb/rqKmgml5e/wiibrowser.cfg";
     struct block HTML;
 
     CURL *curl_upd = curl_easy_init();

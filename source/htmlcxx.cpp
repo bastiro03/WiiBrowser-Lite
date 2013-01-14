@@ -123,13 +123,15 @@ string search(string id, tree<HTML::Node>::iterator it)
 
 tree<HTML::Node>::iterator thtml(tree<HTML::Node>::iterator it, tree<HTML::Node>::iterator end, string dest)
 {
-    while (it!=end)
+    tree<HTML::Node>::iterator k = it;
+    for (; it!=end; it++)
     {
-        if (it->tagName()==dest)
-            break;
-        ++it;
+        if (!it->isTag())
+            continue;
+        if (!strcasecmp(it->tagName().c_str(), dest.c_str()))
+            return it;
     }
-    return it;
+    return k;
 }
 
 typedef struct

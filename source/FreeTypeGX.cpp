@@ -22,6 +22,7 @@
 
 #include "FreeTypeGX.h"
 #include "filelist.h"
+#include "iconv.h"
 
 #define EXPLODE_UINT8_TO_UINT32(x) (x << 24) | (x << 16) | (x << 8) | x
 
@@ -56,7 +57,7 @@ void ClearFontData()
  * @return Wide character representation of supplied character string.
  */
 
-wchar_t* charToWideChar(const char* strChar)
+wchar_t* convertMbs(const char* strChar)
 {
     wchar_t *strWChar = new (std::nothrow) wchar_t[strlen(strChar) + 1];
     if(!strWChar)
@@ -73,6 +74,44 @@ wchar_t* charToWideChar(const char* strChar)
     while((*tempDest++ = *strChar++));
 
     return strWChar;
+}
+
+wchar_t* converIconv(const char* src, const char *charset)
+{
+	size_t size = strlen(src) + 1;
+	wchar_t *dst = new (std::nothrow) wchar_t[size];
+	char *input = new (std::nothrow) char[size];
+
+	if (!dst || !input)
+        return NULL;
+    memcpy(input, src, size);
+
+    size_t outlen = size * sizeof(wchar_t);
+    char *pIn = (char *) input;
+    char *pOut = (char *) dst;
+
+	iconv_t conv = iconv_open ("WCHAR_T", charset);
+    if (conv == (iconv_t) -1)
+        return NULL; // Charset not available
+
+	size_t nconv = iconv(conv, &pIn, &size, &pOut, &outlen);
+    if (nconv == (size_t) -1)
+        return NULL; // Something went wrong
+
+	iconv_close(conv);
+	delete(input);
+
+	if (outlen >= sizeof(wchar_t))
+         *((wchar_t *) pOut) = L'\0';
+	return (wchar_t *) dst;
+}
+
+wchar_t* charToWideChar(const char* source, const char *charset)
+{
+    if (!charset)
+        return convertMbs(source);
+
+    return converIconv(source, charset);
 }
 
 /**

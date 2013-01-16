@@ -243,7 +243,8 @@ typedef struct ftgxDataOffset_ ftgxDataOffset;
 const GXColor ftgxWhite = (GXColor){0xff, 0xff, 0xff, 0xff}; /**< Constant color value used only to sanitize Doxygen documentation. */
 
 bool SetupDefaultFont(const char * customfontpath);
-wchar_t* charToWideChar(const char* p);
+wchar_t* charToWideChar(const char* source, const char *charset = NULL);
+
 void InitFreeType();
 void ClearFontData();
 

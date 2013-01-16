@@ -110,6 +110,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                     text=InsText(text);
                     text->txt = new GuiText((char*)lista->value[0].text.c_str(), 30, (GXColor){0, 0, 0, 255});
                     text->txt->SetOffset(&coordX);
+                    text->txt->SetCharset(HTML->chset);
                     text->txt->SetAlignment(ALIGN_MIDDLE, ALIGN_TOP);
                     text->txt->SetPosition(coordX+screenwidth/2, coordY);
 					text->txt->SetWrap(true, 400);
@@ -126,6 +127,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                         btn=InsButton(btn);
                         btn->label=new GuiText((char*)lista->value[i].text.c_str(), 20, (GXColor){0, 0, 255, 255});
                         btn->label->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+                        btn->label->SetCharset(HTML->chset);
                         btn->label->SetSpace(false);
                         btn->label->SetModel(ANCHOR);
                         btn->label->SetOffset(&coordX);
@@ -215,10 +217,8 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                 }
 
                 else if (lista->name=="meta") {
-                    if (!lista->value.empty() && lista->value[0].text=="refresh") {
-                        sleep(getTime(lista->attribute));
-                        link.assign(getUrl(&choice, lista->attribute));
-                    }
+                    if (!lista->value.empty())
+                        choice = HandleMeta(lista, &link, HTML);
                 }
 
                 else if (lista->name=="return") {
@@ -245,6 +245,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                         text->txt = new GuiText((char*)lista->value[i].text.c_str(), 20, (GXColor){0, 0, 0, 255});
                         text->txt->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
                         text->txt->SetSpace(false);
+                        text->txt->SetCharset(HTML->chset);
                         text->txt->SetOffset(&coordX);
                         if (offset >= (screenwidth-80)) {
                             coordY=Index ? Index->elem->GetYPosition()+Index->screenSize : 40;
@@ -278,7 +279,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                 if(bottone->btn->GetState() == STATE_CLICKED) {
                     bottone->btn->ResetState(); choice = 1;
                     if (bottone->refs)
-                        choice=HandleForm(parentWindow, mainWindow, bottone);
+                        choice=HandleForm(parentWindow, mainWindow, bottone, HTML->chset);
                     if (choice) link.assign(bottone->url);
                 }
             }

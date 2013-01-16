@@ -12,7 +12,7 @@ enum { TEXT=0, BUTTON, HIDDEN, UNKNOWN };
 int inputType(ListaDiInput lista);
 int noSubmit(ListaDiBottoni btn);
 
-int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni btn) {
+int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni btn, const char* ch) {
     GuiImageData Textbox (keyboard_textbox_png, keyboard_textbox_png_size);
     GuiImageData Button (button_png, button_png_size);
 
@@ -44,6 +44,7 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
             button->btn=new GuiButton(ButtonImg->GetWidth(), ButtonImg->GetHeight());
             button->label=new GuiText((char*)lista->value.c_str(), 20, (GXColor){0, 0, 255, 255});
             button->label->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
+            button->label->SetCharset(ch);
             button->label->SetMaxWidth(ButtonImg->GetWidth()-5);
 			button->label->SetScroll(SCROLL_HORIZONTAL);
 
@@ -72,6 +73,7 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
             if (lista->label!="noLabel") {
                 button->label=new GuiText((char*)lista->label.c_str(), 20, (GXColor){0, 0, 255, 255});
                 button->label->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+                button->label->SetCharset(ch);
                 button->label->SetPosition(0,-25);
                 button->label->SetMaxWidth(TextboxImg->GetWidth()-5);
 				button->label->SetScroll(SCROLL_HORIZONTAL);
@@ -333,6 +335,20 @@ void HandleMenuBar(string *link, char* url, int *choice, int img, GuiWindow *mai
             }
         }
     }
+}
+
+int HandleMeta(Lista::iterator lista, string *link, struct block *html) {
+    int choice = 0;
+    if (lista->value[0].text=="Content-Type") {
+        if (html->chset == NULL)
+            html->chset = findCharset(html, lista->attribute.c_str());
+    }
+
+    else if (lista->value[0].text=="refresh") {
+        sleep(getTime(lista->attribute));
+        link->assign(getUrl(&choice, lista->attribute));
+    }
+    return choice;
 }
 
 int getTime(string url) {

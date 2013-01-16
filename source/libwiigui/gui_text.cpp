@@ -24,12 +24,13 @@ static u16 presetStyle = 0;
 /**
  * Constructor for the GuiText class.
  */
-GuiText::GuiText(const char * t, int s, GXColor c)
+GuiText::GuiText(const char * t, int s, GXColor c, const char * ch)
 {
 	origText = NULL;
 	text = NULL;
 	font = NULL;
 	size = s;
+	charset = ch;
 	currentSize = size;
 	color = c;
 	alpha = c.a;
@@ -50,7 +51,7 @@ GuiText::GuiText(const char * t, int s, GXColor c)
     if(t)
 	{
 		origText = strdup(t);
-		text = charToWideChar(gettext(t));
+		text = charToWideChar(gettext(t), charset);
 
         if(currentSize > MAX_FONT_SIZE)
             currentSize = MAX_FONT_SIZE;
@@ -71,6 +72,7 @@ GuiText::GuiText(const wchar_t * t, int s, GXColor c)
 {
     origText = NULL;
 	text = NULL;
+	charset = NULL;
 	font = NULL;
 	size = s;
 	currentSize = size;
@@ -121,6 +123,7 @@ GuiText::GuiText(const char * t)
 {
 	origText = NULL;
 	text = NULL;
+	charset = NULL;
 	font = NULL;
 	size = presetSize;
 	currentSize = size;
@@ -144,7 +147,7 @@ GuiText::GuiText(const char * t)
     if(t)
 	{
 	    origText = strdup(t);
-		text = charToWideChar(gettext(t));
+		text = charToWideChar(gettext(t), charset);
 		if(!text)
 		    return;
 
@@ -189,6 +192,8 @@ void GuiText::ClearDynamicText()
         if(textDyn[i])
             delete [] textDyn[i];
     }
+
+    textDynNum = 0;
 }
 
 void GuiText::SetText(const char * t)
@@ -202,14 +207,13 @@ void GuiText::SetText(const char * t)
 
 	origText = NULL;
 	text = NULL;
-	textDynNum = 0;
 	textScrollPos = 0;
 	textScrollInitialDelay = TEXT_SCROLL_INITIAL_DELAY;
 
     if(t)
 	{
 		origText = strdup(t);
-		text = charToWideChar(gettext(t));
+		text = charToWideChar(gettext(t), charset);
 		if(!text)
 		    return;
 
@@ -231,7 +235,6 @@ void GuiText::SetWText(wchar_t * t)
 
 	origText = NULL;
 	text = NULL;
-	textDynNum = 0;
 	textScrollPos = 0;
 	textScrollInitialDelay = TEXT_SCROLL_INITIAL_DELAY;
 
@@ -278,16 +281,7 @@ void GuiText::SetMaxWidth(int width)
 {
 	maxWidth = width;
 
-	for(int i=0; i < textDynNum; i++)
-	{
-		if(textDyn[i])
-		{
-			delete[] textDyn[i];
-			textDyn[i] = NULL;
-		}
-	}
-
-	textDynNum = 0;
+	ClearDynamicText();
 }
 
 int GuiText::GetMaxWidth()
@@ -308,16 +302,7 @@ void GuiText::SetWrap(bool w, int width)
 	wrap = w;
 	maxWidth = width;
 
-	for(int i=0; i < textDynNum; i++)
-	{
-		if(textDyn[i])
-		{
-			delete[] textDyn[i];
-			textDyn[i] = NULL;
-		}
-	}
-
-	textDynNum = 0;
+    ClearDynamicText();
 }
 
 void GuiText::SetScroll(int s)
@@ -325,16 +310,7 @@ void GuiText::SetScroll(int s)
 	if(textScroll == s)
 		return;
 
-	for(int i=0; i < textDynNum; i++)
-	{
-		if(textDyn[i])
-		{
-			delete[] textDyn[i];
-			textDyn[i] = NULL;
-		}
-	}
-
-	textDynNum = 0;
+    ClearDynamicText();
 
 	textScroll = s;
 	textScrollPos = 0;
@@ -405,6 +381,14 @@ bool GuiText::SetFont(const u8 *fontbuffer, const u32 filesize)
 	return true;
 }
 
+void GuiText::SetCharset(const char * ch)
+{
+    charset = ch;
+
+    if(ch)
+        this->ResetText();
+}
+
 void GuiText::ResetText()
 {
 	if(!origText)
@@ -412,19 +396,10 @@ void GuiText::ResetText()
 	if(text)
 		delete[] text;
 
-	text = charToWideChar(gettext(origText));
+	text = charToWideChar(gettext(origText), charset);
 
-	for(int i=0; i < textDynNum; i++)
-	{
-		if(textDyn[i])
-		{
-			delete[] textDyn[i];
-			textDyn[i] = NULL;
-		}
-	}
-
-	textDynNum = 0;
-	currentSize = 0;
+	ClearDynamicText();
+	// currentSize = 0;
 }
 
 int GuiText::GetLinesCount()
@@ -446,7 +421,7 @@ void GuiText::SetModel(int model)
 bool GuiText::IsOver(int x, int y)
 {
 	if(unsigned(x - this->GetLeft())  < unsigned(textWidth)
-	&& unsigned(y - this->GetTop())  < unsigned(size/**GetLinesCount()*/))
+	&& unsigned(y - this->GetTop())  < unsigned(size /**GetLinesCount()*/))
 		return true;
 	return false;
 }

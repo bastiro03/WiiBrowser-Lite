@@ -143,6 +143,8 @@ typedef struct
 Lista getTag(char * buffer)
 {
     bool parse_css=true;
+    bool parsed=true;
+
     string css_code;
     tree<HTML::Node> dom;
     Lista l1;
@@ -171,13 +173,12 @@ Lista getTag(char * buffer)
 
         for (; it!=end; ++it)
         {
-            it->parseAttributes();
-            if (it->tagName()=="script" ||
-                    it->attribute("style").second.find("display:none")!=string::npos)
+            if (it->tagName()=="script")
             {
                 it.skip_children();
                 continue;
             }
+
             if (!it->isTag() && !it->isClosing() && !it->isComment())
             {
                 if (!parent.empty() && checkparent(parent,TITLE))
@@ -213,8 +214,19 @@ Lista getTag(char * buffer)
             {
                 if (parse_css)
                 {
+                    CSS::Parser style_parser;
                     vector<CSS::Parser::Selector> v;
                     tree<HTML::Node>::iterator k = it;
+                    it->parseAttributes();
+
+                    if (it->attribute("style").second.length() > 0)
+                    {
+                        string css_attr(it->tagName());
+                        css_attr.append(" { " + it->attribute("style").second + " }");
+                        style_parser.parse(css_attr);
+                        parsed = false;
+                    }
+
                     while (k != dom.begin())
                     {
                         CSS::Parser::Selector s;
@@ -231,7 +243,27 @@ Lista getTag(char * buffer)
                     map<string, string>::const_iterator mit = attributes.begin();
                     map<string, string>::const_iterator mend = attributes.end();
 
+                    map<string, string> styles;
                     bool skip=false;
+
+                    if (!parsed)
+                    {
+                        vector<CSS::Parser::Selector> vt;
+                        CSS::Parser::Selector st;
+                        st.setElement(it->tagName());
+                        vt.push_back(st);
+
+                        styles = style_parser.getAttributes(vt);
+                        map<string, string>::const_iterator sit = styles.begin();
+                        map<string, string>::const_iterator send = styles.end();
+
+                        for (parsed = true; sit != send; ++sit)
+                        {
+                            if (sit->first=="display" && sit->second=="none")
+                                skip=true;
+                        }
+                    }
+
                     for (; mit != mend; ++mit)
                     {
                         if (mit->first=="display" && mit->second=="none")
@@ -247,13 +279,12 @@ Lista getTag(char * buffer)
                         ++end;
                         string css_snippet;
 
-                        for (; begin != end; ++begin)
+                        for (skip = true; begin != end; ++begin)
                         {
-                            if (!(begin->isTag()))
+                            if (!begin->isTag())
                                 css_snippet.append(begin->text());
                         }
                         css_parser.parse(css_snippet);
-                        skip=true;
                     }
 
                     if (skip && !open[form].open)

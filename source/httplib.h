@@ -37,11 +37,13 @@ struct block
     char *data;
     u32 size;
     char type[TYPE];
+    char *chset;
 };
 
 extern const struct block emptyblock;
 struct block downloadfile(CURL *curl_handle, const char *url, FILE *hfile);
 void save(struct block *b, FILE *hfile);
+char *findCharset (struct block *b, const char *ct);
 
 void DebugInt(u32 msg);
 void Debug(const char *msg);

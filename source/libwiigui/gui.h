@@ -690,7 +690,7 @@ class GuiText : public GuiElement, public Document
 		//!\param t Text
 		//!\param s Font size
 		//!\param c Font color
-		GuiText(const char * t, int s, GXColor c);
+		GuiText(const char * t, int s, GXColor c, const char * ch = NULL);
         //!\overload
 		//!\param t Text
 		//!\param s Font size
@@ -729,7 +729,10 @@ class GuiText : public GuiElement, public Document
 		//!\param h Text alignment (horizontal)
 		//!\param v Text alignment (vertical)
 		void SetPresets(int sz, GXColor c, int w, u16 s, int h, int v);
-		//!Sets the font size
+		//!Sets the charset
+		//!\param ch charset
+		void SetCharset(const char * ch);
+        //!Sets the font size
 		//!\param s Font size
 		void SetFontSize(int s);
 		//!Sets the maximum width of the drawn texture image
@@ -773,6 +776,7 @@ class GuiText : public GuiElement, public Document
 		wchar_t *textDyn[50]; //!< Text value, if max width, scrolling, or wrapping enabled
 		int textDynNum; //!< Number of text lines
 		char * origText; //!< Original text data (English)
+		const char * charset; //!< Original text data (English)
 		int size; //!< Font size
 		int currentSize;
 		int maxWidth; //!< Maximum width of the generated text object (for text wrapping)

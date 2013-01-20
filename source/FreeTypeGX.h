@@ -165,11 +165,17 @@
 
 enum
 {
-    FONT_REGULAR,
-    FONT_BOLD,
-    FONT_ITALIC,
-    FONTS
+    FONT_DEFAULT,
+    FONT_CHINESE,
+    FONT_KOREAN,
+    FONT_JAPANESE,
+    FONT_TAMIL,
+    FONT_GENERIC,
 };
+
+extern FT_Byte * extFont;
+extern u32 extFontSize;
+extern int loadedFont;
 
 /*! \struct ftgxCharData_
  *
@@ -242,7 +248,7 @@ typedef struct ftgxDataOffset_ ftgxDataOffset;
 
 const GXColor ftgxWhite = (GXColor){0xff, 0xff, 0xff, 0xff}; /**< Constant color value used only to sanitize Doxygen documentation. */
 
-bool SetupDefaultFont(const char * customfontpath);
+bool SelectFont(const char * charset);
 wchar_t* charToWideChar(const char* source, const char *charset = NULL);
 
 void InitFreeType();

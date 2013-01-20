@@ -629,6 +629,7 @@ static int MenuSettings()
 
 			case 1:
 				OnScreenKeyboard(mainWindow, Settings.DefaultFolder, 256);
+				Settings.ChangeFolder();
 				break;
 
 			case 2:

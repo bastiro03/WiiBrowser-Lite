@@ -70,6 +70,8 @@ class SSettings
 		~SSettings();
 		//!Set Default Settings
 		void SetDefault();
+		//!Set Default folder
+		void ChangeFolder();
 		//!Load Settings
 		bool Load();
         //!Find the config file in the default paths
@@ -99,8 +101,11 @@ class SSettings
 
         char Homepage[256];
         char DefaultFolder[256];
+        char AppPath[256];
         char ConfigPath[256];
+
         char BootDevice[6];
+        char UserFolder[256];
         char *Favorites[N];
 
     protected:

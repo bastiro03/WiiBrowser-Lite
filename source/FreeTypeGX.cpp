@@ -21,6 +21,7 @@
  */
 
 #include "FreeTypeGX.h"
+#include "main.h"
 #include "filelist.h"
 #include "iconv.h"
 
@@ -28,8 +29,12 @@
 
 FreeTypeGX *fontSystem[MAX_FONT_SIZE+1];
 
-static FT_Byte * MainFont = (FT_Byte *) font_regular_ttf;
-static u32 MainFontSize = font_regular_ttf_size;
+FT_Byte * mainFont = (FT_Byte *) font_regular_ttf;
+u32 mainFontSize = font_regular_ttf_size;
+
+FT_Byte * extFont = NULL;
+u32 extFontSize = 0;
+int loadedFont = 0;
 
 void InitFreeType()
 {
@@ -45,6 +50,55 @@ void ClearFontData()
             delete fontSystem[i];
         fontSystem[i] = NULL;
     }
+}
+
+bool SelectFont(const char * charset)
+{
+    char filepath[256];
+    int fontToLoad = FONT_DEFAULT;
+    if(!charset)
+        return false;
+
+    if(!stricmp(charset, "gbk") ||
+        !stricmp(charset, "gb2312") ||
+            !stricmp(charset, "big5"))
+    {
+        fontToLoad = FONT_CHINESE;
+        sprintf(filepath, "%sfonts/zh_cn.ttf", Settings.AppPath);
+    }
+
+    if(fontToLoad == FONT_DEFAULT)
+        loadedFont = fontToLoad;
+
+    if(fontToLoad == loadedFont)
+        return false;
+
+    FILE *file = fopen (filepath, "rb");
+    if(file)
+    {
+        fseeko(file,0,SEEK_END);
+        u32 loadSize = ftello(file);
+        if(loadSize == 0)
+            return false;
+
+        if(extFont)
+        {
+            delete(extFont);
+            extFont = NULL;
+        }
+
+        extFont = (u8 *)memalign(32, loadSize);
+        extFontSize = loadSize;
+
+        if(extFont)
+        {
+            fseeko(file,0,SEEK_SET);
+            fread (extFont, 1, loadSize, file);
+            loadedFont = fontToLoad;
+        }
+        fclose(file);
+    }
+    return true;
 }
 
 /**
@@ -123,7 +177,7 @@ FreeTypeGX::FreeTypeGX(FT_UInt pixelSize, const uint8_t* fontBuffer, FT_Long buf
 
     if(fontBuffer && bufferSize > 0)
         FT_New_Memory_Face(ftLibrary, (FT_Byte *)fontBuffer, bufferSize, 0, &ftFace);
-    else FT_New_Memory_Face(ftLibrary, MainFont, MainFontSize, 0, &ftFace);
+    else FT_New_Memory_Face(ftLibrary, mainFont, mainFontSize, 0, &ftFace);
 
     ftSlot = ftFace->glyph;
     setVertexFormat(GX_VTXFMT1);

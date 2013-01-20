@@ -342,6 +342,7 @@ int HandleMeta(Lista::iterator lista, string *link, struct block *html) {
     if (lista->value[0].text=="Content-Type") {
         if (html->chset == NULL)
             html->chset = findCharset(html, lista->attribute.c_str());
+        SelectFont(html->chset);
     }
 
     else if (lista->value[0].text=="refresh") {

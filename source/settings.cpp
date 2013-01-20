@@ -34,7 +34,7 @@
 
 #include "Settings.h"
 
-#define DEFAULT_APP_PATH    "sd:/apps/wiibrowser/"
+#define DEFAULT_APP_PATH    "apps/wiibrowser/"
 #define DEFAULT_HOMEPAGE    "www.google.com/"
 #define CONFIGPATH          "apps/wiibrowser/"
 #define CONFIGNAME          "wiibrowser.cfg"
@@ -57,8 +57,12 @@ void SSettings::SetDefault()
     ShowTooltip = true;
     Music = true;
     Autoupdate = true;
-    sprintf(DefaultFolder, DEFAULT_APP_PATH);
+
     sprintf(Homepage, DEFAULT_HOMEPAGE);
+    sprintf(AppPath, "%s%s", BootDevice, DEFAULT_APP_PATH);
+
+    sprintf(DefaultFolder, DEFAULT_APP_PATH);
+    sprintf(UserFolder, AppPath);
 
     for(int i = 0; i < N; i++)
     {
@@ -145,6 +149,7 @@ bool SSettings::FindConfig()
         }
     }
 
+    sprintf(AppPath, "%s%s", BootDevice, DEFAULT_APP_PATH);
     return found;
 }
 
@@ -193,7 +198,7 @@ bool SSettings::Reset()
 
 bool SSettings::SetSetting(char *name, char *value)
 {
-    int i = 0, off;
+    int i = 0;
 
     if (strcmp(name, "Language") == 0) {
 		if (sscanf(value, "%d", &i) == 1) {
@@ -236,11 +241,8 @@ bool SSettings::SetSetting(char *name, char *value)
 		return true;
 	}
     else if (strcmp(name, "DefaultFolder") == 0) {
-        off = CheckFolder(value);
-
-	    if(off != ABSOLUTE)
-            snprintf(DefaultFolder, sizeof(DefaultFolder), "%s%s", BootDevice, value + off);
-        else strncpy(DefaultFolder, value, sizeof(DefaultFolder));
+	    snprintf(DefaultFolder, sizeof(DefaultFolder), value);
+	    this->ChangeFolder();
 		return true;
 	}
 
@@ -281,7 +283,7 @@ int SSettings::CheckFolder(const char *folder)
 
     for(int i = SD; i <= USB8; i++)
     {
-        if(!strncmp(folder, DeviceName[i], strlen(DeviceName[i])))
+        if(!strncmp(folder, DeviceName[i], 3))
             return ABSOLUTE;
     }
 
@@ -319,4 +321,13 @@ char *SSettings::GetUrl(int f)
     if(f < 0 || f >= N)
         return NULL;
     return Favorites[f];
+}
+
+void SSettings::ChangeFolder()
+{
+    int absolutePath = CheckFolder(DefaultFolder);
+
+    if(absolutePath != ABSOLUTE)
+        snprintf(UserFolder, sizeof(UserFolder), "%s%s", BootDevice, DefaultFolder + absolutePath);
+    else strncpy(UserFolder, DefaultFolder, sizeof(UserFolder));
 }

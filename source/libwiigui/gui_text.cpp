@@ -384,9 +384,12 @@ bool GuiText::SetFont(const u8 *fontbuffer, const u32 filesize)
 void GuiText::SetCharset(const char * ch)
 {
     charset = ch;
+    if(!ch)
+        return;
 
-    if(ch)
-        this->ResetText();
+    this->ResetText();
+    if(loadedFont)
+        this->SetFont(extFont, extFontSize);
 }
 
 void GuiText::ResetText()

@@ -81,7 +81,9 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
     {
         l1=getTag((char*)HTML->data);
         lista=l1.begin();
+
         LWP_CreateThread (&thread, DownloadImage, (void*)url, NULL, 0, 70);
+        SelectFont(HTML->chset);
 
         unsigned int i;
         while (!choice && !(userInput[0].wpad->btns_d & WPAD_BUTTON_B)) {
@@ -365,7 +367,11 @@ void Clear(GuiWindow* mainWindow, Indice Index, Indice *first, Indice *last, Ind
     }
 }
 
-void SetFont(GuiText *text, vector<string> mode) {
+void SetFont(GuiText *text, vector<string> mode)
+{
+    if(loadedFont)
+        return;
+
     if (checkTag(mode, "b") || checkTag(mode, "strong"))
         text->SetFont(font_bold_ttf, font_bold_ttf_size);
     if (checkTag(mode, "em") || checkTag(mode, "i"))

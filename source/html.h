@@ -21,7 +21,7 @@ FILE *SelectFile(GuiWindow *mainWindow, char *type)
 {
     const char *c;
     char path[MAXLEN];
-    snprintf(path, MAXLEN, Settings.DefaultFolder);
+    snprintf(path, MAXLEN, Settings.UserFolder);
     OnScreenKeyboard(mainWindow, path, MAXLEN);
     if ((c = mime2ext(type)))
         strcat(path, c);

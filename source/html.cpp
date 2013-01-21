@@ -112,11 +112,11 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                     text=InsText(text);
                     text->txt = new GuiText((char*)lista->value[0].text.c_str(), 30, (GXColor){0, 0, 0, 255});
                     text->txt->SetOffset(&coordX);
-                    text->txt->SetCharset(HTML->chset);
                     text->txt->SetAlignment(ALIGN_MIDDLE, ALIGN_TOP);
                     text->txt->SetPosition(coordX+screenwidth/2, coordY);
 					text->txt->SetWrap(true, 400);
                     text->txt->SetEffect(EFFECT_FADE, 50);
+                    SetFont(text->txt, lista->value[0].mode, HTML->chset);
                     HaltGui();
                         mainWindow->Append(text->txt);
                     ResumeGui();
@@ -129,7 +129,6 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                         btn=InsButton(btn);
                         btn->label=new GuiText((char*)lista->value[i].text.c_str(), 20, (GXColor){0, 0, 255, 255});
                         btn->label->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-                        btn->label->SetCharset(HTML->chset);
                         btn->label->SetSpace(false);
                         btn->label->SetModel(ANCHOR);
                         btn->label->SetOffset(&coordX);
@@ -138,8 +137,8 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                             offset=offset % (screenwidth-80);
                         }
                         btn->label->SetWrap(true, screenwidth-80-offset);
-                        SetFont(btn->label, lista->value[i].mode);
                         btn->label->SetPosition(0,0);
+                        SetFont(btn->label, lista->value[i].mode, HTML->chset);
 
                         btn->tooltip=new GuiTooltip(lista->attribute.c_str());
                         btn->btn=new GuiButton(btn->label->GetTextWidth(), 20);
@@ -247,7 +246,6 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                         text->txt = new GuiText((char*)lista->value[i].text.c_str(), 20, (GXColor){0, 0, 0, 255});
                         text->txt->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
                         text->txt->SetSpace(false);
-                        text->txt->SetCharset(HTML->chset);
                         text->txt->SetOffset(&coordX);
                         if (offset >= (screenwidth-80)) {
                             coordY=Index ? Index->elem->GetYPosition()+Index->screenSize : 40;
@@ -256,7 +254,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                         text->txt->SetPosition(coordX+40+offset, coordY);
                         text->txt->SetWrap(true, screenwidth-80-offset);
                         text->txt->SetEffect(EFFECT_FADE, 50);
-                        SetFont(text->txt, lista->value[i].mode);
+                        SetFont(text->txt, lista->value[i].mode, HTML->chset);
                         HaltGui();
                             mainWindow->Append(text->txt);
                         ResumeGui();
@@ -367,10 +365,18 @@ void Clear(GuiWindow* mainWindow, Indice Index, Indice *first, Indice *last, Ind
     }
 }
 
-void SetFont(GuiText *text, vector<string> mode)
+void SetFont(GuiText *text, vector<string> mode, char *chset)
 {
-    if(loadedFont)
-        return;
+    if (!checkTag(mode, "entity"))
+    {
+        text->SetCharset(chset);
+        if(loadedFont)
+        {
+            text->SetFont(extFont, extFontSize);
+            return;
+        }
+    }
+    else text->SetCharset("UTF-8");
 
     if (checkTag(mode, "b") || checkTag(mode, "strong"))
         text->SetFont(font_bold_ttf, font_bold_ttf_size);

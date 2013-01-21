@@ -25,8 +25,6 @@
 #include "filelist.h"
 #include "iconv.h"
 
-#define EXPLODE_UINT8_TO_UINT32(x) (x << 24) | (x << 16) | (x << 8) | x
-
 FreeTypeGX *fontSystem[MAX_FONT_SIZE+1];
 
 FT_Byte * mainFont = (FT_Byte *) font_regular_ttf;

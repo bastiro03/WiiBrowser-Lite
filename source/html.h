@@ -11,7 +11,7 @@
 void DrawScroll (GuiWindow *mainWindow, GuiButton **btndown, GuiButton **btnup, GuiSound *btnSoundOver, GuiTrigger *trigA);
 void Clear(GuiWindow *mainWindow, Indice Index, Indice *first, Indice *last, Indice ext);
 void FreeMem(GuiWindow *mainWindow, ListaDiTesto text, ListaDiBottoni btn, ListaDiImg img, Indice Index);
-void SetFont(GuiText *text, vector<string> mode);
+void SetFont(GuiText *text, vector<string> mode, char *chset);
 
 FILE *SelectFile(GuiWindow *mainWindow, char *type);
 bool isValidPath(char *path);

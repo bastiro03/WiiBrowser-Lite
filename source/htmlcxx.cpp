@@ -92,12 +92,7 @@ string findText(tree<HTML::Node>::iterator it)
     for (; begin != ends; ++begin)
     {
         if (!begin->isTag() && !begin->isClosing() && !begin->isComment())
-        {
-            char *decode=(char*)malloc(begin->text().length()+1);
-            decode_html_entities_utf8(strcpy(decode, begin->text().c_str()),NULL);
-            text.append(decode);
-            free(decode);
-        }
+            text.append(begin->text());
     }
     return text;
 }
@@ -140,6 +135,59 @@ typedef struct
     Tag* p;
 } last;
 
+string decode(string temp)
+{
+    char *decode = (char*)malloc(temp.length()+1);
+    decode_html_entities_utf8(strcpy(decode, temp.c_str()), NULL);
+    temp.assign(decode);
+    free(decode);
+
+    return temp;
+}
+
+vector<Value> stringToVector(string text, vector<string> parent)
+{
+    vector<Value> out;
+    Value value;
+
+    int begin = 0;
+    int start, end = 0;
+
+    while((start = text.find('&', begin)) != string::npos)
+    {
+        value.mode = parent;
+
+        if(start > 0)
+        {
+            value.text.assign(text, end, start-end);
+            out.push_back(value);
+        }
+
+        end = text.find(';', start);
+        if(end++ != (int)string::npos)
+        {
+            string temp = text.substr(start, end-start);
+            value.text.assign(decode(temp));
+            value.mode.push_back("entity");
+            out.push_back(value);
+        }
+
+        if(end - 1 == (int)string::npos)
+            begin = start + 1;
+        else begin = end;
+    }
+
+    value.text.assign(text, begin, string::npos);
+    out.push_back(value);
+
+    return out;
+}
+
+void merge(Tag *tag, vector<Value> out)
+{
+    tag->value.insert(tag->value.end(), out.begin(), out.end());
+}
+
 Lista getTag(char * buffer)
 {
     bool parse_css=true;
@@ -154,17 +202,17 @@ Lista getTag(char * buffer)
         string html(buffer);
         HTML::ParserDom parser;
         CSS::Parser css_parser;
-        char *decode=NULL;
 
         //Dump all text of the document
         dom = parser.parseTree(html);
         tree<HTML::Node>::iterator it = dom.begin();
         tree<HTML::Node>::iterator end = dom.end();
 
-        vector<string> parent;
         last open[all]= { {false},{false},{false},{false} };
         it=thtml(it,end,"html");
-        Value out;
+
+        vector<Value> out;
+        vector<string> parent;
 
         if(css_code.length())
         {
@@ -183,29 +231,23 @@ Lista getTag(char * buffer)
             {
                 if (!parent.empty() && checkparent(parent,TITLE))
                 {
-                    decode=(char*)malloc(it->text().length()+1);
-                    decode_html_entities_utf8(strcpy(decode, it->text().c_str()),NULL);
-                    out.text.assign(decode);
-                    free(decode);
-                    out.mode=parent;
+                    string item = it->text();
+                    if(!checkchr(item))
+                        continue;
+                    out = stringToVector(item, parent);
+
                     if (open[title].open)
-                        open[title].p->value.push_back(out);
+                        merge(open[title].p, out);
                     else if (open[a].open)
-                        open[a].p->value.push_back(out);
+                        merge(open[a].p, out);
                     else if (open[text].open)
-                    {
-                        if (checkchr(out.text))
-                            open[text].p->value.push_back(out);
-                    }
+                        merge(open[text].p, out);
                     else
                     {
-                        if (checkchr(out.text))
-                        {
-                            l1.push_back({"text"});
-                            open[text].open=true;
-                            open[text].p=&(*l1.rbegin());
-                            l1.rbegin()->value.push_back(out);
-                        }
+                        l1.push_back({"text"});
+                        open[text].open=true;
+                        open[text].p=&(*l1.rbegin());
+                        merge(open[text].p, out);
                     }
                 }
             }

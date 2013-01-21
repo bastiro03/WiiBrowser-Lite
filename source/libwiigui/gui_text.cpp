@@ -388,8 +388,6 @@ void GuiText::SetCharset(const char * ch)
         return;
 
     this->ResetText();
-    if(loadedFont)
-        this->SetFont(extFont, extFontSize);
 }
 
 void GuiText::ResetText()

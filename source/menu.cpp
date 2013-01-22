@@ -56,10 +56,8 @@ static GuiImage * Splash = NULL;
 
 static lwp_t guithread = LWP_THREAD_NULL;
 static lwp_t updatethread = LWP_THREAD_NULL;
-static lwp_t loadthread = LWP_THREAD_NULL;
 static bool guiHalt = true;
 static int updateThreadHalt = 0;
-static int loadingHalt = 0;
 
 using namespace std;
 
@@ -287,38 +285,6 @@ void StopUpdateThread()
 }
 
 /****************************************************************************
- * LoadingThread
- *
- * Thread for application startup
- ***************************************************************************/
-static void *LoadThread (void *arg)
-{
-	for (int angle = 0; ; angle++)
-	{
-		if(loadingHalt)
-			return NULL;
-        usleep(100*1000);
-        ((GuiImage*)arg)->SetAngle((angle*90) % 360);
-	}
-	return NULL;
-}
-
-void StartLoadThread(GuiImage* arg)
-{
-	if(loadthread != LWP_THREAD_NULL || ExitRequested)
-		return;
-	loadingHalt = 0;
-	LWP_CreateThread (&loadthread, LoadThread, (void*)arg, NULL, 0, 60);
-}
-
-void StopLoadThread()
-{
-	if(loadthread == LWP_THREAD_NULL)
-		return;
-	loadingHalt = 1;
-}
-
-/****************************************************************************
  * UpdateGUI
  *
  * Primary thread to allow GUI to respond to state changes, and draws GUI
@@ -389,19 +355,21 @@ InitGUIThreads()
 	LWP_CreateThread (&updatethread, UpdateThread, NULL, NULL, 0, 60);
 }
 
-void ToggleButtons(GuiToolbar *toolbar)
+void ToggleButtons(GuiToolbar *toolbar, bool checkState)
 {
     if (!toolbar)
         return;
 
-    if (toolbar->btnBack->GetState() != STATE_SELECTED)
+    if (toolbar->btnBack->GetState() != STATE_SELECTED
+        || checkState)
     {
         if (history && history->prec)
             toolbar->btnBack->SetState(STATE_DEFAULT);
         else toolbar->btnBack->SetState(STATE_DISABLED);
     }
 
-    if (toolbar->btnForward->GetState() != STATE_SELECTED)
+    if (toolbar->btnForward->GetState() != STATE_SELECTED
+        || checkState)
     {
         if (history && history->prox)
             toolbar->btnForward->SetState(STATE_DEFAULT);
@@ -711,7 +679,7 @@ static int MenuSplash()
     char myIP[16];
     int conn = 0, menu = MENU_HOME;
     s32 ip;
-    StartLoadThread(&Init);
+    Init.SetEffect(EFFECT_ROTATE, 100, 90);
 
     #ifndef DEBUG
     while ((ip = net_init()) == -EAGAIN) {
@@ -727,7 +695,7 @@ static int MenuSplash()
     #else
     usleep(2000*1000);
     #endif
-    StopLoadThread();
+    Init.StopEffect(EFFECT_ROTATE);
 
     Init.SetEffect(EFFECT_FADE, -50);
     while(Init.GetEffect() > 0) usleep(THREAD_SLEEP);
@@ -752,8 +720,10 @@ static int MenuSplash()
  ***************************************************************************/
 static int MenuHome()
 {
-    strcpy(new_page,prev_page);
+    App->ChangeButtons(HOMEPAGE);
 	prevMenu = MENU_HOME;
+	strcpy(new_page,prev_page);
+
 
     GuiSound btnSoundOver(button_over_pcm, button_over_pcm_size, SOUND_PCM);
     GuiImageData Textbox(keyboard_textbox_png);
@@ -1090,6 +1060,16 @@ void SwapUrls(int i, int j)
     strcpy(Settings.Favorites[j], utemp);
 }
 
+int findEmpty()
+{
+    for(int i = 0; i<N; i++)
+    {
+        if(strlen(Settings.GetUrl(i)) == 0)
+            return i;
+    }
+    return -1;
+}
+
 /****************************************************************************
  * MenuFavorites
  ***************************************************************************/
@@ -1140,7 +1120,7 @@ static int MenuFavorites()
     mainWindow->Append(Left);
     ResumeGui();
 
-    int choice = 0;
+    int i, choice = 0;
     while(!choice)
 	{
 		usleep(THREAD_SLEEP);
@@ -1148,8 +1128,10 @@ static int MenuFavorites()
         if(App->btnSett->GetState() == STATE_CLICKED)
         {
             editing = !editing;
-            for (int i = 0; i<N; i++)
+            for (i = 0; i<N; i++)
                 Block[i].SetEditing(editing);
+
+            App->ChangeButtons(editing ? FAVORITES : HOMEPAGE);
             App->btnSett->ResetState();
         }
 
@@ -1160,6 +1142,17 @@ static int MenuFavorites()
 			App->btnHome->ResetState();
         }
 
+        else if(App->btnSave->GetState() == STATE_CLICKED)
+        {
+			App->btnSave->ResetState();
+
+            if((i = findEmpty()) >= 0)
+			{
+                strcpy(Settings.Favorites[i],prev_page);
+                Label[i]->SetText(Settings.GetUrl(i));
+			}
+        }
+
         else if(Left->Button->GetState() == STATE_CLICKED ||
             App->btnWWW->GetState() == STATE_CLICKED || userInput[0].wpad->btns_d & WPAD_BUTTON_MINUS)
         {
@@ -1167,7 +1160,7 @@ static int MenuFavorites()
             choice = MENU_HOME;
         }
 
-        for (int i = 0; i < N; i++)
+        for (i = 0; i < N; i++)
         {
             if(Block[i].Block->GetState() == STATE_SELECTED)
 				Label[i]->SetScroll(SCROLL_HORIZONTAL);
@@ -1208,21 +1201,21 @@ static int MenuFavorites()
 
     if(editing)
     {
-        for (int i = 0; i < N; i++)
+        for (i = 0; i < N; i++)
             Block[i].Remove->SetEffect(EFFECT_FADE, -50);
         while(Block[N-1].Remove->GetEffect() > 0) usleep(THREAD_SLEEP);
     }
 
-    for (int i = 0; i < N; i++)
+    for (i = 0; i < N; i++)
         Block[i].SetEffect(EFFECT_SLIDE_OUT | EFFECT_SLIDE_RIGHT, 50);
     while(Block[N-1].GetEffect() > 0) usleep(THREAD_SLEEP);
 
     HaltGui();
-    for (int i = 0; i < N; i++)
+    for (i = 0; i < N; i++)
         mainWindow->Remove(&Block[i]);
     ResumeGui();
 
-    for (int i = 0; i < N; i++)
+    for (i = 0; i < N; i++)
         delete(Label[i]);
 
     if(choice != MENU_HOME)

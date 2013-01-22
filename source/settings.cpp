@@ -109,7 +109,7 @@ bool SSettings::FindConfig()
 {
     bool found = false;
 
-    for(int i = SD; i <= USB8; i++)
+    for(int i = SD; i <= USB; i++)
     {
         if(!found)
         {
@@ -128,23 +128,19 @@ bool SSettings::FindConfig()
     if(!found)
     {
         //! No existing config so try to find a place where we can write it too
-        for(int i = SD; i <= USB8; i++)
+        for(int i = SD; i <= USB; i++)
         {
             if(!found)
             {
                 snprintf(BootDevice, sizeof(BootDevice), "%s:/", DeviceName[i]);
                 snprintf(ConfigPath, sizeof(ConfigPath), "%s:/apps/WiiBrowser/%s", DeviceName[i], CONFIGNAME);
-                FILE * testFp = fopen(ConfigPath, "wb");
-                found = (testFp != NULL);
-                fclose(testFp);
+                found = IsWritable(ConfigPath);
             }
             if(!found)
             {
                 snprintf(BootDevice, sizeof(BootDevice), "%s:/", DeviceName[i]);
                 snprintf(ConfigPath, sizeof(ConfigPath), "%s:/%s%s", DeviceName[i], CONFIGPATH, CONFIGNAME);
-                FILE * testFp = fopen(ConfigPath, "wb");
-                found = (testFp != NULL);
-                fclose(testFp);
+                found = IsWritable(ConfigPath);
             }
         }
     }
@@ -281,9 +277,9 @@ int SSettings::CheckFolder(const char *folder)
     if(folder[0] == '/')
         return RELATIVE;
 
-    for(int i = SD; i <= USB8; i++)
+    for(int i = SD; i <= USB; i++)
     {
-        if(!strncmp(folder, DeviceName[i], 3))
+        if(!strncmp(folder, DeviceName[i], strlen(DeviceName[i])))
             return ABSOLUTE;
     }
 
@@ -296,6 +292,14 @@ bool SSettings::CheckFile(const char *path)
     FILE * file = fopen(path, "r");
     found = (file != NULL);
     fclose(file);
+    return found;
+}
+
+bool SSettings::IsWritable(const char *path)
+{
+    FILE * testFile = fopen(path, "wb");
+    bool found = (testFile != NULL);
+    fclose(testFile);
     return found;
 }
 

@@ -45,6 +45,8 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
             button->label=new GuiText((char*)lista->value.c_str(), 20, (GXColor){0, 0, 255, 255});
             button->label->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
             button->label->SetCharset(ch);
+            if(loadedFont)
+                button->label->SetFont(extFont, extFontSize);
             button->label->SetMaxWidth(ButtonImg->GetWidth()-5);
 			button->label->SetScroll(SCROLL_HORIZONTAL);
 
@@ -74,6 +76,8 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
                 button->label=new GuiText((char*)lista->label.c_str(), 20, (GXColor){0, 0, 255, 255});
                 button->label->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
                 button->label->SetCharset(ch);
+                if(loadedFont)
+                    button->label->SetFont(extFont, extFontSize);
                 button->label->SetPosition(0,-25);
                 button->label->SetMaxWidth(TextboxImg->GetWidth()-5);
 				button->label->SetScroll(SCROLL_HORIZONTAL);
@@ -262,7 +266,7 @@ int noSubmit(ListaDiBottoni btn) {
 void showBar(GuiWindow *mainWindow, GuiWindow *parentWindow) {
     if (!Toolbar)
         Toolbar = new GuiToolbar(NAVIGATION);
-    ToggleButtons(Toolbar);
+    ToggleButtons(Toolbar, true);
     Toolbar->SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_IN, 20);
     hidden=false;
     HaltGui();

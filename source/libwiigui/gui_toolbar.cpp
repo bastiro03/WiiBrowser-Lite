@@ -29,6 +29,11 @@ GuiToolbar::GuiToolbar(int set)
     trigA = new GuiTrigger();
     trigA->SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
 
+    imgFavorites = new GuiImageData(favorites_png);
+    imgFavoritesOver = new GuiImageData(favorites_over_png);
+    imgEdit = new GuiImageData(edit_png);
+    imgEditOver = new GuiImageData(edit_over_png);
+
     if (buttons == NAVIGATION || buttons == HOMEPAGE)
     {
         imgWWW = new GuiImageData(www_png);
@@ -198,6 +203,11 @@ GuiToolbar::~GuiToolbar()
     delete(trigA);
     delete(Toolbar);
 
+    delete(imgFavorites);
+    delete(imgFavoritesOver);
+    delete(imgEdit);
+    delete(imgEditOver);
+
     delete(imgWWW);
     delete(imgWWWOver);
     delete(imgSave);
@@ -213,54 +223,86 @@ GuiToolbar::~GuiToolbar()
     delete(btnWWW);
     delete(btnSave);
 
-    if (buttons == NAVIGATION || buttons == HOMEPAGE)
+    delete(imgBack);
+    delete(imgBackFlat);
+    delete(imgBackOver);
+    delete(imgForward);
+    delete(imgForwardFlat);
+    delete(imgForwardOver);
+
+    delete(imgHome);
+    delete(imgHomeOver);
+    delete(imgReload);
+    delete(imgReloadFlat);
+    delete(imgReloadOver);
+
+    delete(imgSett);
+    delete(imgSettFlat);
+    delete(imgSettOver);
+
+    delete(Back);
+    delete(BackFlat);
+    delete(BackOver);
+    delete(Forward);
+    delete(ForwardFlat);
+    delete(ForwardOver);
+
+    delete(Sett);
+    delete(SettFlat);
+    delete(SettOver);
+
+    delete(Home);
+    delete(HomeOver);
+    delete(Reload);
+    delete(ReloadFlat);
+    delete(ReloadOver);
+
+    delete(btnBack);
+    delete(btnForward);
+    delete(btnHome);
+    delete(btnReload);
+    delete(btnSett);
+
+    delete(HomeTooltip);
+    delete(ReloadTooltip);
+    delete(SettTooltip);
+    delete(BackTooltip);
+    delete(ForwardTooltip);
+    delete(WWWTooltip);
+}
+
+void GuiToolbar::ChangeButtons(int set)
+{
+    if (buttons == set)
+        return;
+    buttons = set;
+
+    if (buttons == HOMEPAGE)
     {
-        delete(imgBack);
-        delete(imgBackFlat);
-        delete(imgBackOver);
-        delete(imgForward);
-        delete(imgForwardFlat);
-        delete(imgForwardOver);
+        Save->SetImage(imgSave);
+        SaveOver->SetImage(imgSaveOver);
+        // Reload->SetImage(imgReload);
+        // ReloadOver->SetImage(imgReloadOver);
 
-        delete(imgHome);
-        delete(imgHomeOver);
-        delete(imgReload);
-        delete(imgReloadFlat);
-        delete(imgReloadOver);
+        SaveTooltip->SetText(gettext("Download"));
+        // ReloadTooltip->SetText(gettext("Refresh"));
 
-        delete(imgSett);
-        delete(imgSettFlat);
-        delete(imgSettOver);
+        btnSave->SetState(STATE_DISABLED);
+        // btnReload->SetState(STATE_DISABLED);
+    }
 
-        delete(Back);
-        delete(BackFlat);
-        delete(BackOver);
-        delete(Forward);
-        delete(ForwardFlat);
-        delete(ForwardOver);
+    else if (buttons == FAVORITES)
+    {
+        Save->SetImage(imgFavorites);
+        SaveOver->SetImage(imgFavoritesOver);
+        // Reload->SetImage(imgEdit);
+        // ReloadOver->SetImage(imgEditOver);
 
-        delete(Sett);
-        delete(SettFlat);
-        delete(SettOver);
+        SaveTooltip->SetText(gettext("Add bookmark"));
+        // ReloadTooltip->SetText(gettext("Edit"));
 
-        delete(Home);
-        delete(HomeOver);
-        delete(Reload);
-        delete(ReloadFlat);
-        delete(ReloadOver);
-
-        delete(btnBack);
-        delete(btnForward);
-        delete(btnHome);
-        delete(btnReload);
-        delete(btnSett);
-
-        delete(HomeTooltip);
-        delete(ReloadTooltip);
-        delete(SettTooltip);
-        delete(BackTooltip);
-        delete(ForwardTooltip);
-        delete(WWWTooltip);
+        btnSave->SetState(STATE_DEFAULT);
+        // btnReload->SetState(STATE_DEFAULT);
     }
 }
 

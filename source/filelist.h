@@ -48,11 +48,11 @@ extern const u32	remove_png_size;
 extern const u8		remove_over_png[];
 extern const u32	remove_over_png_size;
 
-extern const u8		wiimote_poweroff_png[];
-extern const u32	wiimote_poweroff_png_size;
+extern const u8		install_png[];
+extern const u32	install_png_size;
 
-extern const u8		wiimote_poweroff_over_png[];
-extern const u32	wiimote_poweroff_over_png_size;
+extern const u8		install_over_png[];
+extern const u32	install_over_png_size;
 
 extern const u8		arrow_l_over_png[];
 extern const u32	arrow_l_over_png_size;

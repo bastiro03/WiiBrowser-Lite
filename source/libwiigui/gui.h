@@ -973,11 +973,18 @@ class GuiToolbar : public GuiWindow
 	public:
 		GuiToolbar(int set);
 		~GuiToolbar();
+
 		void Update(GuiTrigger * t);
+		void ChangeButtons(int set);
 
         GuiImageData *imgToolbar;
         GuiSound *btnSound;
         GuiTrigger *trigA;
+
+        GuiImageData *imgFavorites;
+        GuiImageData *imgFavoritesOver;
+        GuiImageData *imgEdit;
+        GuiImageData *imgEditOver;
 
         GuiImageData *imgWWW;
         GuiImageData *imgWWWOver;

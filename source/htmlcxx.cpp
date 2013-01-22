@@ -81,6 +81,26 @@ int isContainer(string name)
     return checkTag(container, name);
 }
 
+string stripEntities(string input)
+{
+    string text = input;
+    int begin = 0;
+    int start, end = 0;
+
+    while((start = text.find('&', begin)) != string::npos)
+    {
+        end = text.find(';', start);
+        if(end++ != (int)string::npos)
+            text.erase(start, end-start);
+
+        if(end - 1 == (int)string::npos)
+            begin = start + 1;
+        else begin = end;
+    }
+
+    return text;
+}
+
 string findText(tree<HTML::Node>::iterator it)
 {
     tree<HTML::Node>::iterator begin, ends;
@@ -92,7 +112,7 @@ string findText(tree<HTML::Node>::iterator it)
     for (; begin != ends; ++begin)
     {
         if (!begin->isTag() && !begin->isClosing() && !begin->isComment())
-            text.append(begin->text());
+            text.append(stripEntities(begin->text()));
     }
     return text;
 }
@@ -384,7 +404,7 @@ Lista getTag(char * buffer)
                         while (k->tagName() != "form" && k != dom.begin())
                             k = dom.parent(k);
                         string label=search(it->attribute("id").second, k);
-                        open[form].p->form.input=InsInFondo(open[form].p->form.input, it->attribute("name").second, it->attribute("type").second, it->attribute("value").second, label);
+                        open[form].p->form.input=InsInFondo(open[form].p->form.input, it->attribute("name").second, it->attribute("type").second, stripEntities(it->attribute("value").second), label);
                     }
                 }
                 else if (it->tagName() == "meta")

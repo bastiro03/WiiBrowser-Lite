@@ -129,7 +129,8 @@ void GuiFavorite::Update(GuiTrigger * t)
 
 	this->ToggleFocus(t);
 
-	if (editing && this->Block->GetState() == STATE_HELD)
+	if (editing && this->Block->GetState() == STATE_HELD
+        && this->Remove->GetState() == STATE_DEFAULT)
 	{
 	    int xpos = t->wpad->ir.x - this->GetDataWidth()/2;
 	    int ypos = t->wpad->ir.y - this->GetDataHeight()/2;

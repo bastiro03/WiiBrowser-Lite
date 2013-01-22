@@ -76,12 +76,6 @@ class SSettings
 		bool Load();
         //!Find the config file in the default paths
         bool FindConfig();
-		//!Check folder
-        int CheckFolder(const char* folder);
-        //!Check file
-        bool CheckFile(const char* path);
-        //!Check file integrity
-        bool CheckIntegrity(const char *path);
         //!Return favorite
         char *GetUrl(int f);
         //!Save Settings
@@ -109,8 +103,19 @@ class SSettings
         char *Favorites[N];
 
     protected:
+        //!Find value
         void ParseLine(char *line);
+        //!Discard spaces
         void TrimLine(char *dest, char *src, int size);
+        //!Check folder
+        int CheckFolder(const char* folder);
+        //!Check file
+        bool CheckFile(const char* path);
+        //!Check file integrity
+        bool CheckIntegrity(const char *path);
+        //!Check path
+        bool IsWritable(const char *path);
+        //!Variables
         FILE * file;
 };
 
@@ -124,14 +129,9 @@ enum
 enum
 {
     SD = 0,
-    USB1,
-    USB2,
-    USB3,
-    USB4,
-    USB5,
-    USB6,
-    USB7,
-    USB8,
+    USB,
+    CARDA,
+    CARDB,
 	DVD,
     MAXDEVICES
 };
@@ -139,14 +139,9 @@ enum
 const char DeviceName[MAXDEVICES][6] =
 {
     "sd",
-    "usb1",
-    "usb2",
-    "usb3",
-    "usb4",
-    "usb5",
-    "usb6",
-    "usb7",
-    "usb8",
+    "usb",
+    "carda",
+    "cardb",
 	"dvd",
 };
 

@@ -299,9 +299,9 @@ void GuiImage::Draw()
 		{
 			prev = now;
 
-			imageangle+=45.0f;
+			imageangle += effectTarget;
 			if(imageangle >= 360.0f)
-				imageangle = 0;
+				imageangle = (int)imageangle % 360;
 		}
 	}
 

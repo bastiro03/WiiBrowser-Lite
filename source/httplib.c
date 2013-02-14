@@ -95,7 +95,7 @@ struct block downloadfile(CURL *curl_handle, const char *url, FILE *hfile)
         /* some servers don't like requests that are made without a user-agent
         field, so we provide one */
         curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "Mozilla/5.0 (Linux; U; Android 1.1; en-gb; dream) AppleWebKit/525.10+ (KHTML, like Gecko) Version/3.0.4 Mobile Safari/523.12.2");
-        // curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
+		// curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
         curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0L);
 
         /* proper function to close sockets */

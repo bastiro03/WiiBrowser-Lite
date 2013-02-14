@@ -302,7 +302,7 @@ void GuiText::SetWrap(bool w, int width)
 	wrap = w;
 	maxWidth = width;
 
-    ClearDynamicText();
+	ClearDynamicText();
 }
 
 void GuiText::SetScroll(int s)
@@ -310,7 +310,7 @@ void GuiText::SetScroll(int s)
 	if(textScroll == s)
 		return;
 
-    ClearDynamicText();
+	ClearDynamicText();
 
 	textScroll = s;
 	textScrollPos = 0;

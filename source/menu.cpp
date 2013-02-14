@@ -722,6 +722,7 @@ static int MenuHome()
 {
     App->ChangeButtons(HOMEPAGE);
 	prevMenu = MENU_HOME;
+    strcpy(new_page,prev_page);
 	strcpy(new_page,prev_page);
 
 
@@ -1147,10 +1148,10 @@ static int MenuFavorites()
 			App->btnSave->ResetState();
 
             if((i = findEmpty()) >= 0)
-			{
+            {
                 strcpy(Settings.Favorites[i],prev_page);
                 Label[i]->SetText(Settings.GetUrl(i));
-			}
+            }
         }
 
         else if(Left->Button->GetState() == STATE_CLICKED ||

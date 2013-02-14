@@ -343,13 +343,7 @@ void HandleMenuBar(string *link, char* url, int *choice, int img, GuiWindow *mai
 
 int HandleMeta(Lista::iterator lista, string *link, struct block *html) {
     int choice = 0;
-    if (lista->value[0].text=="Content-Type") {
-        if (html->chset == NULL)
-            html->chset = findCharset(html, lista->attribute.c_str());
-        SelectFont(html->chset);
-    }
-
-    else if (lista->value[0].text=="refresh") {
+    if (lista->value[0].text=="refresh") {
         sleep(getTime(lista->attribute));
         link->assign(getUrl(&choice, lista->attribute));
     }

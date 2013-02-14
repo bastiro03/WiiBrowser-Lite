@@ -71,12 +71,9 @@ WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp)
 
 struct block downloadfile(CURL *curl_handle, const char *url, FILE *hfile)
 {
-    char *p, *ct=NULL;
+    char *ct=NULL;
     struct block b;
     int res;
-
-    memset(b.type, 0, TYPE);
-    b.chset = NULL;
 
     struct MemoryStruct chunk;
     chunk.memory = malloc(1);   /* will be grown as needed by the realloc above */
@@ -103,12 +100,12 @@ struct block downloadfile(CURL *curl_handle, const char *url, FILE *hfile)
         curl_easy_setopt(curl_handle, CURLOPT_COOKIEFILE, "");
 
         if (strcasestr(url, "\\post")) {
-            findChr(url, '\\');
-            p = findChr(url, '?');
-            curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, p + 1);
+            url = findChr(url, '\\');
+            url = findChr(url, '?');
+            curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, &url[strlen(url)+1]);
         }
         else {
-            findChr(url, '\\');
+            url = findChr(url, '\\');
             curl_easy_setopt(curl_handle, CURLOPT_HTTPGET, 1);
         }
 
@@ -126,7 +123,7 @@ struct block downloadfile(CURL *curl_handle, const char *url, FILE *hfile)
 
 	b.data = chunk.memory;
 	b.size = chunk.size;
-    b.chset = findCharset(&b, ct);
+    strcpy(b.type, findChr(ct, ';'));
 
     if (hfile)
         save(&b, hfile);
@@ -171,26 +168,10 @@ void save(struct block *b, FILE *hfile)
 // -----------------------------------------------------------
 
 char *findChr (const char *str, char chr) {
-    char *c = strrchr(str, chr);
-    if (c != NULL)
-        *c = '\0';
-    return c;
-}
-
-char *findCharset (struct block *b, const char *ct) {
-    char *p;
-    char *src = malloc(strlen(ct) + 1);
-    strcpy(src, ct);
-
-    p = findChr(src, ';');
-    strcpy(b->type, src);
-
-    if (p++ && (p = findChr(p, '=')))
-    {
-        b->chset = malloc(TYPE);
-        strcpy(b->chset, p + 1);
-    }
-    return b->chset;
+    char *c=strrchr(str, chr);
+    if (c!=NULL)
+        *c='\0';
+    return (char*)str;
 }
 
 // -----------------------------------------------------------

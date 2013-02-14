@@ -21,18 +21,12 @@
  */
 
 #include "FreeTypeGX.h"
-#include "main.h"
 #include "filelist.h"
-#include "iconv.h"
 
 FreeTypeGX *fontSystem[MAX_FONT_SIZE+1];
 
-FT_Byte * mainFont = (FT_Byte *) font_regular_ttf;
-u32 mainFontSize = font_regular_ttf_size;
-
-FT_Byte * extFont = NULL;
-u32 extFontSize = 0;
-int loadedFont = 0;
+static FT_Byte * MainFont = (FT_Byte *) font_regular_ttf;
+static u32 MainFontSize = font_regular_ttf_size;
 
 void InitFreeType()
 {
@@ -50,55 +44,6 @@ void ClearFontData()
     }
 }
 
-bool SelectFont(const char * charset)
-{
-    char filepath[256];
-    int fontToLoad = FONT_DEFAULT;
-    if(!charset)
-        return false;
-
-    if(!stricmp(charset, "gbk") ||
-        !stricmp(charset, "gb2312") ||
-            !stricmp(charset, "big5"))
-    {
-        fontToLoad = FONT_CHINESE;
-        sprintf(filepath, "%sfonts/zh_cn.ttf", Settings.AppPath);
-    }
-
-    if(fontToLoad == FONT_DEFAULT)
-        loadedFont = fontToLoad;
-
-    if(fontToLoad == loadedFont)
-        return false;
-
-    FILE *file = fopen (filepath, "rb");
-    if(file)
-    {
-        fseeko(file,0,SEEK_END);
-        u32 loadSize = ftello(file);
-        if(loadSize == 0)
-            return false;
-
-        if(extFont)
-        {
-            delete(extFont);
-            extFont = NULL;
-        }
-
-        extFont = (u8 *)memalign(32, loadSize);
-        extFontSize = loadSize;
-
-        if(extFont)
-        {
-            fseeko(file,0,SEEK_SET);
-            fread (extFont, 1, loadSize, file);
-            loadedFont = fontToLoad;
-        }
-        fclose(file);
-    }
-    return true;
-}
-
 /**
  * Convert a short char string to a wide char string.
  *
@@ -109,7 +54,7 @@ bool SelectFont(const char * charset)
  * @return Wide character representation of supplied character string.
  */
 
-wchar_t* convertMbs(const char* strChar)
+wchar_t* charToWideChar(const char* strChar)
 {
     wchar_t *strWChar = new (std::nothrow) wchar_t[strlen(strChar) + 1];
     if(!strWChar)
@@ -128,44 +73,6 @@ wchar_t* convertMbs(const char* strChar)
     return strWChar;
 }
 
-wchar_t* converIconv(const char* src, const char *charset)
-{
-	size_t size = strlen(src) + 1;
-	wchar_t *dst = new (std::nothrow) wchar_t[size];
-	char *input = new (std::nothrow) char[size];
-
-	if (!dst || !input)
-        return NULL;
-    memcpy(input, src, size);
-
-    size_t outlen = size * sizeof(wchar_t);
-    char *pIn = (char *) input;
-    char *pOut = (char *) dst;
-
-	iconv_t conv = iconv_open ("WCHAR_T", charset);
-    if (conv == (iconv_t) -1)
-        return NULL; // Charset not available
-
-	size_t nconv = iconv(conv, &pIn, &size, &pOut, &outlen);
-    if (nconv == (size_t) -1)
-        return NULL; // Something went wrong
-
-	iconv_close(conv);
-	delete(input);
-
-	if (outlen >= sizeof(wchar_t))
-         *((wchar_t *) pOut) = L'\0';
-	return (wchar_t *) dst;
-}
-
-wchar_t* charToWideChar(const char* source, const char *charset)
-{
-    if (!charset)
-        return convertMbs(source);
-
-    return converIconv(source, charset);
-}
-
 /**
  * Default constructor for the FreeTypeGX class for WiiXplorer.
  */
@@ -175,7 +82,7 @@ FreeTypeGX::FreeTypeGX(FT_UInt pixelSize, const uint8_t* fontBuffer, FT_Long buf
 
     if(fontBuffer && bufferSize > 0)
         FT_New_Memory_Face(ftLibrary, (FT_Byte *)fontBuffer, bufferSize, 0, &ftFace);
-    else FT_New_Memory_Face(ftLibrary, mainFont, mainFontSize, 0, &ftFace);
+    else FT_New_Memory_Face(ftLibrary, MainFont, MainFontSize, 0, &ftFace);
 
     ftSlot = ftFace->glyph;
     setVertexFormat(GX_VTXFMT1);

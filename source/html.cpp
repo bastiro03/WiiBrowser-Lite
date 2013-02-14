@@ -81,9 +81,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
     {
         l1=getTag((char*)HTML->data);
         lista=l1.begin();
-
         LWP_CreateThread (&thread, DownloadImage, (void*)url, NULL, 0, 70);
-        SelectFont(HTML->chset);
 
         unsigned int i;
         while (!choice && !(userInput[0].wpad->btns_d & WPAD_BUTTON_B)) {
@@ -116,7 +114,6 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                     text->txt->SetPosition(coordX+screenwidth/2, coordY);
 					text->txt->SetWrap(true, 400);
                     text->txt->SetEffect(EFFECT_FADE, 50);
-                    SetFont(text->txt, lista->value[0].mode, HTML->chset);
                     HaltGui();
                         mainWindow->Append(text->txt);
                     ResumeGui();
@@ -137,8 +134,8 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                             offset=offset % (screenwidth-80);
                         }
                         btn->label->SetWrap(true, screenwidth-80-offset);
+                        SetFont(btn->label, lista->value[i].mode);
                         btn->label->SetPosition(0,0);
-                        SetFont(btn->label, lista->value[i].mode, HTML->chset);
 
                         btn->tooltip=new GuiTooltip(lista->attribute.c_str());
                         btn->btn=new GuiButton(btn->label->GetTextWidth(), 20);
@@ -254,7 +251,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                         text->txt->SetPosition(coordX+40+offset, coordY);
                         text->txt->SetWrap(true, screenwidth-80-offset);
                         text->txt->SetEffect(EFFECT_FADE, 50);
-                        SetFont(text->txt, lista->value[i].mode, HTML->chset);
+                        SetFont(text->txt, lista->value[i].mode);
                         HaltGui();
                             mainWindow->Append(text->txt);
                         ResumeGui();
@@ -279,7 +276,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                 if(bottone->btn->GetState() == STATE_CLICKED) {
                     bottone->btn->ResetState(); choice = 1;
                     if (bottone->refs)
-                        choice=HandleForm(parentWindow, mainWindow, bottone, HTML->chset);
+                        choice=HandleForm(parentWindow, mainWindow, bottone);
                     if (choice) link.assign(bottone->url);
                 }
             }
@@ -365,19 +362,7 @@ void Clear(GuiWindow* mainWindow, Indice Index, Indice *first, Indice *last, Ind
     }
 }
 
-void SetFont(GuiText *text, vector<string> mode, char *chset)
-{
-    if (!checkTag(mode, "entity"))
-    {
-        text->SetCharset(chset);
-        if(loadedFont)
-        {
-            text->SetFont(extFont, extFontSize);
-            return;
-        }
-    }
-    else text->SetCharset("UTF-8");
-
+void SetFont(GuiText *text, vector<string> mode) {
     if (checkTag(mode, "b") || checkTag(mode, "strong"))
         text->SetFont(font_bold_ttf, font_bold_ttf_size);
     if (checkTag(mode, "em") || checkTag(mode, "i"))

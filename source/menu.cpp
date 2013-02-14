@@ -723,8 +723,6 @@ static int MenuHome()
     App->ChangeButtons(HOMEPAGE);
 	prevMenu = MENU_HOME;
     strcpy(new_page,prev_page);
-	strcpy(new_page,prev_page);
-
 
     GuiSound btnSoundOver(button_over_pcm, button_over_pcm_size, SOUND_PCM);
     GuiImageData Textbox(keyboard_textbox_png);

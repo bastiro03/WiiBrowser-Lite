@@ -24,13 +24,12 @@ static u16 presetStyle = 0;
 /**
  * Constructor for the GuiText class.
  */
-GuiText::GuiText(const char * t, int s, GXColor c, const char * ch)
+GuiText::GuiText(const char * t, int s, GXColor c)
 {
 	origText = NULL;
 	text = NULL;
 	font = NULL;
 	size = s;
-	charset = ch;
 	currentSize = size;
 	color = c;
 	alpha = c.a;
@@ -51,7 +50,7 @@ GuiText::GuiText(const char * t, int s, GXColor c, const char * ch)
     if(t)
 	{
 		origText = strdup(t);
-		text = charToWideChar(gettext(t), charset);
+		text = charToWideChar(gettext(t));
 
         if(currentSize > MAX_FONT_SIZE)
             currentSize = MAX_FONT_SIZE;
@@ -72,7 +71,6 @@ GuiText::GuiText(const wchar_t * t, int s, GXColor c)
 {
     origText = NULL;
 	text = NULL;
-	charset = NULL;
 	font = NULL;
 	size = s;
 	currentSize = size;
@@ -123,7 +121,6 @@ GuiText::GuiText(const char * t)
 {
 	origText = NULL;
 	text = NULL;
-	charset = NULL;
 	font = NULL;
 	size = presetSize;
 	currentSize = size;
@@ -147,7 +144,7 @@ GuiText::GuiText(const char * t)
     if(t)
 	{
 	    origText = strdup(t);
-		text = charToWideChar(gettext(t), charset);
+		text = charToWideChar(gettext(t));
 		if(!text)
 		    return;
 
@@ -213,7 +210,7 @@ void GuiText::SetText(const char * t)
     if(t)
 	{
 		origText = strdup(t);
-		text = charToWideChar(gettext(t), charset);
+		text = charToWideChar(gettext(t));
 		if(!text)
 		    return;
 
@@ -381,15 +378,6 @@ bool GuiText::SetFont(const u8 *fontbuffer, const u32 filesize)
 	return true;
 }
 
-void GuiText::SetCharset(const char * ch)
-{
-    charset = ch;
-    if(!ch)
-        return;
-
-    this->ResetText();
-}
-
 void GuiText::ResetText()
 {
 	if(!origText)
@@ -397,7 +385,7 @@ void GuiText::ResetText()
 	if(text)
 		delete[] text;
 
-	text = charToWideChar(gettext(origText), charset);
+	text = charToWideChar(gettext(origText));
 
 	ClearDynamicText();
 	// currentSize = 0;

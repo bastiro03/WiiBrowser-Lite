@@ -6,9 +6,7 @@ extern "C" {
 #include "urlcode.h"
 }
 
-int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni btn, const char* ch);
-int HandleMeta(Lista::iterator lista, string *link, struct block *html);
-
+int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni btn);
 int HandleMeta(Lista::iterator lista, string *link, struct block *html);
 
 void HandleImgPad(GuiButton *btnup, GuiButton *btndown, GuiImage * image);

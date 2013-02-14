@@ -12,7 +12,7 @@ enum { TEXT=0, BUTTON, HIDDEN, UNKNOWN };
 int inputType(ListaDiInput lista);
 int noSubmit(ListaDiBottoni btn);
 
-int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni btn, const char* ch) {
+int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni btn) {
     GuiImageData Textbox (keyboard_textbox_png, keyboard_textbox_png_size);
     GuiImageData Button (button_png, button_png_size);
 
@@ -44,9 +44,6 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
             button->btn=new GuiButton(ButtonImg->GetWidth(), ButtonImg->GetHeight());
             button->label=new GuiText((char*)lista->value.c_str(), 20, (GXColor){0, 0, 255, 255});
             button->label->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-            button->label->SetCharset(ch);
-            if(loadedFont)
-                button->label->SetFont(extFont, extFontSize);
             button->label->SetMaxWidth(ButtonImg->GetWidth()-5);
 			button->label->SetScroll(SCROLL_HORIZONTAL);
 
@@ -75,9 +72,6 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
             if (lista->label!="noLabel") {
                 button->label=new GuiText((char*)lista->label.c_str(), 20, (GXColor){0, 0, 255, 255});
                 button->label->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-                button->label->SetCharset(ch);
-                if(loadedFont)
-                    button->label->SetFont(extFont, extFontSize);
                 button->label->SetPosition(0,-25);
                 button->label->SetMaxWidth(TextboxImg->GetWidth()-5);
 				button->label->SetScroll(SCROLL_HORIZONTAL);

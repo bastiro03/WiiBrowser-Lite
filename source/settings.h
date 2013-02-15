@@ -89,6 +89,8 @@ class SSettings
         //!Variables
         int Language;
         int Revision;
+        int UserAgent;
+
         bool ShowTooltip;
         bool Autoupdate;
         bool Music;
@@ -143,6 +145,27 @@ const char DeviceName[MAXDEVICES][6] =
     "carda",
     "cardb",
 	"dvd",
+};
+
+enum
+{
+    EMPTY = 0,
+    LIBCURL,
+    WIIBROWSER,
+    MOZILLA,
+	IEXPLORER,
+	ANDROID,
+    MAXAGENTS
+};
+
+const char AgentName[MAXAGENTS][11] =
+{
+    "None",
+    "Libcurl",
+    "WiiBrowser",
+    "Firefox",
+	"IExplorer",
+	"Android",
 };
 
 #endif

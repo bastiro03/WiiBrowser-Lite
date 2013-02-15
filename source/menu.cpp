@@ -546,6 +546,7 @@ static int MenuSettings()
 	sprintf(options.name[i++], "Autoupdate");
 	sprintf(options.name[i++], "Language");
 	sprintf(options.name[i++], "Music");
+	sprintf(options.name[i++], "UserAgent");
 	options.length = i;
 
 	GuiText titleTxt("Settings", 28, (GXColor){0, 0, 0, 255});
@@ -617,6 +618,12 @@ static int MenuSettings()
             case 5:
 				Settings.Music = !Settings.Music;
 				break;
+
+            case 6:
+				Settings.UserAgent++;
+				if (Settings.UserAgent >= MAXAGENTS)
+					Settings.UserAgent = 0;
+				break;
 		}
 
 		if(ret >= 0 || firstRun)
@@ -627,18 +634,19 @@ static int MenuSettings()
 
 			snprintf (options.value[0], 256, "%s", Settings.Homepage);
 			snprintf (options.value[1], 256, "%s", Settings.DefaultFolder);
+			snprintf (options.value[6], 256, "%s", AgentName[Settings.UserAgent]);
 
-            if (Settings.ShowTooltip == 0) sprintf (options.value[2],"Hide");
-			else if (Settings.ShowTooltip == 1) sprintf (options.value[2],"Show");
-            if (Settings.Autoupdate == 0) sprintf (options.value[3],"Disabled");
-			else if (Settings.Autoupdate == 1) sprintf (options.value[3],"Enabled");
+            if (Settings.ShowTooltip == 0) sprintf (options.value[2], "Hide");
+			else if (Settings.ShowTooltip == 1) sprintf (options.value[2], "Show");
+            if (Settings.Autoupdate == 0) sprintf (options.value[3], "Disabled");
+			else if (Settings.Autoupdate == 1) sprintf (options.value[3], "Enabled");
 
-            if (Settings.Language == LANG_JAPANESE) sprintf (options.value[4],"Japanese");
-			else if (Settings.Language == LANG_ENGLISH) sprintf (options.value[4],"English");
-			else if (Settings.Language == LANG_GERMAN) sprintf (options.value[4],"German");
+            if (Settings.Language == LANG_JAPANESE) sprintf (options.value[4], "Japanese");
+			else if (Settings.Language == LANG_ENGLISH) sprintf (options.value[4], "English");
+			else if (Settings.Language == LANG_GERMAN) sprintf (options.value[4], "German");
 
-			if (Settings.Music == 0) sprintf (options.value[5],"Off");
-			else if (Settings.Music == 1) sprintf (options.value[5],"On");
+			if (Settings.Music == 0) sprintf (options.value[5], "Off");
+			else if (Settings.Music == 1) sprintf (options.value[5], "On");
 
 			optionBrowser.TriggerUpdate();
 		}
@@ -934,7 +942,7 @@ static int MenuBrowse()
     promptWindow.Append(&msgTxt);
 
     promptWindow.SetEffect(EFFECT_SLIDE_TOP | EFFECT_SLIDE_IN, 50);
-    save_mem(url);
+    // save_mem(url);
 
     HaltGui();
     mainWindow->SetState(STATE_DISABLED);
@@ -952,7 +960,7 @@ static int MenuBrowse()
     HTML = downloadfile(curl_handle, url, NULL);
 
     #ifdef DEBUG
-    FILE *pFile = fopen ("Login.htm", "rb");
+    FILE *pFile = fopen ("page.htm", "rb");
     fseek (pFile, 0, SEEK_END);
     int size = ftell(pFile);
     rewind (pFile);

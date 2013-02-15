@@ -311,7 +311,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
     }
 
     if (!knownType(HTML->type) || choice == 2) {
-        if (choice != 2)
+        if (!choice)
             choice = WindowPrompt("Download", "Do you want to save the file?", "Yes", "No");
         if (choice) {
             FILE *file = SelectFile(parentWindow, HTML->type);

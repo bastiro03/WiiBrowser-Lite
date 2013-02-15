@@ -1,14 +1,12 @@
 #ifndef _COMMON_H_
 #define _COMMON_H_
 
-#include "libwiigui/gui.h"
+#include <httplib.h>
 #include <iostream>
 #include <list>
-#define LEN 15
 
-extern "C" {
-    #include <httplib.h>
-}
+#include <libwiigui/gui.h>
+#define LEN 15
 
 using namespace std;
 typedef string TipoElemento;

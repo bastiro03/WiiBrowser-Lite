@@ -53,7 +53,9 @@ SSettings::~SSettings()
 void SSettings::SetDefault()
 {
     Language = LANG_ENGLISH;
+    UserAgent = LIBCURL;
     Revision = 0;
+
     ShowTooltip = true;
     Music = true;
     Autoupdate = true;
@@ -91,6 +93,7 @@ bool SSettings::Save()
 	fprintf(file, "# Main Settings\r\n\r\n");
 	fprintf(file, "Language = %d\r\n", Language);
 	fprintf(file, "Revision = %d\r\n", Revision);
+	fprintf(file, "UserAgent = %d\r\n", UserAgent);
 	fprintf(file, "Autoupdate = %d\r\n", Autoupdate);
 	fprintf(file, "ShowTooltip = %d\r\n", ShowTooltip);
 	fprintf(file, "Music = %d\r\n", Music);
@@ -205,6 +208,12 @@ bool SSettings::SetSetting(char *name, char *value)
 	if (strcmp(name, "Revision") == 0) {
 		if (sscanf(value, "%d", &i) == 1) {
 			Revision = i;
+		}
+		return true;
+	}
+	if (strcmp(name, "UserAgent") == 0) {
+		if (sscanf(value, "%d", &i) == 1) {
+			UserAgent = i;
 		}
 		return true;
 	}

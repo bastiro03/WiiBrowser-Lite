@@ -735,6 +735,8 @@ class GuiText : public GuiElement, public Document
 		//!Sets the maximum width of the drawn texture image
 		//!\param w Maximum width
 		void SetMaxWidth(int w);
+		//!Gets the original text
+		char * GetText();
 		//!Gets the max width of the text
 		int GetMaxWidth();
 		//!Gets the width of the text when rendered

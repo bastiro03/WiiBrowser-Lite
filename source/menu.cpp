@@ -73,8 +73,13 @@ char *getHost(char *url) {
 }
 
 string getRoot(char *url) {
-    char *p=strrchr (url, '/');
-    return strndup(url,(p+1)-url);
+    char *i=strchr (url, '/');
+    char *p=strrchr (i+2, '/');
+    string root(url);
+    if (p != NULL)
+        root.assign(url,(p+1)-url);
+    else root.append("/");
+    return root;
 }
 
 string adjustUrl(string link, const char* url) {
@@ -942,7 +947,7 @@ static int MenuBrowse()
     promptWindow.Append(&msgTxt);
 
     promptWindow.SetEffect(EFFECT_SLIDE_TOP | EFFECT_SLIDE_IN, 50);
-    // save_mem(url);
+    save_mem(url);
 
     HaltGui();
     mainWindow->SetState(STATE_DISABLED);

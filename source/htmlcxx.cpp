@@ -371,6 +371,11 @@ Lista getTag(char * buffer)
                     l1.rbegin()->value.push_back ({it->attribute("http-equiv").second});
                     l1.rbegin()->attribute.append (it->attribute("content").second);
                 }
+                else if (it->tagName() == "base")
+                {
+                    l1.push_back({"base"});
+                    l1.rbegin()->attribute.append (it->attribute("href").second);
+                }
             }
 
             else if (!it->isComment())

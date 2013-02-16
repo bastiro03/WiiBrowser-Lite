@@ -3,7 +3,7 @@
 #define LEN 15
 
 enum html htm;
-char tags [END][LEN]={"html","head","body","meta","title","form","p","a","div",
+char tags [END][LEN]={"html","head","body","base","meta","title","form","p","a","div",
                         "br","img","h1","h2","h3","h4","h5","h6","b","big","blockquote","td","dd","dt",/*"center",*/"li","cite","font"};
 enum { THREAD_EXIT=0, THREAD_SUSPEND, THREAD_RUN };
 
@@ -217,6 +217,10 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                 else if (lista->name=="meta") {
                     if (!lista->value.empty())
                         choice = HandleMeta(lista, &link, HTML);
+                }
+
+                else if (lista->name=="base") {
+                    snprintf(url, 256, lista->attribute.c_str());
                 }
 
                 else if (lista->name=="return") {

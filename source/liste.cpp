@@ -40,6 +40,7 @@ ListaDiBottoni InsButton( ListaDiBottoni lista ) {
 	ListaDiBottoni punt;
     punt=new Button;
     punt->refs=NULL;
+    punt->label=NULL;
     punt->prox = lista;
 	return  punt;
 }

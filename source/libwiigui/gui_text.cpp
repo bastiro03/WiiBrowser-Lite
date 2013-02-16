@@ -286,6 +286,11 @@ int GuiText::GetMaxWidth()
     return maxWidth;
 }
 
+char * GuiText::GetText()
+{
+    return origText;
+}
+
 int GuiText::GetTextWidth()
 {
 	if(!text)

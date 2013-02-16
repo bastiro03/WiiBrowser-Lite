@@ -83,7 +83,7 @@ typedef list<Tag> Lista;
 typedef Index * Indice;
 typedef Url * History;
 
-extern enum html {HTML,HEAD,BODY,META,TITLE,FORM,P,A,DIV,BR,IMG,H1,H2,H3,H4,H5,H6,B,BIG,BLOCKQUOTE,TD,DD,DT,/*CENTER,*/LI,CITE,FONT,END} htm;
+extern enum html {HTML,HEAD,BODY,BASE,META,TITLE,FORM,P,A,DIV,BR,IMG,H1,H2,H3,H4,H5,H6,B,BIG,BLOCKQUOTE,TD,DD,DT,/*CENTER,*/LI,CITE,FONT,END} htm;
 
 extern char tags [END][LEN];
 extern History history;

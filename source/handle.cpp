@@ -7,7 +7,7 @@ void MoveWind (int up, int dir, int line, GuiImage * image);
 void MoveText (int up, int dir, int line, Indice Index);
 
 bool hidden=true;
-enum { TEXT=0, BUTTON, HIDDEN, UNKNOWN };
+enum { TEXT=0, BUTTON, HIDDEN, RADIO, UNKNOWN };
 
 int inputType(ListaDiInput lista);
 int noSubmit(ListaDiBottoni btn);
@@ -33,8 +33,10 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
 
     btn->url.assign(btn->refs->form.action);
     btn->url.append("?");
+
     ListaDiInput lista=btn->refs->form.input;
     ListaDiBottoni bottone, choice=NULL, button=NULL;
+    GuiText *label = NULL;
 
     char *encode; int offset=0;
     while (!NoInput(lista)) {
@@ -69,15 +71,17 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
             button->refs=(Tag*)button;   //Dummy Assignment
             GuiImage *TextboxImg=new GuiImage(&Textbox);
             button->btn=new GuiButton(TextboxImg->GetWidth(), TextboxImg->GetHeight());
+            button->label=new GuiText("", 20, (GXColor){0, 0, 0, 255});
             if (lista->label!="noLabel") {
-                button->label=new GuiText((char*)lista->label.c_str(), 20, (GXColor){0, 0, 255, 255});
-                button->label->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-                button->label->SetPosition(0,-25);
-                button->label->SetMaxWidth(TextboxImg->GetWidth()-5);
-				button->label->SetScroll(SCROLL_HORIZONTAL);
-                button->btn->SetLabel(button->label);
+                label=new GuiText((char*)lista->label.c_str(), 20, (GXColor){0, 0, 255, 255});
+                label->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+                label->SetPosition(0,-25);
+                label->SetMaxWidth(TextboxImg->GetWidth()-5);
+				label->SetScroll(SCROLL_HORIZONTAL);
+                button->btn->SetLabel(label);
                 offset+=25;
             }
+            button->btn->SetLabel(button->label,1);
             button->btn->SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
             button->btn->SetPosition(0, offset);
             button->btn->SetImage(TextboxImg);
@@ -89,6 +93,9 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
                 Form.Append(button->btn);
             ResumeGui();
             offset+=60;
+        }
+        else if (inputType(lista)==RADIO) {
+
         }
         else if (inputType(lista)==UNKNOWN) {
             button=InsButton(button);
@@ -104,6 +111,9 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
         lista=lista->prox;
     }
 
+    char save[MAXLEN];
+    memset(save, 0, sizeof(save));
+
     if (button) {
         while (!(userInput[0].wpad->btns_d & WPAD_BUTTON_B) && !choice) {
             usleep(100);
@@ -111,9 +121,11 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
                 if(bottone->btn && bottone->btn->GetState() == STATE_CLICKED) {
                     if(bottone->refs) {
                         size_t found=bottone->url.find("=")+1;
-                        if (found!=string::npos) bottone->url.erase(found);
-                        char save[MAXLEN]; memset(save, 0, sizeof(save));
+                        if (found!=string::npos)
+                            bottone->url.erase(found);
+                        sprintf(save, bottone->label->GetText());
                         OnScreenKeyboard(parentWindow, save, MAXLEN);
+                        bottone->label->SetText(save);
                         encode=url_encode(save);
                         bottone->url.append(encode);
                         free(encode);
@@ -245,6 +257,7 @@ int inputType(ListaDiInput lista) {
     if (lista->type=="submit" /*|| lista->type=="reset"*/) return BUTTON;
     if (lista->type=="hidden") return HIDDEN;
     if (lista->type=="text" || lista->type=="email" || lista->type=="password" || lista->type=="search" || lista->type.length()==0) return TEXT;
+    // if (lista->type=="radio") return RADIO;
     return UNKNOWN;
 }
 

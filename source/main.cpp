@@ -69,13 +69,6 @@ extern "C" {
     }
 }
 
-void show_mem()
-{
-    printf("m1(%.4f) m2(%.4f)\n",
-           ((float)((char*)SYS_GetArena1Hi()-(char*)SYS_GetArena1Lo()))/0x100000,
-           ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
-}
-
 bool InitMPlayer()
 {
     u8 *mplayerstack;
@@ -121,10 +114,6 @@ bool InitMPlayer()
     setenv("DVDREAD_VERBOSE", "0", 1);
     setenv("DVDCSS_RAW_DEVICE", "/dev/di", 1);
 
-    char agent[30];
-    sprintf(agent, "%s/%s (IOS%d)", APPNAME, "rev40", IOS_GetVersion());
-    char *network_useragent = mem2_strdup(agent, MEM2_OTHER);
-
     // create mplayer thread
     mplayerstack=(u8*)(memalign(32,MPLAYER_STACKSIZE*sizeof(u8)));
     memset(mplayerstack,0,MPLAYER_STACKSIZE*sizeof(u8));
@@ -134,33 +123,16 @@ bool InitMPlayer()
     return true;
 }
 
-void LoadMPlayerFile()
+void LoadMPlayerFile(char *loadedFile)
 {
-    // if(!WiiSettings.subtitleVisibility)
-        // SuspendParseThread();
+    controlledbygui = 2; // signal any previous file to end
 
-    /*settingsSet = false;
-    nowPlayingSet = false;*/
-	controlledbygui = 2; // signal any previous file to end
-
-	// wait for previous file to end
-	while(controlledbygui == 2)
-		usleep(100);
+    // wait for previous file to end
+    while(controlledbygui == 2)
+        usleep(100);
 
     char *partitionlabel = NULL;
-    char ext[7] = "mp4";
-    char* loadedFile = "sd:/Naruto.mp4"; // "http://www.w3schools.com/html/movie.mp4";
-
-    /*if(1)
-    {
-        if (strncmp(loadedFile, "dvd://", 6) == 0 || strncmp(loadedFile, "dvdnav://", 9) == 0)
-            wiiSetDVDDevice(loadedDevice);
-        partitionlabel = GetPartitionLabel(loadedFile);
-    }*/
-
-    // wait for directory parsing to finish (to find subtitles)
-    /*while(WiiSettings.subtitleVisibility && !ParseDone())
-        usleep(100);*/
+    // "http://www.w3schools.com/html/movie.mp4";
 
     // set new file to load
     wiiLoadFile(loadedFile, partitionlabel);
@@ -169,83 +141,38 @@ void LoadMPlayerFile()
         usleep(100);
 }
 
-/*void ResumeMPlayerFile()
+void ResumeMPlayerFile()
 {
-    DisableRumble();
-    SuspendDeviceThread();
-    SuspendPictureThread();
-    SuspendParseThread();
-    settingsSet = false;
-    nowPlayingSet = false;
     controlledbygui = 0;
 }
 
 void StopMPlayerFile()
 {
     controlledbygui = 2; // signal any previous file to end
-}*/
+}
 
 extern "C" {
     void SetMPlayerSettings()
     {
-        /*static float aspectRatio=-2;
-        if(settingsSet)
-            return;
+        GX_SetScreenPos(0, 0, 0.8, 0.8);
 
-        settingsSet = true;
-
-        GX_SetScreenPos(WiiSettings.videoXshift, WiiSettings.videoYshift,
-                        WiiSettings.videoZoomHor, WiiSettings.videoZoomVert);
-        wiiSetAutoResume(WiiSettings.autoResume);
-        wiiSetVolume(WiiSettings.volume);
-        wiiSetSeekBackward(WiiSettings.skipBackward);
-        wiiSetSeekForward(WiiSettings.skipForward);*/
+        wiiSetAutoResume(1);
+        wiiSetVolume(50);
+        wiiSetSeekBackward(10);
+        wiiSetSeekForward(30);
 
         wiiSetCacheFill(30);
         wiiSetOnlineCacheFill(20);
+        wiiSetProperty(MP_CMD_FRAMEDROPPING, FRAMEDROPPING_AUTO);
 
-        /*if(strncmp(loadedFile, "dvd", 3) == 0) // always use framedropping for DVD
-            wiiSetProperty(MP_CMD_FRAMEDROPPING, FRAMEDROPPING_AUTO);
-        else
-            wiiSetProperty(MP_CMD_FRAMEDROPPING, WiiSettings.frameDropping);
-
-        if(aspectRatio!=WiiSettings.aspectRatio)
-        {
-            aspectRatio=WiiSettings.aspectRatio;
-            wiiSetProperty(MP_CMD_SWITCH_RATIO, WiiSettings.aspectRatio);
-        }
-
-        wiiSetProperty(MP_CMD_AUDIO_DELAY, WiiSettings.audioDelay);*/
-
-        // if(!subtitleFontFound)
-            wiiSetProperty(MP_CMD_SUB_VISIBILITY, 0);
-        /*else
-            wiiSetProperty(MP_CMD_SUB_VISIBILITY, WiiSettings.subtitleVisibility);
-
-        wiiSetProperty(MP_CMD_SUB_DELAY, WiiSettings.subtitleDelay);
-
-        wiiSetCodepage(WiiSettings.subtitleCodepage);
-
-        char audioLang[14] = { 0 };
-        char subtitleLang[14] = { 0 };
-
-        if(WiiSettings.audioLanguage[0] != 0)
-            sprintf(audioLang, "%s,%s,en,eng",
-                    WiiSettings.audioLanguage, languages[GetLangIndex(WiiSettings.audioLanguage)].abbrev2);
-        if(WiiSettings.subtitleLanguage[0] != 0)
-            sprintf(subtitleLang, "%s,%s,en,eng",
-                    WiiSettings.subtitleLanguage, languages[GetLangIndex(WiiSettings.subtitleLanguage)].abbrev2);
-
-        wiiSetAudioLanguage(audioLang);
-        wiiSetSubtitleLanguage(subtitleLang);
-        wiiSetSubtitleColor(WiiSettings.subtitleColor);
-        wiiSetSubtitleSize(0.6+(WiiSettings.subtitleSize-1)*0.6); // 1.0-5.0 --> 0.6-3.0*/
+        wiiSetProperty(MP_CMD_AUDIO_DELAY, 0);
+        wiiSetProperty(MP_CMD_SUB_VISIBILITY, 0);
     }
 }
 
 SSettings Settings;
 int ExitRequested = 0,
-                    GuiShutdown = 0;
+    GuiShutdown = 0;
 
 void ExitApp()
 {
@@ -292,6 +219,7 @@ int main(int argc, char *argv[])
                (32*1024); // padding
 
     AddMem2Area (size, MEM2_VIDEO);
+    AddMem2Area (2*1024*1024, MEM2_OTHER); // vars + ttf
     __exception_setreload(10);
 
     GX_AllocTextureMemory();

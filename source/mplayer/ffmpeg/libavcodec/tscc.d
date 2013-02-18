@@ -46,8 +46,8 @@ libavcodec/tscc.o: libavcodec/tscc.c \
  libavutil/pixfmt.h libavutil/rational.h libavutil/audioconvert.h \
  libavcodec/version.h libavcodec/msrledec.h libavcodec/bytestream.h \
  libavutil/common.h libavutil/intreadwrite.h libavutil/bswap.h \
- libavutil/ppc/intreadwrite.h c:/devkitPro/portlibs/ppc/include/zlib.h \
- c:/devkitPro/portlibs/ppc/include/zconf.h \
+ libavutil/ppc/intreadwrite.h c:/devkitPro/libogc/include/zlib.h \
+ c:/devkitPro/libogc/include/zconf.h \
  c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/../../../../powerpc-eabi/include/unistd.h \
  c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/../../../../powerpc-eabi/include/sys/unistd.h
 
@@ -191,9 +191,9 @@ libavutil/bswap.h:
 
 libavutil/ppc/intreadwrite.h:
 
-c:/devkitPro/portlibs/ppc/include/zlib.h:
+c:/devkitPro/libogc/include/zlib.h:
 
-c:/devkitPro/portlibs/ppc/include/zconf.h:
+c:/devkitPro/libogc/include/zconf.h:
 
 c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/../../../../powerpc-eabi/include/unistd.h:
 

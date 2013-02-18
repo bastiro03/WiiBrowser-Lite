@@ -3884,7 +3884,7 @@ play_next_file:
 
 // CACHE2: initial prefill: 20%  later: 5%  (should be set by -cacheopts)
 goto_enable_cache:
-    if (/*stream_cache_size >*/ 0)
+    if (stream_cache_size > 0)
     {
 
         int res;

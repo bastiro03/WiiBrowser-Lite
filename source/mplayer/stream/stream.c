@@ -355,10 +355,10 @@ int stream_read_internal(stream_t *s, void *buf, int len)
   if(len<0)
   {
     s->eof=1;
-    
+
     if(s->type == STREAMTYPE_DVDNAV)
       return 0;
-    
+
     s->buf_pos=s->buf_len=0;
     if(s->error==0 && (errno==EIO || errno==ENOSYS))
     {
@@ -401,7 +401,7 @@ eof_out:
   s->pos+=len;
 #ifdef GEKKO
   _try=0;
-#endif  
+#endif
   return len;
 }
 

@@ -55,9 +55,8 @@ libavformat/matroskadec.o: libavformat/matroskadec.c \
  libavutil/intreadwrite.h libavutil/bswap.h libavutil/ppc/intreadwrite.h \
  libavutil/avassert.h libavcodec/mathops.h libavcodec/ppc/mathops.h \
  libavcodec/put_bits.h libavutil/bswap.h libavutil/intfloat.h \
- libavutil/avstring.h libavutil/lzo.h \
- c:/devkitPro/portlibs/ppc/include/zlib.h \
- c:/devkitPro/portlibs/ppc/include/zconf.h \
+ libavutil/avstring.h libavutil/lzo.h c:/devkitPro/libogc/include/zlib.h \
+ c:/devkitPro/libogc/include/zconf.h \
  c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/../../../../powerpc-eabi/include/unistd.h \
  c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/../../../../powerpc-eabi/include/sys/unistd.h
 
@@ -245,9 +244,9 @@ libavutil/avstring.h:
 
 libavutil/lzo.h:
 
-c:/devkitPro/portlibs/ppc/include/zlib.h:
+c:/devkitPro/libogc/include/zlib.h:
 
-c:/devkitPro/portlibs/ppc/include/zconf.h:
+c:/devkitPro/libogc/include/zconf.h:
 
 c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/../../../../powerpc-eabi/include/unistd.h:
 

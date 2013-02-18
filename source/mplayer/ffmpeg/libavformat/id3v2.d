@@ -1,6 +1,5 @@
 libavformat/id3v2.o: libavformat/id3v2.c ../config.h \
- c:/devkitPro/portlibs/ppc/include/zlib.h \
- c:/devkitPro/portlibs/ppc/include/zconf.h \
+ c:/devkitPro/libogc/include/zlib.h c:/devkitPro/libogc/include/zconf.h \
  c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/../../../../powerpc-eabi/include/sys/types.h \
  c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/../../../../powerpc-eabi/include/_ansi.h \
  c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/../../../../powerpc-eabi/include/newlib.h \
@@ -59,9 +58,9 @@ libavformat/id3v2.o: libavformat/id3v2.c ../config.h \
 
 ../config.h:
 
-c:/devkitPro/portlibs/ppc/include/zlib.h:
+c:/devkitPro/libogc/include/zlib.h:
 
-c:/devkitPro/portlibs/ppc/include/zconf.h:
+c:/devkitPro/libogc/include/zconf.h:
 
 c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/../../../../powerpc-eabi/include/sys/types.h:
 

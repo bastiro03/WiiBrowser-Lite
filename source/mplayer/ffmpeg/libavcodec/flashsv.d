@@ -19,8 +19,7 @@ libavcodec/flashsv.o: libavcodec/flashsv.c \
  c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/../../../../powerpc-eabi/include/stdlib.h \
  c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/../../../../powerpc-eabi/include/machine/stdlib.h \
  c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/../../../../powerpc-eabi/include/alloca.h \
- c:/devkitPro/portlibs/ppc/include/zlib.h \
- c:/devkitPro/portlibs/ppc/include/zconf.h \
+ c:/devkitPro/libogc/include/zlib.h c:/devkitPro/libogc/include/zconf.h \
  c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/../../../../powerpc-eabi/include/unistd.h \
  c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/../../../../powerpc-eabi/include/sys/unistd.h \
  libavutil/intreadwrite.h \
@@ -93,9 +92,9 @@ c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/../../../../powerpc-eab
 
 c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/../../../../powerpc-eabi/include/alloca.h:
 
-c:/devkitPro/portlibs/ppc/include/zlib.h:
+c:/devkitPro/libogc/include/zlib.h:
 
-c:/devkitPro/portlibs/ppc/include/zconf.h:
+c:/devkitPro/libogc/include/zconf.h:
 
 c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/../../../../powerpc-eabi/include/unistd.h:
 

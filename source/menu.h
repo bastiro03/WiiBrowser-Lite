@@ -24,6 +24,7 @@ extern "C" {
 void InitGUIThreads();
 void MainMenu (int menuitem);
 void StopUpdateThread();
+void EnableVideoImg();
 
 extern u8 HWButton;
 extern CURL *curl_handle;
@@ -45,5 +46,14 @@ enum
     NET_ERR = 1,
     IP_ERR
 };
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+    void DisableVideoImg();
+    void DoMPlayerGuiDraw();
+#ifdef __cplusplus
+}
+#endif
 
 #endif

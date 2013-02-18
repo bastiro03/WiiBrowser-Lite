@@ -56,8 +56,8 @@ libavformat/mov.o: libavformat/mov.c \
  libavformat/riff.h libavformat/metadata.h libavformat/isom.h \
  libavformat/dv.h libavcodec/get_bits.h libavutil/avassert.h \
  libavcodec/mathops.h libavcodec/ppc/mathops.h libavformat/id3v1.h \
- libavformat/mov_chan.h c:/devkitPro/portlibs/ppc/include/zlib.h \
- c:/devkitPro/portlibs/ppc/include/zconf.h \
+ libavformat/mov_chan.h c:/devkitPro/libogc/include/zlib.h \
+ c:/devkitPro/libogc/include/zconf.h \
  c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/../../../../powerpc-eabi/include/unistd.h \
  c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/../../../../powerpc-eabi/include/sys/unistd.h \
  libavformat/qtpalette.h
@@ -254,9 +254,9 @@ libavformat/id3v1.h:
 
 libavformat/mov_chan.h:
 
-c:/devkitPro/portlibs/ppc/include/zlib.h:
+c:/devkitPro/libogc/include/zlib.h:
 
-c:/devkitPro/portlibs/ppc/include/zconf.h:
+c:/devkitPro/libogc/include/zconf.h:
 
 c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/../../../../powerpc-eabi/include/unistd.h:
 

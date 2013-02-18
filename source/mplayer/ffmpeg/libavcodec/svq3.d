@@ -54,8 +54,7 @@ libavcodec/svq3.o: libavcodec/svq3.c libavcodec/internal.h \
  libavcodec/cabac.h libavcodec/h264dsp.h libavcodec/h264pred.h \
  libavcodec/rectangle.h libavcodec/h264data.h libavcodec/h264_mvpred.h \
  libavcodec/golomb.h libavcodec/vdpau_internal.h \
- c:/devkitPro/portlibs/ppc/include/zlib.h \
- c:/devkitPro/portlibs/ppc/include/zconf.h \
+ c:/devkitPro/libogc/include/zlib.h c:/devkitPro/libogc/include/zconf.h \
  c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/../../../../powerpc-eabi/include/unistd.h \
  c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/../../../../powerpc-eabi/include/sys/unistd.h \
  libavcodec/svq1.h
@@ -248,9 +247,9 @@ libavcodec/golomb.h:
 
 libavcodec/vdpau_internal.h:
 
-c:/devkitPro/portlibs/ppc/include/zlib.h:
+c:/devkitPro/libogc/include/zlib.h:
 
-c:/devkitPro/portlibs/ppc/include/zconf.h:
+c:/devkitPro/libogc/include/zconf.h:
 
 c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/../../../../powerpc-eabi/include/unistd.h:
 

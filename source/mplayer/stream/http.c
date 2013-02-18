@@ -731,7 +731,7 @@ static void print_icy_metadata(HTTP_header_t *http_hdr) {
 	// and are IMHO useless info ::atmos
 	if( (field_data = http_get_field(http_hdr, "icy-name")) != NULL ) {
 		mp_msg(MSGT_NETWORK,MSGL_INFO,"Name   : %s\n", field_data);
-#ifdef GEKKO		
+#ifdef GEKKO
 		snprintf(streamname, 128, "%s", field_data);
 		streamname_changed = 1;
 #endif

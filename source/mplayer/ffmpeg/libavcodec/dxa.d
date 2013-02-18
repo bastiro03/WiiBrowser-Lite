@@ -45,8 +45,8 @@ libavcodec/dxa.o: libavcodec/dxa.c \
  libavutil/intfloat_readwrite.h libavutil/log.h libavutil/pixfmt.h \
  libavutil/avutil.h libavutil/cpu.h libavutil/dict.h libavutil/log.h \
  libavutil/pixfmt.h libavutil/rational.h libavutil/audioconvert.h \
- libavcodec/version.h c:/devkitPro/portlibs/ppc/include/zlib.h \
- c:/devkitPro/portlibs/ppc/include/zconf.h \
+ libavcodec/version.h c:/devkitPro/libogc/include/zlib.h \
+ c:/devkitPro/libogc/include/zconf.h \
  c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/../../../../powerpc-eabi/include/unistd.h \
  c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/../../../../powerpc-eabi/include/sys/unistd.h
 
@@ -184,9 +184,9 @@ libavutil/audioconvert.h:
 
 libavcodec/version.h:
 
-c:/devkitPro/portlibs/ppc/include/zlib.h:
+c:/devkitPro/libogc/include/zlib.h:
 
-c:/devkitPro/portlibs/ppc/include/zconf.h:
+c:/devkitPro/libogc/include/zconf.h:
 
 c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/../../../../powerpc-eabi/include/unistd.h:
 

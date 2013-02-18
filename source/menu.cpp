@@ -140,6 +140,19 @@ void HaltGui()
 		usleep(THREAD_SLEEP);
 }
 
+extern "C" void DoMPlayerGuiDraw()
+{
+	mainWindow->Draw();
+	mainWindow->DrawTooltip();
+
+	if(userInput[0].wpad->ir.valid)
+		Menu_DrawImg(userInput[0].wpad->ir.x-48, userInput[0].wpad->ir.y-48,
+			96, 96, pointer[0]->GetImage(), userInput[0].wpad->ir.angle, 1, 1, 255, GX_TF_RGBA8);
+
+	DoRumble(0);
+	mainWindow->Update(&userInput[0]);
+}
+
 /****************************************************************************
  * WindowPrompt
  *
@@ -905,22 +918,26 @@ static int MenuHome()
 
     if(choice != MENU_FAVORITES)
     {
-        App->SetEffect(EFFECT_SLIDE_OUT | EFFECT_SLIDE_BOTTOM, 50);
+        // App->SetEffect(EFFECT_SLIDE_OUT | EFFECT_SLIDE_BOTTOM, 50);
         Right->SetEffect(EFFECT_FADE, -50);
-        while(App->GetEffect() > 0) usleep(THREAD_SLEEP);
+        // while(App->GetEffect() > 0) usleep(THREAD_SLEEP);
 
         HaltGui();
-        mainWindow->Remove(App);
         mainWindow->Remove(Right);
         ResumeGui();
     }
 
     HaltGui();
-    LoadMPlayerFile();
-
+    mainWindow->Remove(bgImg);
+    LoadMPlayerFile("sd:/Naruto.mp4"); // "http://www.w3schools.com/html/movie.mp4";
     while(controlledbygui != 1)
         usleep(100);
+
+    mainWindow->Append(bgImg);
     ResetVideo_Menu();
+
+    if(choice != MENU_FAVORITES)
+        mainWindow->Remove(App);
     ResumeGui();
 
     return choice;

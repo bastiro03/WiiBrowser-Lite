@@ -65,7 +65,7 @@ static void CleanFileName(const char *file)  //clean (//) exacmple smb1://film.a
 		}
 		buf[j]='\0';
 		strcpy((char*)file,buf);
-	}	
+	}
 }
 #endif
 
@@ -85,7 +85,7 @@ if(!filename) {
 //============ Open STDIN or plain FILE ============
 #ifdef GEKKO
   CleanFileName(filename);
-#endif  
+#endif
 
   return open_stream_full(filename,STREAM_READ,options,file_format);
 }

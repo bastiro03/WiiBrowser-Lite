@@ -156,7 +156,7 @@ ParseDirectory()
 	{
 		if(strcmp(entry->d_name,".") == 0)
 			continue;
-		
+
 		BROWSERENTRY * newBrowserList = (BROWSERENTRY *)realloc(browserList, (entryNum+1) * sizeof(BROWSERENTRY));
 
 		if(!newBrowserList) // failed to allocate required memory
@@ -181,7 +181,7 @@ ParseDirectory()
 		else
 		{
 			strncpy(browserList[entryNum].displayname, entry->d_name, MAXDISPLAY);	// crop name for display
-		
+
 			if(entry->d_type==DT_DIR)
 				browserList[entryNum].isdir = 1; // flag this as a dir
 		}

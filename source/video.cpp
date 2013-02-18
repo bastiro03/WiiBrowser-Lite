@@ -1,6 +1,6 @@
 /****************************************************************************
- * libwiigui Template
- * Tantric 2009
+ * WiiMC
+ * Tantric 2009-2012
  *
  * video.cpp
  * Video routines
@@ -16,75 +16,54 @@
 
 #include "input.h"
 #include "libwiigui/gui.h"
+#include "menu.h"
+#include "utils/mem2_manager.h"
 
-#define DEFAULT_FIFO_SIZE 256 * 1024
-static unsigned int *xfb[2] = { NULL, NULL }; // Double buffered
-static int whichfb = 0; // Switch
-static unsigned char gp_fifo[DEFAULT_FIFO_SIZE] ATTRIBUTE_ALIGN (32);
+
+extern "C" {
+
+#define DEFAULT_FIFO_SIZE 384 * 1024
+static unsigned char *gp_fifo; // must be in MEM1
 static Mtx GXmodelView2D;
 
-int screenheight;
-int screenwidth;
-u32 FrameTimer = 0;
+unsigned int *xfb[2] = { NULL, NULL }; // Double buffered
+u8 whichfb = 0; // Switch
+bool need_wait=false;
 
 GXRModeObj *vmode; // Menu video mode
-u8 *videoScreenshot = NULL;
+u8 * videoScreenshot = NULL;
+int screenheight = 480;
+int screenwidth = 640;
+u32 FrameTimer = 0;
+bool drawGui = false;
 
 /****************************************************************************
  * TakeScreenshot
  *
  * Copies the current screen into a GX texture
  ***************************************************************************/
+
 void TakeScreenshot()
 {
-	videoScreenshot = (u8 *)memalign(32, vmode->fbWidth * vmode->efbHeight * 4);
-	if(!videoScreenshot)
-        return;
-
 	GX_SetTexCopySrc(0, 0, vmode->fbWidth, vmode->efbHeight);
 	GX_SetTexCopyDst(vmode->fbWidth, vmode->efbHeight, GX_TF_RGBA8, GX_FALSE);
 	DCInvalidateRange(videoScreenshot, vmode->fbWidth * vmode->efbHeight * 4);
 	GX_CopyTex(videoScreenshot, GX_FALSE);
 	GX_PixModeSync();
+	// EnableVideoImg();
 }
 
-/****************************************************************************
- * ResetVideo_Menu
- *
- * Reset the video/rendering mode for the menu
-****************************************************************************/
-void
-ResetVideo_Menu()
+void ResetVideo_Menu()
 {
 	Mtx44 p;
-	f32 yscale;
-	u32 xfbHeight;
 
-	VIDEO_Configure (vmode);
-	VIDEO_Flush();
-	VIDEO_WaitVSync();
-	if (vmode->viTVMode & VI_NON_INTERLACE)
-		VIDEO_WaitVSync();
-	else
-		while (VIDEO_GetNextField())
-			VIDEO_WaitVSync();
+	GX_SetNumChans(1);
+	GX_SetNumTevStages(1);
+	GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD0, GX_TEXMAP0, GX_COLOR0A0);
+	GX_SetTevOp (GX_TEVSTAGE0, GX_PASSCLR);
 
-	// clears the bg to color and clears the z buffer
-	GXColor background = {0, 0, 0, 255};
-	GX_SetCopyClear (background, 0x00ffffff);
-
-	yscale = GX_GetYScaleFactor(vmode->efbHeight,vmode->xfbHeight);
-	xfbHeight = GX_SetDispCopyYScale(yscale);
-	GX_SetScissor(0,0,vmode->fbWidth,vmode->efbHeight);
-	GX_SetDispCopySrc(0,0,vmode->fbWidth,vmode->efbHeight);
-	GX_SetDispCopyDst(vmode->fbWidth,xfbHeight);
-	GX_SetCopyFilter(vmode->aa,vmode->sample_pattern,GX_TRUE,vmode->vfilter);
-	GX_SetFieldMode(vmode->field_rendering,((vmode->viHeight==2*vmode->xfbHeight)?GX_ENABLE:GX_DISABLE));
-
-	if (vmode->aa)
-		GX_SetPixelFmt(GX_PF_RGB565_Z16, GX_ZC_LINEAR);
-	else
-		GX_SetPixelFmt(GX_PF_RGB8_Z24, GX_ZC_LINEAR);
+	GX_SetNumTexGens(1);
+	GX_SetTexCoordGen(GX_TEXCOORD0, GX_TG_MTX2x4, GX_TG_TEX0, GX_IDENTITY);
 
 	// setup the vertex descriptor
 	// tells the flipper to expect direct data
@@ -101,78 +80,12 @@ ResetVideo_Menu()
 	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_TEX0, GX_TEX_ST, GX_F32, 0);
 	GX_SetZMode (GX_FALSE, GX_LEQUAL, GX_TRUE);
 
-	GX_SetNumChans(1);
-	GX_SetNumTexGens(1);
-	GX_SetTevOp (GX_TEVSTAGE0, GX_PASSCLR);
-	GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD0, GX_TEXMAP0, GX_COLOR0A0);
-	GX_SetTexCoordGen(GX_TEXCOORD0, GX_TG_MTX2x4, GX_TG_TEX0, GX_IDENTITY);
-
 	guMtxIdentity(GXmodelView2D);
 	guMtxTransApply (GXmodelView2D, GXmodelView2D, 0.0F, 0.0F, -50.0F);
 	GX_LoadPosMtxImm(GXmodelView2D,GX_PNMTX0);
 
-	guOrtho(p,0,479,0,639,0,300);
+	guOrtho(p,0,screenheight-1,0,screenwidth-1,0,300);
 	GX_LoadProjectionMtx(p, GX_ORTHOGRAPHIC);
-
-	GX_SetViewport(0,0,vmode->fbWidth,vmode->efbHeight,0,1);
-	GX_SetBlendMode(GX_BM_BLEND, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, GX_LO_CLEAR);
-	GX_SetAlphaUpdate(GX_TRUE);
-}
-
-/****************************************************************************
- * InitVideo
- *
- * This function MUST be called at startup.
- * - also sets up menu video mode
- ***************************************************************************/
-
-void
-InitVideo ()
-{
-	VIDEO_Init();
-	vmode = VIDEO_GetPreferredMode(NULL); // get default video mode
-
-	// widescreen fix
-	if(CONF_GetAspectRatio() == CONF_ASPECT_16_9)
-		vmode->viWidth = VI_MAX_WIDTH_PAL;
-
-	VIDEO_Configure (vmode);
-
-	screenheight = 480;
-	screenwidth = vmode->fbWidth;
-
-	// Allocate the video buffers
-	xfb[0] = (u32 *) SYS_AllocateFramebuffer (vmode);
-	xfb[1] = (u32 *) SYS_AllocateFramebuffer (vmode);
-	DCInvalidateRange(xfb[0], VIDEO_GetFrameBufferSize(vmode));
-	DCInvalidateRange(xfb[1], VIDEO_GetFrameBufferSize(vmode));
-	xfb[0] = (u32 *) MEM_K0_TO_K1 (xfb[0]);
-	xfb[1] = (u32 *) MEM_K0_TO_K1 (xfb[1]);
-
-	// A console is always useful while debugging
-	console_init (xfb[0], 20, 64, vmode->fbWidth, vmode->xfbHeight, vmode->fbWidth * 2);
-
-	// Clear framebuffers etc.
-	VIDEO_ClearFrameBuffer (vmode, xfb[0], COLOR_BLACK);
-	VIDEO_ClearFrameBuffer (vmode, xfb[1], COLOR_BLACK);
-	VIDEO_SetNextFramebuffer (xfb[0]);
-
-	VIDEO_SetBlack (FALSE);
-	VIDEO_Flush ();
-	VIDEO_WaitVSync ();
-	if (vmode->viTVMode & VI_NON_INTERLACE)
-		VIDEO_WaitVSync ();
-
-	// Initialize GX
-	GXColor background = { 0, 0, 0, 0xff };
-	memset (&gp_fifo, 0, DEFAULT_FIFO_SIZE);
-	GX_Init (&gp_fifo, DEFAULT_FIFO_SIZE);
-	GX_SetCopyClear (background, 0x00ffffff);
-	GX_SetDispCopyGamma (GX_GM_1_0);
-	GX_SetCullMode (GX_CULL_NONE);
-
-	ResetVideo_Menu();
-	// Finally, the video is up and ready for use :)
 }
 
 /****************************************************************************
@@ -187,6 +100,8 @@ void StopGX()
 
 	VIDEO_SetBlack(TRUE);
 	VIDEO_Flush();
+	VIDEO_WaitVSync();
+	VIDEO_WaitVSync();
 }
 
 /****************************************************************************
@@ -200,11 +115,11 @@ void Menu_Render()
 	GX_SetZMode(GX_TRUE, GX_LEQUAL, GX_TRUE);
 	GX_SetColorUpdate(GX_TRUE);
 	GX_CopyDisp(xfb[whichfb],GX_TRUE);
-	GX_DrawDone();
 	VIDEO_SetNextFramebuffer(xfb[whichfb]);
-	VIDEO_Flush();
+	GX_DrawDone();
 	VIDEO_WaitVSync();
-	FrameTimer++;
+
+	++FrameTimer;
 }
 
 /****************************************************************************
@@ -217,6 +132,11 @@ void Menu_DrawImg(f32 xpos, f32 ypos, u16 width, u16 height, u8 data[],
 {
 	if(data == NULL)
 		return;
+
+	// if width/height are not multiples of 4, assume that we correctly
+	// padded the texture and also pad the dimensions
+	if(width%4) width += (4-width%4);
+	if(height%4) height += (4-height%4);
 
 	GXTexObj texObj;
 
@@ -290,4 +210,124 @@ void Menu_DrawRectangle(f32 x, f32 y, f32 width, f32 height, GXColor color, u8 f
 		GX_Color4u8(color.r, color.g, color.b, color.a);
 	}
 	GX_End();
+}
+
+int DrawMPlayerGui()
+{
+	UpdatePads();
+	// MPlayerInput();
+
+	if(!drawGui)
+		return 1;
+
+	if(!drawGui)
+		return 0;
+
+	ResetVideo_Menu(); // reconfigure GX for GUI
+	// DoMPlayerGuiDraw(); // draw GUI
+	return 1;
+}
+
+/****************************************************************************
+ * InitVideo
+ *
+ * This function MUST be called at startup.
+ * - also sets up menu video mode
+ ***************************************************************************/
+void Draw_VIDEO()
+{
+	need_wait=false;
+	VIDEO_Flush();
+}
+
+void
+InitVideo ()
+{
+	VIDEO_Init();
+	vmode = VIDEO_GetPreferredMode(NULL); // get default video mode
+
+	bool pal = false;
+
+	if (vmode == &TVPal576IntDfScale || vmode == &TVPal576ProgScale)
+		pal = true;
+
+	if (CONF_GetAspectRatio() == CONF_ASPECT_16_9)
+	{
+		screenwidth = 768;
+		vmode->viWidth = 720;
+	}
+	else
+	{
+		vmode->viWidth = 672;
+	}
+
+	if (pal)
+	{
+		vmode->viXOrigin = (VI_MAX_WIDTH_PAL - vmode->viWidth) / 2;
+		vmode->viYOrigin = (VI_MAX_HEIGHT_PAL - vmode->viHeight) / 2;
+	}
+	else
+	{
+		vmode->viXOrigin = (VI_MAX_WIDTH_NTSC - vmode->viWidth) / 2;
+		vmode->viYOrigin = (VI_MAX_HEIGHT_NTSC - vmode->viHeight) / 2;
+	}
+
+	s8 hoffset = 0;
+
+	if (CONF_GetDisplayOffsetH(&hoffset) == 0)
+		vmode->viXOrigin += hoffset;
+
+	VIDEO_Configure (vmode);
+}
+
+void
+InitVideo2 ()
+{
+	// Allocate framebuffers
+	xfb[0] = (u32 *) SYS_AllocateFramebuffer (vmode);
+	xfb[1] = (u32 *) SYS_AllocateFramebuffer (vmode);
+	DCInvalidateRange(xfb[0], VIDEO_GetFrameBufferSize(vmode));
+	DCInvalidateRange(xfb[1], VIDEO_GetFrameBufferSize(vmode));
+	xfb[0] = (u32 *) MEM_K0_TO_K1 (xfb[0]);
+	xfb[1] = (u32 *) MEM_K0_TO_K1 (xfb[1]);
+
+	// Clear framebuffers
+	VIDEO_ClearFrameBuffer (vmode, xfb[0], COLOR_BLACK);
+	VIDEO_ClearFrameBuffer (vmode, xfb[1], COLOR_BLACK);
+	VIDEO_SetNextFramebuffer (xfb[0]);
+
+	VIDEO_SetBlack (FALSE);
+	VIDEO_Flush ();
+	VIDEO_WaitVSync();
+	if (vmode->viTVMode & VI_NON_INTERLACE)
+		VIDEO_WaitVSync();
+	else
+		while (VIDEO_GetNextField())
+			VIDEO_WaitVSync();
+
+	// Initialize GX
+	GXColor background = { 0, 0, 0, 0xff };
+	gp_fifo=(unsigned char *)memalign(32,DEFAULT_FIFO_SIZE);
+	memset (gp_fifo, 0, DEFAULT_FIFO_SIZE);
+	GX_Init (gp_fifo, DEFAULT_FIFO_SIZE);
+	GX_SetCopyClear (background, 0x00ffffff);
+	GX_SetDispCopyGamma (GX_GM_1_0);
+	GX_SetCullMode (GX_CULL_NONE);
+	GX_SetViewport(0,0,vmode->fbWidth,vmode->efbHeight,0,1);
+	GX_SetBlendMode(GX_BM_BLEND, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, GX_LO_CLEAR);
+	GX_SetAlphaUpdate(GX_TRUE);
+	f32 yscale = GX_GetYScaleFactor(vmode->efbHeight,vmode->xfbHeight);
+	u32 xfbHeight = GX_SetDispCopyYScale(yscale);
+	GX_SetScissor(0,0,vmode->fbWidth,vmode->efbHeight);
+	GX_SetDispCopySrc(0,0,vmode->fbWidth,vmode->efbHeight);
+	GX_SetDispCopyDst(vmode->fbWidth,xfbHeight);
+	GX_SetCopyFilter(vmode->aa,vmode->sample_pattern,GX_TRUE,vmode->vfilter);
+	GX_SetFieldMode(vmode->field_rendering,((vmode->viHeight==2*vmode->xfbHeight)?GX_ENABLE:GX_DISABLE));
+
+	GX_SetDrawDoneCallback(Draw_VIDEO);
+	GX_Flush();
+
+	videoScreenshot = (u8 *) mem2_malloc(vmode->fbWidth * vmode->efbHeight * 4, MEM2_VIDEO);
+}
+
 }

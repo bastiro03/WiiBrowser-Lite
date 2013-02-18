@@ -382,6 +382,11 @@ void ToggleButtons(GuiToolbar *toolbar, bool checkState)
     }
 }
 
+extern "C" void ShutdownGui()
+{
+	HaltGui();
+}
+
 /****************************************************************************
  * OnScreenKeyboard
  *
@@ -910,6 +915,14 @@ static int MenuHome()
         ResumeGui();
     }
 
+    HaltGui();
+    LoadMPlayerFile();
+
+    while(controlledbygui != 1)
+        usleep(100);
+    ResetVideo_Menu();
+    ResumeGui();
+
     return choice;
 }
 
@@ -1260,6 +1273,12 @@ void MainMenu(int menu)
 
     remove("debug.txt");
     SetupGui();
+
+    if(!InitMPlayer())
+	{
+		ExitRequested = true;
+		return;
+	}
 
     while(currentMenu != MENU_EXIT)
 	{

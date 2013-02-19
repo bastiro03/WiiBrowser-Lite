@@ -207,7 +207,7 @@ connect2Server_with_af(char *host, int port, int af,int verb) {
 	u32 nodelay = 1;
 	net_setsockopt(socket_server_fd,IPPROTO_TCP,TCP_NODELAY,&nodelay,sizeof(nodelay));
 
-	net_fcntl(socket_server_fd, F_SETFL, net_fcntl(socket_server_fd, F_GETFL, 0) | IOS_O_NONBLOCK);
+	// net_fcntl(socket_server_fd, F_SETFL, net_fcntl(socket_server_fd, F_GETFL, 0) | IOS_O_NONBLOCK);
 	u64 t1,t2;
 	t1=ticks_to_millisecs(gettime());
 	do {
@@ -221,7 +221,7 @@ connect2Server_with_af(char *host, int port, int af,int verb) {
 		closesocket(socket_server_fd);
 		return TCP_ERROR_PORT;
 	}
-	net_fcntl(socket_server_fd, F_SETFL, net_fcntl(socket_server_fd, F_GETFL, 0) & ~IOS_O_NONBLOCK);
+	// net_fcntl(socket_server_fd, F_SETFL, net_fcntl(socket_server_fd, F_GETFL, 0) & ~IOS_O_NONBLOCK);
 #elif !HAVE_WINSOCK2_H
 	fcntl( socket_server_fd, F_SETFL, fcntl(socket_server_fd, F_GETFL) | O_NONBLOCK );
 #else
@@ -264,7 +264,7 @@ connect2Server_with_af(char *host, int port, int af,int verb) {
 
 	// Turn back the socket as blocking
 #if !HAVE_WINSOCK2_H
-	fcntl( socket_server_fd, F_SETFL, fcntl(socket_server_fd, F_GETFL) & ~O_NONBLOCK );
+	// fcntl( socket_server_fd, F_SETFL, fcntl(socket_server_fd, F_GETFL) & ~O_NONBLOCK );
 #else
 	val = 0;
 	ioctlsocket( socket_server_fd, FIONBIO, &val );
@@ -281,6 +281,7 @@ connect2Server_with_af(char *host, int port, int af,int verb) {
 		return TCP_ERROR_PORT;
 	}
 #endif
+
 	return socket_server_fd;
 }
 

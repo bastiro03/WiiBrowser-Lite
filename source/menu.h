@@ -9,11 +9,14 @@
 #ifndef _MENU_H_
 #define _MENU_H_
 
+#define MAXLEN          256
 #undef TIME
 #undef DEBUG
 
-#include <ogcsys.h>
+#include <libwiigui/gui.h>
 #include <curl/curl.h>
+
+#include <ogcsys.h>
 #include <update.h>
 #include <string>
 
@@ -24,10 +27,15 @@ extern "C" {
 void InitGUIThreads();
 void MainMenu (int menuitem);
 void StopUpdateThread();
+
 void EnableVideoImg();
+bool VideoImgVisible();
 
 extern u8 HWButton;
+extern GuiImage *bgImg;
 extern CURL *curl_handle;
+
+extern char new_page[MAXLEN];
 
 enum
 {

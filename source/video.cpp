@@ -18,7 +18,7 @@
 #include "libwiigui/gui.h"
 #include "menu.h"
 #include "utils/mem2_manager.h"
-
+#include "utils/pngu.h"
 
 extern "C" {
 
@@ -50,7 +50,23 @@ void TakeScreenshot()
 	DCInvalidateRange(videoScreenshot, vmode->fbWidth * vmode->efbHeight * 4);
 	GX_CopyTex(videoScreenshot, GX_FALSE);
 	GX_PixModeSync();
-	// EnableVideoImg();
+	EnableVideoImg();
+}
+
+void SaveScreenshot(FILE *file)
+{
+	if(!file)
+        return;
+    int size = vmode->fbWidth * vmode->efbHeight * 4;
+
+    DoMPlayerGuiDraw();
+    TakeScreenshot();
+
+    whichfb ^= 1; // flip framebuffer
+    GX_CopyDisp(xfb[whichfb], GX_TRUE);
+    VIDEO_SetNextFramebuffer(xfb[whichfb]);
+    GX_SetDrawDone();
+    need_wait=true;
 }
 
 void ResetVideo_Menu()
@@ -324,7 +340,7 @@ InitVideo2 ()
 	GX_SetDrawDoneCallback(Draw_VIDEO);
 	GX_Flush();
 
-	videoScreenshot = (u8 *) mem2_malloc(vmode->fbWidth * vmode->efbHeight * 4, MEM2_VIDEO);
+	videoScreenshot = (u8 *)mem2_malloc(vmode->fbWidth * vmode->efbHeight * 4, MEM2_VIDEO);
 }
 
 }

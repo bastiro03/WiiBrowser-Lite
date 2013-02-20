@@ -78,6 +78,8 @@ class SSettings
         bool FindConfig();
         //!Return favorite
         char *GetUrl(int f);
+        //!Return index
+        int FindUrl(char *url);
         //!Save Settings
         bool Save();
 		//!Reset Settings
@@ -96,11 +98,11 @@ class SSettings
         bool Music;
 
         char Homepage[256];
-        char DefaultFolder[256];
         char AppPath[256];
         char ConfigPath[256];
-
         char BootDevice[6];
+
+        char DefaultFolder[256];
         char UserFolder[256];
         char *Favorites[N];
 

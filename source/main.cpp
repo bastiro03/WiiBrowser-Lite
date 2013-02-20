@@ -172,7 +172,7 @@ extern "C" {
 
 SSettings Settings;
 int ExitRequested = 0,
-    GuiShutdown = 0;
+                    GuiShutdown = 0;
 
 void ExitApp()
 {
@@ -215,7 +215,7 @@ int main(int argc, char *argv[])
     InitGUIThreads(); // Initialize GUI
 
     u32 size = ( (1024*MAX_HEIGHT)+((MAX_WIDTH-1024)*MAX_HEIGHT) + (1024*(MAX_HEIGHT/2)*2) ) + // textures
-               (vmode->fbWidth * vmode->efbHeight * 4) + //videoScreenshot
+               (vmode->fbWidth * vmode->efbHeight * 4) + // videoScreenshot
                (32*1024); // padding
 
     AddMem2Area (size, MEM2_VIDEO);

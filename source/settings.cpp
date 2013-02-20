@@ -336,6 +336,16 @@ char *SSettings::GetUrl(int f)
     return Favorites[f];
 }
 
+int SSettings::FindUrl(char *url)
+{
+    for(int i = 0; i < N; i++)
+    {
+        if (!strcmp(Favorites[i], url))
+            return i;
+    }
+    return -1;
+}
+
 void SSettings::ChangeFolder()
 {
     int absolutePath = CheckFolder(DefaultFolder);

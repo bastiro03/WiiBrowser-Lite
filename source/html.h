@@ -17,6 +17,15 @@ FILE *SelectFile(GuiWindow *mainWindow, char *type);
 bool isValidPath(char *path);
 int makedir (char *newdir);
 
+enum
+{
+    UNKNOWN = 0,
+    WEB,
+    TEXT,
+    IMAGE,
+    VIDEO
+};
+
 FILE *SelectFile(GuiWindow *mainWindow, char *type)
 {
     const char *c;

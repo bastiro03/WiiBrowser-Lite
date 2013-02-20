@@ -28,14 +28,13 @@ extern "C" {
 }
 
 #define THREAD_SLEEP    100
-#define MAXLEN          256
 #define N               9
 
 CURL *curl_handle;
 History history;
 
+char new_page[MAXLEN];
 static char prev_page[MAXLEN];
-static char new_page[MAXLEN];
 static int fadeAnim;
 static int prevMenu;
 
@@ -48,10 +47,12 @@ static GuiImageData * pointer[4];
 static const u8 * pointerImg[4];
 static const u8 * pointerGrabImg[4];
 
-static GuiImage * bgImg = NULL;
 static GuiSound * bgMusic = NULL;
+GuiImage * bgImg = NULL;
+
 static GuiImageData * SplashImage = NULL;
 static GuiImage * Splash = NULL;
+static GuiImage * videoImg = NULL;
 
 static GuiWindow * mainWindow = NULL;
 static GuiWindow * guiWindow = NULL;
@@ -119,6 +120,30 @@ string parseUrl(string link, const char* url)
     return adjustUrl(link, url);
 }
 
+void DisableVideoImg()
+{
+	if(!videoImg)
+		return;
+
+	videoImg->SetVisible(false);
+}
+
+void EnableVideoImg()
+{
+	if(!videoImg)
+		return;
+
+	videoImg->SetVisible(true);
+}
+
+bool VideoImgVisible()
+{
+	if(!videoImg)
+		return false;
+
+	return videoImg->IsVisible();
+}
+
 /****************************************************************************
  * ResumeGui
  *
@@ -153,13 +178,6 @@ extern "C" void DoMPlayerGuiDraw()
 {
     mainWindow->Draw();
     mainWindow->DrawTooltip();
-
-    if(userInput[0].wpad->ir.valid)
-        Menu_DrawImg(userInput[0].wpad->ir.x-48, userInput[0].wpad->ir.y-48,
-                     96, 96, pointer[0]->GetImage(), userInput[0].wpad->ir.angle, 1, 1, 255, GX_TF_RGBA8);
-
-    DoRumble(0);
-    mainWindow->Update(&userInput[0]);
 }
 
 /****************************************************************************
@@ -546,6 +564,13 @@ void SetupGui()
     guiWindow = new GuiWindow(screenwidth, screenheight);
     guiWindow->Append(bgImg);
     mainWindow = guiWindow;
+
+    videoImg = new GuiImage();
+	videoImg->SetImage(videoScreenshot, vmode->fbWidth, vmode->viHeight);
+	videoImg->SetScaleX(screenwidth/(float)vmode->fbWidth);
+	videoImg->SetScaleY(screenheight/(float)vmode->efbHeight);
+	videoImg->SetVisible(false);
+	mainWindow->Append(videoImg);
 
     fadeAnim = EFFECT_FADE;
     prevMenu = MENU_HOME;
@@ -982,16 +1007,6 @@ static int MenuHome()
         ResumeGui();
     }
 
-    HaltGui();
-    mainWindow = videoWindow;
-    LoadMPlayerFile("http://www.w3schools.com/html/movie.mp4"); // "sd:/Naruto.mp4";
-    while(controlledbygui != 1)
-        usleep(100);
-
-    mainWindow = guiWindow;
-    ResetVideo_Menu();
-    ResumeGui();
-
     return choice;
 }
 
@@ -1188,12 +1203,9 @@ static int MenuFavorites()
     GuiText *Label[N];
     prevMenu = MENU_FAVORITES;
 
-    for (int i = 0, xpos = 40, ypos = 20; i< N; i++)
+    for (int i = 0, xpos = 40, ypos = 20; i < N; i++)
     {
-        Label[i] = new GuiText(Settings.GetUrl(i), 20, (GXColor)
-        {
-            0, 0, 0, 255
-        });
+        Label[i] = new GuiText(Settings.GetUrl(i), 20, (GXColor){ 0, 0, 0, 255 });
         Label[i]->SetMaxWidth(Block[i].GetDataWidth() - 25);
 
         Block[i].SetInit(xpos, ypos);

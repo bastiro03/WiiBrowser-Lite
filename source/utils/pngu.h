@@ -1,7 +1,7 @@
 /****************************************************************************
  *
  * PNGU
- * 
+ *
  * Original author: frontier (http://frontier-dev.net)
  * Modified by Tantric, 2009-2010
  *
@@ -37,7 +37,7 @@ typedef struct
 
 // Image context, always initialize with SelectImageFrom* and free with ReleaseImageContext
 struct _IMGCTX;
-typedef struct _IMGCTX *IMGCTX; 
+typedef struct _IMGCTX *IMGCTX;
 
 /****************************************************************************
 * Image context handling							                        *
@@ -66,6 +66,7 @@ int PNGU_GetImageProperties (IMGCTX ctx, PNGUPROP *fileproperties);
 u8 * DecodePNG(const u8 *src, int *width, int *height, u8 *dst);
 int PNGU_EncodeFromRGB (IMGCTX ctx, u32 width, u32 height, void *buffer, u32 stride);
 int PNGU_EncodeFromGXTexture (IMGCTX ctx, u32 width, u32 height, void *buffer, u32 stride);
+int PNGU_EncodeFromEFB (IMGCTX ctx, u32 width, u32 height, u32 stride);
 
 #ifdef __cplusplus
 	}

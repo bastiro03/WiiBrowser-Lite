@@ -1,7 +1,7 @@
 /****************************************************************************
  *
  * PNGU
- * 
+ *
  * Original author: frontier (http://frontier-dev.net)
  * Modified by Tantric, 2009-2012
  *
@@ -58,7 +58,7 @@ struct _IMGCTX
 	png_structp png_ptr;
 	png_infop info_ptr;
 	FILE *fd;
-	
+
 	png_bytep *row_pointers;
 	png_bytep img_data;
 };
@@ -178,7 +178,7 @@ static int pngu_info (IMGCTX ctx)
 		int ctxNumTrans;
 
 		png_get_IHDR(ctx->png_ptr, ctx->info_ptr, &width, &height,
-					(int *) &(ctx->prop.imgBitDepth), 
+					(int *) &(ctx->prop.imgBitDepth),
 					(int *) &(ctx->prop.imgColorType),
 					NULL, NULL, NULL);
 
@@ -225,11 +225,11 @@ static int pngu_info (IMGCTX ctx)
 					ctx->prop.bckgrnd.g = background->green >> scale;
 					ctx->prop.bckgrnd.b = background->blue >> scale;
 				}
-				
+
 				// Query list of transparent colors, if any.
 				ctx->prop.numTrans = 0;
 				ctx->prop.trans = NULL;
-				
+
 				if(png_get_tRNS (ctx->png_ptr, ctx->info_ptr, &trans, (int *) &(ctx->prop.numTrans), &trans_values)){
 					ctxNumTrans = ctx->prop.numTrans;
 					if(ctxNumTrans){
@@ -245,44 +245,44 @@ static int pngu_info (IMGCTX ctx)
 							ctx->prop.numTrans = 0;
 					}
 				}
-				
+
 			}
 			break;
-			
+
 			case PNGU_COLOR_TYPE_GRAY:
 			case PNGU_COLOR_TYPE_GRAY_ALPHA:
 			{
 				if(png_get_bKGD (ctx->png_ptr, ctx->info_ptr, &background)){
 					ctx->prop.validBckgrnd = 1;
-					ctx->prop.bckgrnd.r = 
-					ctx->prop.bckgrnd.g = 
+					ctx->prop.bckgrnd.r =
+					ctx->prop.bckgrnd.g =
 					ctx->prop.bckgrnd.b = background->gray >> scale;
 				}
-				
+
 				// Query list of transparent colors, if any.
 				ctx->prop.numTrans = 0;
 				ctx->prop.trans = NULL;
-				
+
 				if(png_get_tRNS (ctx->png_ptr, ctx->info_ptr, &trans, (int *) &(ctx->prop.numTrans), &trans_values)){
 					ctxNumTrans = ctx->prop.numTrans;
 					if(ctxNumTrans){
 						ctx->prop.trans = png_malloc (sizeof (PNGUCOLOR) * ctxNumTrans);
 						if (ctx->prop.trans)
 							for (i = 0; i < ctxNumTrans; i++)
-								ctx->prop.trans[i].r = 
-								ctx->prop.trans[i].g = 
+								ctx->prop.trans[i].r =
+								ctx->prop.trans[i].g =
 								ctx->prop.trans[i].b = trans_values[i].gray >> scale;
 						else
 							ctx->prop.numTrans = 0;
 					}
 				}
-				
+
 			}
 			break;
-			
+
 			default:
-			
-			// It was none of those things, 
+
+			// It was none of those things,
 			{
 				// Query list of transparent colors, if any.
 				ctx->prop.numTrans = 0;
@@ -397,7 +397,7 @@ static u8 * PNGU_DecodeTo4x4RGBA8 (IMGCTX ctx, u32 width, u32 height, int * dstW
 	if(width > MAX_TEX_WIDTH || height > MAX_TEX_HEIGHT)
 	{
 		float ratio = (float)width/(float)height;
-		
+
 		if(ratio > (float)MAX_TEX_WIDTH/(float)MAX_TEX_HEIGHT)
 		{
 			newWidth = MAX_TEX_WIDTH;
@@ -449,7 +449,7 @@ static u8 * PNGU_DecodeTo4x4RGBA8 (IMGCTX ctx, u32 width, u32 height, int * dstW
 					y2 = ((y*yRatio)>>16);
 				}
 
-				if (ctx->prop.imgColorType == PNGU_COLOR_TYPE_GRAY_ALPHA || 
+				if (ctx->prop.imgColorType == PNGU_COLOR_TYPE_GRAY_ALPHA ||
 					ctx->prop.imgColorType == PNGU_COLOR_TYPE_RGB_ALPHA)
 				{
 					if(xRatio > 0)
@@ -594,7 +594,7 @@ int PNGU_EncodeFromRGB (IMGCTX ctx, u32 width, u32 height, void *buffer, u32 str
 	ctx->propRead = 0;
 
 	// Check if the user has selected a file to write the image
-	if (ctx->source == PNGU_SOURCE_BUFFER);	
+	if (ctx->source == PNGU_SOURCE_BUFFER);
 
 	else if (ctx->source == PNGU_SOURCE_DEVICE)
 	{
@@ -637,7 +637,7 @@ int PNGU_EncodeFromRGB (IMGCTX ctx, u32 width, u32 height, void *buffer, u32 str
 	}
 
 	// Setup output file properties
-    png_set_IHDR (ctx->png_ptr, ctx->info_ptr, width, height, 8, PNG_COLOR_TYPE_RGB, 
+    png_set_IHDR (ctx->png_ptr, ctx->info_ptr, width, height, 8, PNG_COLOR_TYPE_RGB,
 				PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
 
 	// Allocate memory to store the image in RGB format
@@ -706,7 +706,7 @@ int PNGU_EncodeFromGXTexture (IMGCTX ctx, u32 width, u32 height, void *buffer, u
 
 	memset(tmpbuffer, 0, width*height*3);
 	png_uint_32 offset;
-	
+
 	for(y=0; y < height; y++)
 	{
 		tmpy1 = y * 640*3;
@@ -723,8 +723,35 @@ int PNGU_EncodeFromGXTexture (IMGCTX ctx, u32 width, u32 height, void *buffer, u
 			tmpbuffer[tmpxy+2] = ptr[offset+33]; // B
 		}
 	}
-	
+
 	res = PNGU_EncodeFromRGB (ctx, width, height, tmpbuffer, stride);
 	png_free(tmpbuffer);
 	return res;
+}
+
+int PNGU_EncodeFromEFB (IMGCTX ctx, u32 width, u32 height, u32 stride)
+{
+    int res;
+    u32 x,y, tmpy, tmpxy, regval, val;
+    unsigned char * tmpbuffer = (unsigned char *)malloc(width*height*3);
+    memset(tmpbuffer, 0, width*height*3);
+
+    for(y=0; y < height; y++)
+    {
+        tmpy = y * 640*3;
+        for(x=0; x < width; x++)
+        {
+            regval = 0xc8000000|(_SHIFTL(x,2,10));
+            regval = (regval&~0x3FF000)|(_SHIFTL(y,12,10));
+            val = *(u32*)regval;
+            tmpxy = x * 3 + tmpy;
+            tmpbuffer[tmpxy  ] = _SHIFTR(val,16,8); // R
+            tmpbuffer[tmpxy+1] = _SHIFTR(val,8,8);  // G
+            tmpbuffer[tmpxy+2] = val&0xff;          // B
+        }
+    }
+
+    res = PNGU_EncodeFromRGB (ctx, width, height, tmpbuffer, stride);
+    free(tmpbuffer);
+    return res;
 }

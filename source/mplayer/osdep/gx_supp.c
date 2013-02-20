@@ -489,7 +489,7 @@ inline void DrawMPlayer()
 			TakeScreenshot();
 		copyScreen = 2;
 	}
-	// else
+	else
 	{
 		drawMode = DrawMPlayerGui();
 	}

@@ -156,7 +156,7 @@ void GuiButton::Draw()
 		if(icon) // draw icon
 			icon->Draw();
 
-        		// draw text
+        // draw text
 		if(label[0])
 			label[0]->Draw();
 		if(label[1])
@@ -186,8 +186,8 @@ void GuiButton::Draw()
 
 		if(iconOver)
 			iconOver->Draw();
-		else if(icon) // draw icon
-			icon->Draw();
+		// else if(icon) // draw icon
+			// icon->Draw();
 
 		// draw text
 		if(labelOver[0])
@@ -219,8 +219,8 @@ void GuiButton::Draw()
 
 		if(iconOver)
 			iconOver->Draw();
-		else if(icon) // draw icon
-			icon->Draw();
+		// else if(icon) // draw icon
+			// icon->Draw();
 
 		// draw text
 		if(labelOver[0])

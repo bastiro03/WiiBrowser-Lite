@@ -15,7 +15,6 @@
 #include <errno.h>
 #include <wiiuse/wpad.h>
 
-#include "libwiigui/gui.h"
 #include "liste.h"
 #include "menu.h"
 #include "main.h"
@@ -32,6 +31,7 @@ extern "C" {
 
 CURL *curl_handle;
 History history;
+GuiImage * bgImg = NULL;
 
 char new_page[MAXLEN];
 static char prev_page[MAXLEN];
@@ -120,6 +120,33 @@ string parseUrl(string link, const char* url)
     return adjustUrl(link, url);
 }
 
+void DisableVideoImg()
+{
+	if(!videoImg)
+		return;
+
+	videoImg->SetVisible(false);
+}
+
+void EnableVideoImg()
+{
+	if(!videoImg)
+		return;
+
+	videoImg->SetVisible(true);
+}
+
+bool VideoImgVisible()
+{
+	if(!videoImg)
+		return false;
+
+	return videoImg->IsVisible();
+}
+
+/****************************************************************************
+ * Handle screenshots
+ ***************************************************************************/
 void DisableVideoImg()
 {
 	if(!videoImg)

@@ -53,22 +53,6 @@ void TakeScreenshot()
 	EnableVideoImg();
 }
 
-void SaveScreenshot(FILE *file)
-{
-	if(!file)
-        return;
-    int size = vmode->fbWidth * vmode->efbHeight * 4;
-
-    DoMPlayerGuiDraw();
-    TakeScreenshot();
-
-    whichfb ^= 1; // flip framebuffer
-    GX_CopyDisp(xfb[whichfb], GX_TRUE);
-    VIDEO_SetNextFramebuffer(xfb[whichfb]);
-    GX_SetDrawDone();
-    need_wait=true;
-}
-
 void ResetVideo_Menu()
 {
 	Mtx44 p;

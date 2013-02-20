@@ -34,8 +34,7 @@ bool VideoImgVisible();
 extern u8 HWButton;
 extern GuiImage *bgImg;
 extern CURL *curl_handle;
-
-extern char new_page[MAXLEN];
+extern GuiImage *bgImg;
 
 enum
 {

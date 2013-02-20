@@ -350,12 +350,9 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
             HandleHtmlPad(&coordX, btnup, btndown, ext, Index, mainWindow);
             HandleMenuBar(&link, url, &choice, 0, mainWindow, parentWindow);
 
-            for (bottone=btn; !NoButton(bottone); bottone=bottone->prox)
-            {
-                if(bottone->btn->GetState() == STATE_CLICKED)
-                {
-                    bottone->btn->ResetState();
-                    choice = 1;
+            for (bottone=btn; !NoButton(bottone); bottone=bottone->prox) {
+                if(bottone->btn->GetState() == STATE_CLICKED) {
+                    bottone->btn->ResetState(); choice = 1;
                     if (bottone->refs)
                         choice=HandleForm(parentWindow, mainWindow, bottone);
                     if (choice) link.assign(bottone->url);
@@ -365,8 +362,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
         l1.clear();
     }
 
-    else if (type == IMAGE)
-    {
+    else if (type == IMAGE) {
         GuiImageData image_data((u8*)HTML->data, HTML->size);
         image = new GuiImage(&image_data);
         image->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
@@ -408,8 +404,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
         ResumeGui();
     }
 
-    if (!knownType(HTML->type) || choice == 2)
-    {
+    if (!knownType(HTML->type) || choice == 2) {
         if (type == UNKNOWN)
             choice = WindowPrompt("Download", "Do you want to save the file?", "Yes", "No");
         if (choice)

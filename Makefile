@@ -18,7 +18,7 @@ include $(DEVKITPPC)/wii_rules
 # INCLUDES is a list of directories containing extra header files
 #---------------------------------------------------------------------------------
 MPLAYER		:=	$(CURDIR)/source/mplayer
-TARGET		:=	wiimc
+TARGET		:=	wiibrowser
 BUILD		:=	build
 SOURCES		:=	source source/html source/css source/libwiigui source/images source/fonts source/sounds \
 				source/lang source/utils source/images/appbar

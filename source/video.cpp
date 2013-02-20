@@ -15,10 +15,8 @@
 #include <wiiuse/wpad.h>
 
 #include "input.h"
-#include "libwiigui/gui.h"
 #include "menu.h"
 #include "utils/mem2_manager.h"
-#include "utils/pngu.h"
 
 extern "C" {
 

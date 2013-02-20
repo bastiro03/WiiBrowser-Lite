@@ -27,13 +27,14 @@ extern "C" {
 }
 
 #define THREAD_SLEEP    100
+#define MAXLEN          256
 #define N               9
 
 CURL *curl_handle;
 History history;
 GuiImage * bgImg = NULL;
 
-char new_page[MAXLEN];
+static char new_page[MAXLEN];
 static char prev_page[MAXLEN];
 static int fadeAnim;
 static int prevMenu;
@@ -48,8 +49,6 @@ static const u8 * pointerImg[4];
 static const u8 * pointerGrabImg[4];
 
 static GuiSound * bgMusic = NULL;
-GuiImage * bgImg = NULL;
-
 static GuiImageData * SplashImage = NULL;
 static GuiImage * Splash = NULL;
 static GuiImage * videoImg = NULL;
@@ -120,30 +119,6 @@ string parseUrl(string link, const char* url)
     return adjustUrl(link, url);
 }
 
-void DisableVideoImg()
-{
-	if(!videoImg)
-		return;
-
-	videoImg->SetVisible(false);
-}
-
-void EnableVideoImg()
-{
-	if(!videoImg)
-		return;
-
-	videoImg->SetVisible(true);
-}
-
-bool VideoImgVisible()
-{
-	if(!videoImg)
-		return false;
-
-	return videoImg->IsVisible();
-}
-
 /****************************************************************************
  * Handle screenshots
  ***************************************************************************/
@@ -205,6 +180,13 @@ extern "C" void DoMPlayerGuiDraw()
 {
     mainWindow->Draw();
     mainWindow->DrawTooltip();
+
+    if(userInput[0].wpad->ir.valid)
+        Menu_DrawImg(userInput[0].wpad->ir.x-48, userInput[0].wpad->ir.y-48,
+                     96, 96, pointer[0]->GetImage(), userInput[0].wpad->ir.angle, 1, 1, 255, GX_TF_RGBA8);
+
+    DoRumble(0);
+    mainWindow->Update(&userInput[0]);
 }
 
 /****************************************************************************

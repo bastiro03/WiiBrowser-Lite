@@ -1,9 +1,5 @@
 #include <stdio.h>
-#include <video.h>
-
 #include "html.h"
-#include "utils/pngu.h"
-#include "utils/mem2_manager.h"
 #define LEN 15
 
 enum html htm;
@@ -15,10 +11,6 @@ enum { THREAD_EXIT=0, THREAD_SUSPEND, THREAD_RUN };
 static int threadState;
 bool isRunning=false;
 static ListaDiImg img;
-
-extern bool need_wait;
-extern u8 whichfb;
-extern unsigned int *xfb[2];
 
 void ResumeThread(lwp_t thread)
 {
@@ -350,9 +342,12 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
             HandleHtmlPad(&coordX, btnup, btndown, ext, Index, mainWindow);
             HandleMenuBar(&link, url, &choice, 0, mainWindow, parentWindow);
 
-            for (bottone=btn; !NoButton(bottone); bottone=bottone->prox) {
-                if(bottone->btn->GetState() == STATE_CLICKED) {
-                    bottone->btn->ResetState(); choice = 1;
+            for (bottone=btn; !NoButton(bottone); bottone=bottone->prox)
+            {
+                if(bottone->btn->GetState() == STATE_CLICKED)
+                {
+                    bottone->btn->ResetState();
+                    choice = 1;
                     if (bottone->refs)
                         choice=HandleForm(parentWindow, mainWindow, bottone);
                     if (choice) link.assign(bottone->url);
@@ -362,7 +357,8 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
         l1.clear();
     }
 
-    else if (type == IMAGE) {
+    else if (type == IMAGE)
+    {
         GuiImageData image_data((u8*)HTML->data, HTML->size);
         image = new GuiImage(&image_data);
         image->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
@@ -404,23 +400,15 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
         ResumeGui();
     }
 
-    if (!knownType(HTML->type) || choice == 2) {
+    if (!knownType(HTML->type) || choice == 2)
+    {
         if (type == UNKNOWN)
             choice = WindowPrompt("Download", "Do you want to save the file?", "Yes", "No");
         if (choice)
         {
             FILE *file = SelectFile(parentWindow, HTML->type);
             if (file)
-            {
-                if (type == WEB)
-                {
-                    hideBar(mainWindow, parentWindow);
-                    HaltGui();
-                    SaveScreenshot(file);
-                    ResumeGui();
-                }
-                else save(HTML, file);
-            }
+                save(HTML, file);
         }
         usleep(100*1000);
     }

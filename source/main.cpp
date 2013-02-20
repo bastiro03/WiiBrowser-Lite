@@ -172,7 +172,7 @@ extern "C" {
 
 SSettings Settings;
 int ExitRequested = 0,
-                    GuiShutdown = 0;
+    GuiShutdown = 0;
 
 void ExitApp()
 {

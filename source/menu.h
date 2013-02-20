@@ -9,7 +9,6 @@
 #ifndef _MENU_H_
 #define _MENU_H_
 
-#define MAXLEN          256
 #undef TIME
 #undef DEBUG
 
@@ -34,7 +33,6 @@ bool VideoImgVisible();
 extern u8 HWButton;
 extern GuiImage *bgImg;
 extern CURL *curl_handle;
-extern GuiImage *bgImg;
 
 enum
 {

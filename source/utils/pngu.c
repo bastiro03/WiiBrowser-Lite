@@ -728,30 +728,3 @@ int PNGU_EncodeFromGXTexture (IMGCTX ctx, u32 width, u32 height, void *buffer, u
 	png_free(tmpbuffer);
 	return res;
 }
-
-int PNGU_EncodeFromEFB (IMGCTX ctx, u32 width, u32 height, u32 stride)
-{
-    int res;
-    u32 x,y, tmpy, tmpxy, regval, val;
-    unsigned char * tmpbuffer = (unsigned char *)malloc(width*height*3);
-    memset(tmpbuffer, 0, width*height*3);
-
-    for(y=0; y < height; y++)
-    {
-        tmpy = y * 640*3;
-        for(x=0; x < width; x++)
-        {
-            regval = 0xc8000000|(_SHIFTL(x,2,10));
-            regval = (regval&~0x3FF000)|(_SHIFTL(y,12,10));
-            val = *(u32*)regval;
-            tmpxy = x * 3 + tmpy;
-            tmpbuffer[tmpxy  ] = _SHIFTR(val,16,8); // R
-            tmpbuffer[tmpxy+1] = _SHIFTR(val,8,8);  // G
-            tmpbuffer[tmpxy+2] = val&0xff;          // B
-        }
-    }
-
-    res = PNGU_EncodeFromRGB (ctx, width, height, tmpbuffer, stride);
-    free(tmpbuffer);
-    return res;
-}

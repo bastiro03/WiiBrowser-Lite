@@ -25,13 +25,13 @@ extern "C" {
 
 void InitGUIThreads();
 void MainMenu (int menuitem);
-void StopUpdateThread();
+void StopGUIThreads();
 
 void EnableVideoImg();
 bool VideoImgVisible();
+bool LoadYouTubeFile(char *newurl, char *data);
 
 extern u8 HWButton;
-extern GuiImage *bgImg;
 extern CURL *curl_handle;
 
 enum
@@ -56,7 +56,11 @@ enum
 extern "C" {
 #endif
     void DisableVideoImg();
+    void UpdatePointer();
     void DoMPlayerGuiDraw();
+
+    void ShowAction (const char *msg);
+    void CancelAction();
 #ifdef __cplusplus
 }
 #endif

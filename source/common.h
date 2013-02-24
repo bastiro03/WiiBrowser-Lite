@@ -102,7 +102,14 @@ extern string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow
 extern string adjustUrl(string link, const char* url);
 extern char *getHost(char *url);
 
-extern void HaltGui();
 extern void ResumeGui();
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern void HaltGui();
+#ifdef __cplusplus
+}
+#endif
 
 #endif

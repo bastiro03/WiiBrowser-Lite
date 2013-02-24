@@ -126,15 +126,14 @@ bool InitMPlayer()
 void LoadMPlayerFile(char *loadedFile)
 {
     controlledbygui = 2; // signal any previous file to end
+    char *partitionlabel = NULL;
 
     // wait for previous file to end
     while(controlledbygui == 2)
         usleep(100);
 
-    char *partitionlabel = NULL;
-    // "http://www.w3schools.com/html/movie.mp4";
-
     // set new file to load
+    ShowAction("Loading...");
     wiiLoadFile(loadedFile, partitionlabel);
 
     while(controlledbygui != 0)
@@ -182,7 +181,7 @@ void ExitApp()
     ShutdownAudio();
     ClearFontData();
     FreeHistory(history);
-    StopUpdateThread();
+    StopGUIThreads();
     if (HWButton)
         SYS_ResetSystem(HWButton, 0, 0);
     exit(0);

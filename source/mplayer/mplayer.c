@@ -145,7 +145,6 @@
 #include "../utils/mem2_manager.h"
 #include "../video.h"
 
-
 extern int prev_dxs, prev_dys;
 extern int stop_cache_thread;
 
@@ -159,7 +158,13 @@ void SetLastDVDMotorTime();
 bool WakeupUSB();
 void ResumeCacheThread();
 bool CacheThreadSuspended();
+
 bool DisableVideoImg();
+void ShowAction (const char *msg);
+void CancelAction();
+
+extern void HaltGui();
+void ResumeGui();
 
 void reinit_video();
 void reinit_audio();
@@ -3555,6 +3560,7 @@ play_next_file:
             controlledbygui = 0; // none playing, so discard
     }
     while (!filename);
+
     end_film_error=0;
     wii_error = 0;
     controlledbygui = 0;
@@ -3886,7 +3892,6 @@ play_next_file:
 goto_enable_cache:
     if (stream_cache_size > 0)
     {
-
         int res;
         current_module = "enable_cache";
 #ifdef GEKKO
@@ -4418,6 +4423,8 @@ goto_enable_cache:
         mpctx->eof=0;
 
         GetRelativeTime();
+        CancelAction();
+        HaltGui();
         total_time_usage_start=GetTimer();
 #endif
 
@@ -4834,7 +4841,7 @@ goto_next_file:  // don't jump here after ao/vo/getch initialization!
 #ifdef GEKKO
     playing_file=false;
     save_restore_point(fileplaying, partitionlabelplaying);
-    // DisableVideoImg();
+    DisableVideoImg();
     end_film_error=stream_error(mpctx->stream);
     printf("mplayer: end film. UNINIT. err: %i\n",stream_error(mpctx->stream));
 

@@ -19,23 +19,36 @@
 #include "menu.h"
 #include "main.h"
 #include "input.h"
+
 #include "filelist.h"
 #include "filebrowser.h"
+#include "utils/http.h"
+#include "utils/mem2_manager.h"
 
 extern "C" {
-#include "entities.h"
+    #include "entities.h"
+    #include "mplayer/stream/url.h"
 }
 
 #define THREAD_SLEEP    100
 #define MAXLEN          256
 #define N               9
+#define GUITH_STACK 	(16384)
+
+extern bool need_wait;
+extern u8 whichfb;
+extern unsigned int *xfb[2];
+
+static u8 loadstack[GUITH_STACK] ATTRIBUTE_ALIGN (32);
+static u8 updatestack[GUITH_STACK] ATTRIBUTE_ALIGN (32);
 
 CURL *curl_handle;
 History history;
-GuiImage * bgImg = NULL;
 
 static char new_page[MAXLEN];
 static char prev_page[MAXLEN];
+static char Message[MAXLEN];
+
 static int fadeAnim;
 static int prevMenu;
 
@@ -49,6 +62,8 @@ static const u8 * pointerImg[4];
 static const u8 * pointerGrabImg[4];
 
 static GuiSound * bgMusic = NULL;
+static GuiImage * bgImg = NULL;
+
 static GuiImageData * SplashImage = NULL;
 static GuiImage * Splash = NULL;
 static GuiImage * videoImg = NULL;
@@ -59,8 +74,11 @@ static GuiWindow * videoWindow = NULL;
 
 static lwp_t guithread = LWP_THREAD_NULL;
 static lwp_t updatethread = LWP_THREAD_NULL;
+static lwp_t loadthread = LWP_THREAD_NULL;
+
 static bool guiHalt = true;
 static int updateThreadHalt = 0;
+static int loadThreadHalt = 1;
 
 using namespace std;
 
@@ -167,7 +185,7 @@ void ResumeGui()
  * This eliminates the possibility that the GUI is in the middle of accessing
  * an element that is being changed.
  ***************************************************************************/
-void HaltGui()
+extern "C" void HaltGui()
 {
     guiHalt = true;
 
@@ -181,12 +199,235 @@ extern "C" void DoMPlayerGuiDraw()
     mainWindow->Draw();
     mainWindow->DrawTooltip();
 
+    // Menu_DrawRectangle(0,0,screenwidth,screenheight,(GXColor){0xbe, 0xca, 0xd5, 0x70},1);
+    DoRumble(0);
+    mainWindow->Update(&userInput[0]);
+}
+
+void UpdatePointer()
+{
     if(userInput[0].wpad->ir.valid)
         Menu_DrawImg(userInput[0].wpad->ir.x-48, userInput[0].wpad->ir.y-48,
                      96, 96, pointer[0]->GetImage(), userInput[0].wpad->ir.angle, 1, 1, 255, GX_TF_RGBA8);
+}
 
-    DoRumble(0);
-    mainWindow->Update(&userInput[0]);
+/****************************************************************************
+ * LoadYouTubeFile
+ *
+ * Creates youtube video url
+ ***************************************************************************/
+bool LoadYouTubeFile(char *newurl, char *data)
+{
+	if(!data)
+		return false;
+	char *str = strstr(data, "url_encoded_fmt_stream_map");
+
+	if(str == NULL)
+		return false;
+
+	int fmt, chosenFormat = 0;
+	char *urlc, *urlcod, *urlcend, *fmtc, *fmtcend;
+	char format[5];
+
+	// get start point
+	urlc = str+30;
+
+	// get end point
+	char *strend = strstr(urlc, ";");
+
+	if(strend == NULL)
+		return false;
+	strend[0] = 0; //terminate the string
+
+	// work through the string looking for required format
+	char *tempurl = (char *)mem2_malloc(2048, MEM2_OTHER);
+	if(!tempurl)
+        return false;
+
+	while(chosenFormat != 35 && urlc < strend-10)
+	{
+		//find section end %2C and set pointer to next section
+		char sep[5];
+		strcpy(sep, ",");
+		strncat(sep, urlc, 3);
+        urlcend = strstr(urlc, sep);
+
+	    char *nexturl = urlcend + 1;
+		if(!urlcend) urlcend = strend;
+
+		//get and decode section
+		snprintf(tempurl,urlcend-urlc+1,"%s",urlc);
+
+		url_unescape_string(tempurl, tempurl); // %252526 = %2526
+		url_unescape_string(tempurl, tempurl); // %2526 = %26
+		url_unescape_string(tempurl, tempurl); // %26 = &
+
+		//get format code of this section
+		fmtc = strstr(tempurl, "itag=");
+		if(!fmtc) break;
+		fmtcend = strstr(fmtc+7,"&");
+		if(!fmtcend) break;
+
+		snprintf(format, fmtcend-fmtc-5+1, "%s", fmtc+5);
+		fmt = atoi(format);
+
+		if((fmt == 5 || fmt == 18 || fmt == 35) && fmt <= 35 && fmt > chosenFormat)
+		{
+			urlcod = strstr(tempurl,"url=");
+			if(!urlcod) break;
+
+			// swap front and back
+			snprintf(urlc,urlcod-tempurl+1,"%s",tempurl);
+			strcpy(tempurl,urlcod+4);
+			strcat(tempurl,"&");
+			strcat(tempurl,urlc);
+
+			// expand signature
+			char *sig = strstr(tempurl,"&sig=");
+			int siglen = strlen(tempurl)-(sig-tempurl)-3;
+			memmove(sig+10,sig+4,siglen);
+			memmove(sig,"&signature=",11);
+
+			// remove &type=
+			sig = strstr(tempurl,"&type=");
+			char *sigend = strstr(sig+6,"&");
+			siglen = strlen(tempurl)-(sigend-tempurl)+1;
+			memmove(sig,sigend,siglen);
+
+			// remove &fallback_host=
+			sig = strstr(tempurl,"&fallback_host=");
+			sigend = strstr(sig+15,"&");
+			siglen = strlen(tempurl)-(sigend-tempurl)+1;
+			memmove(sig,sigend,siglen);
+
+			// remove duplicate &itag=
+			sig = strstr(tempurl,"&itag=");
+			sigend = strstr(sig+6,"&");
+			siglen = strlen(tempurl)-(sigend-tempurl)+1;
+			memmove(sig,sigend,siglen);
+
+			//remove last &
+			siglen = strlen(tempurl);
+			tempurl[siglen-1] = 0;
+
+			chosenFormat = fmt;
+			strcpy(newurl, tempurl);
+		}
+		urlc = nexturl; // do next section
+	}
+
+	mem2_free(tempurl, MEM2_OTHER);
+	if(chosenFormat > 0)
+		return true;
+
+	return false;
+}
+
+/****************************************************************************
+ * LoadingThread
+ *
+ * Opens a window, which displays progress to the user.
+ * Can display a throbber that shows that an action is in progress.
+ ***************************************************************************/
+static int progsleep = 0;
+static GuiImageData * throbber = NULL;
+
+static void
+ProgressWindow(char *msg)
+{
+	GuiWindow promptWindow(556,244);
+	promptWindow.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
+	promptWindow.SetPosition(0, -10);
+
+	GuiImage throbberImg(throbber);
+	throbberImg.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
+	throbberImg.SetPosition(0, 40);
+	throbberImg.SetScale(0.60);
+
+	GuiText msgTxt(msg, 20, (GXColor){0, 0, 0, 255});
+	msgTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
+	msgTxt.SetPosition(0, 80);
+
+    promptWindow.Append(&msgTxt);
+    promptWindow.Append(&throbberImg);
+
+	if(loadThreadHalt > 0)
+		return;
+
+	HaltGui();
+	int oldState = mainWindow->GetState();
+	mainWindow->SetState(STATE_DISABLED);
+	mainWindow->Append(&promptWindow);
+	ResumeGui();
+
+	float angle = 0;
+	u32 count = 0;
+
+	while(loadThreadHalt == 0)
+	{
+        progsleep = 20*1000;
+
+		while(progsleep > 0)
+		{
+			usleep(THREAD_SLEEP);
+			progsleep -= THREAD_SLEEP;
+		}
+
+        if(count % 5 == 0)
+        {
+            angle += 90.0f;
+            if(angle >= 360.0f)
+                angle = 0;
+            throbberImg.SetAngle(angle);
+        }
+        ++count;
+	}
+
+	HaltGui();
+	mainWindow->Remove(&promptWindow);
+	mainWindow->SetState(oldState);
+	ResumeGui();
+}
+
+static void *LoadingThread (void *arg)
+{
+    while(1)
+    {
+        if (loadThreadHalt == 1)
+            LWP_SuspendThread(loadthread);
+        if (loadThreadHalt == 2)
+            return NULL;
+
+		ProgressWindow(Message);
+		usleep(THREAD_SLEEP);
+    }
+    return NULL;
+}
+
+void ShowAction (const char *msg)
+{
+    snprintf(Message, sizeof(Message), msg);
+
+    loadThreadHalt = 0;
+    LWP_ResumeThread (loadthread);
+}
+
+void CancelAction()
+{
+    loadThreadHalt = 1;
+
+    // wait for thread to finish
+    while(!LWP_ThreadIsSuspended(loadthread))
+        usleep(THREAD_SLEEP);
+}
+
+void StopLoading()
+{
+    if(loadthread == LWP_THREAD_NULL)
+        return;
+
+    loadThreadHalt = 2;
+    LWP_ResumeThread(loadthread);
 }
 
 /****************************************************************************
@@ -339,6 +580,7 @@ void ResumeUpdateThread()
 {
     if(updatethread == LWP_THREAD_NULL || ExitRequested)
         return;
+
     updateThreadHalt = 0;
     LWP_ResumeThread(updatethread);
 }
@@ -347,6 +589,7 @@ void StopUpdateThread()
 {
     if(updatethread == LWP_THREAD_NULL)
         return;
+
     updateThreadHalt = 1;
     LWP_ResumeThread(updatethread);
 }
@@ -422,7 +665,26 @@ void
 InitGUIThreads()
 {
     LWP_CreateThread (&guithread, UpdateGUI, NULL, NULL, 0, 70);
-    LWP_CreateThread (&updatethread, UpdateThread, NULL, NULL, 0, 60);
+    LWP_CreateThread (&updatethread, UpdateThread, NULL, updatestack, GUITH_STACK, 60);
+    LWP_CreateThread (&loadthread, LoadingThread, NULL, loadstack, GUITH_STACK, 60);
+}
+
+void
+StopGUIThreads()
+{
+    if(loadthread != LWP_THREAD_NULL)
+    {
+        StopLoading();
+        LWP_JoinThread(loadthread, NULL);
+        loadthread = LWP_THREAD_NULL;
+    }
+
+    if(updatethread != LWP_THREAD_NULL)
+    {
+        StopUpdateThread();
+        LWP_JoinThread(updatethread, NULL);
+        updatethread = LWP_THREAD_NULL;
+    }
 }
 
 void ToggleButtons(GuiToolbar *toolbar, bool checkState)
@@ -581,6 +843,7 @@ void SetupGui()
 	videoImg->SetVisible(false);
 	mainWindow->Append(videoImg);
 
+    throbber = new GuiImageData(loading_png);
     fadeAnim = EFFECT_FADE;
     prevMenu = MENU_HOME;
 

@@ -50,6 +50,7 @@ static int drawMode = 0;
 void StartDrawThread();
 void PauseAndGotoGUI();
 void TakeScreenshot();
+void DrawForegroundGui();
 int DrawMPlayerGui();
 int copyScreen = 0;
 extern int pause_gui;
@@ -465,6 +466,16 @@ void GX_ConfigTextureYUV(u16 width, u16 height, u16 chroma_width, u16 chroma_hei
 
 inline void DrawMPlayer()
 {
+    // draw background images
+    DrawMPlayerGui();
+
+    // reconfigure GX for MPlayer
+    Mtx44 p;
+    draw_initYUV();
+    draw_scaling();
+    guOrtho(p, mplayerheight/2, -(mplayerheight/2), -(mplayerwidth/2), mplayerwidth/2, 10, 1000);
+    GX_LoadProjectionMtx (p, GX_ORTHOGRAPHIC);
+
 	DCFlushRange(Yltexture, Yltexsize);
 	if (wr>0) DCFlushRange(Yrtexture, Yrtexsize);
 	DCFlushRange(Utexture, UVtexsize);
@@ -491,23 +502,13 @@ inline void DrawMPlayer()
 	}
 	else
 	{
-		drawMode = DrawMPlayerGui();
+		DrawForegroundGui();
 	}
 
 	if(copyScreen == 2)
 	{
 		copyScreen = 0;
 		pause_gui = 1;
-	}
-	else if(drawMode != 0)
-	{
-		// reconfigure GX for MPlayer
-		Mtx44 p;
-		draw_initYUV();
-		draw_scaling();
-		guOrtho(p, mplayerheight/2, -(mplayerheight/2), -(mplayerwidth/2), mplayerwidth/2, 10, 1000);
-		GX_LoadProjectionMtx (p, GX_ORTHOGRAPHIC);
-		drawMode = 0;
 	}
 
 	whichfb ^= 1; // flip framebuffer

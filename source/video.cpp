@@ -215,12 +215,19 @@ int DrawMPlayerGui()
 	UpdatePads();
 	MPlayerInput();
 
-	if(!drawGui)
-		return 0;
+	if(!drawGui && 0)
+		return 0; // always draw GUI
 
 	ResetVideo_Menu(); // reconfigure GX for GUI
 	DoMPlayerGuiDraw(); // draw GUI
 	return 1;
+}
+
+void DrawForegroundGui()
+{
+	UpdatePads();
+	ResetVideo_Menu(); // reconfigure GX for GUI
+	UpdatePointer(); // draw GUI
 }
 
 /****************************************************************************

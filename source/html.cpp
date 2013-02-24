@@ -101,7 +101,24 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
     GuiTrigger *trigA=new GuiTrigger;
     trigA->SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
 
-    if (type == WEB)
+    if(!strncmp(url, "http://www.youtube.", 19)
+            || !strncmp(url, "https://www.youtube.", 20))
+    {
+        char newurl[2048];
+
+        if(LoadYouTubeFile(newurl, HTML->data))
+        {
+            LoadMPlayerFile(newurl);
+            while(controlledbygui != 1)
+                usleep(100);
+
+            ResetVideo_Menu();
+            DisableVideoImg();
+            ResumeGui();
+        }
+    }
+
+    else if (type == WEB)
     {
         l1=getTag((char*)HTML->data);
         lista=l1.begin();
@@ -387,22 +404,18 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
 
     else if (type == VIDEO)
     {
-        DisableVideoImg();
-        HaltGui();
-        parentWindow->Remove(bgImg);
         LoadMPlayerFile(url);
         while(controlledbygui != 1)
             usleep(100);
 
-        // parentWindow->Append(bgImg);
-        // DisableVideoImg();
         ResetVideo_Menu();
+        DisableVideoImg();
         ResumeGui();
     }
 
-    if (!knownType(HTML->type) || choice == 2)
+    if (!knownType(HTML->type) || type == VIDEO || choice == 2)
     {
-        if (type == UNKNOWN)
+        if (!choice)
             choice = WindowPrompt("Download", "Do you want to save the file?", "Yes", "No");
         if (choice)
         {

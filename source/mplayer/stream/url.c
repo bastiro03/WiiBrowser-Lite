@@ -289,7 +289,12 @@ url_unescape_string(char *outbuf, const char *inbuf)
         int i,len=strlen(inbuf);
         for (i=0;i<len;i++){
 		c = inbuf[i];
-		if (c == '%' && i<len-2) { //must have 2 more chars
+		if (c == '\\' && inbuf[i+1] == 'u')
+		{
+            c='&';
+            i=i+5;
+		}
+		else if (c == '%' && i<len-2) { //must have 2 more chars
 			c1 = toupper(inbuf[i+1]); // we need uppercase characters
 			c2 = toupper(inbuf[i+2]);
 			if (	((c1>='0' && c1<='9') || (c1>='A' && c1<='F')) &&

@@ -22,7 +22,6 @@
 
 #include "filelist.h"
 #include "filebrowser.h"
-#include "utils/http.h"
 #include "utils/mem2_manager.h"
 
 extern "C" {
@@ -199,7 +198,6 @@ extern "C" void DoMPlayerGuiDraw()
     mainWindow->Draw();
     mainWindow->DrawTooltip();
 
-    // Menu_DrawRectangle(0,0,screenwidth,screenheight,(GXColor){0xbe, 0xca, 0xd5, 0x70},1);
     DoRumble(0);
     mainWindow->Update(&userInput[0]);
 }
@@ -567,10 +565,10 @@ static void *UpdateThread (void *arg)
 
         if(installUpdate)
         {
-            HaltGui();
+            ShowAction("Downloading...");
             if(downloadUpdate(appversion))
                 ExitRequested = true;
-            ResumeGui();
+            CancelAction();
         }
     }
     return NULL;

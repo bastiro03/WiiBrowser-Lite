@@ -215,7 +215,7 @@ int DrawMPlayerGui()
 	UpdatePads();
 	MPlayerInput();
 
-	if(!drawGui && 0)
+	if(0 /* !drawGui */)
 		return 0; // always draw GUI
 
 	ResetVideo_Menu(); // reconfigure GX for GUI

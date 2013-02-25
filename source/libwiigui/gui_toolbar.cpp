@@ -107,7 +107,7 @@ GuiToolbar::GuiToolbar(int set)
         btnBack->SetSoundOver(btnSound);
         btnBack->SetTrigger(trigA);
         btnBack->SetEffectGrow();
-        btnBack->SetPosition(20,20);
+        btnBack->SetPosition(40,20);
         btnBack->SetTooltip(BackTooltip);
 
         btnForward->SetImage(Forward);
@@ -116,7 +116,7 @@ GuiToolbar::GuiToolbar(int set)
         btnForward->SetSoundOver(btnSound);
         btnForward->SetTrigger(trigA);
         btnForward->SetEffectGrow();
-        btnForward->SetPosition(20+Back->GetWidth(),20);
+        btnForward->SetPosition(40+Back->GetWidth(),20);
         btnForward->SetTooltip(ForwardTooltip);
 
         btnWWW->SetImage(WWW);
@@ -125,7 +125,7 @@ GuiToolbar::GuiToolbar(int set)
         btnWWW->SetState(STATE_SELECTED);
         btnWWW->SetTrigger(trigA);
         btnWWW->SetEffectGrow();
-        btnWWW->SetPosition(screenwidth-WWW->GetWidth()-20,20);
+        btnWWW->SetPosition(screenwidth-WWW->GetWidth()-40,20);
         btnWWW->SetTooltip(WWWTooltip);
 
         btnSett->SetImage(Sett);

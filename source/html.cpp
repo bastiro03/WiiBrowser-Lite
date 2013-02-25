@@ -101,7 +101,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
     GuiTrigger *trigA=new GuiTrigger;
     trigA->SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
 
-    if(!strncmp(url, "http://www.youtube.", 19)
+    if (!strncmp(url, "http://www.youtube.", 19)
             || !strncmp(url, "https://www.youtube.", 20))
     {
         char newurl[2048];

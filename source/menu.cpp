@@ -52,9 +52,6 @@ static GuiSwitch * Left = NULL;
 static GuiToolbar * App = NULL;
 static GuiTrigger * trigA = NULL;
 
-static GuiImageData * top;
-static GuiImageData * body;
-
 static GuiImageData * pointer[4];
 static const u8 * pointerImg[4];
 static const u8 * pointerGrabImg[4];
@@ -863,9 +860,6 @@ void SetupGui()
     bgMusic->SetLoop(true);
     if(Settings.Music)
         bgMusic->Play(); // startup music
-
-    top = new GuiImageData(point_top_png);
-    body = new GuiImageData(point_body_png);
 
     pointerImg[0] = player1_point_png;
     pointerImg[1] = player2_point_png;

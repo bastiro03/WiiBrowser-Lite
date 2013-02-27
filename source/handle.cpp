@@ -3,7 +3,7 @@
 
 GuiToolbar *Toolbar = NULL;
 
-void MoveWind (int up, int dir, int line, GuiImage * image);
+void MoveWind (int up, int dir, int space, GuiImage * image);
 void MoveText (int up, int dir, int space, Indice Index);
 
 bool hidden=true;
@@ -239,23 +239,27 @@ void HandleHtmlPad(int *offset, GuiButton *btnup, GuiButton *btndown, Indice ext
 
 void HandleImgPad(GuiButton *btnup, GuiButton *btndown, GuiImage * image) {
     if (btnup->GetState() == STATE_CLICKED || (userInput[0].wpad->btns_h & WPAD_BUTTON_UP)) {
-        if (userInput[0].wpad->btns_h & WPAD_BUTTON_UP) usleep(15000); btnup->ResetState();
-        MoveWind(1,+1,1, image);
+        if (userInput[0].wpad->btns_h & WPAD_BUTTON_UP)
+            usleep(15000);
+        btnup->ResetState();
+        MoveWind(1,+1,25, image);
     }
 
     if (btndown->GetState() == STATE_CLICKED || (userInput[0].wpad->btns_h & WPAD_BUTTON_DOWN)) {
-        if (userInput[0].wpad->btns_h & WPAD_BUTTON_DOWN) usleep(15000); btndown->ResetState();
-        MoveWind(1,-1,1, image);
+        if (userInput[0].wpad->btns_h & WPAD_BUTTON_DOWN)
+            usleep(15000);
+        btndown->ResetState();
+        MoveWind(1,-1,25, image);
     }
 
     if (hidden && userInput[0].wpad->btns_h & WPAD_BUTTON_LEFT) {
         usleep(15000);
-        MoveWind(0,+1,1, image);
+        MoveWind(0,+1,25, image);
     }
 
     if (hidden && userInput[0].wpad->btns_h & WPAD_BUTTON_RIGHT) {
         usleep(15000);
-        MoveWind(0,-1,1, image);
+        MoveWind(0,-1,25, image);
     }
 
     if (userInput[0].wpad->btns_h & WPAD_BUTTON_PLUS) {
@@ -267,13 +271,46 @@ void HandleImgPad(GuiButton *btnup, GuiButton *btndown, GuiImage * image) {
         usleep(15000);
         image->SetScale(image->GetScale()-image->GetScale()/100*5);
     }
+
+    if(userInput[0].wpad->btns_d & WPAD_BUTTON_B)
+    {
+        if(userInput[0].wpad->ir.valid)
+        {
+            x = userInput[0].wpad->ir.x;
+            y = userInput[0].wpad->ir.y;
+        }
+    }
+
+    if (userInput[0].wpad->btns_h & WPAD_BUTTON_B) {
+        usleep(15000);
+        if(userInput[0].wpad->ir.valid)
+        {
+            int distx = userInput[0].wpad->ir.x - x;
+            if(distx > 200) distx = 200;
+            else if (distx < -200) distx = -200;
+
+            if (distx > 10)
+                MoveWind(0,+1,distx/8, image);
+            else if (distx < -10)
+                MoveWind(0,+1,distx/8, image);
+
+            int disty = userInput[0].wpad->ir.y - y;
+            if(disty > 200) disty = 200;
+            else if (disty < -200) disty = -200;
+
+            if (disty > 10)
+                MoveWind(1,+1,disty/8, image);
+            else if (disty < -10)
+                MoveWind(1,+1,disty/8, image);
+        }
+    }
 }
 
-void MoveWind (int up, int dir, int line, GuiImage * image) {
+void MoveWind (int up, int dir, int space, GuiImage * image) {
     if (up)
-        image->SetPosition(image->GetXPosition(), image->GetYPosition()+(line*25*dir));
+        image->SetPosition(image->GetXPosition(), image->GetYPosition()+(space*dir));
     else
-        image->SetPosition(image->GetXPosition()+(line*25*dir), image->GetYPosition());
+        image->SetPosition(image->GetXPosition()+(space*dir), image->GetYPosition());
 }
 
 void MoveText (int up, int dir, int space, Indice Index) {

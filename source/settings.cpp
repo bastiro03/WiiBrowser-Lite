@@ -27,10 +27,13 @@
  * Settings Class
  * for WiiBrowser 2012
  ***************************************************************************/
-#include <ogcsys.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include <ogcsys.h>
+#include <common.h>
+#include <unistd.h>
 
 #include "Settings.h"
 
@@ -38,6 +41,8 @@
 #define DEFAULT_HOMEPAGE    "www.google.com/"
 #define CONFIGPATH          "apps/wiibrowser/"
 #define CONFIGNAME          "wiibrowser.cfg"
+
+#define DEBUG
 
 SSettings::SSettings()
 {
@@ -81,6 +86,11 @@ bool SSettings::Save()
     char filedest[100];
     snprintf(filedest, sizeof(filedest), "%s", ConfigPath);
 
+    #ifdef DEBUG
+    save_mem("Saving..");
+    save_mem(filedest);
+    #endif
+
     file = fopen(ConfigPath, "w");
     if(!file)
     {
@@ -110,6 +120,9 @@ bool SSettings::Save()
 
 bool SSettings::FindConfig()
 {
+    #ifdef DEBUG
+    save_mem("FIND CONFIG");
+    #endif
     bool found = false;
 
     for(int i = SD; i <= USB; i++)
@@ -126,10 +139,18 @@ bool SSettings::FindConfig()
             snprintf(ConfigPath, sizeof(ConfigPath), "%s:/%s%s", DeviceName[i], CONFIGPATH, CONFIGNAME);
             found = CheckFile(ConfigPath);
         }
+
+        #ifdef DEBUG
+        save_mem("ConfigPath:");
+        save_mem(ConfigPath);
+        #endif
     }
 
     if(!found)
     {
+        #ifdef DEBUG
+        save_mem("NOT FOUND");
+        #endif
         //! No existing config so try to find a place where we can write it too
         for(int i = SD; i <= USB; i++)
         {
@@ -149,11 +170,23 @@ bool SSettings::FindConfig()
     }
 
     sprintf(AppPath, "%s%s", BootDevice, DEFAULT_APP_PATH);
+    #ifdef DEBUG
+    save_mem("AppPath:");
+    save_mem(AppPath);
+    #endif
+
     return found;
 }
 
 bool SSettings::Load()
 {
+    #ifdef DEBUG
+    save_mem("LOAD");
+    char buf[256];
+    getcwd(buf, 256);
+    save_mem(buf);
+    #endif
+
     if(!FindConfig())
         return false;
 
@@ -163,6 +196,10 @@ bool SSettings::Load()
 
     if(!CheckIntegrity(filepath))
     {
+        #ifdef DEBUG
+        save_mem("BROKEN");
+        #endif
+
         this->Save();
         return false;
     }
@@ -181,6 +218,10 @@ bool SSettings::Load()
         this->ParseLine(line);
 	}
 	fclose(file);
+
+    #ifdef DEBUG
+    save_mem("LOADED");
+    #endif
 
 	return true;
 }

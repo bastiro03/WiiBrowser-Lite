@@ -25,18 +25,14 @@
 #include "utils/mem2_manager.h"
 
 extern "C" {
-    #include "entities.h"
-    #include "mplayer/stream/url.h"
+#include "entities.h"
+#include "mplayer/stream/url.h"
 }
 
 #define THREAD_SLEEP    100
 #define MAXLEN          256
 #define N               9
 #define GUITH_STACK 	(16384)
-
-extern bool need_wait;
-extern u8 whichfb;
-extern unsigned int *xfb[2];
 
 static u8 loadstack[GUITH_STACK] ATTRIBUTE_ALIGN (32);
 static u8 updatestack[GUITH_STACK] ATTRIBUTE_ALIGN (32);
@@ -55,6 +51,9 @@ static GuiSwitch * Right = NULL;
 static GuiSwitch * Left = NULL;
 static GuiToolbar * App = NULL;
 static GuiTrigger * trigA = NULL;
+
+static GuiImageData * top;
+static GuiImageData * body;
 
 static GuiImageData * pointer[4];
 static const u8 * pointerImg[4];
@@ -141,26 +140,26 @@ string parseUrl(string link, const char* url)
  ***************************************************************************/
 void DisableVideoImg()
 {
-	if(!videoImg)
-		return;
+    if(!videoImg)
+        return;
 
-	videoImg->SetVisible(false);
+    videoImg->SetVisible(false);
 }
 
 void EnableVideoImg()
 {
-	if(!videoImg)
-		return;
+    if(!videoImg)
+        return;
 
-	videoImg->SetVisible(true);
+    videoImg->SetVisible(true);
 }
 
 bool VideoImgVisible()
 {
-	if(!videoImg)
-		return false;
+    if(!videoImg)
+        return false;
 
-	return videoImg->IsVisible();
+    return videoImg->IsVisible();
 }
 
 /****************************************************************************
@@ -216,109 +215,109 @@ void UpdatePointer()
  ***************************************************************************/
 bool LoadYouTubeFile(char *newurl, char *data)
 {
-	if(!data)
-		return false;
-	char *str = strstr(data, "url_encoded_fmt_stream_map");
+    if(!data)
+        return false;
+    char *str = strstr(data, "url_encoded_fmt_stream_map");
 
-	if(str == NULL)
-		return false;
-
-	int fmt, chosenFormat = 0;
-	char *urlc, *urlcod, *urlcend, *fmtc, *fmtcend;
-	char format[5];
-
-	// get start point
-	urlc = str+30;
-
-	// get end point
-	char *strend = strstr(urlc, ";");
-
-	if(strend == NULL)
-		return false;
-	strend[0] = 0; //terminate the string
-
-	// work through the string looking for required format
-	char *tempurl = (char *)mem2_malloc(2048, MEM2_OTHER);
-	if(!tempurl)
+    if(str == NULL)
         return false;
 
-	while(chosenFormat != 35 && urlc < strend-10)
-	{
-		//find section end %2C and set pointer to next section
-		char sep[5];
-		strcpy(sep, ",");
-		strncat(sep, urlc, 3);
+    int fmt, chosenFormat = 0;
+    char *urlc, *urlcod, *urlcend, *fmtc, *fmtcend;
+    char format[5];
+
+    // get start point
+    urlc = str+30;
+
+    // get end point
+    char *strend = strstr(urlc, ";");
+
+    if(strend == NULL)
+        return false;
+    strend[0] = 0; //terminate the string
+
+    // work through the string looking for required format
+    char *tempurl = (char *)mem2_malloc(2048, MEM2_OTHER);
+    if(!tempurl)
+        return false;
+
+    while(chosenFormat != 35 && urlc < strend-10)
+    {
+        //find section end %2C and set pointer to next section
+        char sep[5];
+        strcpy(sep, ",");
+        strncat(sep, urlc, 3);
         urlcend = strstr(urlc, sep);
 
-	    char *nexturl = urlcend + 1;
-		if(!urlcend) urlcend = strend;
+        char *nexturl = urlcend + 1;
+        if(!urlcend) urlcend = strend;
 
-		//get and decode section
-		snprintf(tempurl,urlcend-urlc+1,"%s",urlc);
+        //get and decode section
+        snprintf(tempurl,urlcend-urlc+1,"%s",urlc);
 
-		url_unescape_string(tempurl, tempurl); // %252526 = %2526
-		url_unescape_string(tempurl, tempurl); // %2526 = %26
-		url_unescape_string(tempurl, tempurl); // %26 = &
+        url_unescape_string(tempurl, tempurl); // %252526 = %2526
+        url_unescape_string(tempurl, tempurl); // %2526 = %26
+        url_unescape_string(tempurl, tempurl); // %26 = &
 
-		//get format code of this section
-		fmtc = strstr(tempurl, "itag=");
-		if(!fmtc) break;
-		fmtcend = strstr(fmtc+7,"&");
-		if(!fmtcend) break;
+        //get format code of this section
+        fmtc = strstr(tempurl, "itag=");
+        if(!fmtc) break;
+        fmtcend = strstr(fmtc+7,"&");
+        if(!fmtcend) break;
 
-		snprintf(format, fmtcend-fmtc-5+1, "%s", fmtc+5);
-		fmt = atoi(format);
+        snprintf(format, fmtcend-fmtc-5+1, "%s", fmtc+5);
+        fmt = atoi(format);
 
-		if((fmt == 5 || fmt == 18 || fmt == 35) && fmt <= 35 && fmt > chosenFormat)
-		{
-			urlcod = strstr(tempurl,"url=");
-			if(!urlcod) break;
+        if((fmt == 5 || fmt == 18 || fmt == 35) && fmt <= 35 && fmt > chosenFormat)
+        {
+            urlcod = strstr(tempurl,"url=");
+            if(!urlcod) break;
 
-			// swap front and back
-			snprintf(urlc,urlcod-tempurl+1,"%s",tempurl);
-			strcpy(tempurl,urlcod+4);
-			strcat(tempurl,"&");
-			strcat(tempurl,urlc);
+            // swap front and back
+            snprintf(urlc,urlcod-tempurl+1,"%s",tempurl);
+            strcpy(tempurl,urlcod+4);
+            strcat(tempurl,"&");
+            strcat(tempurl,urlc);
 
-			// expand signature
-			char *sig = strstr(tempurl,"&sig=");
-			int siglen = strlen(tempurl)-(sig-tempurl)-3;
-			memmove(sig+10,sig+4,siglen);
-			memmove(sig,"&signature=",11);
+            // expand signature
+            char *sig = strstr(tempurl,"&sig=");
+            int siglen = strlen(tempurl)-(sig-tempurl)-3;
+            memmove(sig+10,sig+4,siglen);
+            memmove(sig,"&signature=",11);
 
-			// remove &type=
-			sig = strstr(tempurl,"&type=");
-			char *sigend = strstr(sig+6,"&");
-			siglen = strlen(tempurl)-(sigend-tempurl)+1;
-			memmove(sig,sigend,siglen);
+            // remove &type=
+            sig = strstr(tempurl,"&type=");
+            char *sigend = strstr(sig+6,"&");
+            siglen = strlen(tempurl)-(sigend-tempurl)+1;
+            memmove(sig,sigend,siglen);
 
-			// remove &fallback_host=
-			sig = strstr(tempurl,"&fallback_host=");
-			sigend = strstr(sig+15,"&");
-			siglen = strlen(tempurl)-(sigend-tempurl)+1;
-			memmove(sig,sigend,siglen);
+            // remove &fallback_host=
+            sig = strstr(tempurl,"&fallback_host=");
+            sigend = strstr(sig+15,"&");
+            siglen = strlen(tempurl)-(sigend-tempurl)+1;
+            memmove(sig,sigend,siglen);
 
-			// remove duplicate &itag=
-			sig = strstr(tempurl,"&itag=");
-			sigend = strstr(sig+6,"&");
-			siglen = strlen(tempurl)-(sigend-tempurl)+1;
-			memmove(sig,sigend,siglen);
+            // remove duplicate &itag=
+            sig = strstr(tempurl,"&itag=");
+            sigend = strstr(sig+6,"&");
+            siglen = strlen(tempurl)-(sigend-tempurl)+1;
+            memmove(sig,sigend,siglen);
 
-			//remove last &
-			siglen = strlen(tempurl);
-			tempurl[siglen-1] = 0;
+            //remove last &
+            siglen = strlen(tempurl);
+            tempurl[siglen-1] = 0;
 
-			chosenFormat = fmt;
-			strcpy(newurl, tempurl);
-		}
-		urlc = nexturl; // do next section
-	}
+            chosenFormat = fmt;
+            strcpy(newurl, tempurl);
+        }
+        urlc = nexturl; // do next section
+    }
 
-	mem2_free(tempurl, MEM2_OTHER);
-	if(chosenFormat > 0)
-		return true;
+    mem2_free(tempurl, MEM2_OTHER);
+    if(chosenFormat > 0)
+        return true;
 
-	return false;
+    return false;
 }
 
 /****************************************************************************
@@ -333,43 +332,46 @@ static GuiImageData * throbber = NULL;
 static void
 ProgressWindow(char *msg)
 {
-	GuiWindow promptWindow(556,244);
-	promptWindow.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-	promptWindow.SetPosition(0, -10);
+    GuiWindow promptWindow(556,244);
+    promptWindow.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
+    promptWindow.SetPosition(0, -10);
 
-	GuiImage throbberImg(throbber);
-	throbberImg.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-	throbberImg.SetPosition(0, 40);
-	throbberImg.SetScale(0.60);
+    GuiImage throbberImg(throbber);
+    throbberImg.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
+    throbberImg.SetPosition(0, 40);
+    throbberImg.SetScale(0.60);
 
-	GuiText msgTxt(msg, 20, (GXColor){0, 0, 0, 255});
-	msgTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
-	msgTxt.SetPosition(0, 80);
+    GuiText msgTxt(msg, 20, (GXColor)
+    {
+        0, 0, 0, 255
+    });
+    msgTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
+    msgTxt.SetPosition(0, 80);
 
     promptWindow.Append(&msgTxt);
     promptWindow.Append(&throbberImg);
 
-	if(loadThreadHalt > 0)
-		return;
+    if(loadThreadHalt > 0)
+        return;
 
-	HaltGui();
-	int oldState = mainWindow->GetState();
-	mainWindow->SetState(STATE_DISABLED);
-	mainWindow->Append(&promptWindow);
-	ResumeGui();
+    HaltGui();
+    int oldState = mainWindow->GetState();
+    mainWindow->SetState(STATE_DISABLED);
+    mainWindow->Append(&promptWindow);
+    ResumeGui();
 
-	float angle = 0;
-	u32 count = 0;
+    float angle = 0;
+    u32 count = 0;
 
-	while(loadThreadHalt == 0)
-	{
+    while(loadThreadHalt == 0)
+    {
         progsleep = 20*1000;
 
-		while(progsleep > 0)
-		{
-			usleep(THREAD_SLEEP);
-			progsleep -= THREAD_SLEEP;
-		}
+        while(progsleep > 0)
+        {
+            usleep(THREAD_SLEEP);
+            progsleep -= THREAD_SLEEP;
+        }
 
         if(count % 5 == 0)
         {
@@ -379,12 +381,12 @@ ProgressWindow(char *msg)
             throbberImg.SetAngle(angle);
         }
         ++count;
-	}
+    }
 
-	HaltGui();
-	mainWindow->Remove(&promptWindow);
-	mainWindow->SetState(oldState);
-	ResumeGui();
+    HaltGui();
+    mainWindow->Remove(&promptWindow);
+    mainWindow->SetState(oldState);
+    ResumeGui();
 }
 
 static void *LoadingThread (void *arg)
@@ -396,8 +398,8 @@ static void *LoadingThread (void *arg)
         if (loadThreadHalt == 2)
             return NULL;
 
-		ProgressWindow(Message);
-		usleep(THREAD_SLEEP);
+        ProgressWindow(Message);
+        usleep(THREAD_SLEEP);
     }
     return NULL;
 }
@@ -600,6 +602,7 @@ void StopUpdateThread()
 static void *UpdateGUI (void *arg)
 {
     int i, guiRun = 1;
+    bool DrawArrow = false;
 
     while(guiRun)
     {
@@ -623,16 +626,26 @@ static void *UpdateGUI (void *arg)
             }
 #endif
 
-            if(HWButton)
-                ExitRequested = true; // exit program
-            Menu_Render();
-
             for(i=0; i < 4; i++)
             {
                 mainWindow->Update(&userInput[i]);
                 if(userInput[i].wpad->btns_d & (WPAD_BUTTON_HOME | WPAD_CLASSIC_BUTTON_HOME))
                     ExitRequested = true; // exit program
+
+                if(userInput[i].wpad->btns_h & (WPAD_BUTTON_B | WPAD_CLASSIC_BUTTON_B))
+                    DrawArrow = true;
             }
+
+            if(DrawArrow)
+            {
+                pointer[0]->SetImage(pointerGrabImg[0]);
+                DrawArrow = false;
+            }
+            else pointer[0]->SetImage(pointerImg[0]);
+
+            if(HWButton)
+                ExitRequested = true; // exit program
+            Menu_Render();
 
             if(ExitRequested || GuiShutdown)
             {
@@ -835,11 +848,11 @@ void SetupGui()
     mainWindow = guiWindow;
 
     videoImg = new GuiImage();
-	videoImg->SetImage(videoScreenshot, vmode->fbWidth, vmode->viHeight);
-	videoImg->SetScaleX(screenwidth/(float)vmode->fbWidth);
-	videoImg->SetScaleY(screenheight/(float)vmode->efbHeight);
-	videoImg->SetVisible(false);
-	mainWindow->Append(videoImg);
+    videoImg->SetImage(videoScreenshot, vmode->fbWidth, vmode->viHeight);
+    videoImg->SetScaleX(screenwidth/(float)vmode->fbWidth);
+    videoImg->SetScaleY(screenheight/(float)vmode->efbHeight);
+    videoImg->SetVisible(false);
+    mainWindow->Append(videoImg);
 
     throbber = new GuiImageData(loading_png);
     fadeAnim = EFFECT_FADE;
@@ -850,6 +863,9 @@ void SetupGui()
     bgMusic->SetLoop(true);
     if(Settings.Music)
         bgMusic->Play(); // startup music
+
+    top = new GuiImageData(point_top_png);
+    body = new GuiImageData(point_body_png);
 
     pointerImg[0] = player1_point_png;
     pointerImg[1] = player2_point_png;
@@ -1475,7 +1491,10 @@ static int MenuFavorites()
 
     for (int i = 0, xpos = 40, ypos = 20; i < N; i++)
     {
-        Label[i] = new GuiText(Settings.GetUrl(i), 20, (GXColor){ 0, 0, 0, 255 });
+        Label[i] = new GuiText(Settings.GetUrl(i), 20, (GXColor)
+        {
+            0, 0, 0, 255
+        });
         Label[i]->SetMaxWidth(Block[i].GetDataWidth() - 25);
 
         Block[i].SetInit(xpos, ypos);

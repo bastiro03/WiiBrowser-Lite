@@ -36,6 +36,13 @@ extern const u8		button_click_pcm[];
 extern const u32	button_click_pcm_size;
 
 // Images
+
+extern const u8		point_top_png[];
+extern const u32	point_top_png_size;
+
+extern const u8		point_body_png[];
+extern const u32	point_body_png_size;
+
 extern const u8		arrow_r_png[];
 extern const u32	arrow_r_png_size;
 

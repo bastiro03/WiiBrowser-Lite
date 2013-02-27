@@ -125,7 +125,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
         LWP_CreateThread (&thread, DownloadImage, (void*)url, NULL, 0, 70);
 
         unsigned int i;
-        while (!choice && !(userInput[0].wpad->btns_d & WPAD_BUTTON_B))
+        while (!choice)
         {
             Clear(mainWindow, Index, &first, &last, ext);
             coordY=Index ? Index->elem->GetYPosition()+Index->screenSize : 40;

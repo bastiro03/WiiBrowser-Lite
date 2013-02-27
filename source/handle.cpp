@@ -4,13 +4,16 @@
 GuiToolbar *Toolbar = NULL;
 
 void MoveWind (int up, int dir, int line, GuiImage * image);
-void MoveText (int up, int dir, int line, Indice Index);
+void MoveText (int up, int dir, int space, Indice Index);
 
 bool hidden=true;
 enum { TEXT=0, BUTTON, HIDDEN, RADIO, UNKNOWN };
 
 int inputType(ListaDiInput lista);
 int noSubmit(ListaDiBottoni btn);
+
+int x = 0;
+int y = 0;
 
 int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni btn) {
     GuiImageData Textbox (keyboard_textbox_png, keyboard_textbox_png_size);
@@ -169,19 +172,19 @@ void HandleHtmlPad(int *offset, GuiButton *btnup, GuiButton *btndown, Indice ext
     if (btnup->GetState() == STATE_CLICKED || (userInput[0].wpad->btns_h & WPAD_BUTTON_UP)) {
         usleep(15000); btnup->ResetState();
         if (!ext || ext->elem->GetYPosition()+25<screenheight)
-            MoveText(1,+1,1, Index);
+            MoveText(1,+1,25, Index);
     }
 
     if (btndown->GetState() == STATE_CLICKED || (userInput[0].wpad->btns_h & WPAD_BUTTON_DOWN)) {
         usleep(15000); btndown->ResetState();
         if (!Index || Index->elem->GetYPosition()+Index->screenSize>25)
-            MoveText(1,-1,1, Index);
+            MoveText(1,-1,25, Index);
     }
 
     if (hidden && userInput[0].wpad->btns_h & WPAD_BUTTON_LEFT) {
         if (*offset<screenwidth) {
             usleep(15000);
-            MoveText(0,+1,1, Index);
+            MoveText(0,+1,25, Index);
             *offset+=25;
         }
     }
@@ -189,7 +192,7 @@ void HandleHtmlPad(int *offset, GuiButton *btnup, GuiButton *btndown, Indice ext
     if (hidden && userInput[0].wpad->btns_h & WPAD_BUTTON_RIGHT) {
         if (*offset>-screenwidth) {
             usleep(15000);
-            MoveText(0,-1,1, Index);
+            MoveText(0,-1,25, Index);
             *offset-=25;
         }
     }
@@ -197,8 +200,39 @@ void HandleHtmlPad(int *offset, GuiButton *btnup, GuiButton *btndown, Indice ext
     if (userInput[0].wpad->btns_h & WPAD_BUTTON_1) {
         if (*offset) {
             usleep(15000);
-            MoveText(0,-1,(*offset)/25, Index);
+            MoveText(0,-1,(*offset), Index);
             *offset=0;
+        }
+    }
+
+    if(userInput[0].wpad->btns_d & WPAD_BUTTON_B)
+    {
+        if(userInput[0].wpad->ir.valid)
+        {
+            x = userInput[0].wpad->ir.x;
+            y = userInput[0].wpad->ir.y;
+        }
+    }
+
+    if (userInput[0].wpad->btns_h & WPAD_BUTTON_B) {
+        usleep(15000);
+        if(userInput[0].wpad->ir.valid)
+        {
+            int dist = userInput[0].wpad->ir.y - y;
+            if(dist > 200) dist = 200;
+            else if (dist < -200) dist = -200;
+
+            if (!ext || ext->elem->GetYPosition()+25<screenheight)
+            {
+                if (dist > 10)
+                    MoveText(1,1,dist/8, Index);
+            }
+
+            if (!Index || Index->elem->GetYPosition()+Index->screenSize>25)
+            {
+                if (dist < -10)
+                    MoveText(1,1,dist/8, Index);
+            }
         }
     }
 }
@@ -242,14 +276,14 @@ void MoveWind (int up, int dir, int line, GuiImage * image) {
         image->SetPosition(image->GetXPosition()+(line*25*dir), image->GetYPosition());
 }
 
-void MoveText (int up, int dir, int line, Indice Index) {
+void MoveText (int up, int dir, int space, Indice Index) {
     if (up) {
         for (; !NoIndex(Index); Index=Index->prox)
-            Index->elem->SetPosition(Index->elem->GetXPosition(), Index->elem->GetYPosition()+(line*25*dir));
+            Index->elem->SetPosition(Index->elem->GetXPosition(), Index->elem->GetYPosition()+(space*dir));
     }
     else {
         for (; !NoIndex(Index); Index=Index->prox)
-            Index->elem->SetPosition(Index->elem->GetXPosition()+(line*25*dir), Index->elem->GetYPosition());
+            Index->elem->SetPosition(Index->elem->GetXPosition()+(space*dir), Index->elem->GetYPosition());
     }
 }
 
@@ -302,6 +336,43 @@ void HandleMenuBar(string *link, char* url, int *choice, int img, GuiWindow *mai
     }
     if ((img ? userInput[0].wpad->btns_d & WPAD_BUTTON_2 : userInput[0].wpad->btns_d & WPAD_BUTTON_MINUS) && !hidden) {
         hideBar(mainWindow, parentWindow);
+    }
+
+    if (hidden)
+    {
+        if ((userInput[0].wpad->btns_h & WPAD_BUTTON_B) && (userInput[0].wpad->btns_h & WPAD_BUTTON_RIGHT)) {
+            *choice=1;
+        }
+        if ((userInput[0].wpad->btns_h & WPAD_BUTTON_B) && (userInput[0].wpad->btns_h & WPAD_BUTTON_DOWN)) {
+            *choice=2;
+        }
+        if ((userInput[0].wpad->btns_h & WPAD_BUTTON_B) && (userInput[0].wpad->btns_h & WPAD_BUTTON_UP)) {
+            link->assign(url);
+            *choice=1;
+        }
+
+        if ((userInput[0].wpad->btns_h & WPAD_BUTTON_B) && (userInput[0].wpad->btns_h & WPAD_BUTTON_LEFT)) {
+            if (strncmp(Settings.Homepage,"http",4))
+                link->assign("http://");
+            link->append(Settings.Homepage);
+            *choice=1;
+        }
+
+        if ((userInput[0].wpad->btns_h & WPAD_BUTTON_B) && (userInput[0].wpad->btns_h & WPAD_BUTTON_MINUS)) {
+            if (history->prec) {
+                history=history->prec;
+                link->assign(history->url);
+                *choice=1;
+            }
+        }
+
+        if ((userInput[0].wpad->btns_h & WPAD_BUTTON_B) && (userInput[0].wpad->btns_h & WPAD_BUTTON_PLUS)) {
+            if (history->prox) {
+                history=history->prox;
+                link->assign(history->url);
+                *choice=1;
+            }
+        }
     }
 
     if (Toolbar)

@@ -90,7 +90,7 @@ bool InitMPlayer()
     // check if subtitle font file exists
     struct stat st;
     char filepath[1024];
-    sprintf(filepath, "%s/subfont.ttf", AppPath);
+    sprintf(filepath, "%ssubfont.ttf", AppPath);
 
     bool subtitleFontFound;
     if(stat(filepath, &st) == 0)

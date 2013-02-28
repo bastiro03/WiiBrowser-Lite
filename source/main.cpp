@@ -228,10 +228,12 @@ int main(int argc, char *argv[])
     // mplayer cache thread
     memset(cachestack,0,CACHE_STACKSIZE*sizeof(u8));
     LWP_CreateThread(&cthread, mplayercachethread, NULL, cachestack, CACHE_STACKSIZE, 70);
-    ResetVideo_Menu();
+    usleep(200);
 
     Settings.Load();
     LoadLanguage();
+
+    ResetVideo_Menu();
     MainMenu(MENU_SPLASH);
     ExitApp();
 }

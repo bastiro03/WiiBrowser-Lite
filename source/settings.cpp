@@ -42,7 +42,7 @@
 #define CONFIGPATH          "apps/wiibrowser/"
 #define CONFIGNAME          "wiibrowser.cfg"
 
-#define DEBUG
+#undef DEBUG
 
 SSettings::SSettings()
 {

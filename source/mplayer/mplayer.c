@@ -299,7 +299,7 @@ int file_filter = 1;
 
 // cache2:
 #ifdef GEKKO
-int stream_cache_size=8*1024; // 8MB cache
+int stream_cache_size=1*1024; // 1MB cache
 #else
 int stream_cache_size=-1;
 #endif

@@ -23,6 +23,7 @@
 #include "filelist.h"
 #include "filebrowser.h"
 #include "utils/mem2_manager.h"
+#include "config.h"
 
 extern "C" {
 #include "entities.h"
@@ -135,6 +136,7 @@ string parseUrl(string link, const char* url)
 /****************************************************************************
  * Handle screenshots
  ***************************************************************************/
+#ifdef MPLAYER
 void DisableVideoImg()
 {
     if(!videoImg)
@@ -158,6 +160,7 @@ bool VideoImgVisible()
 
     return videoImg->IsVisible();
 }
+#endif
 
 /****************************************************************************
  * ResumeGui
@@ -189,6 +192,7 @@ extern "C" void HaltGui()
         usleep(THREAD_SLEEP);
 }
 
+#ifdef MPLAYER
 extern "C" void DoMPlayerGuiDraw()
 {
     mainWindow->Draw();
@@ -316,6 +320,7 @@ bool LoadYouTubeFile(char *newurl, char *data)
 
     return false;
 }
+#endif
 
 /****************************************************************************
  * LoadingThread
@@ -1645,11 +1650,13 @@ void MainMenu(int menu)
         ExitRequested = 1;
     curl_handle = curl_easy_init();
 
+    #ifdef MPLAYER
     if(!InitMPlayer())
     {
         ExitRequested = true;
         return;
     }
+    #endif
 
     SetupGui();
     remove("debug.txt");

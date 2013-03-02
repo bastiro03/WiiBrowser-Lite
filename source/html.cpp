@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "html.h"
+#include "config.h"
 #define LEN 15
 
 enum html htm;
@@ -101,6 +102,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
     GuiTrigger *trigA=new GuiTrigger;
     trigA->SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
 
+    #ifdef MPLAYER
     if (!strncmp(url, "http://www.youtube.", 19)
             || !strncmp(url, "https://www.youtube.", 20))
     {
@@ -117,8 +119,10 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
             ResumeGui();
         }
     }
+    else
+    #endif
 
-    else if (type == WEB)
+    if (type == WEB)
     {
         l1=getTag((char*)HTML->data);
         lista=l1.begin();
@@ -402,6 +406,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
         delete(image);
     }
 
+    #ifdef MPLAYER
     else if (type == VIDEO)
     {
         LoadMPlayerFile(url);
@@ -412,6 +417,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
         DisableVideoImg();
         ResumeGui();
     }
+    #endif
 
     if (!knownType(HTML->type) || type == VIDEO || choice == 2)
     {

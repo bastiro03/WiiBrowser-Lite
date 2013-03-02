@@ -28,6 +28,10 @@
 
 #include "FreeTypeGX.h"
 #include "utils/mem2_manager.h"
+#include "config.h"
+
+#ifdef MPLAYER
+
 #include "mplayer/input/input.h"
 #include "mplayer/osdep/gx_supp.h"
 
@@ -169,6 +173,8 @@ extern "C" {
     }
 }
 
+#endif
+
 SSettings Settings;
 int ExitRequested = 0,
     GuiShutdown = 0;
@@ -213,25 +219,30 @@ int main(int argc, char *argv[])
     fatInitDefault(); // Initialize file system
     InitGUIThreads(); // Initialize GUI
 
+    #ifdef MPLAYER
     u32 size = ( (1024*MAX_HEIGHT)+((MAX_WIDTH-1024)*MAX_HEIGHT) + (1024*(MAX_HEIGHT/2)*2) ) + // textures
                (vmode->fbWidth * vmode->efbHeight * 4) + // videoScreenshot
                (32*1024); // padding
 
     AddMem2Area (size, MEM2_VIDEO);
-    AddMem2Area (2*1024*1024, MEM2_OTHER); // vars + ttf
-    __exception_setreload(10);
+    #endif
 
-    GX_AllocTextureMemory();
+    AddMem2Area (2*1024*1024, MEM2_OTHER); // vars + ttf
     InitVideo2();
     InitFreeType(); // Initialize font system
 
+    #ifdef MPLAYER
     // mplayer cache thread
+    GX_AllocTextureMemory();
+
     memset(cachestack,0,CACHE_STACKSIZE*sizeof(u8));
     LWP_CreateThread(&cthread, mplayercachethread, NULL, cachestack, CACHE_STACKSIZE, 70);
     usleep(200);
+    #endif
 
     Settings.Load();
     LoadLanguage();
+    __exception_setreload(10);
 
     ResetVideo_Menu();
     MainMenu(MENU_SPLASH);

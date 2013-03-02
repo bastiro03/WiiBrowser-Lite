@@ -116,7 +116,7 @@ export OUTPUT	:=	$(CURDIR)/$(TARGET)
 
 #---------------------------------------------------------------------------------
 $(BUILD):
-	cd source/mplayer; $(MAKE) -f Makefile; cd ../..
+#	cd source/mplayer; $(MAKE) -f Makefile; cd ../..
 	@[ -d $@ ] || mkdir -p $@
 	@make --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
 
@@ -130,7 +130,7 @@ clean:
 	rm -f $(BUILD)/*.d $(BUILD)/*.h $(BUILD)/*.ii $(BUILD)/*.lst $(BUILD)/*.map \
 	$(BUILD)/*.o $(BUILD)/*.s
 	@rm -fr $(OUTPUT).elf $(OUTPUT).dol
-	cd source/mplayer; $(MAKE) -f Makefile clean
+#	cd source/mplayer; $(MAKE) -f Makefile clean
 
 #---------------------------------------------------------------------------------
 run:

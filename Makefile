@@ -39,7 +39,7 @@ LDFLAGS		=	-g $(MACHDEP) -specs=wiimc.spec -Wl
 LIBS    := -lmplayerwii -lavformat -lavcodec -lswscale -lavutil \
                         -lfribidi -ljpeg -liconv -ldi -lpng -lz \
 						-lcurl -lcyassl -lnetport -lasnd -lvorbisidec \
-                        -lfat -lwiiuse -lbte -logc -lfreetype \
+                        -lfat -lwiiuse -lwiikeyboard -lbte -logc -lfreetype \
 
 #---------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level containing

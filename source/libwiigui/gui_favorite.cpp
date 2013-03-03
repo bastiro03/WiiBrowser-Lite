@@ -41,6 +41,14 @@ GuiFavorite::GuiFavorite()
     Block->SetTrigger(trigA);
     Block->SetEffectGrow();
 
+    Label = new GuiText("", 20, (GXColor) {0, 0, 0, 255});
+    Label->SetMaxWidth(GetDataWidth() - 25);
+
+    Thumb = new GuiImage;
+    Thumb->SetScaleX((GetDataWidth() - 10)/(float)640);
+    Thumb->SetScaleY((GetDataHeight() - 8)/(float)480);
+    Thumb->SetPosition(4, 4);
+
     RemoveImg = new GuiImage(RemoveData);
     RemoveImgOver = new GuiImage(RemoveDataOver);
     Remove = new GuiButton(RemoveData->GetWidth(), RemoveData->GetHeight());
@@ -77,6 +85,9 @@ GuiFavorite::~GuiFavorite()
     delete(BlockImg);
     delete(BlockImgOver);
     delete(Block);
+
+    delete(Thumb);
+    delete(Label);
 }
 
 void GuiFavorite::SetEditing(bool e)
@@ -88,6 +99,7 @@ void GuiFavorite::SetEditing(bool e)
     {
         this->Block->SetTrigger(trigH, 0);
         this->Remove->SetEffect(EFFECT_FADE, 30);
+        this->Block->GetIcon()->SetEffect(EFFECT_RUMBLE,2,5);
         this->BlockImg->SetEffect(EFFECT_RUMBLE,2,5);
     }
 
@@ -95,6 +107,8 @@ void GuiFavorite::SetEditing(bool e)
     {
         this->Block->SetTrigger(trigA, 0);
         this->Remove->SetEffect(EFFECT_FADE, -30);
+        this->Block->GetIcon()->StopEffect(EFFECT_RUMBLE);
+        this->Block->GetIcon()->SetAngle(0);
         this->BlockImg->StopEffect(EFFECT_RUMBLE);
         this->BlockImg->SetAngle(0);
     }

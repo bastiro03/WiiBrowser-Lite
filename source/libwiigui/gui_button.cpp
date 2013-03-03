@@ -84,6 +84,10 @@ void GuiButton::SetIcon(GuiImage* img)
 	icon = img;
 	if(img) img->SetParent(this);
 }
+GuiImage * GuiButton::GetIcon()
+{
+    return icon;
+}
 void GuiButton::SetIconOver(GuiImage* img)
 {
 	iconOver = img;
@@ -186,8 +190,8 @@ void GuiButton::Draw()
 
 		if(iconOver)
 			iconOver->Draw();
-		else if(icon) // draw icon
-			icon->Draw();
+		// else if(icon) // draw icon
+			// icon->Draw();
 
 		// draw text
 		if(labelOver[0])
@@ -219,8 +223,8 @@ void GuiButton::Draw()
 
 		if(iconOver)
 			iconOver->Draw();
-		else if(icon) // draw icon
-			icon->Draw();
+		// else if(icon) // draw icon
+			// icon->Draw();
 
 		// draw text
 		if(labelOver[0])

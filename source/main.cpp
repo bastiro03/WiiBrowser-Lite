@@ -94,7 +94,7 @@ bool InitMPlayer()
     // check if subtitle font file exists
     struct stat st;
     char filepath[1024];
-    sprintf(filepath, "%ssubfont.ttf", AppPath);
+    sprintf(filepath, "%s/subfont.ttf", AppPath);
 
     bool subtitleFontFound;
     if(stat(filepath, &st) == 0)
@@ -225,9 +225,9 @@ int main(int argc, char *argv[])
                (32*1024); // padding
 
     AddMem2Area (size, MEM2_VIDEO);
+    AddMem2Area (2*1024*1024, MEM2_OTHER); // vars + ttf
     #endif
 
-    AddMem2Area (2*1024*1024, MEM2_OTHER); // vars + ttf
     InitVideo2();
     InitFreeType(); // Initialize font system
 

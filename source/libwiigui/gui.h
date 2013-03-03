@@ -40,8 +40,10 @@
 #include <wchar.h>
 #include <math.h>
 #include <asndlib.h>
+
 #include <wiiuse/wpad.h>
-#include <ogc/lwp_watchdog.h>
+#include <wiikeyboard/keyboard.h>
+#include <utils/timer.h>
 
 #include "FreeTypeGX.h"
 #include "video.h"
@@ -848,6 +850,9 @@ class GuiButton : public GuiElement
 		//!Sets the button's icon
 		//!\param i Pointer to GuiImage object
 		void SetIcon(GuiImage* i);
+        //!Gets the button's icon
+		//!\return Pointer to GuiImage object
+		GuiImage * GetIcon();
 		//!Sets the button's icon on over
 		//!\param i Pointer to GuiImage object
 		void SetIconOver(GuiImage* i);
@@ -927,6 +932,10 @@ class GuiKeyboard : public GuiWindow
 		void Update(GuiTrigger * t);
 		char kbtextstr[256];
 	protected:
+        static bool bInitUSBKeyboard;
+		int DeleteDelay;
+		Timer keyHeldDelay;
+		keyboard_event keyboardEvent;
 		u32 kbtextmaxlen;
 		int shift;
 		int caps;
@@ -1106,6 +1115,9 @@ class GuiFavorite : public GuiWindow
         GuiImage *BlockImg;
         GuiImage *BlockImgOver;
         GuiButton *Block;
+
+        GuiImage *Thumb;
+        GuiText *Label;
     protected:
         bool editing;
 };

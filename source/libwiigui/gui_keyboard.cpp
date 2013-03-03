@@ -11,6 +11,7 @@
 #include "gui.h"
 
 static char tmptxt[MAX_KEYBOARD_DISPLAY];
+bool GuiKeyboard::bInitUSBKeyboard = true;
 
 static char * GetDisplayText(char * t)
 {
@@ -33,6 +34,13 @@ static char * GetDisplayText(char * t)
 
 GuiKeyboard::GuiKeyboard(char * t, u32 max)
 {
+    if(bInitUSBKeyboard) {
+		bInitUSBKeyboard = false;
+        KEYBOARD_Init(0);
+    }
+	memset(&keyboardEvent, 0, sizeof(keyboardEvent));
+	DeleteDelay = 0;
+
 	width = 540;
 	height = 400;
 	shift = 0;
@@ -278,6 +286,49 @@ void GuiKeyboard::Update(GuiTrigger * t)
 	}
 
 	bool update = false;
+	++DeleteDelay;
+
+    if(t->chan == 0) {
+        // Update only once every frame (50-60 times per second)
+		bool bKeyChangeEvent = (KEYBOARD_GetEvent(&keyboardEvent) == 1);
+		if(bKeyChangeEvent) {
+			if(keyboardEvent.type == KEYBOARD_PRESSED) {
+				keyHeldDelay.reset();
+			}
+			else {
+				// key released -> reset symbol
+				keyboardEvent.symbol = 0;
+			}
+		}
+
+		// if the key was not released it -> add it again as "new" event
+		if(	   (keyboardEvent.symbol != 0)
+			&& (   bKeyChangeEvent
+				|| (keyHeldDelay.elapsedMilliSecs() > 500 && DeleteDelay > 15)))	// delay hold key
+		{
+			wchar_t charCode = 0;
+			if(((keyboardEvent.symbol >> 8) == 0xF2) && (keyboardEvent.symbol & 0xFF) < 0x80) {
+				// this is usually a numpad
+				charCode = keyboardEvent.symbol & 0xFF;
+			}
+			else if(  (keyboardEvent.symbol < 0xD800)										// this is usually a normal character
+					|| (keyboardEvent.symbol >= 62102 && keyboardEvent.symbol <= 62105)		// up/down/left/right numpad
+					|| (keyboardEvent.symbol >= 62340 && keyboardEvent.symbol <= 62343))	// up/down/left/right arrows
+			{
+				charCode = keyboardEvent.symbol;
+			}
+
+			if(charCode != 0) {
+				FILE *file = fopen("keyb.txt", "a");
+				fprintf(file, "keycode: %d\r\n", keyboardEvent.keycode);
+				fwprintf(file, L"wchar_t: %c\r\n", charCode);
+				fprintf(file, "char: %c\r\n\r\n", charCode);
+				fclose(file);
+				exit(0);
+				DeleteDelay = 0;
+			}
+		}
+	}
 
 	if(keySpace->GetState() == STATE_CLICKED)
 	{

@@ -80,6 +80,8 @@ class SSettings
         char *GetUrl(int f);
         //!Return index
         int FindUrl(char *url);
+        //!Remove favorite
+        void Remove(int f);
         //!Save Settings
         bool Save();
 		//!Reset Settings
@@ -97,14 +99,16 @@ class SSettings
         bool Autoupdate;
         bool Music;
 
-        char Homepage[256];
         char AppPath[256];
         char ConfigPath[256];
         char BootDevice[6];
 
+        char Homepage[256];
         char DefaultFolder[256];
         char UserFolder[256];
+
         char *Favorites[N];
+        u8 *Thumbnails[N];
 
     protected:
         //!Find value

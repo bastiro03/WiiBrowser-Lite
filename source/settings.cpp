@@ -34,6 +34,7 @@
 #include <ogcsys.h>
 #include <common.h>
 #include <unistd.h>
+#include <dirent.h>
 
 #include "Settings.h"
 
@@ -43,6 +44,9 @@
 #define CONFIGNAME          "wiibrowser.cfg"
 
 #undef DEBUG
+
+void *LoadFile(char *filepath, int size);
+void WriteFile(char *filepath, int size, void *buffer);
 
 SSettings::SSettings()
 {
@@ -75,6 +79,7 @@ void SSettings::SetDefault()
     {
         Favorites[i] = new char[256];
         memset(Favorites[i], 0, 256);
+        Thumbnails[i] = NULL;
     }
 }
 
@@ -113,8 +118,27 @@ bool SSettings::Save()
 	fprintf(file, "\r\n# Favorites\r\n\r\n");
 	for(int i = 0; i < N; i++)
         fprintf(file, "Favorite(%d) = %s\r\n", i, Favorites[i]);
-
     fclose(file);
+
+    // save thumbnails
+    snprintf(filedest, sizeof(filedest), "%s/thumbnails", AppPath);
+
+    DIR *dir = opendir(filedest);
+    int size = 640*480*4;
+
+    if(!dir && mkdir(filedest, 0777) != 0)
+        return false;
+    else closedir(dir);
+
+    for (int i = 0; i < N; i++)
+    {
+        snprintf(filedest, sizeof(filedest), "%s/thumbnails/thumb_%d.gxt", AppPath, i);
+        if (!Thumbnails[i])
+            continue;
+
+        WriteFile(filedest, size, Thumbnails[i]);
+    }
+
     return true;
 }
 
@@ -218,6 +242,15 @@ bool SSettings::Load()
         this->ParseLine(line);
 	}
 	fclose(file);
+
+    int size = 640*480*4;
+
+    // load thumbnails
+    for (int i = 0; i < N; i++)
+    {
+        snprintf(filepath, sizeof(filepath), "%s/thumbnails/thumb_%d.gxt", AppPath, i);
+        Thumbnails[i] = (u8 *)LoadFile(filepath, size);
+    }
 
     #ifdef DEBUG
     save_mem("LOADED");
@@ -387,6 +420,23 @@ int SSettings::FindUrl(char *url)
     return -1;
 }
 
+void SSettings::Remove(int f)
+{
+    if(f < 0 || f >= N)
+        return;
+
+    char filepath[256];
+    bzero(Favorites[f], 256);
+    snprintf(filepath, sizeof(filepath), "%s/thumbnails/thumb_%d.gxt", AppPath, f);
+
+    if(Thumbnails[f])
+    {
+        delete(Thumbnails[f]);
+        Thumbnails[f] = NULL;
+        remove(filepath);
+    }
+}
+
 void SSettings::ChangeFolder()
 {
     int absolutePath = CheckFolder(DefaultFolder);
@@ -394,4 +444,36 @@ void SSettings::ChangeFolder()
     if(absolutePath != ABSOLUTE)
         snprintf(UserFolder, sizeof(UserFolder), "%s%s", BootDevice, DefaultFolder + absolutePath);
     else strncpy(UserFolder, DefaultFolder, sizeof(UserFolder));
+}
+
+void *LoadFile(char *filepath, int size)
+{
+    FILE *file = fopen(filepath, "rb");
+    if(!file)
+    {
+        fclose(file);
+        return NULL;
+    }
+
+    u8 *buffer = new u8[size];
+    if(!buffer)
+        return NULL;
+
+    fread(buffer, size, 1, file);
+    fclose(file);
+
+    return buffer;
+}
+
+void WriteFile(char *filepath, int size, void *buffer)
+{
+    FILE *file = fopen(filepath, "wb");
+    if(!file)
+    {
+        fclose(file);
+        return;
+    }
+
+    fwrite(buffer, size, 1, file);
+    fclose(file);
 }

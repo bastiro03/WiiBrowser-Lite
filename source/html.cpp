@@ -80,6 +80,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
     static lwp_t thread = LWP_THREAD_NULL;
     int type = knownType(HTML->type);
     int coordX = 0, coordY, offset = 0, choice = 0;
+    bool done = false;
 
     GuiWindow *scrollWindow = new GuiWindow(50, screenheight-80);
     scrollWindow->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
@@ -350,6 +351,19 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                     }
                 }
                 lista++;
+            }
+
+            else if (!done)
+            {
+                HaltGui();
+                DoMPlayerGuiDraw();
+                u8 *video = TakeScreenshot();
+                ResumeGui();
+
+                int t = 0;
+                if ((t = Settings.FindUrl(url)) >= 0)
+                    Settings.Thumbnails[t] = video;
+                done = true;
             }
 
             if (!btnup)

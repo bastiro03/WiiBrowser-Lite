@@ -17,6 +17,7 @@
 #include "input.h"
 #include "menu.h"
 #include "utils/mem2_manager.h"
+#include "utils/pngu.h"
 
 extern "C" {
 
@@ -40,15 +41,54 @@ bool drawGui = false;
  *
  * Copies the current screen into a GX texture
  ***************************************************************************/
-
-void TakeScreenshot()
+u8* TakeScreenshot()
 {
+    videoScreenshot = (u8 *)memalign(32, vmode->fbWidth * vmode->efbHeight * 4);
+    if(!videoScreenshot)
+        exit(0);
+
 	GX_SetTexCopySrc(0, 0, vmode->fbWidth, vmode->efbHeight);
 	GX_SetTexCopyDst(vmode->fbWidth, vmode->efbHeight, GX_TF_RGBA8, GX_FALSE);
 	DCInvalidateRange(videoScreenshot, vmode->fbWidth * vmode->efbHeight * 4);
 	GX_CopyTex(videoScreenshot, GX_FALSE);
 	GX_PixModeSync();
-	EnableVideoImg();
+
+	return videoScreenshot;
+}
+
+void SaveScreenshot(char *path)
+{
+    int texSize = vmode->fbWidth * vmode->efbHeight * 4;
+    u8 * gameScreenTex = NULL;
+    gameScreenTex = (u8 *)memalign(32, texSize);
+    if(gameScreenTex == NULL)
+        return;
+
+    GX_SetTexCopySrc(0, 0, vmode->fbWidth, vmode->efbHeight);
+    GX_SetTexCopyDst(vmode->fbWidth, vmode->efbHeight, GX_TF_RGBA8, GX_FALSE);
+    DCInvalidateRange(gameScreenTex, texSize);
+    GX_CopyTex(gameScreenTex, GX_FALSE);
+    GX_PixModeSync();
+
+    u8 * testbuffer = (u8 *) memalign(32, 1024*512);
+    memset (testbuffer, 0, 1024*512);
+    int imgSize = 0;
+
+    IMGCTX pngContext = PNGU_SelectImageFromBuffer(testbuffer);
+    if (pngContext != NULL)
+    {
+        imgSize = PNGU_EncodeFromGXTexture(pngContext, screenwidth, screenheight, gameScreenTex, 0);
+        PNGU_ReleaseImageContext (pngContext);
+    }
+
+    if(imgSize > 0)
+    {
+        FILE* fp = fopen(path, "wb");
+        fwrite(testbuffer, 1, imgSize, fp);
+        fclose(fp);
+    }
+
+    free(testbuffer);
 }
 
 void ResetVideo_Menu()
@@ -329,7 +369,8 @@ InitVideo2 ()
 	GX_SetDrawDoneCallback(Draw_VIDEO);
 	GX_Flush();
 
-	videoScreenshot = (u8 *)mem2_malloc(vmode->fbWidth * vmode->efbHeight * 4, MEM2_VIDEO);
+	// videoScreenshot = (u8 *)mem2_malloc(vmode->fbWidth * vmode->efbHeight * 4, MEM2_VIDEO);
+	// videoScreenshot = (u8 *)memalign(32, vmode->fbWidth * vmode->efbHeight * 4);
 }
 
 }

@@ -136,7 +136,7 @@ string parseUrl(string link, const char* url)
 /****************************************************************************
  * Handle screenshots
  ***************************************************************************/
-#ifdef MPLAYER
+#ifndef MPLAYER
 void DisableVideoImg()
 {
     if(!videoImg)
@@ -150,6 +150,7 @@ void EnableVideoImg()
     if(!videoImg)
         return;
 
+    videoImg->SetImage(videoScreenshot, vmode->fbWidth, vmode->viHeight);
     videoImg->SetVisible(true);
 }
 
@@ -192,7 +193,6 @@ extern "C" void HaltGui()
         usleep(THREAD_SLEEP);
 }
 
-#ifdef MPLAYER
 extern "C" void DoMPlayerGuiDraw()
 {
     mainWindow->Draw();
@@ -202,6 +202,7 @@ extern "C" void DoMPlayerGuiDraw()
     mainWindow->Update(&userInput[0]);
 }
 
+#ifdef MPLAYER
 void UpdatePointer()
 {
     if(userInput[0].wpad->ir.valid)
@@ -849,12 +850,14 @@ void SetupGui()
     guiWindow->Append(bgImg);
     mainWindow = guiWindow;
 
-    videoImg = new GuiImage();
+    #ifndef MPLAYER
+	videoImg = new GuiImage();
     videoImg->SetImage(videoScreenshot, vmode->fbWidth, vmode->viHeight);
     videoImg->SetScaleX(screenwidth/(float)vmode->fbWidth);
     videoImg->SetScaleY(screenheight/(float)vmode->efbHeight);
     videoImg->SetVisible(false);
     mainWindow->Append(videoImg);
+	#endif
 
     throbber = new GuiImageData(loading_png);
     fadeAnim = EFFECT_FADE;
@@ -1453,6 +1456,13 @@ void SwapPos(GuiFavorite *Block, int i, int j)
     Block[j].SetPosition(xtemp, ytemp);
 }
 
+void SwapImage(GuiFavorite *Block, int i, int j)
+{
+    u8 *itemp = Settings.Thumbnails[i];
+    Settings.Thumbnails[i] = Settings.Thumbnails[j];
+    Settings.Thumbnails[j] = itemp;
+}
+
 void SwapUrls(int i, int j)
 {
     char utemp[256];
@@ -1485,22 +1495,23 @@ static int MenuFavorites()
     Right->SetEffect(EFFECT_FADE, -50);
 
     GuiFavorite Block[N];
-    GuiText *Label[N];
     prevMenu = MENU_FAVORITES;
 
     for (int i = 0, xpos = 40, ypos = 20; i < N; i++)
     {
-        Label[i] = new GuiText(Settings.GetUrl(i), 20, (GXColor)
-        {
-            0, 0, 0, 255
-        });
-        Label[i]->SetMaxWidth(Block[i].GetDataWidth() - 25);
-
         Block[i].SetInit(xpos, ypos);
         Block[i].SetEffect(EFFECT_SLIDE_IN | EFFECT_SLIDE_RIGHT, 50);
         Block[i].SetPosition(xpos,ypos);
-        Block[i].Block->SetLabel(Label[i]);
         Block[i].Block->SetUpdateCallback(DragCallback);
+        Block[i].Label->SetText(Settings.GetUrl(i));
+
+        if(Settings.Thumbnails[i])
+        {
+            Block[i].Thumb->SetImage(Settings.Thumbnails[i], vmode->fbWidth, vmode->viHeight);
+            Block[i].Block->SetIcon(Block[i].Thumb);
+            Block[i].Block->SetLabelOver(Block[i].Label);
+        }
+        else Block[i].Block->SetLabel(Block[i].Label);
 
         xpos += Block[i].GetDataWidth()+35;
         if(xpos > screenwidth-90)
@@ -1553,7 +1564,7 @@ static int MenuFavorites()
             if((i = findEmpty()) >= 0)
             {
                 strcpy(Settings.Favorites[i],prev_page);
-                Label[i]->SetText(Settings.GetUrl(i));
+                Block[i].Label->SetText(Settings.GetUrl(i));
             }
         }
 
@@ -1567,8 +1578,8 @@ static int MenuFavorites()
         for (i = 0; i < N; i++)
         {
             if(Block[i].Block->GetState() == STATE_SELECTED)
-                Label[i]->SetScroll(SCROLL_HORIZONTAL);
-            else Label[i]->SetScroll(SCROLL_NONE);
+                Block[i].Label->SetScroll(SCROLL_HORIZONTAL);
+            else Block[i].Label->SetScroll(SCROLL_NONE);
 
             if(Block[i].Block->GetState() == STATE_CLICKED &&
                     Left->Button->GetState() == STATE_DEFAULT && !editing)
@@ -1580,9 +1591,10 @@ static int MenuFavorites()
 
             else if(Block[i].Remove->GetState() == STATE_CLICKED)
             {
-                bzero(Settings.Favorites[i],256);
+                Block[i].Block->SetIcon(NULL);
+                Settings.Remove(i);
+                Block[i].Label->SetText(Settings.GetUrl(i));
                 Block[i].Remove->ResetState();
-                Label[i]->SetText(Settings.GetUrl(i));
             }
 
             if(editing && !Held(Block))
@@ -1596,6 +1608,7 @@ static int MenuFavorites()
                             Block[j].Block->IsInside(userInput[0].wpad->ir.x, userInput[0].wpad->ir.y))
                     {
                         SwapPos(Block, i, j);
+                        SwapImage(Block, i, j);
                         SwapUrls(i, j);
                     }
                 }
@@ -1618,9 +1631,6 @@ static int MenuFavorites()
     for (i = 0; i < N; i++)
         mainWindow->Remove(&Block[i]);
     ResumeGui();
-
-    for (i = 0; i < N; i++)
-        delete(Label[i]);
 
     if(choice != MENU_HOME)
     {

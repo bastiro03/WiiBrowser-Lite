@@ -1,4 +1,4 @@
-#include "html.h"
+#include "html_lt.h"
 #include "element.h"
 #include "tokenizer.h"
 #include "document.h"
@@ -493,7 +493,7 @@ int litehtml::element::render( int x, int y, int max_width )
 
 	m_lines.clear();
 	m_floats.clear();
-	
+
 	add_line(max_width);
 
 	int rw = 0;
@@ -615,10 +615,10 @@ int litehtml::element::render( int x, int y, int max_width )
 
 	ret_width += content_margins_left() + content_margins_right();
 
-	if((	m_display == display_inline_block						|| 
-			(m_float != float_none && m_css_width.is_predefined())	|| 
-			m_el_position == element_position_absolute ) 
-			
+	if((	m_display == display_inline_block						||
+			(m_float != float_none && m_css_width.is_predefined())	||
+			m_el_position == element_position_absolute )
+
 			&& ret_width < max_width && !m_second_pass)
 	{
 		m_second_pass = true;
@@ -816,7 +816,7 @@ void litehtml::element::finish_line( int max_width )
 int litehtml::element::add_line( int max_width, element_clear clr, int el_width, bool finish_prev )
 {
 	int top = 0;
-	
+
 	if(!m_lines.empty())
 	{
 		if(finish_prev)
@@ -896,7 +896,7 @@ int litehtml::element::add_line( int max_width, element_clear clr, int el_width,
 	}
 
 	ln->init(left, get_line_right(top, max_width), top, m_line_height);
-	
+
 	return ln->line_right();
 }
 
@@ -995,7 +995,7 @@ int litehtml::element::select(const css_element_selector& selector, bool apply_p
 			if(!attr_value)
 			{
 				return 0;
-			} else 
+			} else
 			{
 				if(i->first == L"class")
 				{
@@ -1464,26 +1464,26 @@ void litehtml::element::parse_background()
 
 	// parse background_attachment
 	m_bg.m_attachment = (background_attachment) value_index(
-		get_style_property(L"background-attachment", false, L"scroll"), 
-		background_attachment_strings, 
+		get_style_property(L"background-attachment", false, L"scroll"),
+		background_attachment_strings,
 		background_attachment_scroll);
 
 	// parse background_attachment
 	m_bg.m_repeat = (background_repeat) value_index(
-		get_style_property(L"background-repeat", false, L"repeat"), 
-		background_repeat_strings, 
+		get_style_property(L"background-repeat", false, L"repeat"),
+		background_repeat_strings,
 		background_repeat_repeat);
 
 	// parse background_clip
 	m_bg.m_clip = (background_box) value_index(
-		get_style_property(L"background-clip", false, L"border-box"), 
-		background_box_strings, 
+		get_style_property(L"background-clip", false, L"border-box"),
+		background_box_strings,
 		background_box_border);
 
 	// parse background_origin
 	m_bg.m_origin = (background_box) value_index(
-		get_style_property(L"background-origin", false, L"content-box"), 
-		background_box_strings, 
+		get_style_property(L"background-origin", false, L"content-box"),
+		background_box_strings,
 		background_box_content);
 
 	// parse background-image
@@ -2005,12 +2005,12 @@ void litehtml::element::draw_background( uint_ptr hdc, int x, int y, const posit
 			}
 			if(!bg.m_image.empty())
 			{
-				m_doc->container()->draw_background(hdc, 
-					bg.m_image.c_str(), 
-					bg.m_baseurl.c_str(), 
-					bg_draw_pos, 
+				m_doc->container()->draw_background(hdc,
+					bg.m_image.c_str(),
+					bg.m_baseurl.c_str(),
+					bg_draw_pos,
 					bg.m_position,
-					bg.m_repeat, 
+					bg.m_repeat,
 					bg.m_attachment);
 			}
 

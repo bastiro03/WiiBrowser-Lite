@@ -1,4 +1,4 @@
-#include "html.h"
+#include "html_lt.h"
 #include "web_color.h"
 #include "tokenizer.h"
 
@@ -8,7 +8,7 @@ _wtoi(const wchar_t *str)
   return (int)wcstol(str, 0, 10);
 }
 
-litehtml::def_color litehtml::g_def_colors[] = 
+litehtml::def_color litehtml::g_def_colors[] =
 {
 	{L"transparent",L"rgba(0, 0, 0, 0)"},
 	{L"AliceBlue",L"#F0F8FF"},

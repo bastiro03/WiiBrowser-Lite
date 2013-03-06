@@ -97,6 +97,7 @@ extern void ToggleButtons(GuiToolbar *toolbar, bool checkState = 0);
 
 extern void save_mem(string str);
 extern void save_mem_int(float str);
+extern void save_wmem(wstring str, const char *path);
 
 extern string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainWindow, char *url);
 extern string adjustUrl(string link, const char* url);

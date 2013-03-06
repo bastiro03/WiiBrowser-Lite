@@ -23,7 +23,10 @@
 #include "filelist.h"
 #include "filebrowser.h"
 #include "utils/mem2_manager.h"
+
 #include "config.h"
+#include "include/litehtml.h"
+#include "litehtml/wii_container.h"
 
 extern "C" {
 #include "entities.h"
@@ -64,9 +67,9 @@ static GuiImageData * SplashImage = NULL;
 static GuiImage * Splash = NULL;
 static GuiImage * videoImg = NULL;
 
-static GuiWindow * mainWindow = NULL;
 static GuiWindow * guiWindow = NULL;
 static GuiWindow * videoWindow = NULL;
+GuiWindow * mainWindow = NULL;
 
 static lwp_t guithread = LWP_THREAD_NULL;
 static lwp_t updatethread = LWP_THREAD_NULL;
@@ -1353,9 +1356,9 @@ jump:
 
     decode_html_entities_utf8(url, NULL);
     struct block HTML;
-    HTML = downloadfile(curl_handle, url, NULL);
+    // HTML = downloadfile(curl_handle, url, NULL);
 
-#ifdef DEBUG
+#ifndef DEBUG
     FILE *pFile = fopen ("page.htm", "rb");
     fseek (pFile, 0, SEEK_END);
     int size = ftell(pFile);
@@ -1408,15 +1411,54 @@ jump:
     childWindow.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
     childWindow.SetPosition(0,0);
 
+    /*
     HaltGui();
     mainWindow->SetState(STATE_DISABLED);
     mainWindow->Append(&childWindow);
     mainWindow->ChangeFocus(&childWindow);
     ResumeGui();
+    */
 
     string link;
-    link = DisplayHTML(&HTML, mainWindow, &childWindow, url);
+    // link = DisplayHTML(&HTML, mainWindow, &childWindow, url);
+
+    pFile = fopen ("page.css", "rb");
+    fseek (pFile, 0, SEEK_END);
+    size = ftell(pFile);
+    rewind (pFile);
+
+    char *data = (char*) malloc (sizeof(char)*size);
+    if (data == NULL) exit (2);
+    fread (data, 1, size, pFile);
+    fclose(pFile);
+
+    wchar_t* css = charToWideChar(data);
+    wchar_t* html_text = charToWideChar(HTML.data);
+
+    free(data);
     free(HTML.data);
+
+    litehtml::context m_context;
+    m_context.load_master_stylesheet(css);
+
+    litehtml::document::ptr m_doc;
+    litehtml::wii_container wii;
+
+    if(html_text)
+	{
+		m_doc = litehtml::document::createFromString(html_text, &wii, &m_context);
+		delete html_text;
+	}
+
+    m_doc->render(screenwidth);
+
+	if(m_doc)
+	{
+		litehtml::position clip(0, 0, screenwidth, screenheight);
+		m_doc->draw(0, 0, 0, &clip);
+	}
+
+    while(1);
 
     HaltGui();
     mainWindow->Remove(&childWindow);

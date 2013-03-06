@@ -1,4 +1,4 @@
-#include "html.h"
+#include "html_lt.h"
 #include "document.h"
 #include "elements.h"
 #include "tokenizer.h"
@@ -20,7 +20,7 @@
 #define FW_NORMAL       400
 #define FW_SEMIBOLD     600
 #define FW_BOLD         700
-   
+
 int
 wtoi(const wchar_t *str)
 {
@@ -123,7 +123,7 @@ litehtml::document::ptr litehtml::document::createFromString( const wchar_t* str
 		case litehtml::scanner::TT_ATTR:
 			doc->parse_attribute(sc.get_attr_name(), sc.get_value());
 			break;
-		case litehtml::scanner::TT_WORD: 
+		case litehtml::scanner::TT_WORD:
 			doc->parse_word(sc.get_value());
 			break;
 		case litehtml::scanner::TT_SPACE:
@@ -312,7 +312,7 @@ void litehtml::document::draw( uint_ptr hdc, int x, int y, const position* clip 
 int litehtml::document::cvt_units( const wchar_t* str, int fontSize, bool* is_percent/*= 0*/ ) const
 {
 	if(!str)	return 0;
-	
+
 	css_length val;
 	val.fromString(str);
 	if(is_percent && val.units() == css_units_percentage && !val.is_predefined())

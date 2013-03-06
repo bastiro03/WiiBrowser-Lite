@@ -150,7 +150,7 @@ typedef struct _paddata {
 #define EFFECT_ROTATE				4096
 #define EFFECT_COLOR_TRANSITION		8192
 
-#include "document.h"
+#include "gui_document.h"
 
 //!Sound conversion and playback. A wrapper for other sound libraries - ASND, libmad, ltremor, etc
 class GuiSound

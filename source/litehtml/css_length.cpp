@@ -1,5 +1,5 @@
 #include <cwctype>
-#include "html.h"
+#include "html_lt.h"
 #include "css_length.h"
 
 void litehtml::css_length::fromString( const std::wstring& str, const std::wstring& predefs )

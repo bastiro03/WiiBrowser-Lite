@@ -23,7 +23,7 @@ namespace litehtml
 
 		std::wstring	text;
 		std::wstring	baseurl;
-		
+
 		css_text()
 		{
 		}
@@ -80,7 +80,7 @@ namespace litehtml
 		litehtml::element::ptr			create_element(const wchar_t* tag_name);
 
 		static litehtml::document::ptr createFromString(const wchar_t* str, litehtml::document_container* objPainter, litehtml::context* ctx);
-	
+
 	private:
 		//void			load_default_styles();
 		litehtml::element*	add_root();

@@ -1,4 +1,4 @@
-#include "html.h"
+#include "html_lt.h"
 #include "background.h"
 
 litehtml::background::background(void)

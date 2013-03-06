@@ -16,13 +16,71 @@
 using namespace std;
 extern GuiWindow *mainWindow;
 
-/*
 litehtml::wii_container::wii_container(void)
 {
 }
 
 litehtml::wii_container::~wii_container(void)
 {
+}
+
+void litehtml::wii_container::set_cursor(const wchar_t* cursor)
+{
+
+}
+
+void litehtml::wii_container::set_caption(const wchar_t* caption)
+{
+
+}
+
+litehtml::uint_ptr litehtml::wii_container::get_temp_dc()
+{
+
+}
+
+void litehtml::wii_container::release_temp_dc(uint_ptr hdc)
+{
+
+}
+
+void litehtml::wii_container::fill_rect(uint_ptr hdc, const litehtml::position& pos, const litehtml::web_color color, const litehtml::css_border_radius& radius)
+{
+
+}
+
+void litehtml::wii_container::draw_list_marker(uint_ptr hdc, list_style_type marker_type, int x, int y, int height, const web_color& color)
+{
+
+}
+
+void litehtml::wii_container::load_image(const wchar_t* src, const wchar_t* baseurl)
+{
+
+}
+
+void litehtml::wii_container::get_image_size(const wchar_t* src, const wchar_t* baseurl, litehtml::size& sz)
+{
+
+}
+
+void litehtml::wii_container::draw_image(uint_ptr hdc, const wchar_t* src, const wchar_t* baseurl, const litehtml::position& pos)
+{
+
+}
+
+void litehtml::wii_container::draw_borders(uint_ptr hdc, const css_borders& borders, const litehtml::position& draw_pos)
+{
+
+}
+
+void litehtml::wii_container::draw_background(uint_ptr hdc, const wchar_t* image, const wchar_t* baseurl,
+											const litehtml::position& draw_pos,
+											const litehtml::css_position& bg_pos,
+											litehtml::background_repeat repeat,
+											litehtml::background_attachment attachment)
+{
+
 }
 
 litehtml::uint_ptr litehtml::wii_container::create_font( const wchar_t* faceName, int size, int weight, litehtml::font_style italic, unsigned int decoration )
@@ -55,7 +113,7 @@ int litehtml::wii_container::line_height( litehtml::uint_ptr hdc, litehtml::uint
 {
 	FreeTypeGX *fnt = (FreeTypeGX *)hFont;
 
-    return fnt->ftPointSize;
+    return fnt->ftPointSize + 6;
 }
 
 int litehtml::wii_container::text_width( litehtml::uint_ptr hdc, const wchar_t* text, litehtml::uint_ptr hFont )
@@ -65,6 +123,7 @@ int litehtml::wii_container::text_width( litehtml::uint_ptr hdc, const wchar_t* 
     return fnt->getWidth(text);
 }
 
+/*
 void litehtml::wii_container::draw_text( litehtml::uint_ptr hdc, const wchar_t* text, litehtml::uint_ptr hFont, litehtml::web_color color, const litehtml::position& pos )
 {
     FreeTypeGX *fnt = (FreeTypeGX *)hFont;
@@ -76,6 +135,7 @@ void litehtml::wii_container::draw_text( litehtml::uint_ptr hdc, const wchar_t* 
 
 	fnt->drawText(x, y, text, col, style);
 }
+*/
 
 void litehtml::wii_container::draw_text( litehtml::uint_ptr hdc, const wchar_t* text, litehtml::uint_ptr hFont, litehtml::web_color color, const litehtml::position& pos )
 {
@@ -93,7 +153,6 @@ void litehtml::wii_container::draw_text( litehtml::uint_ptr hdc, const wchar_t* 
 
     mainWindow->Append(show);
 }
-*/
 
 wchar_t* converIconv(const char* src, const char *charset)
 {
@@ -185,7 +244,23 @@ wstring getRoot( wchar_t *url )
     return root;
 }
 
-/*
+int litehtml::wii_container::get_text_base_line( litehtml::uint_ptr hdc, litehtml::uint_ptr hFont )
+{
+    FreeTypeGX *fnt = (FreeTypeGX *)hFont;
+
+    return fnt->ftFace->size->metrics.descender >> 6;
+}
+
+int litehtml::wii_container::get_default_font_size()
+{
+	return 20;
+}
+
+int litehtml::wii_container::pt_to_px( int pt )
+{
+    return (pt * 96) / 72;
+}
+
 void litehtml::wii_container::import_css( std::wstring& text, const std::wstring& url, std::wstring& baseurl, const string_vector& media )
 {
 	if(media.empty() || std::find(media.begin(), media.end(), std::wstring(L"all")) != media.end() || std::find(media.begin(), media.end(), std::wstring(L"screen")) != media.end())
@@ -310,4 +385,3 @@ void litehtml::wii_container::get_client_rect( litehtml::position& client )
 	client.width	= screenwidth;
 	client.height	= screenheight;
 }
-*/

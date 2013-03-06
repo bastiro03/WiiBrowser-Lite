@@ -260,7 +260,6 @@ class FreeTypeGX {
 
 	private:
         FT_Library ftLibrary;   /**< FreeType FT_Library instance. */
-        FT_Face ftFace;         /**< FreeType reusable FT_Face typographic object. */
         FT_GlyphSlot ftSlot;    /**< FreeType reusable FT_GlyphSlot glyph container object. */
 		bool ftKerningEnabled;	/**< Flag indicating the availability of font kerning data. */
 		uint8_t vertexIndex;	/**< Vertex format descriptor index. */
@@ -284,7 +283,9 @@ class FreeTypeGX {
 	public:
 		FreeTypeGX(FT_UInt pixelSize, const uint8_t* fontBuffer = NULL, FT_Long bufferSize = 0);
 		~FreeTypeGX();
+
 		FT_UInt ftPointSize;	/**< Requested size of the rendered font. */
+		FT_Face ftFace;         /**< FreeType reusable FT_Face typographic object. */
 
         void ChangeFontSize(FT_UInt pixelSize);
 		void setVertexFormat(uint8_t vertexIndex);

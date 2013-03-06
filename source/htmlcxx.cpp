@@ -38,6 +38,14 @@ void save_mem_int(float str)
     file.close();
 }
 
+void save_wmem(wstring str, const char *path)
+{
+    wofstream file;
+    file.open (path, ios::out | ios::app);
+    file << str << endl << endl;
+    file.close();
+}
+
 int checkparent(vector<string> tag, int start)
 {
     unsigned int i, k;

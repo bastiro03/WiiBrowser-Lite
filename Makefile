@@ -21,8 +21,8 @@ MPLAYER		:=	$(CURDIR)/source/mplayer
 TARGET		:=	wiibrowser
 BUILD		:=	build
 SOURCES		:=	source source/html source/css source/libwiigui source/images source/fonts source/sounds \
-				source/lang source/utils source/images/appbar source/litehtml
-INCLUDES	:=	source source/mplayer source/include
+				source/lang source/utils source/images/appbar source/litehtml source/include
+INCLUDES	:=	source source/mplayer
 
 #---------------------------------------------------------------------------------
 # options for code generation
@@ -68,6 +68,7 @@ sFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
 SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.S)))
 TTFFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.ttf)))
 LANGFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.lang)))
+CSSFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.css)))
 PNGFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.png)))
 JPGFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.jpg)))
 GIFFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.gif)))
@@ -86,6 +87,7 @@ endif
 export OFILES	:=	$(CPPFILES:.cpp=.o) $(CFILES:.c=.o) \
 					$(sFILES:.s=.o) $(SFILES:.S=.o) \
 					$(TTFFILES:.ttf=.ttf.o) $(LANGFILES:.lang=.lang.o) \
+					$(CSSFILES:.css=.css.o) \
 					$(PNGFILES:.png=.png.o) \
 					$(OGGFILES:.ogg=.ogg.o) $(PCMFILES:.pcm=.pcm.o) \
 					$(JPGFILES:.jpg=.jpg.o) \
@@ -159,6 +161,10 @@ $(OUTPUT).elf: $(OFILES)
 	$(bin2o)
 
 %.lang.o : %.lang
+	@echo $(notdir $<)
+	$(bin2o)
+
+%.css.o : %.css
 	@echo $(notdir $<)
 	$(bin2o)
 

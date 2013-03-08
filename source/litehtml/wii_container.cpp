@@ -10,18 +10,30 @@
 #include "..\httplib.h"
 #include "..\video.h"
 
-#include "libwiigui/gui.h"
 #include "wii_container.h"
+#include "common.h"
 
 using namespace std;
-extern GuiWindow *mainWindow;
 
-litehtml::wii_container::wii_container(void)
+extern GuiWindow *mainWindow;
+extern GuiImage *bgImg;
+
+wchar_t *load_text_file( const wchar_t *url );
+struct block get_image( const wchar_t *url );
+
+litehtml::wii_container::wii_container()
 {
 }
 
 litehtml::wii_container::~wii_container(void)
 {
+    clear_images();
+}
+
+void litehtml::wii_container::open_url(wstring path)
+{
+    m_doc_path = path;
+    m_base_path = path;
 }
 
 void litehtml::wii_container::set_cursor(const wchar_t* cursor)
@@ -36,7 +48,7 @@ void litehtml::wii_container::set_caption(const wchar_t* caption)
 
 litehtml::uint_ptr litehtml::wii_container::get_temp_dc()
 {
-
+	return 0;
 }
 
 void litehtml::wii_container::release_temp_dc(uint_ptr hdc)
@@ -46,27 +58,83 @@ void litehtml::wii_container::release_temp_dc(uint_ptr hdc)
 
 void litehtml::wii_container::fill_rect(uint_ptr hdc, const litehtml::position& pos, const litehtml::web_color color, const litehtml::css_border_radius& radius)
 {
+    double width = pos.right() - pos.left();
+    double height = pos.bottom() - pos.top();
 
+    GXColor col = { color.blue, color.green, color.red, color.alpha };
+    GuiImage *image = new GuiImage(width, height, col);
+    image->SetPosition(pos.left(), pos.top());
+
+    mainWindow->Append(image);
 }
 
 void litehtml::wii_container::draw_list_marker(uint_ptr hdc, list_style_type marker_type, int x, int y, int height, const web_color& color)
 {
+	int top_margin = height / 3;
 
+	int draw_x		= x;
+	int draw_y		= y + top_margin;
+	int draw_width	= height - top_margin * 2;
+	int draw_height	= height - top_margin * 2;
+
+	switch(marker_type)
+	{
+        case litehtml::list_style_type_circle:
+        case litehtml::list_style_type_disc:
+        case litehtml::list_style_type_square:
+        default:
+		{
+			fill_rect(hdc, litehtml::position(draw_x, draw_y, draw_width, draw_height), color, litehtml::css_border_radius());
+		}
+		break;
+	}
 }
 
 void litehtml::wii_container::load_image(const wchar_t* src, const wchar_t* baseurl)
 {
+	std::wstring url, str(src);
+	url = make_url(str, baseurl);
 
+	if(m_images.find(url.c_str()) == m_images.end())
+	{
+		struct block img = get_image(url.c_str());
+		if(img.size > 0 && strstr(img.type, "image"))
+		{
+		    GuiImageData *imagedata = new GuiImageData((u8 *)img.data, img.size);
+			m_images[url.c_str()] = imagedata;
+		}
+		free(img.data);
+	}
 }
 
 void litehtml::wii_container::get_image_size(const wchar_t* src, const wchar_t* baseurl, litehtml::size& sz)
 {
+	std::wstring url, str(src);
+	url = make_url(str, baseurl);
 
+	images_map::iterator img = m_images.find(url.c_str());
+	if(img != m_images.end())
+	{
+		sz.width	= img->second->GetWidth();
+		sz.height	= img->second->GetHeight();
+	}
 }
 
 void litehtml::wii_container::draw_image(uint_ptr hdc, const wchar_t* src, const wchar_t* baseurl, const litehtml::position& pos)
 {
+    std::wstring url, str(src);
+	url = make_url(str, baseurl);
 
+	images_map::iterator img = m_images.find(url.c_str());
+	if(img != m_images.end())
+	{
+        GuiImage *image = new GuiImage(img->second);
+
+        image->SetSize(pos.width, pos.height);
+        image->SetPosition(pos.x, pos.y);
+
+        mainWindow->Append(image);
+	}
 }
 
 void litehtml::wii_container::draw_borders(uint_ptr hdc, const css_borders& borders, const litehtml::position& draw_pos)
@@ -80,13 +148,71 @@ void litehtml::wii_container::draw_background(uint_ptr hdc, const wchar_t* image
 											litehtml::background_repeat repeat,
 											litehtml::background_attachment attachment)
 {
+	std::wstring url, tmp(image);
+	url = make_url(tmp, baseurl);
 
+	images_map::iterator img_i = m_images.find(url.c_str());
+	if(img_i != m_images.end())
+	{
+		GuiImageData* bgbmp = img_i->second;
+
+		litehtml::size img_sz;
+		img_sz.width	= bgbmp->GetWidth();
+		img_sz.height	= bgbmp->GetHeight();
+
+		int bg_x = draw_pos.x;
+		int bg_y = draw_pos.y;
+
+		if(bg_pos.x.units() != litehtml::css_units_percentage)
+		{
+			bg_x += (int) bg_pos.x.val();
+		} else
+		{
+			bg_x += (int) ((float) (draw_pos.width - img_sz.width) * bg_pos.x.val() / 100.0);
+		}
+
+		if(bg_pos.y.units() != litehtml::css_units_percentage)
+		{
+			bg_y += (int) bg_pos.y.val();
+		} else
+		{
+			bg_y += (int) ( (float) (draw_pos.height - img_sz.height) * bg_pos.y.val() / 100.0);
+		}
+
+		litehtml::position pos(bg_x, bg_y, bgbmp->GetWidth(), bgbmp->GetHeight());
+		draw_image(0, image, baseurl, pos);
+
+		switch(repeat)
+		{
+		case litehtml::background_repeat_no_repeat:
+		/*	draw_image(0, image, baseurl, { bg_x, bg_y, bgbmp->GetWidth(), bgbmp->GetHeight() });
+			break;*/
+
+		case litehtml::background_repeat_repeat_x:
+		/*	cairo_set_source(cr, pattern);
+			cairo_rectangle(cr, draw_pos.left(), bg_y, draw_pos.width, bgbmp->getHeight());
+			cairo_fill(cr);
+			break;*/
+
+		case litehtml::background_repeat_repeat_y:
+		/*	cairo_set_source(cr, pattern);
+			cairo_rectangle(cr, bg_x, draw_pos.top(), bgbmp->getWidth(), draw_pos.height);
+			cairo_fill(cr);
+			break;*/
+
+		case litehtml::background_repeat_repeat:
+		/*	cairo_set_source(cr, pattern);
+			cairo_rectangle(cr, draw_pos.left(), draw_pos.top(), draw_pos.width, draw_pos.height);
+			cairo_fill(cr);*/
+			break;
+		}
+	}
 }
 
 litehtml::uint_ptr litehtml::wii_container::create_font( const wchar_t* faceName, int size, int weight, litehtml::font_style italic, unsigned int decoration )
 {
-    const u8 *fontbuffer = font_regular_ttf;
-    u32	filesize = font_regular_ttf_size;
+    const u8 *fontbuffer = font_ttf;
+    u32	filesize = font_ttf_size;
 
     if (italic == litehtml::fontStyleItalic)
     {
@@ -94,6 +220,7 @@ litehtml::uint_ptr litehtml::wii_container::create_font( const wchar_t* faceName
         filesize = font_italic_ttf_size;
     }
 
+    // size = size >= get_default_font_size() ? size : get_default_font_size();
     FreeTypeGX *font = new FreeTypeGX(size, fontbuffer, filesize);
 
     return (uint_ptr) font;
@@ -123,20 +250,6 @@ int litehtml::wii_container::text_width( litehtml::uint_ptr hdc, const wchar_t* 
     return fnt->getWidth(text);
 }
 
-/*
-void litehtml::wii_container::draw_text( litehtml::uint_ptr hdc, const wchar_t* text, litehtml::uint_ptr hFont, litehtml::web_color color, const litehtml::position& pos )
-{
-    FreeTypeGX *fnt = (FreeTypeGX *)hFont;
-    double x = pos.left();
-	double y = pos.top();
-
-	GXColor col = { color.blue, color.green, color.red, color.alpha };
-	u16 style = FTGX_JUSTIFY_LEFT | FTGX_ALIGN_TOP;
-
-	fnt->drawText(x, y, text, col, style);
-}
-*/
-
 void litehtml::wii_container::draw_text( litehtml::uint_ptr hdc, const wchar_t* text, litehtml::uint_ptr hFont, litehtml::web_color color, const litehtml::position& pos )
 {
     FreeTypeGX *fnt = (FreeTypeGX *)hFont;
@@ -145,12 +258,13 @@ void litehtml::wii_container::draw_text( litehtml::uint_ptr hdc, const wchar_t* 
 
 	GXColor col = { color.blue, color.green, color.red, color.alpha };
 
-    GuiText *show = new GuiText(text, fnt->ftPointSize, col);
+    GuiText *show = new GuiText(text, 0, col);
     show->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
     show->SetPosition(x, y);
-    show->SetWrap(true, pos.right() - pos.left());
+    show->SetFont(fnt);
     show->SetEffect(EFFECT_FADE, 50);
 
+    // show->SetWrap(true, pos.right() - pos.left());
     mainWindow->Append(show);
 }
 
@@ -190,10 +304,11 @@ wchar_t *load_text_file( const wchar_t *url )
     CURL *curl_upd = curl_easy_init();
 
     char *ascii = new char[wcslen(url) + 1];
-    wcstombs(ascii, url, wcslen(url));
+    int bt = wcstombs(ascii, url, wcslen(url));
+    ascii[bt] = 0;
 
     HTML = downloadfile(curl_upd, ascii, NULL);
-    free(ascii);
+    delete(ascii);
     if(HTML.size == 0)
         return NULL;
 
@@ -202,6 +317,25 @@ wchar_t *load_text_file( const wchar_t *url )
 	free(HTML.data);
 
 	return text;
+}
+
+struct block get_image( const wchar_t *url )
+{
+    struct block HTML;
+    CURL *curl_upd = curl_easy_init();
+
+    char *ascii = new char[wcslen(url) + 1];
+    int bt = wcstombs(ascii, url, wcslen(url));
+    ascii[bt] = 0;
+
+    HTML = downloadfile(curl_upd, ascii, NULL);
+    delete(ascii);
+    if(HTML.size == 0)
+        return emptyblock;
+
+	curl_easy_cleanup(curl_upd);
+
+	return HTML;
 }
 
 wchar_t *wcsndup( const wchar_t *wideString, size_t  length )
@@ -253,7 +387,7 @@ int litehtml::wii_container::get_text_base_line( litehtml::uint_ptr hdc, litehtm
 
 int litehtml::wii_container::get_default_font_size()
 {
-	return 20;
+	return 16;
 }
 
 int litehtml::wii_container::pt_to_px( int pt )
@@ -279,7 +413,7 @@ void litehtml::wii_container::import_css( std::wstring& text, const std::wstring
 
 void litehtml::wii_container::set_base_url( const wchar_t* base_url )
 {
-	if(base_url)
+	if(base_url && base_url[0])
 	{
         wstring temp(base_url);
         m_base_path = make_url(temp, m_base_path.c_str());
@@ -316,6 +450,9 @@ void litehtml::wii_container::link( litehtml::document* doc, litehtml::element::
 
 wstring litehtml::wii_container::make_url( wstring link, const wchar_t* url )
 {
+    if(!url || !url[0])
+        url = m_base_path.c_str();
+
     wstring result;
     if (link.find(L"http://")==0 || link.find(L"https://")==0)
         return link;
@@ -384,4 +521,16 @@ void litehtml::wii_container::get_client_rect( litehtml::position& client )
 	client.y		= 0;
 	client.width	= screenwidth;
 	client.height	= screenheight;
+}
+
+void litehtml::wii_container::clear_images()
+{
+	for(images_map::iterator i = m_images.begin(); i != m_images.end(); i++)
+	{
+		if(i->second)
+		{
+			delete i->second;
+		}
+	}
+	m_images.clear();
 }

@@ -24,6 +24,7 @@ GuiImage::GuiImage()
 	stripe = 0;
 	imgType = IMAGE_DATA;
 	format = GX_TF_RGBA8;
+	clipped = false;
 }
 
 GuiImage::GuiImage(GuiImageData * img)
@@ -43,6 +44,7 @@ GuiImage::GuiImage(GuiImageData * img)
 	tileVertical = -1;
 	stripe = 0;
 	imgType = IMAGE_DATA;
+	clipped = false;
 }
 
 GuiImage::GuiImage(u8 * img, int w, int h)
@@ -57,6 +59,7 @@ GuiImage::GuiImage(u8 * img, int w, int h)
 	stripe = 0;
 	imgType = IMAGE_TEXTURE;
 	format = GX_TF_RGBA8;
+	clipped = false;
 }
 
 GuiImage::GuiImage(int w, int h, GXColor c)
@@ -70,6 +73,7 @@ GuiImage::GuiImage(int w, int h, GXColor c)
 	stripe = 0;
 	imgType = IMAGE_COLOR;
 	format = GX_TF_RGBA8;
+	clipped = false;
 
 	if(!image)
 		return;
@@ -104,6 +108,9 @@ u8 * GuiImage::GetImage()
 
 void GuiImage::SetImage(GuiImageData * img)
 {
+    if(image && imgType == IMAGE_COLOR)
+        delete image;
+
 	image = NULL;
 	width = 0;
 	height = 0;
@@ -117,8 +124,21 @@ void GuiImage::SetImage(GuiImageData * img)
 	imgType = IMAGE_DATA;
 }
 
+void GuiImage::SetClip(int x, int y, int w, int h)
+{
+    clipped = true;
+
+    clipx = x;
+    clipy = y;
+    clipw = w;
+    cliph = h;
+}
+
 void GuiImage::SetImage(u8 * img, int w, int h)
 {
+    if(image && imgType == IMAGE_COLOR)
+        delete image;
+
 	image = NULL;
 	width = 0;
 	height = 0;
@@ -131,6 +151,35 @@ void GuiImage::SetImage(u8 * img, int w, int h)
 		imgType = IMAGE_TEXTURE;
 		format = GX_TF_RGBA8;
 	}
+}
+
+void GuiImage::SetImage(int w, int h, GXColor c)
+{
+    if(image && imgType == IMAGE_COLOR)
+        delete image;
+
+	image = (u8 *)memalign (32, w * h << 2);
+	width = w;
+	height = h;
+	imgType = IMAGE_COLOR;
+	format = GX_TF_RGBA8;
+
+	if(!image)
+		return;
+
+	int x, y;
+
+	for(y=0; y < h; ++y)
+	{
+		for(x=0; x < w; ++x)
+		{
+			this->SetPixel(x, y, c);
+		}
+	}
+
+	int len = w * h << 2;
+	if(len%32) len += (32-len%32);
+	DCFlushRange(image, len);
 }
 
 void GuiImage::SetAngle(float a)
@@ -272,6 +321,9 @@ void GuiImage::Draw()
 	}
 	else
 	{
+		if(clipped)
+            Menu_ClipImg(clipx, clipy, clipw, cliph);
+
 		Menu_DrawImg(currLeft, currTop, width, height, image, imageangle, currScaleX, currScaleY, alpha, format);
 	}
 

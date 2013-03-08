@@ -12,6 +12,9 @@
 #include <gccore.h>
 
 // Fonts
+extern const u8		font_ttf[];
+extern const u32	font_ttf_size;
+
 extern const u8		font_regular_ttf[];
 extern const u32	font_regular_ttf_size;
 

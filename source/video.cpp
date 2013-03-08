@@ -165,6 +165,11 @@ void Menu_Render()
  *
  * Draws the specified image on screen using GX
  ***************************************************************************/
+void Menu_ClipImg(f32 xpos, f32 ypos, u16 width, u16 height)
+{
+    GX_SetScissor(xpos,ypos,width,height);
+}
+
 void Menu_DrawImg(f32 xpos, f32 ypos, u16 width, u16 height, u8 data[],
 	f32 degrees, f32 scaleX, f32 scaleY, u8 alpha, u8 format)
 {
@@ -220,6 +225,7 @@ void Menu_DrawImg(f32 xpos, f32 ypos, u16 width, u16 height, u8 data[],
 
 	GX_SetTevOp (GX_TEVSTAGE0, GX_PASSCLR);
 	GX_SetVtxDesc (GX_VA_TEX0, GX_NONE);
+	GX_SetScissor(0,0,vmode->fbWidth,vmode->efbHeight);
 }
 
 /****************************************************************************

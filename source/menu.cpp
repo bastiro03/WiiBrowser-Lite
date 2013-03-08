@@ -61,7 +61,7 @@ static const u8 * pointerImg[4];
 static const u8 * pointerGrabImg[4];
 
 static GuiSound * bgMusic = NULL;
-static GuiImage * bgImg = NULL;
+GuiImage * bgImg = NULL;
 
 static GuiImageData * SplashImage = NULL;
 static GuiImage * Splash = NULL;
@@ -1356,9 +1356,9 @@ jump:
 
     decode_html_entities_utf8(url, NULL);
     struct block HTML;
-    // HTML = downloadfile(curl_handle, url, NULL);
+    HTML = downloadfile(curl_handle, url, NULL);
 
-#ifndef DEBUG
+#ifdef DEBUG
     FILE *pFile = fopen ("page.htm", "rb");
     fseek (pFile, 0, SEEK_END);
     int size = ftell(pFile);
@@ -1422,15 +1422,15 @@ jump:
     string link;
     // link = DisplayHTML(&HTML, mainWindow, &childWindow, url);
 
-    pFile = fopen ("page.css", "rb");
-    fseek (pFile, 0, SEEK_END);
-    size = ftell(pFile);
-    rewind (pFile);
+    FILE *cFile = fopen ("page.css", "rb");
+    fseek (cFile, 0, SEEK_END);
+    int csize = ftell(cFile);
+    rewind (cFile);
 
-    char *data = (char*) malloc (sizeof(char)*size);
+    char *data = (char*) malloc (sizeof(char)*csize);
     if (data == NULL) exit (2);
-    fread (data, 1, size, pFile);
-    fclose(pFile);
+    fread (data, 1, csize, cFile);
+    fclose(cFile);
 
     wchar_t* css = charToWideChar(data);
     wchar_t* html_text = charToWideChar(HTML.data);
@@ -1440,9 +1440,14 @@ jump:
 
     litehtml::context m_context;
     m_context.load_master_stylesheet(css);
+    delete(css);
 
     litehtml::document::ptr m_doc;
     litehtml::wii_container wii;
+
+    wchar_t* wurl = charToWideChar(url);
+    wii.open_url(wurl);
+    delete(wurl);
 
     if(html_text)
 	{
@@ -1450,13 +1455,15 @@ jump:
 		delete html_text;
 	}
 
-    m_doc->render(screenwidth);
+    m_doc->render(screenwidth - 40);
 
+	HaltGui();
 	if(m_doc)
 	{
 		litehtml::position clip(0, 0, screenwidth, screenheight);
-		m_doc->draw(0, 0, 0, &clip);
+		m_doc->draw(0, 20, 20, &clip);
 	}
+	ResumeGui();
 
     while(1);
 

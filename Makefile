@@ -29,7 +29,7 @@ INCLUDES	:=	source source/mplayer source/include
 #---------------------------------------------------------------------------------
 
 CFLAGS		=	-g -O3 -Wall $(MACHDEP) $(INCLUDE)  \
-				-D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -Wframe-larger-than=8192
+				-D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE
 CXXFLAGS	=	-std=gnu++0x $(CFLAGS)
 LDFLAGS		=	-g $(MACHDEP) -specs=wiimc.spec -Wl
 

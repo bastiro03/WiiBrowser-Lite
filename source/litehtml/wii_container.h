@@ -8,11 +8,6 @@ namespace litehtml
 	{
 	    typedef std::map<std::wstring, GuiImageData *>	images_map;
 
-        std::wstring			    m_anchor;
-        std::wstring			    m_base_path;
-        std::wstring			    m_doc_path;
-
-        litehtml::context*		    m_context;
         litehtml::position::vector	m_clips;
         images_map				    m_images;
 
@@ -45,20 +40,20 @@ namespace litehtml
 		virtual void		draw_borders(uint_ptr hdc, const css_borders& borders, const litehtml::position& draw_pos);
 
         virtual	void		set_caption(const wchar_t* caption);
-		virtual	void		set_base_url(const wchar_t* base_url);
-		virtual	void		link(litehtml::document* doc, litehtml::element::ptr el);
-        virtual	void		on_anchor_click(const wchar_t* url, litehtml::element::ptr el);
+		virtual	void		set_base_url(const wchar_t* base_url) = 0;
+		virtual	void		link(litehtml::document* doc, litehtml::element::ptr el) = 0;
+        virtual	void		on_anchor_click(const wchar_t* url, litehtml::element::ptr el) = 0;
         virtual	void		set_cursor(const wchar_t* cursor);
 		virtual	wchar_t		toupper(const wchar_t c);
 		virtual	wchar_t		tolower(const wchar_t c);
-		virtual void		import_css(std::wstring& text, const std::wstring& url, std::wstring& baseurl, const string_vector& media);
+		virtual void		import_css(std::wstring& text, const std::wstring& url, std::wstring& baseurl, const string_vector& media) = 0;
 		virtual void		set_clip(const litehtml::position& pos, bool valid_x, bool valid_y);
 		virtual void		del_clip();
 
-        void                open_url(std::wstring path);
+        void                line_to(int xleft, int yleft, int xright, int yright, litehtml::web_color color);
 
     protected:
-        virtual std::wstring make_url(std::wstring link, const wchar_t* url);
+        virtual std::wstring make_url(std::wstring link, const wchar_t* url) = 0;
         void get_client_rect(litehtml::position& client);
         void clear_images();
 	};

@@ -223,9 +223,9 @@ void Menu_DrawImg(f32 xpos, f32 ypos, u16 width, u16 height, u8 data[],
 	GX_End();
 	GX_LoadPosMtxImm (GXmodelView2D, GX_PNMTX0);
 
+	GX_SetScissor(0,0,vmode->fbWidth,vmode->efbHeight);
 	GX_SetTevOp (GX_TEVSTAGE0, GX_PASSCLR);
 	GX_SetVtxDesc (GX_VA_TEX0, GX_NONE);
-	GX_SetScissor(0,0,vmode->fbWidth,vmode->efbHeight);
 }
 
 /****************************************************************************

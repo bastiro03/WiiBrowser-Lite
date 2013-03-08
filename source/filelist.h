@@ -24,6 +24,10 @@ extern const u32	font_bold_ttf_size;
 extern const u8		font_italic_ttf[];
 extern const u32	font_italic_ttf_size;
 
+// Css
+extern const u8		master_css[];
+extern const u32	master_css_size;
+
 // Languages
 extern const u8		en_lang[];
 extern const u32	en_lang_size;

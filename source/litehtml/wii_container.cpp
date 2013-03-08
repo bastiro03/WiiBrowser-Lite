@@ -1,13 +1,10 @@
 #include <wctype.h>
-#include <iconv.h>
 #include <algorithm>
 
 #include "..\include\litehtml.h"
-#include "..\litehtml\tokenizer.h"
 
 #include "..\FreeTypeGX.h"
 #include "..\filelist.h"
-#include "..\httplib.h"
 #include "..\video.h"
 
 #include "wii_container.h"
@@ -28,12 +25,6 @@ litehtml::wii_container::wii_container()
 litehtml::wii_container::~wii_container(void)
 {
     clear_images();
-}
-
-void litehtml::wii_container::open_url(wstring path)
-{
-    m_doc_path = path;
-    m_base_path = path;
 }
 
 void litehtml::wii_container::set_cursor(const wchar_t* cursor)
@@ -125,21 +116,88 @@ void litehtml::wii_container::draw_image(uint_ptr hdc, const wchar_t* src, const
     std::wstring url, str(src);
 	url = make_url(str, baseurl);
 
+    litehtml::position cpos;
+	if(!m_clips.empty())
+        cpos = *(m_clips.rbegin());
+
 	images_map::iterator img = m_images.find(url.c_str());
 	if(img != m_images.end())
 	{
         GuiImage *image = new GuiImage(img->second);
 
-        image->SetSize(pos.width, pos.height);
+        image->SetScaleX((float)pos.width/image->GetWidth());
+        image->SetScaleY((float)pos.height/image->GetHeight());
         image->SetPosition(pos.x, pos.y);
+
+        if(!m_clips.empty())
+            image->SetClip(cpos.x, cpos.y, cpos.width, cpos.height);
 
         mainWindow->Append(image);
 	}
+	del_clip();
+}
+
+void litehtml::wii_container::line_to(int xleft, int yleft, int xright, int yright, litehtml::web_color color)
+{
+    litehtml::position pos(xleft, yleft, xright - xleft, yright - yleft);
+    fill_rect(0, pos, color, litehtml::css_border_radius());
 }
 
 void litehtml::wii_container::draw_borders(uint_ptr hdc, const css_borders& borders, const litehtml::position& draw_pos)
 {
+	int bdr_top		= 0;
+	int bdr_bottom	= 0;
+	int bdr_left	= 0;
+	int bdr_right	= 0;
 
+	if(borders.top.width.val() != 0 && borders.top.style > litehtml::border_style_hidden)
+	{
+		bdr_top = (int) borders.top.width.val();
+	}
+	if(borders.bottom.width.val() != 0 && borders.bottom.style > litehtml::border_style_hidden)
+	{
+		bdr_bottom = (int) borders.bottom.width.val();
+	}
+	if(borders.left.width.val() != 0 && borders.left.style > litehtml::border_style_hidden)
+	{
+		bdr_left = (int) borders.left.width.val();
+	}
+	if(borders.right.width.val() != 0 && borders.right.style > litehtml::border_style_hidden)
+	{
+		bdr_right = (int) borders.right.width.val();
+	}
+
+	// draw right border
+	if(bdr_right)
+	{
+        line_to(draw_pos.right() - bdr_right, draw_pos.top() + bdr_top, draw_pos.right(), draw_pos.top(), borders.right.color);
+        line_to(draw_pos.right(), draw_pos.top(), draw_pos.right(),	draw_pos.bottom(), borders.right.color);
+        line_to(draw_pos.right(), draw_pos.bottom(), draw_pos.right() - bdr_right,	draw_pos.bottom() - bdr_bottom, borders.right.color);
+	}
+
+	// draw bottom border
+	if(bdr_bottom)
+	{
+		line_to(draw_pos.left(), draw_pos.bottom(), draw_pos.left() + bdr_left, draw_pos.bottom() - bdr_bottom, borders.bottom.color);
+		line_to(draw_pos.left() + bdr_left, draw_pos.bottom() - bdr_bottom, draw_pos.right() - bdr_right, draw_pos.bottom() - bdr_bottom, borders.bottom.color);
+		line_to(draw_pos.right() - bdr_right, draw_pos.bottom() - bdr_bottom, draw_pos.right(),	draw_pos.bottom(), borders.bottom.color);
+	}
+
+	// draw top border
+	if(bdr_top)
+	{
+        line_to(draw_pos.left(), draw_pos.top(), draw_pos.left() + bdr_left, draw_pos.top() + bdr_top, borders.top.color);
+        line_to(draw_pos.left() + bdr_left, draw_pos.top() + bdr_top, draw_pos.right() - bdr_right,	draw_pos.top() + bdr_top, borders.top.color);
+        line_to(draw_pos.right() - bdr_right,	draw_pos.top() + bdr_top, draw_pos.right(),	draw_pos.top(), borders.top.color);
+	}
+
+	// draw left border
+	if(bdr_left)
+	{
+		line_to(draw_pos.left() + bdr_left, draw_pos.top() + bdr_top, draw_pos.left(), draw_pos.top(), borders.left.color);
+		line_to(draw_pos.left(), draw_pos.top(), draw_pos.left(), draw_pos.bottom(), borders.left.color);
+		line_to(draw_pos.left(), draw_pos.bottom(), draw_pos.left() + bdr_left,	draw_pos.bottom() - bdr_bottom, borders.left.color);
+	}
 }
 
 void litehtml::wii_container::draw_background(uint_ptr hdc, const wchar_t* image, const wchar_t* baseurl,
@@ -150,6 +208,7 @@ void litehtml::wii_container::draw_background(uint_ptr hdc, const wchar_t* image
 {
 	std::wstring url, tmp(image);
 	url = make_url(tmp, baseurl);
+	set_clip(draw_pos, 1, 1);
 
 	images_map::iterator img_i = m_images.find(url.c_str());
 	if(img_i != m_images.end())
@@ -254,7 +313,7 @@ void litehtml::wii_container::draw_text( litehtml::uint_ptr hdc, const wchar_t* 
 {
     FreeTypeGX *fnt = (FreeTypeGX *)hFont;
     double x = pos.left();
-	double y = pos.top();
+	double y = pos.top() + 15;
 
 	GXColor col = { color.blue, color.green, color.red, color.alpha };
 
@@ -266,57 +325,6 @@ void litehtml::wii_container::draw_text( litehtml::uint_ptr hdc, const wchar_t* 
 
     // show->SetWrap(true, pos.right() - pos.left());
     mainWindow->Append(show);
-}
-
-wchar_t* converIconv(const char* src, const char *charset)
-{
-    size_t size = strlen(src) + 1;
-    wchar_t *dst = new (std::nothrow) wchar_t[size];
-    char *input = new (std::nothrow) char[size];
-
-    if (!dst || !input)
-    return NULL;
-    memcpy(input, src, size);
-
-    size_t outlen = size * sizeof(wchar_t);
-    char *pIn = (char *) input;
-    char *pOut = (char *) dst;
-
-    iconv_t conv = iconv_open ("WCHAR_T", charset);
-    if (conv == (iconv_t) -1)
-        return NULL; // Charset not available
-
-    size_t nconv = iconv(conv, &pIn, &size, &pOut, &outlen);
-    if (nconv == (size_t) -1)
-        return NULL; // Something went wrong
-
-    iconv_close(conv);
-    delete(input);
-
-    if (outlen >= sizeof(wchar_t))
-        *((wchar_t *) pOut) = L'\0';
-    return (wchar_t *) dst;
-}
-
-wchar_t *load_text_file( const wchar_t *url )
-{
-    struct block HTML;
-    CURL *curl_upd = curl_easy_init();
-
-    char *ascii = new char[wcslen(url) + 1];
-    int bt = wcstombs(ascii, url, wcslen(url));
-    ascii[bt] = 0;
-
-    HTML = downloadfile(curl_upd, ascii, NULL);
-    delete(ascii);
-    if(HTML.size == 0)
-        return NULL;
-
-	curl_easy_cleanup(curl_upd);
-	wchar_t *text = converIconv(HTML.data, "UTF-8");
-	free(HTML.data);
-
-	return text;
 }
 
 struct block get_image( const wchar_t *url )
@@ -338,46 +346,6 @@ struct block get_image( const wchar_t *url )
 	return HTML;
 }
 
-wchar_t *wcsndup( const wchar_t *wideString, size_t  length )
-{
-    /* Local variables. */
-    wchar_t  *duplicate ;
-
-    duplicate = (wchar_t *) calloc (length + 1, sizeof (wchar_t)) ;
-    if (duplicate == NULL) {
-        return (NULL) ;
-    }
-
-    if (wideString == NULL) {
-        duplicate[0] = 0 ;
-    } else {
-        wcsncpy (duplicate, wideString, length) ;
-        duplicate[length] = 0 ;
-    }
-
-    return (duplicate) ;
-}
-
-wchar_t *getHost( wchar_t *url )
-{
-    wchar_t *p = wcschr(url, L'/')+2;
-    wchar_t *c = wcschr(p, L'/');
-    if (c != NULL)
-        return wcsndup(url,(c+1)-url);
-    return url;
-}
-
-wstring getRoot( wchar_t *url )
-{
-    wchar_t *i = wcschr(url, L'/');
-    wchar_t *p = wcsrchr(i+2, L'/');
-    wstring root(url);
-    if (p != NULL)
-        root.assign(url,(p+1)-url);
-    else root.append(L"/");
-    return root;
-}
-
 int litehtml::wii_container::get_text_base_line( litehtml::uint_ptr hdc, litehtml::uint_ptr hFont )
 {
     FreeTypeGX *fnt = (FreeTypeGX *)hFont;
@@ -393,86 +361,6 @@ int litehtml::wii_container::get_default_font_size()
 int litehtml::wii_container::pt_to_px( int pt )
 {
     return (pt * 96) / 72;
-}
-
-void litehtml::wii_container::import_css( std::wstring& text, const std::wstring& url, std::wstring& baseurl, const string_vector& media )
-{
-	if(media.empty() || std::find(media.begin(), media.end(), std::wstring(L"all")) != media.end() || std::find(media.begin(), media.end(), std::wstring(L"screen")) != media.end())
-	{
-		std::wstring css_url;
-		css_url = make_url(url, baseurl.c_str());
-		wchar_t *css = load_text_file(css_url.c_str());
-		if(css)
-		{
-			baseurl = css_url;
-			text = css;
-			delete css;
-		}
-	}
-}
-
-void litehtml::wii_container::set_base_url( const wchar_t* base_url )
-{
-	if(base_url && base_url[0])
-	{
-        wstring temp(base_url);
-        m_base_path = make_url(temp, m_base_path.c_str());
-	}
-	else
-	{
-		m_base_path = m_doc_path;
-	}
-}
-
-void litehtml::wii_container::link( litehtml::document* doc, litehtml::element::ptr el )
-{
-	const wchar_t* rel = el->get_attr(L"rel");
-	if(rel && !wcscmp(rel, L"stylesheet"))
-	{
-		const wchar_t* media = el->get_attr(L"media", L"screen");
-		if(media && (wcsstr(media, L"screen") || wcsstr(media, L"all")))
-		{
-			const wchar_t* href = el->get_attr(L"href");
-			if(href)
-			{
-				std::wstring url, temp(href);
-				url = make_url(temp, m_base_path.c_str());
-				wchar_t *css = load_text_file(url.c_str());
-				if(css)
-				{
-					doc->add_stylesheet(css, url.c_str());
-					delete css;
-				}
-			}
-		}
-	}
-}
-
-wstring litehtml::wii_container::make_url( wstring link, const wchar_t* url )
-{
-    if(!url || !url[0])
-        url = m_base_path.c_str();
-
-    wstring result;
-    if (link.find(L"http://")==0 || link.find(L"https://")==0)
-        return link;
-    else if (link.at(0) == L'/' && link.at(1) == L'/')
-        result.assign(L"http:"); // https?
-    else if (link.at(0) == L'/')
-    {
-        result = getHost((wchar_t *)url);
-        if (*result.rbegin() == '/')
-            link.erase(link.begin());
-    }
-    else result = getRoot((wchar_t *)url);
-    result.append(link);
-    return result;
-}
-
-void litehtml::wii_container::on_anchor_click( const wchar_t* url, litehtml::element::ptr el )
-{
-    wstring temp(url);
-    m_anchor = make_url(temp, m_base_path.c_str());
 }
 
 wchar_t litehtml::wii_container::toupper( const wchar_t c )

@@ -26,7 +26,7 @@
 
 #include "config.h"
 #include "include/litehtml.h"
-#include "litehtml/wii_container.h"
+#include "litehtml/viewwnd.h"
 
 extern "C" {
 #include "entities.h"
@@ -1405,7 +1405,7 @@ jump:
 
     if (!history || strcmp(history->url.c_str(),url))
         history=InsUrl(history,url);
-    sleep(1);
+    free(HTML.data);
 
     GuiWindow childWindow(screenwidth, screenheight);
     childWindow.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
@@ -1421,49 +1421,21 @@ jump:
 
     string link;
     // link = DisplayHTML(&HTML, mainWindow, &childWindow, url);
-
-    FILE *cFile = fopen ("page.css", "rb");
-    fseek (cFile, 0, SEEK_END);
-    int csize = ftell(cFile);
-    rewind (cFile);
-
-    char *data = (char*) malloc (sizeof(char)*csize);
-    if (data == NULL) exit (2);
-    fread (data, 1, csize, cFile);
-    fclose(cFile);
-
-    wchar_t* css = charToWideChar(data);
-    wchar_t* html_text = charToWideChar(HTML.data);
-
-    free(data);
-    free(HTML.data);
+    wchar_t* css = charToWideChar((char *)master_css);
 
     litehtml::context m_context;
     m_context.load_master_stylesheet(css);
     delete(css);
 
-    litehtml::document::ptr m_doc;
-    litehtml::wii_container wii;
-
     wchar_t* wurl = charToWideChar(url);
-    wii.open_url(wurl);
+    CHTMLViewWnd wii(&m_context);
+    wii.open(wurl);
     delete(wurl);
 
-    if(html_text)
-	{
-		m_doc = litehtml::document::createFromString(html_text, &wii, &m_context);
-		delete html_text;
-	}
-
-    m_doc->render(screenwidth - 40);
-
-	HaltGui();
-	if(m_doc)
-	{
-		litehtml::position clip(0, 0, screenwidth, screenheight);
-		m_doc->draw(0, 20, 20, &clip);
-	}
-	ResumeGui();
+    litehtml::position clip(0, 0, screenwidth, screenheight);
+    HaltGui();
+    wii.OnPaint(clip);
+    ResumeGui();
 
     while(1);
 

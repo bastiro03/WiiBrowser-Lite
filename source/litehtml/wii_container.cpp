@@ -12,9 +12,6 @@
 
 using namespace std;
 
-extern GuiWindow *mainWindow;
-extern GuiImage *bgImg;
-
 wchar_t *load_text_file( const wchar_t *url );
 struct block get_image( const wchar_t *url );
 
@@ -49,14 +46,12 @@ void litehtml::wii_container::release_temp_dc(uint_ptr hdc)
 
 void litehtml::wii_container::fill_rect(uint_ptr hdc, const litehtml::position& pos, const litehtml::web_color color, const litehtml::css_border_radius& radius)
 {
-    double width = pos.right() - pos.left();
-    double height = pos.bottom() - pos.top();
+    GXColor col = { color.red, color.green, color.blue, color.alpha };
+    GuiImage *image = new GuiImage(pos.width, pos.height, col);
+    image->SetPosition(pos.x, pos.y);
 
-    GXColor col = { color.blue, color.green, color.red, color.alpha };
-    GuiImage *image = new GuiImage(width, height, col);
-    image->SetPosition(pos.left(), pos.top());
-
-    mainWindow->Append(image);
+    m_list.push_back(image);
+    // m_wind->Append(image);
 }
 
 void litehtml::wii_container::draw_list_marker(uint_ptr hdc, list_style_type marker_type, int x, int y, int height, const web_color& color)
@@ -132,7 +127,8 @@ void litehtml::wii_container::draw_image(uint_ptr hdc, const wchar_t* src, const
         if(!m_clips.empty())
             image->SetClip(cpos.x, cpos.y, cpos.width, cpos.height);
 
-        mainWindow->Append(image);
+		// m_wind->Append(image);
+		m_list.push_back(image);
 	}
 	del_clip();
 }
@@ -315,16 +311,17 @@ void litehtml::wii_container::draw_text( litehtml::uint_ptr hdc, const wchar_t* 
     double x = pos.left();
 	double y = pos.top() + 15;
 
-	GXColor col = { color.blue, color.green, color.red, color.alpha };
+	GXColor col = { color.red, color.green, color.blue, color.alpha };
 
     GuiText *show = new GuiText(text, 0, col);
     show->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
     show->SetPosition(x, y);
     show->SetFont(fnt);
-    show->SetEffect(EFFECT_FADE, 50);
 
+    show->SetEffect(EFFECT_FADE, 50);
     // show->SetWrap(true, pos.right() - pos.left());
-    mainWindow->Append(show);
+    // m_wind->Append(show);
+    m_list.push_back(show);
 }
 
 struct block get_image( const wchar_t *url )

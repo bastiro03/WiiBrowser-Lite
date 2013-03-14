@@ -1,5 +1,6 @@
 #pragma once
 #include "libwiigui/gui.h"
+#include "list"
 
 namespace litehtml
 {
@@ -8,10 +9,11 @@ namespace litehtml
 	{
 	    typedef std::map<std::wstring, GuiImageData *>	images_map;
 
+    public:
         litehtml::position::vector	m_clips;
         images_map				    m_images;
+        std::list<GuiElement *>     m_list;
 
-    public:
         wii_container();
 		virtual ~wii_container();
 

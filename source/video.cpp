@@ -259,20 +259,20 @@ void Menu_DrawRectangle(f32 x, f32 y, f32 width, f32 height, GXColor color, u8 f
 int DrawMPlayerGui()
 {
 	UpdatePads();
-	MPlayerInput();
+	// MPlayerInput();
 
 	if(0 /* !drawGui */)
 		return 0; // always draw GUI
 
-	ResetVideo_Menu(); // reconfigure GX for GUI
+	// ResetVideo_Menu(); // reconfigure GX for GUI
 	DoMPlayerGuiDraw(); // draw GUI
 	return 1;
 }
 
 void DrawForegroundGui()
 {
-	UpdatePads();
-	ResetVideo_Menu(); // reconfigure GX for GUI
+	// UpdatePads();
+	// ResetVideo_Menu(); // reconfigure GX for GUI
 	UpdatePointer(); // draw GUI
 }
 

@@ -23,10 +23,7 @@
 #include "filelist.h"
 #include "filebrowser.h"
 #include "utils/mem2_manager.h"
-
 #include "config.h"
-#include "include/litehtml.h"
-#include "litehtml/viewwnd.h"
 
 extern "C" {
 #include "entities.h"
@@ -61,7 +58,7 @@ static const u8 * pointerImg[4];
 static const u8 * pointerGrabImg[4];
 
 static GuiSound * bgMusic = NULL;
-GuiImage * bgImg = NULL;
+static GuiImage * bgImg = NULL;
 
 static GuiImageData * SplashImage = NULL;
 static GuiImage * Splash = NULL;
@@ -69,7 +66,7 @@ static GuiImage * videoImg = NULL;
 
 static GuiWindow * guiWindow = NULL;
 static GuiWindow * videoWindow = NULL;
-GuiWindow * mainWindow = NULL;
+static GuiWindow * mainWindow = NULL;
 
 static lwp_t guithread = LWP_THREAD_NULL;
 static lwp_t updatethread = LWP_THREAD_NULL;
@@ -205,7 +202,6 @@ extern "C" void DoMPlayerGuiDraw()
     mainWindow->Update(&userInput[0]);
 }
 
-#ifdef MPLAYER
 void UpdatePointer()
 {
     if(userInput[0].wpad->ir.valid)
@@ -213,6 +209,7 @@ void UpdatePointer()
                      96, 96, pointer[0]->GetImage(), userInput[0].wpad->ir.angle, 1, 1, 255, GX_TF_RGBA8);
 }
 
+#ifdef MPLAYER
 /****************************************************************************
  * LoadYouTubeFile
  *
@@ -1411,33 +1408,14 @@ jump:
     childWindow.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
     childWindow.SetPosition(0,0);
 
-    /*
     HaltGui();
     mainWindow->SetState(STATE_DISABLED);
     mainWindow->Append(&childWindow);
     mainWindow->ChangeFocus(&childWindow);
     ResumeGui();
-    */
 
     string link;
-    // link = DisplayHTML(&HTML, mainWindow, &childWindow, url);
-    wchar_t* css = charToWideChar((char *)master_css);
-
-    litehtml::context m_context;
-    m_context.load_master_stylesheet(css);
-    delete(css);
-
-    wchar_t* wurl = charToWideChar(url);
-    CHTMLViewWnd wii(&m_context);
-    wii.open(wurl);
-    delete(wurl);
-
-    litehtml::position clip(0, 0, screenwidth, screenheight);
-    HaltGui();
-    wii.OnPaint(clip);
-    ResumeGui();
-
-    while(1);
+    link = DisplayHTML(&HTML, mainWindow, &childWindow, url);
 
     HaltGui();
     mainWindow->Remove(&childWindow);

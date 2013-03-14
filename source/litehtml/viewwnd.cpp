@@ -17,8 +17,7 @@ wchar_t *load_text_file( const wchar_t *url, bool use_iconv )
     int bt = wcstombs(ascii, url, wcslen(url));
     ascii[bt] = 0;
 
-    FILE *file = fopen("c.txt", "wb");
-    HTML = downloadfile(curl_upd, ascii, file);
+    HTML = downloadfile(curl_upd, ascii, NULL);
     delete(ascii);
     if(HTML.size == 0)
         return NULL;
@@ -36,7 +35,7 @@ wchar_t *load_text_file( const wchar_t *url, bool use_iconv )
 
 enum
 {
-    SB_LINEDOWN,
+    SB_LINEDOWN = 0,
     SB_PAGEDOWN,
     SB_LINEUP,
     SB_PAGEUP,
@@ -61,11 +60,16 @@ void CHTMLViewWnd::OnCreate()
 
 }
 
-void CHTMLViewWnd::OnPaint( litehtml::position clip )
+void CHTMLViewWnd::SetClip( litehtml::position clip )
+{
+    m_clip = clip;
+}
+
+void CHTMLViewWnd::OnPaint()
 {
 	if(m_doc)
 	{
-		m_doc->draw(0, -m_left, -m_top, &clip);
+		m_doc->draw(0, -m_left, -m_top, &m_clip);
 	}
 }
 
@@ -301,8 +305,8 @@ void CHTMLViewWnd::OnVScroll( int pos, int flags )
 
 	if(newTop != m_top)
 	{
-		// ScrollWindowEx(m_hWnd, 0, m_top - newTop, NULL, NULL, NULL, NULL, SW_INVALIDATE | SW_ERASE);
 		m_top  = newTop;
+		OnPaint();
 	}
 }
 
@@ -374,7 +378,7 @@ void CHTMLViewWnd::OnLButtonDown( int x, int y )
 	}
 }
 
-void CHTMLViewWnd::OnLButtonUp( int x, int y )
+wchar_t *CHTMLViewWnd::OnLButtonUp( int x, int y )
 {
 	if(m_doc)
 	{
@@ -391,9 +395,10 @@ void CHTMLViewWnd::OnLButtonUp( int x, int y )
 		}
 		if(!m_anchor.empty())
 		{
-			open(m_anchor.c_str());
+			return (wchar_t *)m_anchor.c_str();
 		}
 	}
+	return NULL;
 }
 
 void CHTMLViewWnd::back()

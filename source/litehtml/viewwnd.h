@@ -7,7 +7,6 @@ using namespace std;
 
 class CHTMLViewWnd : public wii_container
 {
-	litehtml::document::ptr	m_doc;
 	int						m_top;
 	int						m_left;
 	int						m_max_top;
@@ -18,8 +17,11 @@ class CHTMLViewWnd : public wii_container
 	std::wstring			m_anchor;
 	litehtml::string_vector	m_history_back;
 	litehtml::string_vector	m_history_forward;
+	litehtml::position      m_clip;
 
 public:
+	litehtml::document::ptr	m_doc;
+
 	CHTMLViewWnd(litehtml::context* ctx);
 	virtual ~CHTMLViewWnd(void);
 
@@ -36,15 +38,18 @@ public:
 	virtual	void		on_anchor_click(const wchar_t* url, litehtml::element::ptr el);
 
 	virtual void		OnCreate();
-	virtual void		OnPaint(litehtml::position clip);
+	virtual void		OnPaint();
+	virtual void        SetClip(litehtml::position clip);
 	virtual void		OnSize(int width, int height);
 	virtual void		OnDestroy();
 	virtual void		OnVScroll(int pos, int flags);
 	virtual void		OnKeyDown(int vKey);
 	virtual void		OnMouseMove(int x, int y);
 	virtual void		OnLButtonDown(int x, int y);
-	virtual void		OnLButtonUp(int x, int y);
+	virtual wchar_t*    OnLButtonUp(int x, int y);
 	virtual void		OnMouseLeave();
+
+	void                set_wind(GuiWindow *main);
 
 protected:
 	virtual std::wstring make_url(std::wstring link, const wchar_t* url);

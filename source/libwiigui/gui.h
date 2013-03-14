@@ -682,7 +682,7 @@ class GuiImage : public GuiElement
 		//!Does not alter the image data
 		//!\param s Alpha amount to draw over the image
 		void SetStripe(int s);
-	protected:
+	// protected:
 		int imgType; //!< Type of image data (IMAGE_TEXTURE, IMAGE_COLOR, IMAGE_DATA)
 		u8 * image; //!< Poiner to image data. May be shared with GuiImageData data
 		u8 format; //!< Texture format

@@ -303,7 +303,7 @@ void GuiWindow::MoveSelectionHor(int dir)
 		top = _elements.at(selected)->GetTop();
 	}
 
-	
+
 	// look for a button on the same row, to the left/right
 	for (i = 0; i < elemSize; ++i)
 	{

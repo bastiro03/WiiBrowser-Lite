@@ -1,9 +1,6 @@
 #include <stdio.h>
 #include "html.h"
 #include "config.h"
-
-#include "include/litehtml.h"
-#include "litehtml/viewwnd.h"
 #define LEN 15
 
 enum html htm;
@@ -82,7 +79,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
 {
     static lwp_t thread = LWP_THREAD_NULL;
     int type = knownType(HTML->type);
-    int coordX = 0, coordY = 0, offset = 0, choice = 0;
+    int coordX = 0, coordY, offset = 0, choice = 0;
     bool done = false;
 
     GuiWindow *scrollWindow = new GuiWindow(50, screenheight-80);
@@ -94,13 +91,12 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
     GuiImage *image=NULL;
 
     GuiButton *btndown=NULL, *btnup=NULL;
-    list<GuiElement *> l1;
-    list<GuiElement *>::iterator lista;
-
+    Lista l1;
+    Lista::iterator lista;
     ListaDiTesto text=InitText();
     ListaDiBottoni bottone, btn=InitButton();
     Indice first=NULL, last=NULL, ext=NULL, Index=InitIndex();
-    // threadState=THREAD_RUN;
+    threadState=THREAD_RUN;
     img=InitImg();
 
     GuiSound *btnSoundOver= new GuiSound(button_over_pcm, button_over_pcm_size, SOUND_PCM);
@@ -129,35 +125,20 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
 
     if (type == WEB)
     {
-        // LWP_CreateThread (&thread, DownloadImage, (void*)url, NULL, 0, 70);
-        wchar_t* css = charToWideChar((char *)master_css);
-
-        litehtml::context m_context;
-        m_context.load_master_stylesheet(css);
-        delete(css);
-
-        wchar_t* wurl = charToWideChar(url);
-        CHTMLViewWnd wii(&m_context);
-        wii.open(wurl);
-        delete(wurl);
-
-        litehtml::position clip(0, 0, screenwidth, wii.m_doc->height());
-        wii.SetClip(clip);
-        wii.OnPaint();
-
-        l1 = wii.m_list;
-        lista = l1.begin();
+        l1=getTag((char*)HTML->data);
+        lista=l1.begin();
+        LWP_CreateThread (&thread, DownloadImage, (void*)url, NULL, 0, 70);
 
         unsigned int i;
         while (!choice)
         {
             Clear(mainWindow, Index, &first, &last, ext);
-            coordY=Index ? Index->elem->GetYPosition()+Index->elem->GetHeight() : 0;
+            coordY=Index ? Index->elem->GetYPosition()+Index->screenSize : 40;
             if (!ext && Index) ext=Index;
 
             if (first && first->prox)
             {
-                if (first->prox->elem->GetYPosition()+first->prox->elem->GetHeight()>=0)
+                if (first->prox->elem->GetYPosition()+first->prox->screenSize>=0)
                 {
                     first->prox->elem->SetVisible(true);
                     first->prox->elem->SetEffect(EFFECT_FADE, 50);
@@ -177,11 +158,198 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
 
             else if (lista!=l1.end() && coordY<screenheight)
             {
-                HaltGui();
-                mainWindow->Append(*lista);
-                ResumeGui();
-                Index=InsIndex(Index);
-                Index->elem=*lista;
+                if (lista->name=="title" && !lista->value.empty())
+                {
+                    text=InsText(text);
+                    text->txt = new GuiText((char*)lista->value[0].text.c_str(), 30, (GXColor)
+                    {
+                        0, 0, 0, 255
+                    });
+                    text->txt->SetOffset(&coordX);
+                    text->txt->SetAlignment(ALIGN_MIDDLE, ALIGN_TOP);
+                    text->txt->SetPosition(coordX+screenwidth/2, coordY);
+                    text->txt->SetWrap(true, 400);
+                    text->txt->SetEffect(EFFECT_FADE, 50);
+                    HaltGui();
+                    mainWindow->Append(text->txt);
+                    ResumeGui();
+                    Index=InsIndex(Index);
+                    Index->elem=text->txt;
+                    Index->screenSize=10+30*text->txt->GetLinesCount();
+                }
+
+                else if (lista->name=="a")
+                {
+                    for(i=0; i<lista->value.size(); i++)
+                    {
+                        btn=InsButton(btn);
+                        btn->label=new GuiText((char*)lista->value[i].text.c_str(), 20, (GXColor)
+                        {
+                            0, 0, 255, 255
+                        });
+                        btn->label->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+                        btn->label->SetSpace(false);
+                        btn->label->SetModel(ANCHOR);
+                        btn->label->SetOffset(&coordX);
+                        if (offset >= (screenwidth-80))
+                        {
+                            coordY=Index ? Index->elem->GetYPosition()+Index->screenSize : 40;
+                            offset=offset % (screenwidth-80);
+                        }
+                        btn->label->SetWrap(true, screenwidth-80-offset);
+                        SetFont(btn->label, lista->value[i].mode);
+                        btn->label->SetPosition(0,0);
+
+                        btn->tooltip=new GuiTooltip(lista->attribute.c_str());
+                        btn->btn=new GuiButton(btn->label->GetTextWidth(), 20);
+                        btn->btn->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+                        btn->btn->SetPosition(coordX+40+offset, coordY);
+                        btn->btn->SetLabel(btn->label);
+
+                        btn->btn->SetSoundOver(btnSoundOver);
+                        btn->btn->SetTrigger(trigA);
+                        btn->url.assign(lista->attribute);
+                        btn->btn->SetTooltip(btn->tooltip);
+                        btn->btn->SetEffect(EFFECT_FADE, 50);
+
+                        HaltGui();
+                        mainWindow->Append(btn->btn);
+                        ResumeGui();
+                        Index=InsIndex(Index);
+                        Index->elem=btn->btn;
+                        offset+=btn->label->GetTextWidth();
+                        Index->screenSize=(offset/(screenwidth-80))*25;
+                    }
+                }
+
+                else if (lista->name=="img" && !lista->value.empty() && lista->value[0].text.length()>0)
+                {
+                    string tmp=adjustUrl(lista->value[0].text, url);
+                    if (lista->attribute.length()!=0)
+                    {
+                        img=InsImg(img);
+                        img->imgdata=new GuiImageData(NULL, 0);
+                        img->img=new GuiImage(img->imgdata);
+                        img->img->SetPosition(coordX+40, coordY);
+                        img->tag=&(*lista);
+                        HaltGui();
+                        mainWindow->Append(img->img);
+                        ResumeGui();
+                        Index=InsIndex(Index);
+                        Index->elem=img->img;
+                        Index->screenSize=atoi(lista->attribute.c_str())+5;
+                        Index->content=null;
+                    }
+                    else
+                    {
+                        HaltThread(thread);
+                        struct block IMAGE = downloadfile(curl_handle, tmp.c_str(), NULL);
+                        if(IMAGE.size>0 && strstr(IMAGE.type, "image"))
+                        {
+                            img=InsImg(img);
+                            img->imgdata=new GuiImageData((u8*)IMAGE.data, IMAGE.size);
+                            img->img=new GuiImage(img->imgdata);
+                            img->img->SetPosition(coordX+40, coordY);
+                            img->img->SetEffect(EFFECT_FADE, 50);
+                            HaltGui();
+                            mainWindow->Append(img->img);
+                            ResumeGui();
+                            Index=InsIndex(Index);
+                            Index->elem=img->img;
+                            Index->screenSize=img->img->GetHeight()+5;
+                            Index->content=null;
+                        }
+                        free(IMAGE.data);
+                        ResumeThread(thread);
+                    }
+                }
+
+                else if (lista->name=="form")
+                {
+                    btn=InsButton(btn);
+                    btn->refs=&(*lista);
+                    GuiImage *TextboxImg=new GuiImage(&Textbox);
+                    btn->btn=new GuiButton(TextboxImg->GetWidth(), TextboxImg->GetHeight());
+                    btn->btn->SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
+                    btn->btn->SetPosition(coordX, coordY);
+                    btn->btn->SetImage(TextboxImg);
+
+                    btn->btn->SetSoundOver(btnSoundOver);
+                    btn->btn->SetTrigger(trigA);
+                    btn->btn->SetEffectGrow();
+
+                    btn->btn->SetEffect(EFFECT_FADE, 50);
+                    HaltGui();
+                    mainWindow->Append(btn->btn);
+                    ResumeGui();
+                    Index=InsIndex(Index);
+                    Index->elem=btn->btn;
+                    Index->screenSize=60;
+                }
+
+                else if (lista->name=="meta")
+                {
+                    if (!lista->value.empty())
+                        choice = HandleMeta(lista, &link, HTML);
+                }
+
+                else if (lista->name=="base")
+                {
+                    snprintf(url, 256, lista->attribute.c_str());
+                }
+
+                else if (lista->name=="return")
+                {
+                    if ((++lista)!=l1.end() && lista->name!="p" && lista->name!="return")
+                    {
+                        if (Index)
+                            Index->screenSize+=25;
+                        offset=0;
+                    }
+                    lista--;
+                }
+
+                else if (lista->name=="p")
+                {
+                    if ((++lista)!=l1.end() && lista->name!="p" && lista->name!="return")
+                    {
+                        if (Index)
+                            Index->screenSize+=50;
+                        offset=0;
+                    }
+                    lista--;
+                }
+
+                else
+                {
+                    for(i=0; i<lista->value.size(); i++)
+                    {
+                        text=InsText(text);
+                        text->txt = new GuiText((char*)lista->value[i].text.c_str(), 20, (GXColor)
+                        {
+                            0, 0, 0, 255
+                        });
+                        text->txt->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+                        text->txt->SetSpace(false);
+                        text->txt->SetOffset(&coordX);
+                        if (offset >= (screenwidth-80))
+                        {
+                            coordY=Index ? Index->elem->GetYPosition()+Index->screenSize : 40;
+                            offset=offset % (screenwidth-80);
+                        }
+                        text->txt->SetPosition(coordX+40+offset, coordY);
+                        text->txt->SetWrap(true, screenwidth-80-offset);
+                        text->txt->SetEffect(EFFECT_FADE, 50);
+                        SetFont(text->txt, lista->value[i].mode);
+                        HaltGui();
+                        mainWindow->Append(text->txt);
+                        ResumeGui();
+                        offset+=text->txt->GetTextWidth();
+                        Index=InsIndex(Index);
+                        Index->elem=text->txt;
+                        Index->screenSize=(offset/(screenwidth-80))*25;
+                    }
+                }
                 lista++;
             }
 
@@ -206,25 +374,20 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                 ResumeGui();
             }
 
-            if (userInput[0].wpad->btns_d & WPAD_BUTTON_A) {
-                if(userInput[0].wpad->ir.valid)
-                {
-                    wii.OnLButtonDown(userInput[0].wpad->ir.x, userInput[0].wpad->ir.y);
-                    wchar_t *wlink = wii.OnLButtonUp(userInput[0].wpad->ir.x, userInput[0].wpad->ir.y);
-                    if (wlink)
-                    {
-                        char *ascii = new char[wcslen(wlink) + 1];
-                        int bt = wcstombs(ascii, wlink, wcslen(wlink));
-                        ascii[bt] = 0;
-
-                        link.assign(ascii);
-                        choice = 1;
-                    }
-                }
-            }
-
             HandleHtmlPad(&coordX, btnup, btndown, ext, Index, mainWindow);
             HandleMenuBar(&link, url, &choice, 0, mainWindow, parentWindow);
+
+            for (bottone=btn; !NoButton(bottone); bottone=bottone->prox)
+            {
+                if(bottone->btn->GetState() == STATE_CLICKED)
+                {
+                    bottone->btn->ResetState();
+                    choice = 1;
+                    if (bottone->refs)
+                        choice=HandleForm(parentWindow, mainWindow, bottone);
+                    if (choice) link.assign(bottone->url);
+                }
+            }
         }
         l1.clear();
     }
@@ -316,7 +479,7 @@ void Clear(GuiWindow* mainWindow, Indice Index, Indice *first, Indice *last, Ind
 {
     if (NoIndex(*first)) *first=ext;
     if (NoIndex(*last)) *last=Index;
-    if (*first && (*first)->elem->GetYPosition()+(*first)->elem->GetHeight() <0)
+    if (*first && (*first)->elem->GetYPosition()+(*first)->screenSize <0)
     {
         (*first)->elem->SetVisible(false);
         *first=(*first)->prec;

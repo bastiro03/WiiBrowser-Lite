@@ -21,7 +21,7 @@ MPLAYER		:=	$(CURDIR)/source/mplayer
 TARGET		:=	wiibrowser
 BUILD		:=	build
 SOURCES		:=	source source/html source/css source/libwiigui source/images source/fonts source/sounds \
-				source/lang source/utils source/images/appbar source/litehtml source/include
+				source/lang source/utils source/images/appbar
 INCLUDES	:=	source source/mplayer
 
 #---------------------------------------------------------------------------------
@@ -29,17 +29,18 @@ INCLUDES	:=	source source/mplayer
 #---------------------------------------------------------------------------------
 
 CFLAGS		=	-g -O3 -Wall $(MACHDEP) $(INCLUDE)  \
-				-D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE
+				-D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -Wframe-larger-than=8192
 CXXFLAGS	=	-std=gnu++0x $(CFLAGS)
 LDFLAGS		=	-g $(MACHDEP) -specs=wiimc.spec -Wl
 
 #---------------------------------------------------------------------------------
 # any extra libraries we wish to link with the project
 #---------------------------------------------------------------------------------
-LIBS    := -lmplayerwii -lavformat -lavcodec -lswscale -lavutil \
-                        -lfribidi -ljpeg -liconv -ldi -lpng -lz \
-						-lcurl -lcyassl -lnetport -lasnd -lvorbisidec \
-                        -lfat -lwiiuse -lwiikeyboard -lbte -logc -lfreetype \
+LIBS	:=	-lfribidi -ljpeg -liconv -ldi -lpng -lz \
+				-lcurl -lcyassl -lnetport -lasnd -lvorbisidec \
+					-lfat -lwiiuse -lwiikeyboard -lbte -logc -lfreetype \
+
+# -lmplayerwii -lavformat -lavcodec -lswscale -lavutil \
 
 #---------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level containing
@@ -68,7 +69,6 @@ sFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
 SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.S)))
 TTFFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.ttf)))
 LANGFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.lang)))
-CSSFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.css)))
 PNGFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.png)))
 JPGFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.jpg)))
 GIFFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.gif)))
@@ -87,7 +87,6 @@ endif
 export OFILES	:=	$(CPPFILES:.cpp=.o) $(CFILES:.c=.o) \
 					$(sFILES:.s=.o) $(SFILES:.S=.o) \
 					$(TTFFILES:.ttf=.ttf.o) $(LANGFILES:.lang=.lang.o) \
-					$(CSSFILES:.css=.css.o) \
 					$(PNGFILES:.png=.png.o) \
 					$(OGGFILES:.ogg=.ogg.o) $(PCMFILES:.pcm=.pcm.o) \
 					$(JPGFILES:.jpg=.jpg.o) \
@@ -161,10 +160,6 @@ $(OUTPUT).elf: $(OFILES)
 	$(bin2o)
 
 %.lang.o : %.lang
-	@echo $(notdir $<)
-	$(bin2o)
-
-%.css.o : %.css
 	@echo $(notdir $<)
 	$(bin2o)
 

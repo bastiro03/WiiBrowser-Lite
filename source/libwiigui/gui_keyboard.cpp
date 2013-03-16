@@ -285,7 +285,9 @@ void GuiKeyboard::Update(GuiTrigger * t)
 		catch (const std::exception& e) { }
 	}
 
+	wchar_t charCode = 0;
 	bool update = false;
+
 	++DeleteDelay;
 
     if(t->chan == 0) {
@@ -306,7 +308,6 @@ void GuiKeyboard::Update(GuiTrigger * t)
 			&& (   bKeyChangeEvent
 				|| (keyHeldDelay.elapsedMilliSecs() > 500 && DeleteDelay > 15)))	// delay hold key
 		{
-			wchar_t charCode = 0;
 			if(((keyboardEvent.symbol >> 8) == 0xF2) && (keyboardEvent.symbol & 0xFF) < 0x80) {
 				// this is usually a numpad
 				charCode = keyboardEvent.symbol & 0xFF;
@@ -318,19 +319,12 @@ void GuiKeyboard::Update(GuiTrigger * t)
 				charCode = keyboardEvent.symbol;
 			}
 
-			if(charCode != 0) {
-				FILE *file = fopen("keyb.txt", "a");
-				fprintf(file, "keycode: %d\r\n", keyboardEvent.keycode);
-				fwprintf(file, L"wchar_t: %c\r\n", charCode);
-				fprintf(file, "char: %c\r\n\r\n", charCode);
-				fclose(file);
-				exit(0);
-				DeleteDelay = 0;
-			}
+			if(charCode != 0)
+                DeleteDelay = 0;
 		}
 	}
 
-	if(keySpace->GetState() == STATE_CLICKED)
+	if(keySpace->GetState() == STATE_CLICKED            || charCode == 0x20)
 	{
 		if(strlen(kbtextstr) < kbtextmaxlen)
 		{
@@ -339,7 +333,7 @@ void GuiKeyboard::Update(GuiTrigger * t)
 		}
 		keySpace->SetState(STATE_SELECTED, t->chan);
 	}
-	else if(keyBack->GetState() == STATE_CLICKED)
+	else if(keyBack->GetState() == STATE_CLICKED        || charCode == 0x08)
 	{
 		if(strlen(kbtextstr) > 0)
 		{
@@ -348,13 +342,13 @@ void GuiKeyboard::Update(GuiTrigger * t)
 		}
 		keyBack->SetState(STATE_SELECTED, t->chan);
 	}
-	else if(keyShift->GetState() == STATE_CLICKED)
+	else if(keyShift->GetState() == STATE_CLICKED       || charCode == 0xf101)
 	{
 		shift ^= 1;
 		keyShift->SetState(STATE_SELECTED, t->chan);
 		update = true;
 	}
-	else if(keyCaps->GetState() == STATE_CLICKED)
+	else if(keyCaps->GetState() == STATE_CLICKED        || charCode == 0xf105)
 	{
 		caps ^= 1;
 		keyCaps->SetState(STATE_SELECTED, t->chan);
@@ -381,7 +375,8 @@ void GuiKeyboard::Update(GuiTrigger * t)
 					keyTxt[i][j]->SetText(txt);
 				}
 
-				if(keyBtn[i][j]->GetState() == STATE_CLICKED)
+				if(keyBtn[i][j]->GetState() == STATE_CLICKED
+                        || charCode == keys[i][j].ch || charCode == keys[i][j].chShift)
 				{
 					if(strlen(kbtextstr) < kbtextmaxlen)
 					{

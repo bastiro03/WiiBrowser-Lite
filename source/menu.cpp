@@ -64,9 +64,9 @@ static GuiImageData * SplashImage = NULL;
 static GuiImage * Splash = NULL;
 static GuiImage * videoImg = NULL;
 
+static GuiWindow * mainWindow = NULL;
 static GuiWindow * guiWindow = NULL;
 static GuiWindow * videoWindow = NULL;
-static GuiWindow * mainWindow = NULL;
 
 static lwp_t guithread = LWP_THREAD_NULL;
 static lwp_t updatethread = LWP_THREAD_NULL;
@@ -202,6 +202,7 @@ extern "C" void DoMPlayerGuiDraw()
     mainWindow->Update(&userInput[0]);
 }
 
+#ifdef MPLAYER
 void UpdatePointer()
 {
     if(userInput[0].wpad->ir.valid)
@@ -209,7 +210,6 @@ void UpdatePointer()
                      96, 96, pointer[0]->GetImage(), userInput[0].wpad->ir.angle, 1, 1, 255, GX_TF_RGBA8);
 }
 
-#ifdef MPLAYER
 /****************************************************************************
  * LoadYouTubeFile
  *
@@ -1402,7 +1402,7 @@ jump:
 
     if (!history || strcmp(history->url.c_str(),url))
         history=InsUrl(history,url);
-    free(HTML.data);
+    sleep(1);
 
     GuiWindow childWindow(screenwidth, screenheight);
     childWindow.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
@@ -1416,6 +1416,7 @@ jump:
 
     string link;
     link = DisplayHTML(&HTML, mainWindow, &childWindow, url);
+    free(HTML.data);
 
     HaltGui();
     mainWindow->Remove(&childWindow);

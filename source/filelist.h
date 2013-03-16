@@ -12,9 +12,6 @@
 #include <gccore.h>
 
 // Fonts
-extern const u8		font_ttf[];
-extern const u32	font_ttf_size;
-
 extern const u8		font_regular_ttf[];
 extern const u32	font_regular_ttf_size;
 
@@ -23,10 +20,6 @@ extern const u32	font_bold_ttf_size;
 
 extern const u8		font_italic_ttf[];
 extern const u32	font_italic_ttf_size;
-
-// Css
-extern const u8		master_css[];
-extern const u32	master_css_size;
 
 // Languages
 extern const u8		en_lang[];

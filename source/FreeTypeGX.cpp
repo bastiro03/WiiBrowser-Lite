@@ -21,7 +21,6 @@
  */
 
 #include "FreeTypeGX.h"
-#include "iconv.h"
 #include "filelist.h"
 
 FreeTypeGX *fontSystem[MAX_FONT_SIZE+1];
@@ -72,36 +71,6 @@ wchar_t* charToWideChar(const char* strChar)
     while((*tempDest++ = *strChar++));
 
     return strWChar;
-}
-
-wchar_t* converIconv(const char* src, const char *charset)
-{
-    size_t size = strlen(src) + 1;
-    wchar_t *dst = new (std::nothrow) wchar_t[size];
-    char *input = new (std::nothrow) char[size];
-
-    if (!dst || !input)
-        return NULL;
-    memcpy(input, src, size);
-
-    size_t outlen = size * sizeof(wchar_t);
-    char *pIn = (char *) input;
-    char *pOut = (char *) dst;
-
-    iconv_t conv = iconv_open ("WCHAR_T", charset);
-    if (conv == (iconv_t) -1)
-        return NULL; // Charset not available
-
-    size_t nconv = iconv(conv, &pIn, &size, &pOut, &outlen);
-    if (nconv == (size_t) -1)
-        return NULL; // Something went wrong
-
-    iconv_close(conv);
-    delete(input);
-
-    if (outlen >= sizeof(wchar_t))
-        *((wchar_t *) pOut) = L'\0';
-    return (wchar_t *) dst;
 }
 
 /**

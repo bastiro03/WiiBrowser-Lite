@@ -242,10 +242,8 @@ typedef struct ftgxDataOffset_ ftgxDataOffset;
 
 const GXColor ftgxWhite = (GXColor){0xff, 0xff, 0xff, 0xff}; /**< Constant color value used only to sanitize Doxygen documentation. */
 
-wchar_t* charToWideChar(const char* p);
-wchar_t* converIconv(const char* src, const char *charset);
-
 bool SetupDefaultFont(const char * customfontpath);
+wchar_t* charToWideChar(const char* p);
 void InitFreeType();
 void ClearFontData();
 
@@ -262,7 +260,9 @@ class FreeTypeGX {
 
 	private:
         FT_Library ftLibrary;   /**< FreeType FT_Library instance. */
+        FT_Face ftFace;         /**< FreeType reusable FT_Face typographic object. */
         FT_GlyphSlot ftSlot;    /**< FreeType reusable FT_GlyphSlot glyph container object. */
+		FT_UInt ftPointSize;	/**< Requested size of the rendered font. */
 		bool ftKerningEnabled;	/**< Flag indicating the availability of font kerning data. */
 		uint8_t vertexIndex;	/**< Vertex format descriptor index. */
 		uint32_t compatibilityMode;	/**< Compatibility mode for default tev operations and vertex descriptors. */
@@ -285,9 +285,6 @@ class FreeTypeGX {
 	public:
 		FreeTypeGX(FT_UInt pixelSize, const uint8_t* fontBuffer = NULL, FT_Long bufferSize = 0);
 		~FreeTypeGX();
-
-		FT_UInt ftPointSize;	/**< Requested size of the rendered font. */
-		FT_Face ftFace;         /**< FreeType reusable FT_Face typographic object. */
 
         void ChangeFontSize(FT_UInt pixelSize);
 		void setVertexFormat(uint8_t vertexIndex);

@@ -177,7 +177,7 @@ void HandleHtmlPad(int *offset, GuiButton *btnup, GuiButton *btndown, Indice ext
 
     if (btndown->GetState() == STATE_CLICKED || (userInput[0].wpad->btns_h & WPAD_BUTTON_DOWN)) {
         usleep(15000); btndown->ResetState();
-        if (!Index || Index->elem->GetYPosition()+Index->elem->GetHeight()>25)
+        if (!Index || Index->elem->GetYPosition()+Index->screenSize>25)
             MoveText(1,-1,25, Index);
     }
 
@@ -228,7 +228,7 @@ void HandleHtmlPad(int *offset, GuiButton *btnup, GuiButton *btndown, Indice ext
                     MoveText(1,1,dist/8, Index);
             }
 
-            if (!Index || Index->elem->GetYPosition()+Index->elem->GetHeight()>25)
+            if (!Index || Index->elem->GetYPosition()+Index->screenSize>25)
             {
                 if (dist < -10)
                     MoveText(1,1,dist/8, Index);

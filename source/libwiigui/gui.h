@@ -150,7 +150,7 @@ typedef struct _paddata {
 #define EFFECT_ROTATE				4096
 #define EFFECT_COLOR_TRANSITION		8192
 
-#include "gui_document.h"
+#include "document.h"
 
 //!Sound conversion and playback. A wrapper for other sound libraries - ASND, libmad, ltremor, etc
 class GuiSound
@@ -652,19 +652,11 @@ class GuiImage : public GuiElement
 		//!Sets up a new image using the GuiImageData object specified
 		//!\param img Pointer to GuiImageData object
 		void SetImage(GuiImageData * img);
-		//!Sets up a new image clip
-		//!\param x, y, w, h Clip size
-		void SetClip(int x, int y, int w, int h);
 		//!\overload
 		//!\param img Pointer to image data
 		//!\param w Width
 		//!\param h Height
 		void SetImage(u8 * img, int w, int h);
-        //!\overload
-		//!\param w Image width
-		//!\param h Image height
-		//!\param c Image color
-		void SetImage(int w, int h, GXColor c);
 		//!Gets the pixel color at the specified coordinates of the image
 		//!\param x X coordinate
 		//!\param y Y coordinate
@@ -682,7 +674,7 @@ class GuiImage : public GuiElement
 		//!Does not alter the image data
 		//!\param s Alpha amount to draw over the image
 		void SetStripe(int s);
-	// protected:
+	protected:
 		int imgType; //!< Type of image data (IMAGE_TEXTURE, IMAGE_COLOR, IMAGE_DATA)
 		u8 * image; //!< Poiner to image data. May be shared with GuiImageData data
 		u8 format; //!< Texture format
@@ -690,11 +682,6 @@ class GuiImage : public GuiElement
 		int tile; //!< Number of times to draw (tile) the image horizontally
 		int tileVertical; //!< Number of times to draw (tile) the image vertically
 		int stripe; //!< Alpha value (0-255) to apply a stripe effect to the texture
-		int clipx; //!< Clip x offset
-		int clipy; //!< Clip y offset
-		int clipw; //!< Clip width
-		int cliph; //!< Clip height
-		bool clipped; //!< Clip property
 };
 
 //!Display, manage, and manipulate text in the GUI
@@ -733,9 +720,6 @@ class GuiText : public GuiElement, public Document
 		//!\param font bufferblock
 		//!\param font filesize
 		bool SetFont(const u8 *fontbuffer, const u32 filesize);
-        //!Change the font
-		//!\param font
-		bool SetFont(FreeTypeGX *gxfont);
 		//!use spaces?
 		void SetSpace(bool space);
 		//!Sets up preset values to be used by GuiText(t)

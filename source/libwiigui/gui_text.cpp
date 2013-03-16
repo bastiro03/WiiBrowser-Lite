@@ -383,21 +383,6 @@ bool GuiText::SetFont(const u8 *fontbuffer, const u32 filesize)
 	return true;
 }
 
-bool GuiText::SetFont(FreeTypeGX *gxfont)
-{
-    if(!gxfont)
-        return false;
-
-    if(font)
-        delete font;
-
-    font = gxfont;
-    currentSize = gxfont->ftPointSize;
-	textWidth = font->getWidth(text);
-
-	return true;
-}
-
 void GuiText::ResetText()
 {
 	if(!origText)

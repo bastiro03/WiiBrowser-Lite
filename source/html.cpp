@@ -42,7 +42,7 @@ static void *DownloadImage (void *arg)
             for (lista=img; !NoImg(lista); lista=lista->prox)
             {
                 if (threadState==THREAD_EXIT || threadState==THREAD_SUSPEND) break;
-                if (!lista->imgdata->GetImage() && lista->tag)
+                if (!lista->fetched && !lista->img->GetImage() && lista->tag)
                 {
                     string tmp=adjustUrl(lista->tag->value[0].text, (char*)arg);
                     struct block THREAD = downloadfile(curl_handle, tmp.c_str(), NULL);
@@ -53,6 +53,7 @@ static void *DownloadImage (void *arg)
                         lista->img->SetScale(screenwidth-80, atoi(lista->tag->attribute.c_str()));
                         lista->img->SetEffect(EFFECT_FADE, 50);
                     }
+                    lista->fetched = true;
                     free(THREAD.data);
                 }
             }
@@ -228,8 +229,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                     if (lista->attribute.length()!=0)
                     {
                         img=InsImg(img);
-                        img->imgdata=new GuiImageData(NULL, 0);
-                        img->img=new GuiImage(img->imgdata);
+                        img->img=new GuiImage();
                         img->img->SetPosition(coordX+40, coordY);
                         img->tag=&(*lista);
                         HaltGui();

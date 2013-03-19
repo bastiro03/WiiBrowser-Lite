@@ -47,6 +47,7 @@ typedef struct Text {
 typedef struct Image {
   GuiImageData *imgdata;
   GuiImage *img;
+  bool fetched;
   struct Tag *tag;
   struct Image *prox;
 } Image;

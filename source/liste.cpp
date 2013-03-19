@@ -95,6 +95,8 @@ ListaDiImg InsImg( ListaDiImg lista ) {
 	ListaDiImg punt;
     punt=new Image;
     punt->tag = NULL;
+    punt->imgdata = NULL;
+    punt->fetched = false;
     punt->prox = lista;
 	return  punt;
 }

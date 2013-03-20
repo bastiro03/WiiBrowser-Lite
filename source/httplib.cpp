@@ -34,6 +34,10 @@
 #include "httplib.h"
 #include "main.h"
 
+extern "C" {
+#include "urlcode.h"
+}
+
 // -----------------------------------------------------------
 // VARIABLES
 // -----------------------------------------------------------
@@ -80,7 +84,7 @@ WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp)
     return realsize;
 }
 
-struct block downloadfile(CURL *curl_handle, const char *url, FILE *hfile)
+struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
 {
     char *ct=NULL;
     struct block b;
@@ -104,24 +108,17 @@ struct block downloadfile(CURL *curl_handle, const char *url, FILE *hfile)
         field, so we provide one */
         curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, Agents[Settings.UserAgent]);
         curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0L);
+        curl_easy_setopt(curl_handle, CURLOPT_COOKIEFILE, "");
 
         /* proper function to close sockets */
         curl_easy_setopt(curl_handle, CURLOPT_CLOSESOCKETFUNCTION, close_callback);
-        curl_easy_setopt(curl_handle, CURLOPT_COOKIEFILE, "");
-
-        if (strcasestr(url, "\\post")) {
-            url = findChr(url, '\\');
-            url = findChr(url, '?');
-            curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, &url[strlen(url)+1]);
-        }
-        else {
-            url = findChr(url, '\\');
-            curl_easy_setopt(curl_handle, CURLOPT_HTTPGET, 1);
-        }
-
+        curl_easy_setopt(curl_handle, CURLOPT_HTTPGET, 1);
         curl_easy_setopt(curl_handle, CURLOPT_URL, url);
-        if ((res=curl_easy_perform(curl_handle)) != 0) {   /*error!*/
-            Debug(url); Debug(curl_easy_strerror((CURLcode)res));
+
+        if ((res = curl_easy_perform(curl_handle)) != 0)      /*error!*/
+        {
+            Debug(url);
+            Debug(curl_easy_strerror((CURLcode)res));
             return emptyblock;
         }
 
@@ -138,6 +135,122 @@ struct block downloadfile(CURL *curl_handle, const char *url, FILE *hfile)
     if (hfile)
         save(&b, hfile);
 	return b;
+}
+
+struct block postrequest(CURL *curl_handle, const char *url, curl_httppost *data)
+{
+    char *ct=NULL;
+    struct block b;
+    int res;
+
+    struct MemoryStruct chunk;
+    chunk.memory = (char *)malloc(1);   /* will be grown as needed by the realloc above */
+    chunk.size = 0;
+    url = findChr(url, '?');
+
+    if(curl_handle) {
+        /* send all data to this function  */
+        curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
+        curl_easy_setopt(curl_handle, CURLOPT_NOPROGRESS, 1);
+
+        /* we pass our 'chunk' struct to the callback function */
+        curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&chunk);
+        curl_easy_setopt(curl_handle, CURLOPT_AUTOREFERER, 1);
+        curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
+
+        /* some servers don't like requests that are made without a user-agent
+        field, so we provide one */
+        curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, Agents[Settings.UserAgent]);
+        curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0L);
+
+        /* proper function to close sockets */
+        curl_easy_setopt(curl_handle, CURLOPT_CLOSESOCKETFUNCTION, close_callback);
+        curl_easy_setopt(curl_handle, CURLOPT_COOKIEFILE, "");
+
+        if (data == NULL)
+            curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, &url[strlen(url)+1]);
+        else curl_easy_setopt(curl_handle, CURLOPT_HTTPPOST, data);
+
+        curl_easy_setopt(curl_handle, CURLOPT_URL, url);
+        res = curl_easy_perform(curl_handle);
+
+        if (data)
+            curl_formfree(data);
+
+        if (res != 0)       /*error!*/
+        {
+            Debug(url);
+            Debug(curl_easy_strerror((CURLcode)res));
+            return emptyblock;
+        }
+
+        if(CURLE_OK != curl_easy_getinfo(curl_handle, CURLINFO_CONTENT_TYPE, &ct) || !ct)
+            return emptyblock;
+    }
+    else
+        return emptyblock;
+
+	b.data = chunk.memory;
+	b.size = chunk.size;
+    strcpy(b.type, findChr(ct, ';'));
+
+	return b;
+}
+
+struct curl_httppost *multipartform(const char *url)
+{
+    struct curl_httppost *formpost = NULL;
+    struct curl_httppost *lastptr = NULL;
+
+    char *temp = strrchr(url, '?');
+    char *begin = url_decode(temp);
+    char *mid = NULL;
+    char *name, *value;
+
+    /* Fill in the filename field */
+    do
+    {
+        mid = strchr(begin, '=');
+        begin++;
+        name = strndup(begin, mid-begin);
+
+        begin = strchr(begin, '&');
+        mid++;
+        value = strndup(mid, begin-mid);
+
+        curl_formadd(&formpost,
+            &lastptr,
+            CURLFORM_COPYNAME, name,
+            CURLFORM_COPYCONTENTS, value,
+            CURLFORM_END);
+
+        free(name);
+        free(value);
+    }
+    while ((begin = strchr(begin, '&')));
+
+    free(begin);
+    return formpost;
+}
+
+struct block downloadfile(CURL *curl_handle, const char *url, FILE *hfile)
+{
+    const char *mode = strrchr(url, '\\');
+    url = findChr(url, '\\');
+
+    if (!mode)
+        return getrequest(curl_handle, url, hfile);
+
+    if (strcasestr(mode + 1, "post"))
+        return postrequest(curl_handle, url, NULL);
+
+    else if (strcasestr(mode + 1, "multipart"))
+    {
+        curl_httppost *data = multipartform(url);
+        return postrequest(curl_handle, url, data);
+    }
+
+    return getrequest(curl_handle, url, hfile);
 }
 
 // -----------------------------------------------------------

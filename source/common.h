@@ -29,6 +29,7 @@ typedef struct Value {
 typedef struct Form {
   TipoElemento action;
   TipoElemento method;
+  TipoElemento enctype;
   Input *input;
 } Form;
 

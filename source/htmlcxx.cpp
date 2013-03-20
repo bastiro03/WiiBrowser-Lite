@@ -351,6 +351,7 @@ Lista getTag(char * buffer)
                     l1.push_back({"form"});
                     l1.rbegin()->form.action.append (it->attribute("action").second);
                     l1.rbegin()->form.method.append (it->attribute("method").second);
+                    l1.rbegin()->form.enctype.append (it->attribute("enctype").second);
                     open[form].open=true;
                     open[form].p=&(*l1.rbegin());
                 }
@@ -363,6 +364,17 @@ Lista getTag(char * buffer)
                             k = dom.parent(k);
                         string label=search(it->attribute("id").second, k);
                         open[form].p->form.input=InsInFondo(open[form].p->form.input, it->attribute("name").second, it->attribute("type").second, stripEntities(it->attribute("value").second), label);
+                    }
+                }
+                else if (it->tagName() == "textarea")
+                {
+                    if (open[form].open)
+                    {
+                        tree<HTML::Node>::iterator k = it;
+                        while (k->tagName() != "form" && k != dom.begin())
+                            k = dom.parent(k);
+                        string label=search(it->attribute("id").second, k);
+                        open[form].p->form.input=InsInFondo(open[form].p->form.input, it->attribute("name").second, it->tagName(), "", label);
                     }
                 }
                 else if (it->tagName() == "meta")

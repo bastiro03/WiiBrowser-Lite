@@ -2,7 +2,7 @@
 <app version="1">
   <name>WiiBrowser</name>
   <coder>gave92</coder>
-  <version>rev59</version>
+  <version>rev61</version>
   <release_date>201212251643</release_date>
   <short_description>A Web browser for the Wii</short_description>
   <long_description>WiiBrowser is a wii web browser by gave92 started from WiiXplore sources and using a customized libwiigui as base for the GUI.

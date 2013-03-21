@@ -21,6 +21,7 @@ int y = 0;
 int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni btn)
 {
     GuiImageData Textbox (keyboard_textbox_png, keyboard_textbox_png_size);
+    GuiImageData TextboxImgData (bg_options_png, bg_options_png_size);
     GuiImageData Button (button_png, button_png_size);
 
     GuiSound *btnSoundOver= new GuiSound(button_over_pcm, button_over_pcm_size, SOUND_PCM);
@@ -80,7 +81,7 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
             button=InsButton(button);
             button->btn=NULL;
         }
-        else if (inputType(lista)==TEXTAREA)
+        else if (inputType(lista)==TEXT)
         {
             button=InsButton(button);
             button->refs=(Tag*)button;   // Dummy Assignment
@@ -114,7 +115,7 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
             HaltGui();
             Form.Append(button->btn);
             ResumeGui();
-            offset+=60;
+            offset+=TextboxImg->GetHeight()+10;
         }
         else if (inputType(lista)==RADIO)
         {
@@ -126,20 +127,20 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
             else
                 continue;
         }
-        else if (inputType(lista)==TEXT)
+        else if (inputType(lista)==TEXTAREA)
         {
             button=InsButton(button);
             button->refs=(Tag*)button;   // Dummy Assignment
-            GuiFrameImage *TextboxFrame=new GuiFrameImage(screenwidth - 80, 140);
-            button->btn=new GuiButton(screenwidth - 80, 140);
+            GuiImage *TextboxImg = new GuiImage(&TextboxImgData);
+            button->btn=new GuiButton(TextboxImg->GetWidth(), TextboxImg->GetHeight());
             button->label=new GuiLongText("", 20, (GXColor)
             {
                 0, 0, 0, 255
             });
             button->label->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-            button->label->SetLinesToDraw(5);
-            button->label->SetMaxWidth(screenwidth - 105);
-            button->label->SetPosition(10, 25);
+            button->label->SetLinesToDraw(TextboxImg->GetHeight()/25);
+            button->label->SetMaxWidth(TextboxImg->GetWidth()-45);
+            button->label->SetPosition(20, 30);
             if (lista->label!="noLabel")
             {
                 label=new GuiText((char*)lista->label.c_str(), 20, (GXColor)
@@ -148,7 +149,7 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
                 });
                 label->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
                 label->SetPosition(0,-25);
-                label->SetMaxWidth(screenwidth-85);
+                label->SetMaxWidth(TextboxImg->GetWidth()-5);
                 label->SetScroll(SCROLL_HORIZONTAL);
                 button->btn->SetLabel(label);
                 offset+=25;
@@ -156,14 +157,14 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
             button->btn->SetLabel(button->label, 1);
             button->btn->SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
             button->btn->SetPosition(0, offset);
-            button->btn->SetFrame(TextboxFrame);
+            button->btn->SetImage(TextboxImg);
             button->btn->SetSoundOver(btnSoundOver);
             button->btn->SetTrigger(trigA);
             button->btn->SetEffect(EFFECT_FADE, 50);
             HaltGui();
             Form.Append(button->btn);
             ResumeGui();
-            offset+=150;
+            offset+=TextboxImg->GetHeight()+10;
         }
         else if (inputType(lista)==UNKNOWN)
         {

@@ -101,6 +101,23 @@ string stripEntities(string input)
     return text;
 }
 
+vector<Value> splitText(string text, vector<string> parent, int chars, int rows)
+{
+    vector<Value> data;
+    int maxLen = chars * rows;
+
+    Value value;
+    value.mode = parent;
+
+    for (int index = 0; index < text.length(); index += maxLen)
+    {
+        value.text = text.substr(index, MIN(maxLen, text.length() - index));
+        data.push_back(value);
+    }
+
+    return data;
+}
+
 string findText(tree<HTML::Node>::iterator it)
 {
     tree<HTML::Node>::iterator begin, ends;
@@ -154,6 +171,11 @@ tree<HTML::Node>::iterator thtml(tree<HTML::Node>::iterator it, tree<HTML::Node>
     return k;
 }
 
+void merge(Tag *tag, vector<Value> out)
+{
+    tag->value.insert(tag->value.end(), out.begin(), out.end());
+}
+
 typedef struct
 {
     bool open;
@@ -182,9 +204,10 @@ Lista getTag(char * buffer)
         tree<HTML::Node>::iterator end = dom.end();
 
         vector<string> parent;
+        vector<Value> out;
+
         last open[all]= { {false},{false},{false},{false} };
         it=thtml(it,end,"html");
-        Value out;
 
         if(css_code.length())
         {
@@ -205,27 +228,26 @@ Lista getTag(char * buffer)
                 {
                     decode=(char*)malloc(it->text().length()+1);
                     decode_html_entities_utf8(strcpy(decode, it->text().c_str()),NULL);
-                    out.text.assign(decode);
+                    string item(decode);
                     free(decode);
-                    out.mode=parent;
+
+                    out = splitText(item, parent, 50, 40);
+                    if(!checkchr(item))
+                        continue;
+
                     if (open[title].open)
-                        open[title].p->value.push_back(out);
+                        merge(open[title].p, out);
                     else if (open[a].open)
-                        open[a].p->value.push_back(out);
+                        merge(open[a].p, out);
                     else if (open[text].open)
-                    {
-                        if (checkchr(out.text))
-                            open[text].p->value.push_back(out);
-                    }
+                        merge(open[text].p, out);
+
                     else
                     {
-                        if (checkchr(out.text))
-                        {
-                            l1.push_back({"text"});
-                            open[text].open=true;
-                            open[text].p=&(*l1.rbegin());
-                            l1.rbegin()->value.push_back(out);
-                        }
+                        l1.push_back({"text"});
+                        open[text].open=true;
+                        open[text].p=&(*l1.rbegin());
+                        merge(open[text].p, out);
                     }
                 }
             }
@@ -364,6 +386,7 @@ Lista getTag(char * buffer)
                             k = dom.parent(k);
                         string label=search(it->attribute("id").second, k);
                         open[form].p->form.input=InsInFondo(open[form].p->form.input, it->attribute("name").second, it->attribute("type").second, stripEntities(it->attribute("value").second), label);
+                        SetOption(open[form].p->form.input, it->attribute("checked").second);
                     }
                 }
                 else if (it->tagName() == "textarea")

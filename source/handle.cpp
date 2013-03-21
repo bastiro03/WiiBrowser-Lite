@@ -47,7 +47,7 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
 
     char *encode;
     int offset=0;
-    while (!NoInput(lista))
+    for (; !NoInput(lista); lista=lista->prox)
     {
         if (inputType(lista)==BUTTON)
         {
@@ -118,7 +118,13 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
         }
         else if (inputType(lista)==RADIO)
         {
-
+            if (lista->option == "checked")
+            {
+                button=InsButton(button);
+                button->btn=NULL;
+            }
+            else
+                continue;
         }
         else if (inputType(lista)==UNKNOWN)
         {
@@ -133,7 +139,6 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
             button->url.append(encode);
             free(encode);
         }
-        lista=lista->prox;
     }
 
     char save[MAXLEN];
@@ -424,10 +429,10 @@ int inputType(ListaDiInput lista)
         return BUTTON;
     if (lista->type=="hidden")
         return HIDDEN;
-    if (lista->type=="text" || lista->type=="textarea" || lista->type=="email"
-            || lista->type=="password" || lista->type=="search" || lista->type.length()==0)
+    if (lista->type=="text" || lista->type=="textarea" || lista->type=="email" || lista->type=="password"
+            || lista->type=="search" || lista->type=="tel" || lista->type.length()==0)
         return TEXT;
-    // if (lista->type=="radio") return RADIO;
+    if (lista->type=="radio") return RADIO;
     return UNKNOWN;
 }
 

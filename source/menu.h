@@ -33,6 +33,7 @@ bool LoadYouTubeFile(char *newurl, char *data);
 
 extern u8 HWButton;
 extern CURL *curl_handle;
+extern char new_page[];
 
 enum
 {

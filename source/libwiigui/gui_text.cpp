@@ -532,7 +532,7 @@ void GuiText::Draw()
 			textDynNum = linenum;
 		}
 
-		int lineheight = newSize + 6;
+		int lineheight = newSize + 5;
 		int leftPoint, voffset = 0;
 
 		if(alignmentVert == ALIGN_MIDDLE)

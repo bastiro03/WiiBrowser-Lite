@@ -76,6 +76,17 @@ ListaDiInput InsInFondo( ListaDiInput lista, TipoElemento name, TipoElemento typ
     return lista;
 }
 
+void SetOption( ListaDiInput element, TipoElemento value )
+{
+    if (!element)
+        return;
+
+    while (element->prox)
+        element = element->prox;
+
+    element->option = value;
+}
+
 void DistruggiInput( ListaDiInput lista ) {
     if (NoInput(lista)) return;
     DistruggiInput(lista->prox);

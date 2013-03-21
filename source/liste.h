@@ -17,6 +17,7 @@ void DistruggiButton( ListaDiBottoni lista );
 ListaDiInput InitInput( void );
 int NoInput( ListaDiInput lista );
 ListaDiInput InsInFondo(ListaDiInput lista, TipoElemento name, TipoElemento type, TipoElemento value, TipoElemento label );
+void SetOption( ListaDiInput element, TipoElemento value );
 void DistruggiInput( ListaDiInput lista );
 
 ListaDiImg InitImg( void );

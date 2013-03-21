@@ -17,6 +17,7 @@ typedef struct Input {
   TipoElemento name;
   TipoElemento type;
   TipoElemento value;
+  TipoElemento option;
   TipoElemento label;
   struct Input *prox;
 } Input;

@@ -361,7 +361,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                 ResumeGui();
 
                 int t = 0;
-                if ((t = Settings.FindUrl(url)) >= 0)
+                if ((t = Settings.FindUrl(new_page)) >= 0)
                     Settings.Thumbnails[t] = video;
                 done = true;
             }

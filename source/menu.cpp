@@ -41,7 +41,7 @@ static u8 updatestack[GUITH_STACK] ATTRIBUTE_ALIGN (32);
 CURL *curl_handle;
 History history;
 
-static char new_page[MAXLEN];
+char new_page[MAXLEN];
 static char prev_page[MAXLEN];
 static char Message[MAXLEN];
 

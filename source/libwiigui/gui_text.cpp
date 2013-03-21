@@ -33,6 +33,7 @@ GuiText::GuiText(const char * t, int s, GXColor c)
 	currentSize = size;
 	color = c;
 	alpha = c.a;
+	linestodraw = MAX_LINES;
 	style = FTGX_JUSTIFY_CENTER | FTGX_ALIGN_MIDDLE;
 	maxWidth = 0;
 	usespace = true;
@@ -62,7 +63,7 @@ GuiText::GuiText(const char * t, int s, GXColor c)
 		textWidth = fontSystem[currentSize]->getWidth(text);
 	}
 
-	for(int i=0; i < 50; i++)
+	for(int i=0; i < MAX_LINES; i++)
 		textDyn[i] = NULL;
     selectable = true;
 }
@@ -76,6 +77,7 @@ GuiText::GuiText(const wchar_t * t, int s, GXColor c)
 	currentSize = size;
 	color = c;
 	alpha = c.a;
+    linestodraw = MAX_LINES;
 	style = FTGX_JUSTIFY_CENTER | FTGX_ALIGN_MIDDLE;
 	maxWidth = 0;
 	font = 0;
@@ -109,7 +111,7 @@ GuiText::GuiText(const wchar_t * t, int s, GXColor c)
 		textWidth = fontSystem[currentSize]->getWidth(text);
 	}
 
-    for(int i=0; i < 50; i++)
+    for(int i=0; i < MAX_LINES; i++)
 		textDyn[i] = NULL;
 	selectable = true;
 }
@@ -133,6 +135,7 @@ GuiText::GuiText(const char * t)
 	textModel = NORMAL;
 	textDynNum = 0;
 	font = 0;
+    linestodraw = MAX_LINES;
 	textScroll = SCROLL_NONE;
 	textScrollPos = 0;
 	textScrollInitialDelay = TEXT_SCROLL_INITIAL_DELAY;
@@ -158,7 +161,7 @@ GuiText::GuiText(const char * t)
 		textWidth = fontSystem[currentSize]->getWidth(text);
 	}
 
-	for(int i=0; i < 50; i++)
+	for(int i=0; i < MAX_LINES; i++)
 		textDyn[i] = NULL;
     selectable = true;
 }
@@ -494,7 +497,7 @@ void GuiText::Draw()
 			int lastSpaceIndex = -1;
 			int currentWidth = 0;
 
-			while(ch < textlen && linenum < 50)
+			while(ch < textlen && linenum < linestodraw)
 			{
 				if(n == 0)
 					textDyn[linenum] = new wchar_t[textlen + 1];

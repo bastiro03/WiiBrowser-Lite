@@ -181,6 +181,21 @@ GuiKeyboard::GuiKeyboard(char * t, u32 max)
 	keyShift->SetEffectGrow();
 	this->Append(keyShift);
 
+    keyEnterImg = new GuiImage(keyMedium);
+	keyEnterOverImg = new GuiImage(keyMediumOver);
+	keyEnterText = new GuiText("Enter", 20, (GXColor){0, 0, 0, 0xff});
+	keyEnter = new GuiButton(keyMedium->GetWidth(), keyMedium->GetHeight());
+	keyEnter->SetImage(keyEnterImg);
+	keyEnter->SetImageOver(keyEnterOverImg);
+	keyEnter->SetLabel(keyEnterText);
+	keyEnter->SetSoundOver(keySoundOver);
+	keyEnter->SetSoundClick(keySoundClick);
+	keyEnter->SetTrigger(trigA);
+	keyEnter->SetTrigger(trig2);
+	keyEnter->SetPosition(10*42+61, 1*42+80);
+	keyEnter->SetEffectGrow();
+	this->Append(keyEnter);
+
 	keySpaceImg = new GuiImage(keyLarge);
 	keySpaceOverImg = new GuiImage(keyLargeOver);
 	keySpace = new GuiButton(keyLarge->GetWidth(), keyLarge->GetHeight());
@@ -217,7 +232,10 @@ GuiKeyboard::GuiKeyboard(char * t, u32 max)
 				keyBtn[i][j]->SetTrigger(trigA);
 				keyBtn[i][j]->SetTrigger(trig2);
 				keyBtn[i][j]->SetLabel(keyTxt[i][j]);
-				keyBtn[i][j]->SetPosition(j*42+21*i+40, i*42+80);
+				if(i != 1)
+                    keyBtn[i][j]->SetPosition(j*42+21*i+40, i*42+80);
+                else
+                    keyBtn[i][j]->SetPosition(j*42+21*i-1, i*42+80);
 				keyBtn[i][j]->SetEffectGrow();
 				this->Append(keyBtn[i][j]);
 			}
@@ -237,6 +255,10 @@ GuiKeyboard::~GuiKeyboard()
 	delete keyCapsImg;
 	delete keyCapsOverImg;
 	delete keyCaps;
+    delete keyEnterText;
+	delete keyEnterImg;
+	delete keyEnterOverImg;
+	delete keyEnter;
 	delete keyShiftText;
 	delete keyShiftImg;
 	delete keyShiftOverImg;
@@ -332,6 +354,15 @@ void GuiKeyboard::Update(GuiTrigger * t)
 			kbText->SetText(kbtextstr);
 		}
 		keySpace->SetState(STATE_SELECTED, t->chan);
+	}
+    if(keyEnter->GetState() == STATE_CLICKED            || charCode == 0x0d)
+	{
+		if(strlen(kbtextstr) < kbtextmaxlen)
+		{
+			kbtextstr[strlen(kbtextstr)] = '\n';
+			kbText->SetText(kbtextstr);
+		}
+		keyEnter->SetState(STATE_SELECTED, t->chan);
 	}
 	else if(keyBack->GetState() == STATE_CLICKED        || charCode == 0x08)
 	{

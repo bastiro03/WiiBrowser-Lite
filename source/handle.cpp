@@ -10,7 +10,7 @@ void MoveText (int up, int dir, int space, Indice Index);
 void HandleFormPad(GuiButton *btnup, GuiButton *btndown, GuiWindow *mainWindow);
 
 bool hidden=true;
-enum { TEXT=0, BUTTON, HIDDEN, RADIO, UNKNOWN };
+enum { TEXT=0, BUTTON, HIDDEN, RADIO, TEXTAREA, UNKNOWN };
 
 int inputType(ListaDiInput lista);
 int noSubmit(ListaDiBottoni btn);
@@ -80,7 +80,7 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
             button=InsButton(button);
             button->btn=NULL;
         }
-        else if (inputType(lista)==TEXT)
+        else if (inputType(lista)==TEXTAREA)
         {
             button=InsButton(button);
             button->refs=(Tag*)button;   // Dummy Assignment
@@ -125,6 +125,45 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
             }
             else
                 continue;
+        }
+        else if (inputType(lista)==TEXT)
+        {
+            button=InsButton(button);
+            button->refs=(Tag*)button;   // Dummy Assignment
+            GuiFrameImage *TextboxFrame=new GuiFrameImage(screenwidth - 80, 140);
+            button->btn=new GuiButton(screenwidth - 80, 140);
+            button->label=new GuiLongText("", 20, (GXColor)
+            {
+                0, 0, 0, 255
+            });
+            button->label->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+            button->label->SetLinesToDraw(5);
+            button->label->SetMaxWidth(screenwidth - 105);
+            button->label->SetPosition(10, 25);
+            if (lista->label!="noLabel")
+            {
+                label=new GuiText((char*)lista->label.c_str(), 20, (GXColor)
+                {
+                    0, 0, 255, 255
+                });
+                label->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+                label->SetPosition(0,-25);
+                label->SetMaxWidth(screenwidth-85);
+                label->SetScroll(SCROLL_HORIZONTAL);
+                button->btn->SetLabel(label);
+                offset+=25;
+            }
+            button->btn->SetLabel(button->label, 1);
+            button->btn->SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
+            button->btn->SetPosition(0, offset);
+            button->btn->SetFrame(TextboxFrame);
+            button->btn->SetSoundOver(btnSoundOver);
+            button->btn->SetTrigger(trigA);
+            button->btn->SetEffect(EFFECT_FADE, 50);
+            HaltGui();
+            Form.Append(button->btn);
+            ResumeGui();
+            offset+=150;
         }
         else if (inputType(lista)==UNKNOWN)
         {
@@ -429,10 +468,13 @@ int inputType(ListaDiInput lista)
         return BUTTON;
     if (lista->type=="hidden")
         return HIDDEN;
-    if (lista->type=="text" || lista->type=="textarea" || lista->type=="email" || lista->type=="password"
+    if (lista->type=="text" || lista->type=="email" || lista->type=="password"
             || lista->type=="search" || lista->type=="tel" || lista->type.length()==0)
         return TEXT;
-    if (lista->type=="radio") return RADIO;
+    if (lista->type=="radio")
+        return RADIO;
+    if (lista->type=="textarea")
+        return TEXTAREA;
     return UNKNOWN;
 }
 

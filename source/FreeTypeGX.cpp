@@ -394,6 +394,7 @@ uint16_t FreeTypeGX::drawText(int16_t x, int16_t y, const wchar_t *text, GXColor
     uint16_t fullTextWidth = textWidth > 0 ? textWidth : getWidth(text);
     uint16_t x_pos = x, printed = 0;
     uint16_t x_offset = 0, y_offset = 0;
+
     GXTexObj glyphTexture;
     FT_Vector pairDelta;
     ftgxDataOffset offset;
@@ -452,6 +453,90 @@ uint16_t FreeTypeGX::drawText(int16_t x, int16_t y, const wchar_t *text, GXColor
     }
 
     return printed;
+}
+
+uint16_t FreeTypeGX::drawLongText(int16_t x, int16_t y, const wchar_t *text, GXColor color,
+		uint16_t textStyle, uint16_t lineDistance, uint16_t maxLines, uint16_t startWidth, uint16_t maxWidth)
+{
+	if (!text) return 0;
+
+	bool bIsTab;
+	uint16_t cur_line = 0;
+	uint16_t x_pos = 0;
+	uint16_t x_offset = -startWidth, y_offset = 0;
+
+	GXTexObj glyphTexture;
+	FT_Vector pairDelta;
+	ftgxDataOffset offset;
+
+	if (textStyle & FTGX_ALIGN_MASK)
+	{
+	    this->getOffset(text, &offset, maxWidth);
+        y_offset = this->getStyleOffsetHeight(&offset, textStyle);
+	}
+
+	startWidth++;
+
+	int i = 0;
+	std::map<wchar_t, ftgxCharData>::iterator itr;
+
+	while (text[i])
+	{
+		if (maxWidth > 0 && x_pos > startWidth+maxWidth) {
+
+			while(text[i] != 0 && text[i] != '\n')
+				i++;
+
+			if(!text[i])
+				break;
+		}
+
+		if(text[i] == '\n') {
+			cur_line++;
+			i++;
+			x_pos = 0;
+			y_offset += lineDistance;
+			continue;
+		}
+
+		if (maxLines > 0 && cur_line >= maxLines)
+			break;
+
+		bIsTab = (text[i] == L'\t');
+        ftgxCharData* glyphData = NULL;
+        itr = fontData.find(text[i]);
+
+        if (itr != fontData.end())
+        {
+            glyphData = &itr->second;
+        }
+        else
+        {
+            glyphData = cacheGlyphData(bIsTab ? L' ' : text[i]);
+        }
+
+		if (glyphData != NULL)
+		{
+			if (ftKerningEnabled && i > 0)
+			{
+			    FT_Get_Kerning(ftFace, fontData[text[i - 1]].glyphIndex, glyphData->glyphIndex, FT_KERNING_DEFAULT, &pairDelta);
+				x_pos += pairDelta.x >> 6;
+			}
+
+			if((startWidth == 0) || (x_pos + glyphData->glyphAdvanceX > startWidth)) {
+				GX_InitTexObj(&glyphTexture, glyphData->glyphDataTexture, glyphData->textureWidth, glyphData->textureHeight, GX_TF_RGBA8, GX_CLAMP, GX_CLAMP, GX_FALSE);
+				copyTextureToFramebuffer(&glyphTexture, glyphData->textureWidth, glyphData->textureHeight, x + x_pos + glyphData->renderOffsetX + x_offset, y - glyphData->renderOffsetY + y_offset, 0, color);
+			}
+
+			if(bIsTab)
+				x_pos += glyphData->glyphAdvanceX * 4;
+			else
+				x_pos += glyphData->glyphAdvanceX;
+		}
+		++i;
+	}
+
+	return 0;
 }
 
 void FreeTypeGX::drawTextFeature(int16_t x, int16_t y, uint16_t width, ftgxDataOffset *offsetData, uint16_t format, GXColor color)

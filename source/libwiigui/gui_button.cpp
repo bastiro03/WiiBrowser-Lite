@@ -18,6 +18,7 @@ GuiButton::GuiButton(int w, int h)
 {
 	width = w;
 	height = h;
+	frame = NULL;
 	image = NULL;
 	imageFlat = NULL;
 	imageOver[0] = NULL;
@@ -54,6 +55,11 @@ GuiButton::~GuiButton()
 {
 }
 
+void GuiButton::SetFrame(GuiFrameImage* frm)
+{
+	frame = frm;
+	if(frm) frm->SetParent(this);
+}
 void GuiButton::SetImage(GuiImage* img)
 {
 	image = img;
@@ -159,6 +165,8 @@ void GuiButton::Draw()
 
 		if(icon) // draw icon
 			icon->Draw();
+        if(frame) // draw frame
+			frame->Draw();
 
         // draw text
 		if(label[0])
@@ -192,6 +200,8 @@ void GuiButton::Draw()
 			iconOver->Draw();
 		// else if(icon) // draw icon
 			// icon->Draw();
+        if(frame) // draw frame
+			frame->Draw();
 
 		// draw text
 		if(labelOver[0])
@@ -225,6 +235,8 @@ void GuiButton::Draw()
 			iconOver->Draw();
 		// else if(icon) // draw icon
 			// icon->Draw();
+        if(frame) // draw frame
+			frame->Draw();
 
 		// draw text
 		if(labelOver[0])
@@ -248,6 +260,8 @@ void GuiButton::Draw()
 			image->Draw();
 		if(icon) // draw icon
 			icon->Draw();
+        if(frame) // draw frame
+			frame->Draw();
 
 		// draw text
 		if(label[0])

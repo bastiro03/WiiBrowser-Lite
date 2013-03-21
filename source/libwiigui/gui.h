@@ -61,6 +61,8 @@ extern FreeTypeGX *fontSystem[];
 #define MAX_OPTIONS 			150
 #define MAX_KEYBOARD_DISPLAY	32
 
+#define MAX_LINES 				50
+
 typedef void (*UpdateCallback)(void * e);
 
 enum
@@ -151,6 +153,9 @@ typedef struct _paddata {
 #define EFFECT_COLOR_TRANSITION		8192
 
 #include "document.h"
+
+class GuiFrameImage;
+class GuiLongText;
 
 //!Sound conversion and playback. A wrapper for other sound libraries - ASND, libmad, ltremor, etc
 class GuiSound
@@ -487,6 +492,8 @@ class GuiElement
 		bool rumble; //!< Wiimote rumble (on/off) - set to on when this element requests a rumble event
 };
 
+#include "gui_frameimage.h"
+
 //!Allows GuiElements to be grouped together into a "window"
 class GuiWindow : public GuiElement
 {
@@ -752,6 +759,8 @@ class GuiText : public GuiElement, public Document
 		void SetWrap(bool w, int width = 0);
         //!Returns cursor position
 		bool IsOver(int x, int y);
+        //!Set max lines to draw
+        void SetLinesToDraw(int l) { linestodraw = l; }
 		//!Sets the text type
 		void SetModel(int model);
 		//!Sets the font color
@@ -774,7 +783,7 @@ class GuiText : public GuiElement, public Document
 		GXColor color; //!< Font color
 		FreeTypeGX *font; //!< Font type
 		wchar_t* text; //!< Translated Unicode text value
-		wchar_t *textDyn[50]; //!< Text value, if max width, scrolling, or wrapping enabled
+		wchar_t *textDyn[MAX_LINES]; //!< Text value, if max width, scrolling, or wrapping enabled
 		int textDynNum; //!< Number of text lines
 		char * origText; //!< Original text data (English)
 		int size; //!< Font size
@@ -786,10 +795,13 @@ class GuiText : public GuiElement, public Document
 		int textScrollDelay; //!< Scrolling speed
 		int textWidth;
 		int textModel;
+		int linestodraw;
 		u16 style; //!< FreeTypeGX style attributes
 		bool wrap; //!< Wrapping toggle
 		bool usespace;
 };
+
+#include "gui_longtext.h"
 
 //!Display, manage, and manipulate tooltips in the GUI
 class GuiTooltip : public GuiElement
@@ -832,7 +844,10 @@ class GuiButton : public GuiElement
 		GuiButton(int w = 0, int h = 0);
 		//!Destructor
 		~GuiButton();
-		//!Sets the button's image
+		//!Sets the button's frame
+		//!\param i Pointer to GuiFrameImage object
+		void SetFrame(GuiFrameImage* i);
+        //!Sets the button's image
 		//!\param i Pointer to GuiImage object
 		void SetImage(GuiImage* i);
 		//!Sets the button's image on over
@@ -900,6 +915,7 @@ class GuiButton : public GuiElement
 		//!\param t Pointer to a GuiTrigger, containing the current input data from PAD/WPAD
 		void Update(GuiTrigger * t);
 	protected:
+		GuiFrameImage * frame; //!< Button frame (default)
 		GuiImage * image; //!< Button image (default)
 		GuiImage * imageFlat; //!< Button image (default)
 		GuiImage * imageOver[2]; //!< Button image for STATE_SELECTED
@@ -945,6 +961,10 @@ class GuiKeyboard : public GuiWindow
 		GuiImage * keyCapsImg;
 		GuiImage * keyCapsOverImg;
 		GuiButton * keyCaps;
+        GuiText * keyEnterText;
+		GuiImage * keyEnterImg;
+		GuiImage * keyEnterOverImg;
+		GuiButton * keyEnter;
 		GuiText * keyShiftText;
 		GuiImage * keyShiftImg;
 		GuiImage * keyShiftOverImg;

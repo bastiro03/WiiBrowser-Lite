@@ -1250,7 +1250,7 @@ static int MenuHome()
 
         else if(App->btnHome->GetState() == STATE_CLICKED)
         {
-            sprintf(new_page,Settings.Homepage);
+            strcpy(new_page,Settings.Homepage);
             strcpy(prev_page,new_page);
             URL.SetText(new_page);
             App->btnHome->ResetState();
@@ -1262,7 +1262,7 @@ static int MenuHome()
             if (history->prec)
             {
                 history=history->prec;
-                snprintf(new_page,256,history->url.c_str());
+                strncpy(new_page,history->url.c_str(),256);
                 strcpy(prev_page,new_page);
                 URL.SetText(new_page);
             }
@@ -1274,7 +1274,7 @@ static int MenuHome()
             if (history->prox)
             {
                 history=history->prox;
-                snprintf(new_page,256,history->url.c_str());
+                strncpy(new_page,history->url.c_str(),256);
                 strcpy(prev_page,new_page);
                 URL.SetText(new_page);
             }
@@ -1597,7 +1597,7 @@ static int MenuFavorites()
 
         else if(App->btnHome->GetState() == STATE_CLICKED)
         {
-            sprintf(new_page,Settings.Homepage);
+            strcpy(new_page,Settings.Homepage);
             strcpy(prev_page,new_page);
             App->btnHome->ResetState();
         }
@@ -1629,7 +1629,7 @@ static int MenuFavorites()
             if(Block[i].Block->GetState() == STATE_CLICKED &&
                     Left->Button->GetState() == STATE_DEFAULT && !editing)
             {
-                sprintf(new_page,Settings.GetUrl(i));
+                strcpy(new_page,Settings.GetUrl(i));
                 strcpy(prev_page,new_page);
                 Block[i].Block->ResetState();
             }

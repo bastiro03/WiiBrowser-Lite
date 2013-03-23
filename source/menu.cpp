@@ -134,6 +134,29 @@ string parseUrl(string link, const char* url)
 }
 
 /****************************************************************************
+ * Perform downloads
+ ***************************************************************************/
+FILE *SelectFile(GuiWindow *mainWindow, char *type);
+
+bool performDownload(FILE **hfile, char *url)
+{
+    int choice;
+    char *ct = checkfile(curl_handle, url);
+    bool download = (ct != NULL);
+
+    if(download)
+    {
+        choice = WindowPrompt("Download", "Do you want to save the file?", "Yes", "No");
+        if (choice)
+            *hfile = SelectFile(mainWindow, ct);
+    }
+    else *hfile = NULL;
+
+    free(ct);
+    return download;
+}
+
+/****************************************************************************
  * Handle screenshots
  ***************************************************************************/
 #ifndef MPLAYER
@@ -1303,15 +1326,18 @@ static int MenuHome()
  ***************************************************************************/
 static int MenuBrowse()
 {
-    char *nurl=NULL;
-    char *url=(char*) malloc (sizeof(new_page)+10);
+    char *nurl = NULL;
+    char *url = NULL;
+    FILE *hfile = NULL;
+
+    bool result;
+    url = (char*) malloc (sizeof(new_page)+10);
     bzero(url, sizeof(new_page)+10);
 
     if (strncmp(new_page,"http",4))
         strcpy(url,"http://");
     strcat(url,new_page);
 
-jump:
     GuiWindow promptWindow(448,288);
     promptWindow.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
     promptWindow.SetPosition(0, -10);
@@ -1337,8 +1363,22 @@ jump:
     promptWindow.Append(&title);
     promptWindow.Append(&msgTxt);
 
-    promptWindow.SetEffect(EFFECT_SLIDE_TOP | EFFECT_SLIDE_IN, 50);
+    GuiWindow childWindow(screenwidth, screenheight);
+    childWindow.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
+    childWindow.SetPosition(0,0);
+
+jump:
+    decode_html_entities_utf8(url, NULL);
+    result = performDownload(&hfile, url);
+
+    if (result && !hfile)
+    {
+        free(url);
+        return MENU_HOME;
+    }
+
     save_mem(url);
+    promptWindow.SetEffect(EFFECT_SLIDE_TOP | EFFECT_SLIDE_IN, 50);
 
     HaltGui();
     mainWindow->SetState(STATE_DISABLED);
@@ -1351,9 +1391,8 @@ jump:
     prev = gettime();
 #endif
 
-    decode_html_entities_utf8(url, NULL);
     struct block HTML;
-    HTML = downloadfile(curl_handle, url, NULL);
+    HTML = downloadfile(curl_handle, url, hfile);
 
 #ifdef DEBUG
     FILE *pFile = fopen ("page.htm", "rb");
@@ -1394,19 +1433,16 @@ jump:
         strcpy(url, nurl);
     }
 
-    if (HTML.size == 0)
+    if (!HTML.size && !result)
     {
         WindowPrompt("WiiBrowser", "Failed", "Ok", NULL);
+        free(url);
         return MENU_HOME;
     }
 
     if (!history || strcmp(history->url.c_str(),url))
         history=InsUrl(history,url);
     sleep(1);
-
-    GuiWindow childWindow(screenwidth, screenheight);
-    childWindow.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-    childWindow.SetPosition(0,0);
 
     HaltGui();
     mainWindow->SetState(STATE_DISABLED);

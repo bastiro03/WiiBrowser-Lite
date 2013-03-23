@@ -42,6 +42,14 @@ extern "C" {
 // VARIABLES
 // -----------------------------------------------------------
 
+enum
+{
+    HEAD,
+    POST,
+    GET,
+    REQUESTS
+};
+
 const char Agents[MAXAGENTS][256] =
 {
     "",
@@ -55,10 +63,11 @@ const char Agents[MAXAGENTS][256] =
 const struct block emptyblock = {NULL, 0};
 
 // -----------------------------------------------------------
-// FUNCTIONS
+// DATA HANDLING
 // -----------------------------------------------------------
 
 char *findChr (const char *str, char chr);
+bool mustdownload(char *content);
 
 int close_callback (void *clientp, curl_socket_t item) {
 	return net_close(item);
@@ -76,7 +85,7 @@ WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp)
     struct MemoryStruct *mem = (struct MemoryStruct *)userp;
     mem->memory = (char *)realloc(mem->memory, mem->size + realsize + 1);
     if (mem->memory == NULL) {
-        printf("not enough memory (realloc returned NULL)\n");
+        Debug("not enough memory (realloc returned NULL)\n");
         exit(EXIT_FAILURE);
     }
     memcpy(&(mem->memory[mem->size]), contents, realsize);
@@ -84,7 +93,69 @@ WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp)
     return realsize;
 }
 
-struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
+static size_t writedata(void *ptr, size_t size, size_t nmemb, void *stream)
+{
+    int written = fwrite(ptr, size, nmemb, (FILE *)stream);
+    return written;
+}
+
+// -----------------------------------------------------------
+// SET HEADERS
+// -----------------------------------------------------------
+
+void setmainheaders(CURL *curl_handle, const char *url)
+{
+    if(!curl_handle)
+        return;
+
+    /* send all data to this function  */
+    curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
+
+    /* follow redirects */
+    curl_easy_setopt(curl_handle, CURLOPT_AUTOREFERER, 1);
+    curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
+    curl_easy_setopt(curl_handle, CURLOPT_NOPROGRESS, 1);
+
+    /* some servers don't like requests that are made without a user-agent
+    field, so we provide one */
+    curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, Agents[Settings.UserAgent]);
+    curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0L);
+    curl_easy_setopt(curl_handle, CURLOPT_COOKIEFILE, "");
+
+    /* proper function to close sockets */
+    curl_easy_setopt(curl_handle, CURLOPT_CLOSESOCKETFUNCTION, close_callback);
+    curl_easy_setopt(curl_handle, CURLOPT_URL, url);
+}
+
+void setrequestheaders(CURL *curl_handle, int request)
+{
+    if(!curl_handle)
+        return;
+
+    if(request == HEAD)
+    {
+        /* get header only  */
+        curl_easy_setopt(curl_handle, CURLOPT_HEADER, 1);
+        curl_easy_setopt(curl_handle, CURLOPT_NOBODY, 1);
+    }
+
+    else if(request == GET)
+    {
+        /* reset handle to perform get  */
+        curl_easy_setopt(curl_handle, CURLOPT_HTTPGET, 1);
+    }
+
+    else if(request == POST)
+    {
+
+    }
+}
+
+// -----------------------------------------------------------
+// REQUEST FUNCTIONS
+// -----------------------------------------------------------
+
+struct block headrequest(CURL *curl_handle, const char *url)
 {
     char *ct=NULL;
     struct block b;
@@ -94,26 +165,12 @@ struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
     chunk.memory = (char *)malloc(1);   /* will be grown as needed by the realloc above */
     chunk.size = 0; /* no data at this point */
 
-    if(curl_handle) {
-        /* send all data to this function  */
-        curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
-        curl_easy_setopt(curl_handle, CURLOPT_NOPROGRESS, 1);
+    setmainheaders(curl_handle, url);
+    setrequestheaders(curl_handle, HEAD);
 
+    if(curl_handle) {
         /* we pass our 'chunk' struct to the callback function */
         curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&chunk);
-        curl_easy_setopt(curl_handle, CURLOPT_AUTOREFERER, 1);
-        curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
-
-        /* some servers don't like requests that are made without a user-agent
-        field, so we provide one */
-        curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, Agents[Settings.UserAgent]);
-        curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0L);
-        curl_easy_setopt(curl_handle, CURLOPT_COOKIEFILE, "");
-
-        /* proper function to close sockets */
-        curl_easy_setopt(curl_handle, CURLOPT_CLOSESOCKETFUNCTION, close_callback);
-        curl_easy_setopt(curl_handle, CURLOPT_HTTPGET, 1);
-        curl_easy_setopt(curl_handle, CURLOPT_URL, url);
 
         if ((res = curl_easy_perform(curl_handle)) != 0)      /*error!*/
         {
@@ -132,8 +189,50 @@ struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
 	b.size = chunk.size;
     strcpy(b.type, findChr(ct, ';'));
 
-    if (hfile)
-        save(&b, hfile);
+	return b;
+}
+
+struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
+{
+    char *ct=NULL;
+    struct block b;
+    int res;
+
+    struct MemoryStruct chunk;
+    chunk.memory = (char *)malloc(1);   /* will be grown as needed by the realloc above */
+    chunk.size = 0; /* no data at this point */
+
+    setmainheaders(curl_handle, url);
+    setrequestheaders(curl_handle, GET);
+
+    if(curl_handle) {
+        /* we pass our 'chunk' struct to the callback function */
+        if(hfile)
+        {
+            /* send all data to this function  */
+            curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, writedata);
+            curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)hfile);
+        }
+        else curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&chunk);
+
+        if ((res = curl_easy_perform(curl_handle)) != 0)      /*error!*/
+        {
+            Debug(url);
+            Debug(curl_easy_strerror((CURLcode)res));
+            return emptyblock;
+        }
+
+        if(CURLE_OK != curl_easy_getinfo(curl_handle, CURLINFO_CONTENT_TYPE, &ct) || !ct)
+            return emptyblock;
+    }
+    else
+        return emptyblock;
+
+	b.data = chunk.memory;
+	b.size = chunk.size;
+    strcpy(b.type, findChr(ct, ';'));
+
+    fclose(hfile);
 	return b;
 }
 
@@ -148,41 +247,26 @@ struct block postrequest(CURL *curl_handle, const char *url, curl_httppost *data
     chunk.size = 0;
     url = findChr(url, '?');
 
-    if(curl_handle) {
-        /* send all data to this function  */
-        curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
-        curl_easy_setopt(curl_handle, CURLOPT_NOPROGRESS, 1);
+    setmainheaders(curl_handle, url);
+    setrequestheaders(curl_handle, POST);
 
+    if(curl_handle) {
         /* we pass our 'chunk' struct to the callback function */
         curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&chunk);
-        curl_easy_setopt(curl_handle, CURLOPT_AUTOREFERER, 1);
-        curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
-
-        /* some servers don't like requests that are made without a user-agent
-        field, so we provide one */
-        curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, Agents[Settings.UserAgent]);
-        curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0L);
-
-        /* proper function to close sockets */
-        curl_easy_setopt(curl_handle, CURLOPT_CLOSESOCKETFUNCTION, close_callback);
-        curl_easy_setopt(curl_handle, CURLOPT_COOKIEFILE, "");
 
         if (data == NULL)
             curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, &url[strlen(url)+1]);
         else curl_easy_setopt(curl_handle, CURLOPT_HTTPPOST, data);
 
-        curl_easy_setopt(curl_handle, CURLOPT_URL, url);
-        res = curl_easy_perform(curl_handle);
+        if ((res = curl_easy_perform(curl_handle)) != 0)      /*error!*/
+        {
+            if (data)
+                curl_formfree(data);
+            return emptyblock;
+        }
 
         if (data)
             curl_formfree(data);
-
-        if (res != 0)       /*error!*/
-        {
-            Debug(url);
-            Debug(curl_easy_strerror((CURLcode)res));
-            return emptyblock;
-        }
 
         if(CURLE_OK != curl_easy_getinfo(curl_handle, CURLINFO_CONTENT_TYPE, &ct) || !ct)
             return emptyblock;
@@ -237,6 +321,7 @@ struct block downloadfile(CURL *curl_handle, const char *url, FILE *hfile)
 {
     const char *mode = strrchr(url, '\\');
     url = findChr(url, '\\');
+    curl_easy_reset(curl_handle);
 
     if (!mode)
         return getrequest(curl_handle, url, hfile);
@@ -251,6 +336,20 @@ struct block downloadfile(CURL *curl_handle, const char *url, FILE *hfile)
     }
 
     return getrequest(curl_handle, url, hfile);
+}
+
+char *checkfile(CURL *curl_handle, const char *url)
+{
+    struct block head;
+    head = headrequest(curl_handle, url);
+
+    if(head.size == 0)
+        return NULL;
+    free(head.data);
+
+    if(mustdownload(head.type))
+        return strdup(head.type);
+    return NULL;
 }
 
 // -----------------------------------------------------------
@@ -290,13 +389,18 @@ void save(struct block *b, FILE *hfile)
 // EXTENSIONS METHODES
 // -----------------------------------------------------------
 
+bool mustdownload(char content[])
+{
+    if (!strcmp(content, "text/html") || strstr(content, "application/xhtml")
+            || strstr(content, "text") || strstr(content, "image")
+                /*|| strstr(content, "video")*/)
+        return false;
+    return true;
+}
+
 char *findChr (const char *str, char chr) {
     char *c=strrchr(str, chr);
     if (c!=NULL)
         *c='\0';
     return (char*)str;
 }
-
-// -----------------------------------------------------------
-// THE END
-// -----------------------------------------------------------

@@ -433,16 +433,12 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
     }
     #endif
 
-    if (!knownType(HTML->type) || type == VIDEO || choice == 2)
+    /* download displayed page or image */
+    if (choice == 2)
     {
-        if (!choice)
-            choice = WindowPrompt("Download", "Do you want to save the file?", "Yes", "No");
-        if (choice)
-        {
-            FILE *file = SelectFile(parentWindow, HTML->type);
-            if (file)
-                save(HTML, file);
-        }
+        FILE *file = SelectFile(parentWindow, HTML->type);
+        if (file)
+            save(HTML, file);
         usleep(100*1000);
     }
 

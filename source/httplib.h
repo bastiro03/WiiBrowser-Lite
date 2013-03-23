@@ -28,7 +28,7 @@
 // -----------------------------------------------------------
 
 #define MAX_LEN         256
-#define TYPE            20
+#define TYPE            50
 #define DEBUG_LEVEL
 #define APPNAME         "WiiBrowser"
 
@@ -41,6 +41,7 @@ struct block
 
 extern const struct block emptyblock;
 struct block downloadfile(CURL *curl_handle, const char *url, FILE *hfile);
+char *checkfile(CURL *curl_handle, const char *url);
 void save(struct block *b, FILE *hfile);
 
 void DebugInt(u32 msg);

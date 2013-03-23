@@ -61,7 +61,9 @@ extern "C" {
     void DoMPlayerGuiDraw();
 
     void ShowAction (const char *msg);
+    void SetMessage (const char *msg);
     void CancelAction();
+    bool CancelDownload();
 #ifdef __cplusplus
 }
 #endif

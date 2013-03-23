@@ -33,6 +33,7 @@
 
 #include "httplib.h"
 #include "main.h"
+#include "menu.h"
 
 extern "C" {
 #include "urlcode.h"
@@ -127,6 +128,21 @@ void setmainheaders(CURL *curl_handle, const char *url)
     curl_easy_setopt(curl_handle, CURLOPT_URL, url);
 }
 
+int showprogress(void *bar,
+                    double total, /* dltotal */
+                    double done, /* dlnow */
+                    double ultotal,
+                    double ulnow)
+{
+    char msg[20];
+    sprintf(msg, "Loading...%2.2f%%", done*100.0/total);
+    SetMessage(msg);
+
+    if(CancelDownload())
+        return 1;
+    return 0;
+}
+
 void setrequestheaders(CURL *curl_handle, int request)
 {
     if(!curl_handle)
@@ -143,6 +159,8 @@ void setrequestheaders(CURL *curl_handle, int request)
     {
         /* reset handle to perform get  */
         curl_easy_setopt(curl_handle, CURLOPT_HTTPGET, 1);
+        curl_easy_setopt(curl_handle, CURLOPT_NOPROGRESS, 0);
+        curl_easy_setopt(curl_handle, CURLOPT_PROGRESSFUNCTION, showprogress);
     }
 
     else if(request == POST)

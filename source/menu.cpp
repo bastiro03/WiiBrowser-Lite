@@ -59,6 +59,7 @@ static const u8 * pointerGrabImg[4];
 
 static GuiSound * bgMusic = NULL;
 static GuiImage * bgImg = NULL;
+static GuiButton * actionButton = NULL;
 
 static GuiImageData * SplashImage = NULL;
 static GuiImage * Splash = NULL;
@@ -354,6 +355,7 @@ bool LoadYouTubeFile(char *newurl, char *data)
  ***************************************************************************/
 static int progsleep = 0;
 static GuiImageData * throbber = NULL;
+static GuiText * msgTxt = NULL;
 
 static void
 ProgressWindow(char *msg)
@@ -367,18 +369,19 @@ ProgressWindow(char *msg)
     throbberImg.SetPosition(0, 40);
     throbberImg.SetScale(0.60);
 
-    GuiText msgTxt(msg, 20, (GXColor)
+    msgTxt = new GuiText(msg, 20, (GXColor)
     {
         0, 0, 0, 255
     });
-    msgTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
-    msgTxt.SetPosition(0, 80);
+    msgTxt->SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
+    msgTxt->SetPosition(0, 80);
 
-    promptWindow.Append(&msgTxt);
+    promptWindow.Append(msgTxt);
     promptWindow.Append(&throbberImg);
 
     if(loadThreadHalt > 0)
         return;
+    float angle = 0;
 
     HaltGui();
     int oldState = mainWindow->GetState();
@@ -386,12 +389,9 @@ ProgressWindow(char *msg)
     mainWindow->Append(&promptWindow);
     ResumeGui();
 
-    float angle = 0;
-    u32 count = 0;
-
     while(loadThreadHalt == 0)
     {
-        progsleep = 20*1000;
+        progsleep = 100*1000;
 
         while(progsleep > 0)
         {
@@ -399,20 +399,19 @@ ProgressWindow(char *msg)
             progsleep -= THREAD_SLEEP;
         }
 
-        if(count % 5 == 0)
-        {
-            angle += 90.0f;
-            if(angle >= 360.0f)
-                angle = 0;
-            throbberImg.SetAngle(angle);
-        }
-        ++count;
+        angle += 90.0f;
+        if(angle >= 360.0f)
+            angle = 0;
+        throbberImg.SetAngle(angle);
     }
 
     HaltGui();
     mainWindow->Remove(&promptWindow);
     mainWindow->SetState(oldState);
     ResumeGui();
+
+    delete(msgTxt);
+    msgTxt = NULL;
 }
 
 static void *LoadingThread (void *arg)
@@ -436,6 +435,16 @@ void ShowAction (const char *msg)
 
     loadThreadHalt = 0;
     LWP_ResumeThread (loadthread);
+}
+
+void SetMessage (const char *msg)
+{
+    if (!msgTxt)
+        return;
+
+    snprintf(Message, sizeof(Message), msg);
+
+    msgTxt->SetText(msg);
 }
 
 void CancelAction()
@@ -1332,6 +1341,11 @@ static int MenuHome()
 /****************************************************************************
  * MenuBrowse
  ***************************************************************************/
+bool CancelDownload()
+{
+    return (actionButton->GetState() == STATE_CLICKED);
+}
+
 static int MenuBrowse()
 {
     char *nurl = NULL;
@@ -1359,17 +1373,39 @@ static int MenuBrowse()
     });
     title.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
     title.SetPosition(0,40);
-    GuiText msgTxt("Loading...please wait.", 22, (GXColor)
+
+    GuiText staticTxt("Loading...please wait", 20, (GXColor)
     {
         0, 0, 0, 255
     });
-    msgTxt.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-    msgTxt.SetPosition(0,-20);
-    msgTxt.SetWrap(true, 400);
+    staticTxt.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
+    staticTxt.SetPosition(0,-20);
+    staticTxt.SetWrap(true, 400);
+
+    GuiSound btnSoundOver(button_over_pcm, button_over_pcm_size, SOUND_PCM);
+    GuiImageData btnOutline(button_png);
+    GuiImageData btnOutlineOver(button_over_png);
+    GuiImage btnImg(&btnOutline);
+    GuiImage btnImgOver(&btnOutlineOver);
+
+    GuiText btnTxt("Cancel", 22, (GXColor)
+    {
+        0, 0, 0, 255
+    });
+
+    actionButton = new GuiButton(btnOutline.GetWidth(), btnOutline.GetHeight());
+    actionButton->SetAlignment(ALIGN_CENTRE, ALIGN_BOTTOM);
+    actionButton->SetPosition(0, -25);
+
+    actionButton->SetLabel(&btnTxt);
+    actionButton->SetImage(&btnImg);
+    actionButton->SetImageOver(&btnImgOver);
+    actionButton->SetSoundOver(&btnSoundOver);
+    actionButton->SetTrigger(trigA);
+    actionButton->SetEffectGrow();
 
     promptWindow.Append(&dialogBoxImg);
     promptWindow.Append(&title);
-    promptWindow.Append(&msgTxt);
 
     GuiWindow childWindow(screenwidth, screenheight);
     childWindow.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
@@ -1387,6 +1423,22 @@ jump:
 
     save_mem(url);
     promptWindow.SetEffect(EFFECT_SLIDE_TOP | EFFECT_SLIDE_IN, 50);
+
+    msgTxt = new GuiText("Loading...please wait", 20, (GXColor)
+    {
+        0, 0, 0, 255
+    });
+
+    msgTxt->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
+    msgTxt->SetPosition(0,-20);
+    msgTxt->SetWrap(true, 400);
+
+    if (result)
+    {
+        promptWindow.Append(actionButton);
+        promptWindow.Append(msgTxt);
+    }
+    else promptWindow.Append(&staticTxt);
 
     HaltGui();
     mainWindow->SetState(STATE_DISABLED);
@@ -1434,6 +1486,12 @@ jump:
     mainWindow->Remove(&promptWindow);
     mainWindow->SetState(STATE_DEFAULT);
     ResumeGui();
+
+    delete(msgTxt);
+    delete(actionButton);
+
+    msgTxt = NULL;
+    actionButton = NULL;
 
     if (CURLE_OK == curl_easy_getinfo(curl_handle, CURLINFO_EFFECTIVE_URL, &nurl))
     {

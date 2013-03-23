@@ -9,6 +9,7 @@
  ***************************************************************************/
 
 #include "gui.h"
+#include "wiikeyboard/usbkeyboard.h"
 
 static char tmptxt[MAX_KEYBOARD_DISPLAY];
 bool GuiKeyboard::bInitUSBKeyboard = true;
@@ -308,6 +309,7 @@ void GuiKeyboard::Update(GuiTrigger * t)
 	}
 
 	wchar_t charCode = 0;
+	u8 keyCode = 0;
 	bool update = false;
 
 	++DeleteDelay;
@@ -341,7 +343,9 @@ void GuiKeyboard::Update(GuiTrigger * t)
 				charCode = keyboardEvent.symbol;
 			}
 
-			if(charCode != 0)
+			keyCode = keyboardEvent.modifiers;
+
+			if(charCode != 0 || keyCode != 0)
                 DeleteDelay = 0;
 		}
 	}
@@ -373,17 +377,33 @@ void GuiKeyboard::Update(GuiTrigger * t)
 		}
 		keyBack->SetState(STATE_SELECTED, t->chan);
 	}
-	else if(keyShift->GetState() == STATE_CLICKED       || charCode == 0xf101)
+	else if(keyShift->GetState() == STATE_CLICKED       || keyCode == 0xf101)
 	{
 		shift ^= 1;
 		keyShift->SetState(STATE_SELECTED, t->chan);
 		update = true;
 	}
-	else if(keyCaps->GetState() == STATE_CLICKED        || charCode == 0xf105)
+	else if(keyCaps->GetState() == STATE_CLICKED        || keyCode == 0xf105)
 	{
 		caps ^= 1;
 		keyCaps->SetState(STATE_SELECTED, t->chan);
+		USBKeyboard_SetLed(USBKEYBOARD_LEDCAPS, caps);
 		update = true;
+	}
+
+	if (charCode < 0xD800)
+	{
+		if(strlen(kbtextstr) < kbtextmaxlen)
+		{
+            kbtextstr[strlen(kbtextstr)] = charCode;
+        }
+		kbText->SetText(GetDisplayText(kbtextstr));
+
+		if(shift)
+        {
+            shift ^= 1;
+            update = true;
+        }
 	}
 
 	char txt[2] = { 0, 0 };
@@ -406,8 +426,7 @@ void GuiKeyboard::Update(GuiTrigger * t)
 					keyTxt[i][j]->SetText(txt);
 				}
 
-				if(keyBtn[i][j]->GetState() == STATE_CLICKED
-                        || charCode == keys[i][j].ch || charCode == keys[i][j].chShift)
+				if(keyBtn[i][j]->GetState() == STATE_CLICKED)
 				{
 					if(strlen(kbtextstr) < kbtextmaxlen)
 					{
@@ -421,7 +440,7 @@ void GuiKeyboard::Update(GuiTrigger * t)
 						}
 					}
 					kbText->SetText(GetDisplayText(kbtextstr));
-					keyBtn[i][j]->SetState(STATE_SELECTED, t->chan);
+                    keyBtn[i][j]->SetState(STATE_SELECTED, t->chan);
 
 					if(shift)
 					{

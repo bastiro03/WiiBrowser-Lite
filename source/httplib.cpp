@@ -171,6 +171,7 @@ struct block headrequest(CURL *curl_handle, const char *url)
     if(curl_handle) {
         /* we pass our 'chunk' struct to the callback function */
         curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&chunk);
+        curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 0);
 
         if ((res = curl_easy_perform(curl_handle)) != 0)      /*error!*/
         {
@@ -338,14 +339,21 @@ struct block downloadfile(CURL *curl_handle, const char *url, FILE *hfile)
     return getrequest(curl_handle, url, hfile);
 }
 
-char *checkfile(CURL *curl_handle, const char *url)
+char *checkfile(CURL *curl_handle, char **url)
 {
     struct block head;
-    head = headrequest(curl_handle, url);
+    head = headrequest(curl_handle, *url);
+    char *new_url = NULL;
 
     if(head.size == 0)
         return NULL;
     free(head.data);
+
+    if(CURLE_OK == curl_easy_getinfo(curl_handle, CURLINFO_REDIRECT_URL, &new_url) && new_url)
+    {
+        *url = (char*)realloc((*url), strlen(new_url)+1);
+        strcpy((*url), new_url);
+    }
 
     if(mustdownload(head.type))
         return strdup(head.type);

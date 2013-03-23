@@ -41,7 +41,7 @@ struct block
 
 extern const struct block emptyblock;
 struct block downloadfile(CURL *curl_handle, const char *url, FILE *hfile);
-char *checkfile(CURL *curl_handle, const char *url);
+char *checkfile(CURL *curl_handle, char **url);
 void save(struct block *b, FILE *hfile);
 
 void DebugInt(u32 msg);

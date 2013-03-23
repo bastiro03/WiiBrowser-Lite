@@ -71,8 +71,8 @@ int knownType(char type[])
         return TEXT;
     if (strstr(type, "image"))
         return IMAGE;
-    if (strstr(type, "video"))
-        return VIDEO;
+    // if (strstr(type, "video"))
+        // return VIDEO;
     return UNKNOWN;
 }
 
@@ -434,11 +434,16 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
     #endif
 
     /* download displayed page or image */
-    if (choice == 2)
+    if (!knownType(HTML->type) || choice == 2)
     {
-        FILE *file = SelectFile(parentWindow, HTML->type);
-        if (file)
-            save(HTML, file);
+        if (!choice)
+            choice = WindowPrompt("Download", "Do you want to save the file?", "Yes", "No");
+        if (choice)
+        {
+            FILE *file = SelectFile(parentWindow, HTML->type);
+            if (file)
+                save(HTML, file);
+        }
         usleep(100*1000);
     }
 

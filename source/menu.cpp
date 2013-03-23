@@ -138,7 +138,7 @@ string parseUrl(string link, const char* url)
  ***************************************************************************/
 FILE *SelectFile(GuiWindow *mainWindow, char *type);
 
-bool performDownload(FILE **hfile, char *url)
+bool performDownload(FILE **hfile, char **url)
 {
     int choice;
     char *ct = checkfile(curl_handle, url);
@@ -940,6 +940,7 @@ static int MenuSettings()
     sprintf(options.name[i++], "Homepage");
     sprintf(options.name[i++], "Save Folder");
     sprintf(options.name[i++], "Show Tooltips");
+    sprintf(options.name[i++], "Show Thumbnails");
     sprintf(options.name[i++], "Autoupdate");
     sprintf(options.name[i++], "Language");
     sprintf(options.name[i++], "Music");
@@ -1009,20 +1010,24 @@ static int MenuSettings()
             break;
 
         case 3:
-            Settings.Autoupdate = !Settings.Autoupdate;
+            Settings.ShowThumbs = !Settings.ShowThumbs;
             break;
 
         case 4:
+            Settings.Autoupdate = !Settings.Autoupdate;
+            break;
+
+        case 5:
             Settings.Language++;
             if (Settings.Language >= LANG_LENGTH)
                 Settings.Language = 0;
             break;
 
-        case 5:
+        case 6:
             Settings.Music = !Settings.Music;
             break;
 
-        case 6:
+        case 7:
             Settings.UserAgent++;
             if (Settings.UserAgent >= MAXAGENTS)
                 Settings.UserAgent = 0;
@@ -1037,19 +1042,22 @@ static int MenuSettings()
 
             snprintf (options.value[0], 256, "%s", Settings.Homepage);
             snprintf (options.value[1], 256, "%s", Settings.DefaultFolder);
-            snprintf (options.value[6], 256, "%s", AgentName[Settings.UserAgent]);
+            snprintf (options.value[7], 256, "%s", AgentName[Settings.UserAgent]);
 
             if (Settings.ShowTooltip == 0) sprintf (options.value[2], "Hide");
             else if (Settings.ShowTooltip == 1) sprintf (options.value[2], "Show");
-            if (Settings.Autoupdate == 0) sprintf (options.value[3], "Disabled");
-            else if (Settings.Autoupdate == 1) sprintf (options.value[3], "Enabled");
+            if (Settings.ShowThumbs == 0) sprintf (options.value[3], "Hide");
+            else if (Settings.ShowThumbs == 1) sprintf (options.value[3], "Show");
 
-            if (Settings.Language == LANG_JAPANESE) sprintf (options.value[4], "Japanese");
-            else if (Settings.Language == LANG_ENGLISH) sprintf (options.value[4], "English");
-            else if (Settings.Language == LANG_GERMAN) sprintf (options.value[4], "German");
+            if (Settings.Autoupdate == 0) sprintf (options.value[4], "Disabled");
+            else if (Settings.Autoupdate == 1) sprintf (options.value[4], "Enabled");
 
-            if (Settings.Music == 0) sprintf (options.value[5], "Off");
-            else if (Settings.Music == 1) sprintf (options.value[5], "On");
+            if (Settings.Language == LANG_JAPANESE) sprintf (options.value[5], "Japanese");
+            else if (Settings.Language == LANG_ENGLISH) sprintf (options.value[5], "English");
+            else if (Settings.Language == LANG_GERMAN) sprintf (options.value[5], "German");
+
+            if (Settings.Music == 0) sprintf (options.value[6], "Off");
+            else if (Settings.Music == 1) sprintf (options.value[6], "On");
 
             optionBrowser.TriggerUpdate();
         }
@@ -1369,7 +1377,7 @@ static int MenuBrowse()
 
 jump:
     decode_html_entities_utf8(url, NULL);
-    result = performDownload(&hfile, url);
+    result = performDownload(&hfile, &url);
 
     if (result && !hfile)
     {
@@ -1451,7 +1459,8 @@ jump:
     ResumeGui();
 
     string link;
-    link = DisplayHTML(&HTML, mainWindow, &childWindow, url);
+    if (!result)
+        link = DisplayHTML(&HTML, mainWindow, &childWindow, url);
     free(HTML.data);
 
     HaltGui();
@@ -1541,7 +1550,7 @@ static int MenuFavorites()
         Block[i].Block->SetUpdateCallback(DragCallback);
         Block[i].Label->SetText(Settings.GetUrl(i));
 
-        if(Settings.Thumbnails[i])
+        if(Settings.ShowThumbs && Settings.Thumbnails[i])
         {
             Block[i].Thumb->SetImage(Settings.Thumbnails[i], vmode->fbWidth, vmode->viHeight);
             Block[i].Block->SetIcon(Block[i].Thumb);

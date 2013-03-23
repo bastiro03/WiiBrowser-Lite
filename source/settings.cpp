@@ -66,8 +66,9 @@ void SSettings::SetDefault()
     Revision = 0;
 
     ShowTooltip = true;
-    Music = true;
     Autoupdate = true;
+    Music = true;
+    ShowThumbs = true;
 
     sprintf(Homepage, DEFAULT_HOMEPAGE);
     sprintf(AppPath, "%s%s", BootDevice, DEFAULT_APP_PATH);
@@ -111,6 +112,7 @@ bool SSettings::Save()
 	fprintf(file, "UserAgent = %d\r\n", UserAgent);
 	fprintf(file, "Autoupdate = %d\r\n", Autoupdate);
 	fprintf(file, "ShowTooltip = %d\r\n", ShowTooltip);
+	fprintf(file, "ShowThumbnails = %d\r\n", ShowThumbs);
 	fprintf(file, "Music = %d\r\n", Music);
 	fprintf(file, "DefaultFolder = %s\r\n", DefaultFolder);
 	fprintf(file, "Homepage = %s\r\n", Homepage);
@@ -300,6 +302,12 @@ bool SSettings::SetSetting(char *name, char *value)
 	else if (strcmp(name, "ShowTooltip") == 0) {
 		if (sscanf(value, "%d", &i) == 1) {
 			ShowTooltip = i;
+		}
+		return true;
+	}
+    else if (strcmp(name, "ShowThumbnails") == 0) {
+		if (sscanf(value, "%d", &i) == 1) {
+			ShowThumbs = i;
 		}
 		return true;
 	}

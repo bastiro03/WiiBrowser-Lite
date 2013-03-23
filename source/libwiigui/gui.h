@@ -312,9 +312,15 @@ class GuiElement
 		//!Gets the current width of the element. Does not currently consider the scale
 		//!\return width
 		int GetWidth();
-		//!Gets the height of the element. Does not currently consider the scale
+        //!Gets the real width of the element. Considers the scale
+		//!\return width
+		int GetRealWidth();
+		//!Gets the current height of the element. Does not currently consider the scale
 		//!\return height
 		int GetHeight();
+        //!Gets the real height of the element. Considers the scale
+		//!\return height
+		int GetRealHeight();
 		//!Sets the size (width/height) of the element
 		//!\param w Width of element
 		//!\param h Height of element

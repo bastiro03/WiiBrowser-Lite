@@ -179,9 +179,19 @@ int GuiElement::GetWidth()
 	return width;
 }
 
+int GuiElement::GetRealWidth()
+{
+	return GetWidth() * GetScaleX();
+}
+
 int GuiElement::GetHeight()
 {
 	return height;
+}
+
+int GuiElement::GetRealHeight()
+{
+	return GetHeight() * GetScaleY();
 }
 
 void GuiElement::SetSize(int w, int h)

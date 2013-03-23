@@ -132,15 +132,16 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
             button=InsButton(button);
             button->refs=(Tag*)button;   // Dummy Assignment
             GuiImage *TextboxImg = new GuiImage(&TextboxImgData);
-            button->btn=new GuiButton(TextboxImg->GetWidth(), TextboxImg->GetHeight());
+            TextboxImg->SetScale(0.86);
+            button->btn=new GuiButton(TextboxImg->GetRealWidth(), TextboxImg->GetRealHeight());
             button->label=new GuiLongText("", 20, (GXColor)
             {
                 0, 0, 0, 255
             });
             button->label->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-            button->label->SetLinesToDraw(TextboxImg->GetHeight()/25);
-            button->label->SetMaxWidth(TextboxImg->GetWidth()-45);
-            button->label->SetPosition(20, 30);
+            button->label->SetLinesToDraw(TextboxImg->GetRealHeight()/25);
+            button->label->SetMaxWidth(TextboxImg->GetRealWidth()-45);
+            button->label->SetPosition(20, 25);
             if (lista->label!="noLabel")
             {
                 label=new GuiText((char*)lista->label.c_str(), 20, (GXColor)
@@ -149,7 +150,7 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
                 });
                 label->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
                 label->SetPosition(0,-25);
-                label->SetMaxWidth(TextboxImg->GetWidth()-5);
+                label->SetMaxWidth(TextboxImg->GetRealWidth()-5);
                 label->SetScroll(SCROLL_HORIZONTAL);
                 button->btn->SetLabel(label);
                 offset+=25;
@@ -164,7 +165,7 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
             HaltGui();
             Form.Append(button->btn);
             ResumeGui();
-            offset+=TextboxImg->GetHeight()+10;
+            offset+=TextboxImg->GetRealHeight()+10;
         }
         else if (inputType(lista)==UNKNOWN)
         {

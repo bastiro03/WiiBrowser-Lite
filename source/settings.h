@@ -96,6 +96,7 @@ class SSettings
         int UserAgent;
 
         bool ShowTooltip;
+        bool ShowThumbs;
         bool Autoupdate;
         bool Music;
 

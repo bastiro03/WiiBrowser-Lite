@@ -1343,6 +1343,9 @@ static int MenuHome()
  ***************************************************************************/
 bool CancelDownload()
 {
+    if (!actionButton)
+        return false;
+
     return (actionButton->GetState() == STATE_CLICKED);
 }
 

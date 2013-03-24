@@ -391,7 +391,7 @@ void GuiKeyboard::Update(GuiTrigger * t)
 		update = true;
 	}
 
-	if (charCode < 0xD800)
+	if (charCode > 0x20 && charCode < 0xD800)
 	{
 		if(strlen(kbtextstr) < kbtextmaxlen)
 		{

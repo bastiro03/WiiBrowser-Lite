@@ -30,6 +30,8 @@ void Menu_DrawImg(f32 xpos, f32 ypos, u16 width, u16 height, u8 data[], f32 degr
 void Menu_DrawRectangle(f32 x, f32 y, f32 width, f32 height, GXColor color, u8 filled);
 
 u8* TakeScreenshot();
+void SaveScreenshot(char *path);
+
 void DrawForegroundGui();
 int DrawMPlayerGui();
 

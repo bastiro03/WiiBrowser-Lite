@@ -72,7 +72,7 @@ int knownType(char type[])
     if (strstr(type, "image"))
         return IMAGE;
     // if (strstr(type, "video"))
-        // return VIDEO;
+    // return VIDEO;
     return UNKNOWN;
 }
 
@@ -104,7 +104,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
     GuiTrigger *trigA=new GuiTrigger;
     trigA->SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
 
-    #ifdef MPLAYER
+#ifdef MPLAYER
     if (!strncmp(url, "http://www.youtube.", 19)
             || !strncmp(url, "https://www.youtube.", 20))
     {
@@ -122,316 +122,318 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
         }
     }
     else
-    #endif
+#endif
 
-    if (type == WEB)
-    {
-        l1=getTag((char*)HTML->data);
-        lista=l1.begin();
-        LWP_CreateThread (&thread, DownloadImage, (void*)url, NULL, 0, 70);
-
-        unsigned int i;
-        while (!choice)
+        if (type == WEB)
         {
-            Clear(mainWindow, Index, &first, &last, ext);
-            coordY=Index ? Index->elem->GetYPosition()+Index->screenSize : 40;
-            if (!ext && Index) ext=Index;
+            l1=getTag((char*)HTML->data);
+            lista=l1.begin();
+            LWP_CreateThread (&thread, DownloadImage, (void*)url, NULL, 0, 70);
 
-            if (first && first->prox)
+            unsigned int i;
+            while (!choice)
             {
-                if (first->prox->elem->GetYPosition()+first->prox->screenSize>=0)
-                {
-                    first->prox->elem->SetVisible(true);
-                    first->prox->elem->SetEffect(EFFECT_FADE, 50);
-                    first=first->prox;
-                }
-            }
+                Clear(mainWindow, Index, &first, &last, ext);
+                coordY=Index ? Index->elem->GetYPosition()+Index->screenSize : 40;
+                if (!ext && Index) ext=Index;
 
-            if (last && last->prec)
-            {
-                if (last->prec->elem->GetYPosition()<screenheight)
+                if (first && first->prox)
                 {
-                    last->prec->elem->SetVisible(true);
-                    last->prec->elem->SetEffect(EFFECT_FADE, 50);
-                    last=last->prec;
-                }
-            }
-
-            else if (lista!=l1.end() && coordY<screenheight)
-            {
-                if (lista->name=="title" && !lista->value.empty())
-                {
-                    text=InsText(text);
-                    text->txt = new GuiText((char*)lista->value[0].text.c_str(), 30, (GXColor)
+                    if (first->prox->elem->GetYPosition()+first->prox->screenSize>=0)
                     {
-                        0, 0, 0, 255
-                    });
-                    text->txt->SetOffset(&coordX);
-                    text->txt->SetAlignment(ALIGN_MIDDLE, ALIGN_TOP);
-                    text->txt->SetPosition(coordX+screenwidth/2, coordY);
-                    text->txt->SetWrap(true, 400);
-                    text->txt->SetEffect(EFFECT_FADE, 50);
-                    HaltGui();
-                    mainWindow->Append(text->txt);
-                    ResumeGui();
-                    Index=InsIndex(Index);
-                    Index->elem=text->txt;
-                    Index->screenSize=10+30*text->txt->GetLinesCount();
+                        first->prox->elem->SetVisible(true);
+                        first->prox->elem->SetEffect(EFFECT_FADE, 50);
+                        first=first->prox;
+                    }
                 }
 
-                else if (lista->name=="a")
+                if (last && last->prec)
                 {
-                    for(i=0; i<lista->value.size(); i++)
+                    if (last->prec->elem->GetYPosition()<screenheight)
                     {
-                        btn=InsButton(btn);
-                        btn->label=new GuiText((char*)lista->value[i].text.c_str(), 20, (GXColor)
+                        last->prec->elem->SetVisible(true);
+                        last->prec->elem->SetEffect(EFFECT_FADE, 50);
+                        last=last->prec;
+                    }
+                }
+
+                else if (lista!=l1.end() && coordY<screenheight)
+                {
+                    if (lista->name=="title" && !lista->value.empty())
+                    {
+                        text=InsText(text);
+                        text->txt = new GuiText((char*)lista->value[0].text.c_str(), 30, (GXColor)
                         {
-                            0, 0, 255, 255
+                            0, 0, 0, 255
                         });
-                        btn->label->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-                        btn->label->SetSpace(false);
-                        btn->label->SetModel(ANCHOR);
-                        btn->label->SetOffset(&coordX);
-                        if (offset >= (screenwidth-80))
+                        text->txt->SetOffset(&coordX);
+                        text->txt->SetAlignment(ALIGN_MIDDLE, ALIGN_TOP);
+                        text->txt->SetPosition(coordX+screenwidth/2, coordY);
+                        text->txt->SetWrap(true, 400);
+                        text->txt->SetEffect(EFFECT_FADE, 50);
+                        HaltGui();
+                        mainWindow->Append(text->txt);
+                        ResumeGui();
+                        Index=InsIndex(Index);
+                        Index->elem=text->txt;
+                        Index->screenSize=10+30*text->txt->GetLinesCount();
+                    }
+
+                    else if (lista->name=="a")
+                    {
+                        for(i=0; i<lista->value.size(); i++)
                         {
-                            coordY=Index ? Index->elem->GetYPosition()+Index->screenSize : 40;
-                            offset=offset % (screenwidth-80);
+                            btn=InsButton(btn);
+                            btn->label=new GuiText((char*)lista->value[i].text.c_str(), 20, (GXColor)
+                            {
+                                0, 0, 255, 255
+                            });
+                            btn->label->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+                            btn->label->SetSpace(false);
+                            btn->label->SetModel(ANCHOR);
+                            btn->label->SetOffset(&coordX);
+                            if (offset >= (screenwidth-80))
+                            {
+                                coordY=Index ? Index->elem->GetYPosition()+Index->screenSize : 40;
+                                offset=offset % (screenwidth-80);
+                            }
+                            btn->label->SetWrap(true, screenwidth-80-offset);
+                            SetFont(btn->label, lista->value[i].mode);
+                            btn->label->SetPosition(0,0);
+
+                            btn->tooltip=new GuiTooltip(lista->attribute.c_str());
+                            btn->btn=new GuiButton(btn->label->GetTextWidth(), 20);
+                            btn->btn->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+                            btn->btn->SetPosition(coordX+40+offset, coordY);
+                            btn->btn->SetLabel(btn->label);
+
+                            btn->btn->SetSoundOver(btnSoundOver);
+                            btn->btn->SetTrigger(trigA);
+                            btn->url.assign(lista->attribute);
+                            btn->btn->SetTooltip(btn->tooltip);
+                            btn->btn->SetEffect(EFFECT_FADE, 50);
+
+                            HaltGui();
+                            mainWindow->Append(btn->btn);
+                            ResumeGui();
+                            Index=InsIndex(Index);
+                            Index->elem=btn->btn;
+                            offset+=btn->label->GetTextWidth();
+                            Index->screenSize=(offset/(screenwidth-80))*25;
                         }
-                        btn->label->SetWrap(true, screenwidth-80-offset);
-                        SetFont(btn->label, lista->value[i].mode);
-                        btn->label->SetPosition(0,0);
-
-                        btn->tooltip=new GuiTooltip(lista->attribute.c_str());
-                        btn->btn=new GuiButton(btn->label->GetTextWidth(), 20);
-                        btn->btn->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-                        btn->btn->SetPosition(coordX+40+offset, coordY);
-                        btn->btn->SetLabel(btn->label);
-
-                        btn->btn->SetSoundOver(btnSoundOver);
-                        btn->btn->SetTrigger(trigA);
-                        btn->url.assign(lista->attribute);
-                        btn->btn->SetTooltip(btn->tooltip);
-                        btn->btn->SetEffect(EFFECT_FADE, 50);
-
-                        HaltGui();
-                        mainWindow->Append(btn->btn);
-                        ResumeGui();
-                        Index=InsIndex(Index);
-                        Index->elem=btn->btn;
-                        offset+=btn->label->GetTextWidth();
-                        Index->screenSize=(offset/(screenwidth-80))*25;
                     }
-                }
 
-                else if (lista->name=="img" && !lista->value.empty() && lista->value[0].text.length()>0)
-                {
-                    string tmp=adjustUrl(lista->value[0].text, url);
-                    if (lista->attribute.length()!=0)
+                    else if (lista->name=="img" && !lista->value.empty() && lista->value[0].text.length()>0)
                     {
-                        img=InsImg(img);
-                        img->img=new GuiImage();
-                        img->img->SetPosition(coordX+40, coordY);
-                        img->tag=&(*lista);
-                        HaltGui();
-                        mainWindow->Append(img->img);
-                        ResumeGui();
-                        Index=InsIndex(Index);
-                        Index->elem=img->img;
-                        Index->screenSize=atoi(lista->attribute.c_str())+5;
-                        Index->content=null;
-                    }
-                    else
-                    {
-                        HaltThread(thread);
-                        struct block IMAGE = downloadfile(curl_handle, tmp.c_str(), NULL);
-                        if(IMAGE.size>0 && strstr(IMAGE.type, "image"))
+                        string tmp=adjustUrl(lista->value[0].text, url);
+                        if (lista->attribute.length()!=0)
                         {
                             img=InsImg(img);
-                            img->imgdata=new GuiImageData((u8*)IMAGE.data, IMAGE.size);
-                            img->img=new GuiImage(img->imgdata);
+                            img->img=new GuiImage();
                             img->img->SetPosition(coordX+40, coordY);
-                            img->img->SetEffect(EFFECT_FADE, 50);
+                            img->tag=&(*lista);
                             HaltGui();
                             mainWindow->Append(img->img);
                             ResumeGui();
                             Index=InsIndex(Index);
                             Index->elem=img->img;
-                            Index->screenSize=img->img->GetHeight()+5;
+                            Index->screenSize=atoi(lista->attribute.c_str())+5;
                             Index->content=null;
                         }
-                        free(IMAGE.data);
-                        ResumeThread(thread);
-                    }
-                }
-
-                else if (lista->name=="form")
-                {
-                    btn=InsButton(btn);
-                    btn->refs=&(*lista);
-                    GuiImage *TextboxImg=new GuiImage(&Textbox);
-                    btn->btn=new GuiButton(TextboxImg->GetWidth(), TextboxImg->GetHeight());
-                    btn->btn->SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
-                    btn->btn->SetPosition(coordX, coordY);
-                    btn->btn->SetImage(TextboxImg);
-
-                    btn->btn->SetSoundOver(btnSoundOver);
-                    btn->btn->SetTrigger(trigA);
-                    btn->btn->SetEffectGrow();
-
-                    btn->btn->SetEffect(EFFECT_FADE, 50);
-                    HaltGui();
-                    mainWindow->Append(btn->btn);
-                    ResumeGui();
-                    Index=InsIndex(Index);
-                    Index->elem=btn->btn;
-                    Index->screenSize=60;
-                }
-
-                else if (lista->name=="meta")
-                {
-                    if (!lista->value.empty())
-                        choice = HandleMeta(lista, &link, HTML);
-                }
-
-                else if (lista->name=="base")
-                {
-                    snprintf(url, 256, lista->attribute.c_str());
-                }
-
-                else if (lista->name=="return")
-                {
-                    if ((++lista)!=l1.end() && lista->name!="p" && lista->name!="return")
-                    {
-                        if (Index)
-                            Index->screenSize+=25;
-                        offset=0;
-                    }
-                    lista--;
-                }
-
-                else if (lista->name=="p")
-                {
-                    if ((++lista)!=l1.end() && lista->name!="p" && lista->name!="return")
-                    {
-                        if (Index)
-                            Index->screenSize+=50;
-                        offset=0;
-                    }
-                    lista--;
-                }
-
-                else
-                {
-                    for(i=0; i<lista->value.size(); i++)
-                    {
-                        text=InsText(text);
-                        text->txt = new GuiText((char*)lista->value[i].text.c_str(), 20, (GXColor)
+                        else
                         {
-                            0, 0, 0, 255
-                        });
-                        text->txt->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-                        text->txt->SetSpace(false);
-                        text->txt->SetOffset(&coordX);
-                        if (offset >= (screenwidth-80))
-                        {
-                            coordY=Index ? Index->elem->GetYPosition()+Index->screenSize : 40;
-                            offset=offset % (screenwidth-80);
+                            HaltThread(thread);
+                            struct block IMAGE = downloadfile(curl_handle, tmp.c_str(), NULL);
+                            if(IMAGE.size>0 && strstr(IMAGE.type, "image"))
+                            {
+                                img=InsImg(img);
+                                img->imgdata=new GuiImageData((u8*)IMAGE.data, IMAGE.size);
+                                img->img=new GuiImage(img->imgdata);
+                                img->img->SetPosition(coordX+40, coordY);
+                                img->img->SetEffect(EFFECT_FADE, 50);
+                                HaltGui();
+                                mainWindow->Append(img->img);
+                                ResumeGui();
+                                Index=InsIndex(Index);
+                                Index->elem=img->img;
+                                Index->screenSize=img->img->GetHeight()+5;
+                                Index->content=null;
+                            }
+                            free(IMAGE.data);
+                            ResumeThread(thread);
                         }
-                        text->txt->SetPosition(coordX+40+offset, coordY);
-                        text->txt->SetWrap(true, screenwidth-80-offset);
-                        text->txt->SetEffect(EFFECT_FADE, 50);
-                        SetFont(text->txt, lista->value[i].mode);
+                    }
+
+                    else if (lista->name=="form")
+                    {
+                        btn=InsButton(btn);
+                        btn->refs=&(*lista);
+                        GuiImage *TextboxImg=new GuiImage(&Textbox);
+                        btn->btn=new GuiButton(TextboxImg->GetWidth(), TextboxImg->GetHeight());
+                        btn->btn->SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
+                        btn->btn->SetPosition(coordX, coordY);
+                        btn->btn->SetImage(TextboxImg);
+
+                        btn->btn->SetSoundOver(btnSoundOver);
+                        btn->btn->SetTrigger(trigA);
+                        btn->btn->SetEffectGrow();
+
+                        btn->btn->SetEffect(EFFECT_FADE, 50);
                         HaltGui();
-                        mainWindow->Append(text->txt);
+                        mainWindow->Append(btn->btn);
                         ResumeGui();
-                        offset+=text->txt->GetTextWidth();
                         Index=InsIndex(Index);
-                        Index->elem=text->txt;
-                        Index->screenSize=(offset/(screenwidth-80))*25;
+                        Index->elem=btn->btn;
+                        Index->screenSize=60;
+                    }
+
+                    else if (lista->name=="meta")
+                    {
+                        if (!lista->value.empty())
+                            choice = HandleMeta(lista, &link, HTML);
+                    }
+
+                    else if (lista->name=="base")
+                    {
+                        snprintf(url, 256, lista->attribute.c_str());
+                    }
+
+                    else if (lista->name=="return")
+                    {
+                        if ((++lista)!=l1.end() && lista->name!="p" && lista->name!="return")
+                        {
+                            if (Index)
+                                Index->screenSize+=25;
+                            offset=0;
+                        }
+                        lista--;
+                    }
+
+                    else if (lista->name=="p")
+                    {
+                        if ((++lista)!=l1.end() && lista->name!="p" && lista->name!="return")
+                        {
+                            if (Index)
+                                Index->screenSize+=50;
+                            offset=0;
+                        }
+                        lista--;
+                    }
+
+                    else
+                    {
+                        for(i=0; i<lista->value.size(); i++)
+                        {
+                            text=InsText(text);
+                            text->txt = new GuiText((char*)lista->value[i].text.c_str(), 20, (GXColor)
+                            {
+                                0, 0, 0, 255
+                            });
+                            text->txt->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+                            text->txt->SetSpace(false);
+                            text->txt->SetOffset(&coordX);
+                            if (offset >= (screenwidth-80))
+                            {
+                                coordY=Index ? Index->elem->GetYPosition()+Index->screenSize : 40;
+                                offset=offset % (screenwidth-80);
+                            }
+                            text->txt->SetPosition(coordX+40+offset, coordY);
+                            text->txt->SetWrap(true, screenwidth-80-offset);
+                            text->txt->SetEffect(EFFECT_FADE, 50);
+                            SetFont(text->txt, lista->value[i].mode);
+                            HaltGui();
+                            mainWindow->Append(text->txt);
+                            ResumeGui();
+                            offset+=text->txt->GetTextWidth();
+                            Index=InsIndex(Index);
+                            Index->elem=text->txt;
+                            Index->screenSize=(offset/(screenwidth-80))*25;
+                        }
+                    }
+                    lista++;
+                }
+
+                else if (!done)
+                {
+                    HaltGui();
+                    DoMPlayerGuiDraw();
+                    u8 *video = TakeScreenshot();
+                    ResumeGui();
+
+                    int t = 0;
+                    if ((t = Settings.FindUrl(new_page)) >= 0
+                            || (t = Settings.FindUrl(url)) >= 0)
+                        Settings.Thumbnails[t] = video;
+                    else free(video);
+                    done = true;
+                }
+
+                if (!btnup)
+                {
+                    DrawScroll (scrollWindow, &btndown, &btnup, btnSoundOver, trigA);
+                    HaltGui();
+                    mainWindow->Append(scrollWindow);
+                    ResumeGui();
+                }
+
+                HandleHtmlPad(&coordX, btnup, btndown, ext, Index, mainWindow);
+                HandleMenuBar(&link, url, &choice, 0, mainWindow, parentWindow);
+
+                for (bottone=btn; !NoButton(bottone); bottone=bottone->prox)
+                {
+                    if(bottone->btn->GetState() == STATE_CLICKED)
+                    {
+                        bottone->btn->ResetState();
+                        choice = 1;
+                        if (bottone->refs)
+                            choice=HandleForm(parentWindow, mainWindow, bottone);
+                        if (choice) link.assign(bottone->url);
                     }
                 }
-                lista++;
             }
-
-            else if (!done)
-            {
-                HaltGui();
-                DoMPlayerGuiDraw();
-                u8 *video = TakeScreenshot();
-                ResumeGui();
-
-                int t = 0;
-                if ((t = Settings.FindUrl(new_page)) >= 0)
-                    Settings.Thumbnails[t] = video;
-                done = true;
-            }
-
-            if (!btnup)
-            {
-                DrawScroll (scrollWindow, &btndown, &btnup, btnSoundOver, trigA);
-                HaltGui();
-                mainWindow->Append(scrollWindow);
-                ResumeGui();
-            }
-
-            HandleHtmlPad(&coordX, btnup, btndown, ext, Index, mainWindow);
-            HandleMenuBar(&link, url, &choice, 0, mainWindow, parentWindow);
-
-            for (bottone=btn; !NoButton(bottone); bottone=bottone->prox)
-            {
-                if(bottone->btn->GetState() == STATE_CLICKED)
-                {
-                    bottone->btn->ResetState();
-                    choice = 1;
-                    if (bottone->refs)
-                        choice=HandleForm(parentWindow, mainWindow, bottone);
-                    if (choice) link.assign(bottone->url);
-                }
-            }
+            l1.clear();
         }
-        l1.clear();
-    }
 
-    else if (type == IMAGE)
-    {
-        GuiImageData image_data((u8*)HTML->data, HTML->size);
-        image = new GuiImage(&image_data);
-        image->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-        image->SetPosition(0,0);
-
-        HaltGui();
-        mainWindow->Append(image);
-        ResumeGui();
-
-        DrawScroll (scrollWindow, &btndown, &btnup, btnSoundOver, trigA);
-        HaltGui();
-        mainWindow->Append(scrollWindow);
-        ResumeGui();
-
-        while (!choice && !(userInput[0].wpad->btns_d & WPAD_BUTTON_B))
+        else if (type == IMAGE)
         {
-            HandleMenuBar(&link, url, &choice, 1, mainWindow, parentWindow);
-            HandleImgPad(btnup, btndown, image);
+            GuiImageData image_data((u8*)HTML->data, HTML->size);
+            image = new GuiImage(&image_data);
+            image->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
+            image->SetPosition(0,0);
+
+            HaltGui();
+            mainWindow->Append(image);
+            ResumeGui();
+
+            DrawScroll (scrollWindow, &btndown, &btnup, btnSoundOver, trigA);
+            HaltGui();
+            mainWindow->Append(scrollWindow);
+            ResumeGui();
+
+            while (!choice && !(userInput[0].wpad->btns_d & WPAD_BUTTON_B))
+            {
+                HandleMenuBar(&link, url, &choice, 1, mainWindow, parentWindow);
+                HandleImgPad(btnup, btndown, image);
+            }
+
+            HaltGui();
+            mainWindow->Remove(image);
+            ResumeGui();
+            delete(image);
         }
 
-        HaltGui();
-        mainWindow->Remove(image);
-        ResumeGui();
-        delete(image);
-    }
+#ifdef MPLAYER
+        else if (type == VIDEO)
+        {
+            LoadMPlayerFile(url);
+            while(controlledbygui != 1)
+                usleep(100);
 
-    #ifdef MPLAYER
-    else if (type == VIDEO)
-    {
-        LoadMPlayerFile(url);
-        while(controlledbygui != 1)
-            usleep(100);
-
-        ResetVideo_Menu();
-        DisableVideoImg();
-        ResumeGui();
-    }
-    #endif
+            ResetVideo_Menu();
+            DisableVideoImg();
+            ResumeGui();
+        }
+#endif
 
     /* download displayed page or image */
     if (!knownType(HTML->type) || choice == 2)

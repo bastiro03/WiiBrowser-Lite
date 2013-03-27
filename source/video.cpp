@@ -21,7 +21,9 @@
 
 extern "C" {
 
+#define SAVEBUFFERSIZE (1024 * 1024 * 2)
 #define DEFAULT_FIFO_SIZE 384 * 1024
+
 static unsigned char *gp_fifo; // must be in MEM1
 static Mtx GXmodelView2D;
 
@@ -58,37 +60,22 @@ u8* TakeScreenshot()
 
 void SaveScreenshot(char *path)
 {
-    int texSize = vmode->fbWidth * vmode->efbHeight * 4;
-    u8 * gameScreenTex = NULL;
-    gameScreenTex = (u8 *)memalign(32, texSize);
-    if(gameScreenTex == NULL)
+    unsigned char * savebuffer = (unsigned char *)memalign(32, SAVEBUFFERSIZE);
+    if (!savebuffer)
         return;
 
-    GX_SetTexCopySrc(0, 0, vmode->fbWidth, vmode->efbHeight);
-    GX_SetTexCopyDst(vmode->fbWidth, vmode->efbHeight, GX_TF_RGBA8, GX_FALSE);
-    DCInvalidateRange(gameScreenTex, texSize);
-    GX_CopyTex(gameScreenTex, GX_FALSE);
-    GX_PixModeSync();
+ 	IMGCTX pngContext = PNGU_SelectImageFromBuffer(savebuffer);
+ 	if (pngContext != NULL)
+ 	{
+        int imgSize = PNGU_EncodeFromGXTexture(pngContext, vmode->fbWidth, vmode->efbHeight, videoScreenshot, 0);
+        PNGU_ReleaseImageContext(pngContext);
 
-    u8 * testbuffer = (u8 *) memalign(32, 1024*512);
-    memset (testbuffer, 0, 1024*512);
-    int imgSize = 0;
-
-    IMGCTX pngContext = PNGU_SelectImageFromBuffer(testbuffer);
-    if (pngContext != NULL)
-    {
-        imgSize = PNGU_EncodeFromGXTexture(pngContext, screenwidth, screenheight, gameScreenTex, 0);
-        PNGU_ReleaseImageContext (pngContext);
+        FILE *file = fopen(path, "wb");
+        fwrite(savebuffer, imgSize, 1, file);
+        fclose(file);
     }
 
-    if(imgSize > 0)
-    {
-        FILE* fp = fopen(path, "wb");
-        fwrite(testbuffer, 1, imgSize, fp);
-        fclose(fp);
-    }
-
-    free(testbuffer);
+    free(savebuffer);
 }
 
 void ResetVideo_Menu()

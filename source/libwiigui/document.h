@@ -1,6 +1,6 @@
 /****************************************************************************
- * Copyright (C) 2009
- * by Tantric
+ * Copyright (C) 2012
+ * by gave92
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any
@@ -21,8 +21,6 @@
  * 3. This notice may not be removed or altered from any source
  * distribution.
  *
- * Modifications by Dimok
- * for WiiXplorer 2009
  ***************************************************************************/
 
 #include "gui.h"

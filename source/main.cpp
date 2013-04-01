@@ -1,10 +1,10 @@
 /****************************************************************************
  * libwiigui Template
  * Tantric 2009
+ * modified by gave92
  *
+ * WiiBrowser
  * main.cpp
- * Basic template/demonstration of libwiigui capabilities. For a
- * full-featured app using many more extensions, check out Snes9x GX.
  ***************************************************************************/
 
 #include <gccore.h>
@@ -176,8 +176,7 @@ extern "C" {
 #endif
 
 SSettings Settings;
-int ExitRequested = 0,
-    GuiShutdown = 0;
+int ExitRequested = 0;
 
 void ExitApp()
 {
@@ -188,6 +187,7 @@ void ExitApp()
     ClearFontData();
     FreeHistory(history);
     StopGUIThreads();
+    Cleanup();
     if (HWButton)
         SYS_ResetSystem(HWButton, 0, 0);
     exit(0);

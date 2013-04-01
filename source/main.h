@@ -1,7 +1,9 @@
 /****************************************************************************
  * libwiigui Template
  * Tantric 2009
+ * modified by gave92
  *
+ * WiiBrowser
  * main.h
  ***************************************************************************/
 
@@ -17,7 +19,6 @@ void ExitApp();
 
 extern SSettings Settings;
 extern int ExitRequested;
-extern int GuiShutdown;
 extern FreeTypeGX *fontSystem[];
 
 extern "C" {

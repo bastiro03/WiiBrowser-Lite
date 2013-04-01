@@ -1,7 +1,9 @@
 /****************************************************************************
  * libwiigui Template
  * Tantric 2009
+ * modified by gave92
  *
+ * WiiBrowser
  * menu.cpp
  * Menu flow routines - handles all menu logic
  ***************************************************************************/
@@ -682,7 +684,7 @@ static void *UpdateGUI (void *arg)
                 ExitRequested = true; // exit program
             Menu_Render();
 
-            if(ExitRequested || GuiShutdown)
+            if(ExitRequested)
             {
                 for(i = guiRun = 0; i <= 255; i += 15)
                 {
@@ -730,6 +732,13 @@ StopGUIThreads()
         StopUpdateThread();
         LWP_JoinThread(updatethread, NULL);
         updatethread = LWP_THREAD_NULL;
+    }
+
+    if(guithread != LWP_THREAD_NULL)
+    {
+        ResumeGui();
+        LWP_JoinThread(guithread, NULL);
+        guithread = LWP_THREAD_NULL;
     }
 }
 
@@ -1756,6 +1765,32 @@ static int MenuFavorites()
 /****************************************************************************
  * MainMenu
  ***************************************************************************/
+void Cleanup()
+{
+    bgMusic->Stop();
+
+    delete trigA;
+    delete bgMusic;
+    delete bgImg;
+
+    delete SplashImage;
+    delete Splash;
+    delete mainWindow;
+
+    delete Right;
+    delete Left;
+    delete App;
+
+    delete pointer[0];
+    delete pointer[1];
+    delete pointer[2];
+    delete pointer[3];
+
+    curl_easy_cleanup(curl_handle);
+    curl_global_cleanup();
+    mainWindow = NULL;
+}
+
 void MainMenu(int menu)
 {
     int currentMenu = menu;
@@ -1802,30 +1837,6 @@ void MainMenu(int menu)
         }
     }
 
-    GuiShutdown = 1;
+    ExitRequested = 1;
     ResumeGui();
-
-    LWP_JoinThread(guithread, NULL);
-    bgMusic->Stop();
-
-    delete trigA;
-    delete bgMusic;
-    delete bgImg;
-
-    delete SplashImage;
-    delete Splash;
-    delete mainWindow;
-
-    delete Right;
-    delete Left;
-    delete App;
-
-    delete pointer[0];
-    delete pointer[1];
-    delete pointer[2];
-    delete pointer[3];
-
-    curl_easy_cleanup(curl_handle);
-    curl_global_cleanup();
-    mainWindow = NULL;
 }

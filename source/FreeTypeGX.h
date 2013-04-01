@@ -3,7 +3,9 @@
  * FreeType parsable font into a GX texture for Wii homebrew development.
  * Copyright (C) 2008 Armin Tamzarian
  * Modified by Tantric, 2009
+ * Modified by gave92, 2012
  *
+ * WiiBrowser
  * This file is part of FreeTypeGX.
  *
  * FreeTypeGX is free software: you can redistribute it and/or modify

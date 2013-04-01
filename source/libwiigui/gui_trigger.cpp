@@ -1,7 +1,9 @@
 /****************************************************************************
  * libwiigui
+ * WiiBrowser
  *
  * Tantric 2009
+ * modified by gave92
  *
  * gui_trigger.cpp
  *
@@ -175,7 +177,7 @@ bool GuiTrigger::Left()
 		if(diff_usec(prev[chan], now[chan]) > delay[chan])
 		{
 			prev[chan] = now[chan];
-			
+
 			if(delay[chan] == SCROLL_DELAY_INITIAL)
 				delay[chan] = SCROLL_DELAY_LOOP;
 			else if(delay[chan] > SCROLL_DELAY_DECREASE)
@@ -208,7 +210,7 @@ bool GuiTrigger::Right()
 		if(diff_usec(prev[chan], now[chan]) > delay[chan])
 		{
 			prev[chan] = now[chan];
-			
+
 			if(delay[chan] == SCROLL_DELAY_INITIAL)
 				delay[chan] = SCROLL_DELAY_LOOP;
 			else if(delay[chan] > SCROLL_DELAY_DECREASE)
@@ -241,7 +243,7 @@ bool GuiTrigger::Up()
 		if(diff_usec(prev[chan], now[chan]) > delay[chan])
 		{
 			prev[chan] = now[chan];
-			
+
 			if(delay[chan] == SCROLL_DELAY_INITIAL)
 				delay[chan] = SCROLL_DELAY_LOOP;
 			else if(delay[chan] > SCROLL_DELAY_DECREASE)
@@ -274,7 +276,7 @@ bool GuiTrigger::Down()
 		if(diff_usec(prev[chan], now[chan]) > delay[chan])
 		{
 			prev[chan] = now[chan];
-			
+
 			if(delay[chan] == SCROLL_DELAY_INITIAL)
 				delay[chan] = SCROLL_DELAY_LOOP;
 			else if(delay[chan] > SCROLL_DELAY_DECREASE)

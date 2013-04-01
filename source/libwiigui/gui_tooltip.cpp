@@ -1,7 +1,9 @@
 /****************************************************************************
  * libwiigui
+ * WiiBrowser
  *
- * Tantric 2009-2012
+ * Tantric 2009
+ * modified by gave92
  *
  * gui_tooltip.cpp
  *

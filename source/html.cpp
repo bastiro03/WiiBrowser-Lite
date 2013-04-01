@@ -358,6 +358,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                     HaltGui();
                     DoMPlayerGuiDraw();
                     u8 *video = TakeScreenshot();
+                    // SaveScreenshot("sd:/path.png");
                     ResumeGui();
 
                     int t = 0;

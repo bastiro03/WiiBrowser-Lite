@@ -1,7 +1,9 @@
 /****************************************************************************
  * libwiigui Template
  * Tantric 2009
+ * modified by gave92
  *
+ * WiiBrowser
  * update.cpp
  * Wii/GameCube auto-update management
  ***************************************************************************/

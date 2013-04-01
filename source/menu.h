@@ -1,7 +1,9 @@
 /****************************************************************************
  * libwiigui Template
  * Tantric 2009
+ * modified by gave92
  *
+ * WiiBrowser
  * menu.h
  * Menu flow routines - handles all menu logic
  ***************************************************************************/
@@ -24,8 +26,9 @@ extern "C" {
 }
 
 void InitGUIThreads();
-void MainMenu (int menuitem);
+void MainMenu(int menuitem);
 void StopGUIThreads();
+void Cleanup();
 
 void EnableVideoImg();
 bool VideoImgVisible();

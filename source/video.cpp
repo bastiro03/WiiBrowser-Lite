@@ -1,7 +1,9 @@
 /****************************************************************************
  * WiiMC
  * Tantric 2009-2012
+ * modified by gave92
  *
+ * WiiBrowser
  * video.cpp
  * Video routines
  ***************************************************************************/
@@ -60,22 +62,15 @@ u8* TakeScreenshot()
 
 void SaveScreenshot(char *path)
 {
-    unsigned char * savebuffer = (unsigned char *)memalign(32, SAVEBUFFERSIZE);
-    if (!savebuffer)
-        return;
+    IMGCTX  pngContext;
 
- 	IMGCTX pngContext = PNGU_SelectImageFromBuffer(savebuffer);
- 	if (pngContext != NULL)
- 	{
-        int imgSize = PNGU_EncodeFromGXTexture(pngContext, vmode->fbWidth, vmode->efbHeight, videoScreenshot, 0);
+    if ((pngContext = PNGU_SelectImageFromDevice(path)))
+    {
+        int ret = PNGU_EncodeFromEFB(pngContext,
+                                 vmode->fbWidth, vmode->efbHeight,
+                                 0);
         PNGU_ReleaseImageContext(pngContext);
-
-        FILE *file = fopen(path, "wb");
-        fwrite(savebuffer, imgSize, 1, file);
-        fclose(file);
     }
-
-    free(savebuffer);
 }
 
 void ResetVideo_Menu()
@@ -355,9 +350,6 @@ InitVideo2 ()
 
 	GX_SetDrawDoneCallback(Draw_VIDEO);
 	GX_Flush();
-
-	// videoScreenshot = (u8 *)mem2_malloc(vmode->fbWidth * vmode->efbHeight * 4, MEM2_VIDEO);
-	// videoScreenshot = (u8 *)memalign(32, vmode->fbWidth * vmode->efbHeight * 4);
 }
 
 }

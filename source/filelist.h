@@ -1,7 +1,9 @@
 /****************************************************************************
  * libwiigui Template
  * Tantric 2009
+ * modified by gave92
  *
+ * WiiBrowser
  * imagelist.h
  * Contains a list of all of the files in the images, fonts, sounds folders
  ***************************************************************************/

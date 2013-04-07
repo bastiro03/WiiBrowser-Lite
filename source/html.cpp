@@ -7,7 +7,6 @@ enum html htm;
 char tags [END][LEN]= {"html","head","body","base","meta","title","form","p","a","div",
                        "br","img","h1","h2","h3","h4","h5","h6","b","big","blockquote","td","dd","dt",/*"center",*/"li","cite","font"
                       };
-enum { THREAD_EXIT=0, THREAD_SUSPEND, THREAD_RUN };
 
 static int threadState;
 bool isRunning=false;
@@ -358,7 +357,6 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                     HaltGui();
                     DoMPlayerGuiDraw();
                     u8 *video = TakeScreenshot();
-                    // SaveScreenshot("sd:/path.png");
                     ResumeGui();
 
                     int t = 0;
@@ -377,7 +375,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                     ResumeGui();
                 }
 
-                HandleHtmlPad(&coordX, btnup, btndown, ext, Index, mainWindow);
+                HandleHtmlPad(&coordX, btnup, btndown, ext, Index, parentWindow);
                 HandleMenuBar(&link, url, &choice, 0, mainWindow, parentWindow);
 
                 for (bottone=btn; !NoButton(bottone); bottone=bottone->prox)

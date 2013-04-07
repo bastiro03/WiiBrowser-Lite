@@ -67,8 +67,8 @@ void SaveScreenshot(char *path)
     if ((pngContext = PNGU_SelectImageFromDevice(path)))
     {
         int ret = PNGU_EncodeFromEFB(pngContext,
-                                 vmode->fbWidth, vmode->efbHeight,
-                                 0);
+                                     vmode->fbWidth, vmode->efbHeight,
+                                     0);
         PNGU_ReleaseImageContext(pngContext);
     }
 }

@@ -1,3 +1,6 @@
+#ifndef _LISTE_H_
+#define _LISTE_H_
+
 #include "common.h"
 
 /*************************************************************
@@ -36,3 +39,5 @@ History InsUrl( History lista, char *url );
 
 void DistruggiHistory( History lista, int prox );
 void FreeHistory( History lista );
+
+#endif

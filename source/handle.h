@@ -1,5 +1,7 @@
 #include <unistd.h>
-#include "liste.h"
+#include "video.h"
+#include "fileop.h"
+
 #define MAXLEN 256
 
 extern "C" {

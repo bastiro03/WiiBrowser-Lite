@@ -1,5 +1,4 @@
 #include "handle.h"
-#include "main.h"
 
 GuiToolbar *Toolbar = NULL;
 
@@ -300,6 +299,19 @@ void HandleHtmlPad(int *offset, GuiButton *btnup, GuiButton *btndown, Indice ext
     }
 
     if (userInput[0].wpad->btns_h & WPAD_BUTTON_1)
+    {
+        char path[256];
+
+        if (SelectPath(mainWindow, path))
+        {
+            HaltGui();
+            DoMPlayerGuiDraw();
+            SaveScreenshot(path);
+            ResumeGui();
+        }
+    }
+
+    if (userInput[0].wpad->btns_h & WPAD_BUTTON_2)
     {
         if (*offset)
         {

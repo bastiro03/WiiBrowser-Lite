@@ -22,6 +22,7 @@ BROWSERINFO browser;
 BROWSERENTRY * browserList = NULL; // list of files/folders in browser
 
 char rootdir[10];
+char fullpath[MAXPATHLEN];
 
 /****************************************************************************
  * ResetBrowser()

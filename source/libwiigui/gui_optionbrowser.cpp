@@ -317,8 +317,8 @@ void GuiOptionBrowser::Update(GuiTrigger * t)
 	}
 
 	// pad/joystick navigation
-	if(!focus)
-		return; // skip navigation
+	// if(!focus)
+		// return; // skip navigation
 
 	if(t->Down() || arrowDownBtn->GetState() == STATE_CLICKED)
 	{

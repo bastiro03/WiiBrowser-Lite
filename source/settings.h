@@ -98,6 +98,7 @@ class SSettings
         bool ShowTooltip;
         bool ShowThumbs;
         bool Autoupdate;
+        bool Restore;
         bool Music;
 
         char AppPath[256];

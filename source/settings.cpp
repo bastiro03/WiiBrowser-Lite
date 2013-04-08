@@ -68,6 +68,7 @@ void SSettings::SetDefault()
     ShowTooltip = true;
     Autoupdate = true;
     Music = true;
+    Restore = true;
     ShowThumbs = true;
 
     sprintf(Homepage, DEFAULT_HOMEPAGE);
@@ -114,6 +115,7 @@ bool SSettings::Save()
 	fprintf(file, "ShowTooltip = %d\r\n", ShowTooltip);
 	fprintf(file, "ShowThumbnails = %d\r\n", ShowThumbs);
 	fprintf(file, "Music = %d\r\n", Music);
+	fprintf(file, "RestoreSession = %d\r\n", Restore);
 	fprintf(file, "DefaultFolder = %s\r\n", DefaultFolder);
 	fprintf(file, "Homepage = %s\r\n", Homepage);
 
@@ -317,6 +319,12 @@ bool SSettings::SetSetting(char *name, char *value)
 		}
 		return true;
 	}
+    else if (strcmp(name, "RestoreSession") == 0) {
+		if (sscanf(value, "%d", &i) == 1) {
+			Restore = i;
+		}
+		return true;
+	}
     else if (strcmp(name, "Homepage") == 0) {
         strncpy(Homepage, value, sizeof(Homepage));
 		return true;
@@ -420,6 +428,9 @@ char *SSettings::GetUrl(int f)
 
 int SSettings::FindUrl(char *url)
 {
+    if(!url || !url[0])
+        return -1;
+
     for(int i = 0; i < N; i++)
     {
         if (!strcmp(Favorites[i], url))

@@ -71,7 +71,7 @@ int knownType(char type[])
     if (strstr(type, "image"))
         return IMAGE;
     // if (strstr(type, "video"))
-    // return VIDEO;
+        // return VIDEO;
     return UNKNOWN;
 }
 
@@ -148,7 +148,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
 
                 if (last && last->prec)
                 {
-                    if (last->prec->elem->GetYPosition()<screenheight)
+                    if (last->prec->elem->GetYPosition()<screenheight+25)
                     {
                         last->prec->elem->SetVisible(true);
                         last->prec->elem->SetEffect(EFFECT_FADE, 50);
@@ -156,7 +156,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                     }
                 }
 
-                else if (lista!=l1.end() && coordY<screenheight)
+                else if (lista!=l1.end() && coordY<screenheight+25)
                 {
                     if (lista->name=="title" && !lista->value.empty())
                     {
@@ -375,7 +375,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                     ResumeGui();
                 }
 
-                HandleHtmlPad(&coordX, btnup, btndown, ext, Index, parentWindow);
+                HandleHtmlPad(&coordX, btnup, btndown, ext, Index, mainWindow, parentWindow);
                 HandleMenuBar(&link, url, &choice, 0, mainWindow, parentWindow);
 
                 for (bottone=btn; !NoButton(bottone); bottone=bottone->prox)
@@ -486,7 +486,7 @@ void Clear(GuiWindow* mainWindow, Indice Index, Indice *first, Indice *last, Ind
         (*first)->elem->SetVisible(false);
         *first=(*first)->prec;
     }
-    if (*last && (*last)->elem->GetYPosition()>screenheight)
+    if (*last && (*last)->elem->GetYPosition()>screenheight+25)
     {
         (*last)->elem->SetVisible(false);
         *last=(*last)->prox;

@@ -185,6 +185,7 @@ void ExitApp()
     StopGX();
     ShutdownAudio();
     ClearFontData();
+    DumpList(history);
     FreeHistory(history);
     StopGUIThreads();
     Cleanup();
@@ -205,6 +206,14 @@ void WiiPowerPressed()
 void WiimotePowerPressed(s32 chan)
 {
     HWButton = SYS_POWEROFF_STANDBY;
+}
+
+void Wait()
+{
+    while(true)
+    {
+
+    }
 }
 
 int main(int argc, char *argv[])
@@ -246,5 +255,5 @@ int main(int argc, char *argv[])
 
     ResetVideo_Menu();
     MainMenu(MENU_SPLASH);
-    ExitApp();
+    Wait();
 }

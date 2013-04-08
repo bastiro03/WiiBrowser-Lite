@@ -1,4 +1,6 @@
 #include "liste.h"
+#include "settings.h"
+#include "main.h"
 
 /*************************************************************
                      IMPLEMENTAZIONE
@@ -149,6 +151,14 @@ History InitHistory( void ) {
 	return NULL;
 }
 
+History RewindHistory( History lista ) {
+	if (!lista)
+        return NULL;
+	while (!NoUrls(lista->prec))
+        lista=lista->prec;
+	return lista;
+}
+
 int NoUrls( History lista ) {
     return lista == NULL;
 }
@@ -178,4 +188,38 @@ void FreeHistory( History lista ) {
     if (lista)
         DistruggiHistory(lista->prox,1);
     DistruggiHistory(lista,0);
+}
+
+void DumpList ( History lista, const char * file ) {
+    char path[256];
+    snprintf(path, 256, "%s/history.txt", Settings.AppPath);
+    FILE * fp=fopen(path, "w");
+    if (!fp)
+        return;
+
+    lista=RewindHistory(lista);
+    while (!NoUrls(lista)) {
+        fprintf(fp, "%s\r\n", lista->url.c_str());
+        lista=lista->prox;
+    }
+    fprintf(fp, "# End List");
+    fclose(fp);
+}
+
+History LoadList ( const char * file ) {
+    char path[256];
+    snprintf(path, 256, "%s/history.txt", Settings.AppPath);
+    FILE * fp=fopen(path, "r");
+    if (!fp)
+        return NULL;
+
+    History lista = NULL;
+    while (!feof(fp)) {
+        fscanf(fp, "%s", path);
+        if (strchr(path, '#'))
+            break;
+        lista=InsUrl(lista, path);
+    }
+    fclose(fp);
+    return lista;
 }

@@ -946,6 +946,151 @@ void SetupGui()
 }
 
 /****************************************************************************
+ * MenuBrowseDevice
+ ***************************************************************************/
+static int MenuBrowseDevice()
+{
+	char title[100];
+	char path[256];
+	int i;
+
+	ShutoffRumble();
+
+	// populate initial directory listing
+	if(BrowseDevice() <= 0)
+	{
+		int choice = WindowPrompt(
+		"Error",
+		"Unable to display files on selected load device.",
+		"Retry",
+		"Cancel");
+
+		if(choice)
+			return MENU_BROWSE_DEVICE;
+		else
+			return MENU_HOME;
+	}
+
+	int menu = MENU_NONE;
+
+	sprintf(title, "Browse files");
+	bzero(path, sizeof(path));
+
+    GuiSound btnSoundOver(button_over_pcm, button_over_pcm_size, SOUND_PCM);
+    GuiImageData Textbox(keyboard_textbox_png);
+    GuiImage TextboxImg(&Textbox);
+    GuiButton InsertURL(TextboxImg.GetWidth(), TextboxImg.GetHeight());
+
+    GuiText URL("", 20, (GXColor)
+    {
+        0, 0, 0, 255
+    });
+    URL.SetMaxWidth(TextboxImg.GetWidth()-20);
+    URL.SetScroll(SCROLL_HORIZONTAL);
+
+    InsertURL.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
+    InsertURL.SetPosition(0,30);
+    InsertURL.SetLabel(&URL);
+    InsertURL.SetImage(&TextboxImg);
+    InsertURL.SetSoundOver(&btnSoundOver);
+    InsertURL.SetTrigger(trigA);
+    InsertURL.SetEffectGrow();
+
+    GuiText titleTxt(title, 28, (GXColor){0, 0, 0, 255});
+    titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+	titleTxt.SetPosition(50,50);
+
+	GuiFileBrowser fileBrowser(552, 248);
+	fileBrowser.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
+	fileBrowser.SetPosition(0, 108);
+
+	GuiImageData btnOutline(button_png);
+	GuiImageData btnOutlineOver(button_over_png);
+	GuiText backBtnTxt("Go Back", 24, (GXColor){0, 0, 0, 255});
+	GuiImage backBtnImg(&btnOutline);
+	GuiImage backBtnImgOver(&btnOutlineOver);
+	GuiButton backBtn(btnOutline.GetWidth(), btnOutline.GetHeight());
+	backBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
+	backBtn.SetPosition(50, -35);
+	backBtn.SetLabel(&backBtnTxt);
+	backBtn.SetImage(&backBtnImg);
+	backBtn.SetImageOver(&backBtnImgOver);
+	backBtn.SetTrigger(trigA);
+	backBtn.SetEffectGrow();
+
+	GuiWindow buttonWindow(screenwidth, screenheight);
+	buttonWindow.Append(&backBtn);
+
+	HaltGui();
+	// mainWindow->Append(&titleTxt);
+	mainWindow->Append(&fileBrowser);
+	mainWindow->Append(&buttonWindow);
+	mainWindow->Append(&InsertURL);
+	ResumeGui();
+
+	while(menu == MENU_NONE)
+	{
+		usleep(THREAD_SLEEP);
+
+        if(InsertURL.GetState() == STATE_CLICKED)
+        {
+            URL.SetScroll(SCROLL_NONE);
+            OnScreenKeyboard(mainWindow, path, 256);
+            URL.SetText(path);
+            URL.SetScroll(SCROLL_HORIZONTAL);
+        }
+
+		// update file browser based on arrow buttons
+		// set MENU_EXIT if A button pressed on a file
+		for(i=0; i < FILE_PAGESIZE; i++)
+		{
+			if(fileBrowser.fileList[i]->GetState() == STATE_CLICKED)
+			{
+				fileBrowser.fileList[i]->ResetState();
+				// check corresponding browser entry
+				if(browserList[browser.selIndex].isdir)
+				{
+					if(BrowserChangeFolder())
+					{
+						fileBrowser.ResetState();
+						fileBrowser.fileList[0]->SetState(STATE_SELECTED);
+						fileBrowser.TriggerUpdate();
+
+						sprintf(fullpath, "%s%s", rootdir, browser.dir+1); // print current path
+						sprintf(path, fullpath);
+						URL.SetText(fullpath);
+					}
+					else
+					{
+						menu = MENU_BROWSE_DEVICE;
+						break;
+					}
+				}
+				else
+				{
+					ShutoffRumble();
+					// load file
+					sprintf(fullpath, "%s%s/%s", rootdir, browser.dir+1, browserList[browser.selIndex].filename); // print current path
+					sprintf(path, fullpath);
+					URL.SetText(fullpath);
+				}
+			}
+		}
+		if(backBtn.GetState() == STATE_CLICKED)
+			menu = MENU_HOME;
+	}
+
+	HaltGui();
+	// mainWindow->Remove(&titleTxt);
+	mainWindow->Remove(&buttonWindow);
+	mainWindow->Remove(&fileBrowser);
+	mainWindow->Remove(&InsertURL);
+	ResumeGui();
+
+	return menu;
+}
+
+/****************************************************************************
  * MenuSettings
  ***************************************************************************/
 static int MenuSettings()
@@ -962,6 +1107,7 @@ static int MenuSettings()
     sprintf(options.name[i++], "Autoupdate");
     sprintf(options.name[i++], "Language");
     sprintf(options.name[i++], "Music");
+    sprintf(options.name[i++], "Restore Session");
     sprintf(options.name[i++], "UserAgent");
     options.length = i;
 
@@ -1046,6 +1192,10 @@ static int MenuSettings()
             break;
 
         case 7:
+            Settings.Restore = !Settings.Restore;
+            break;
+
+        case 8:
             Settings.UserAgent++;
             if (Settings.UserAgent >= MAXAGENTS)
                 Settings.UserAgent = 0;
@@ -1060,7 +1210,7 @@ static int MenuSettings()
 
             snprintf (options.value[0], 256, "%s", Settings.Homepage);
             snprintf (options.value[1], 256, "%s", Settings.DefaultFolder);
-            snprintf (options.value[7], 256, "%s", AgentName[Settings.UserAgent]);
+            snprintf (options.value[8], 256, "%s", AgentName[Settings.UserAgent]);
 
             if (Settings.ShowTooltip == 0) sprintf (options.value[2], "Hide");
             else if (Settings.ShowTooltip == 1) sprintf (options.value[2], "Show");
@@ -1076,6 +1226,8 @@ static int MenuSettings()
 
             if (Settings.Music == 0) sprintf (options.value[6], "Off");
             else if (Settings.Music == 1) sprintf (options.value[6], "On");
+            if (Settings.Restore == 0) sprintf (options.value[7], "Start new");
+            else if (Settings.Restore == 1) sprintf (options.value[7], "Restore");
 
             optionBrowser.TriggerUpdate();
         }
@@ -1336,11 +1488,13 @@ static int MenuHome()
     {
         App->SetEffect(EFFECT_SLIDE_OUT | EFFECT_SLIDE_BOTTOM, 50);
         Right->SetEffect(EFFECT_FADE, -50);
+        Left->SetEffect(EFFECT_FADE, -50);
         while(App->GetEffect() > 0) usleep(THREAD_SLEEP);
 
         HaltGui();
         mainWindow->Remove(App);
         mainWindow->Remove(Right);
+        mainWindow->Remove(Left);
         ResumeGui();
     }
 
@@ -1531,6 +1685,8 @@ jump:
     string link;
     if (!result)
         link = DisplayHTML(&HTML, mainWindow, &childWindow, url);
+
+    bzero(new_page, sizeof(new_page));
     free(HTML.data);
 
     HaltGui();
@@ -1765,6 +1921,36 @@ static int MenuFavorites()
 /****************************************************************************
  * MainMenu
  ***************************************************************************/
+void Init()
+{
+    memset(prev_page, 0, sizeof(prev_page));
+    if (Settings.Restore)
+        history = LoadList();
+    else history = InitHistory();
+
+    if(curl_global_init(CURL_GLOBAL_ALL))
+        ExitRequested = 1;
+    curl_handle = curl_easy_init();
+
+    char cookies[30];
+    sprintf(cookies, "%s/cookie.csv", Settings.AppPath);
+
+    /* setup cookies engine */
+    curl_easy_setopt(curl_handle, CURLOPT_COOKIEFILE, cookies);
+    curl_easy_setopt(curl_handle, CURLOPT_COOKIEJAR, cookies);
+
+    #ifdef MPLAYER
+    if(!InitMPlayer())
+    {
+        ExitRequested = true;
+        return;
+    }
+    #endif
+
+    SetupGui();
+    remove("debug.txt");
+}
+
 void Cleanup()
 {
     bgMusic->Stop();
@@ -1794,23 +1980,7 @@ void Cleanup()
 void MainMenu(int menu)
 {
     int currentMenu = menu;
-    memset(prev_page, 0, sizeof(prev_page));
-    history = InitHistory();
-
-    if(curl_global_init(CURL_GLOBAL_ALL))
-        ExitRequested = 1;
-    curl_handle = curl_easy_init();
-
-    #ifdef MPLAYER
-    if(!InitMPlayer())
-    {
-        ExitRequested = true;
-        return;
-    }
-    #endif
-
-    SetupGui();
-    remove("debug.txt");
+    Init();
 
     while(currentMenu != MENU_EXIT)
     {
@@ -1830,6 +2000,9 @@ void MainMenu(int menu)
             break;
         case MENU_BROWSE:
             currentMenu = MenuBrowse();
+            break;
+        case MENU_BROWSE_DEVICE:
+            currentMenu = MenuBrowseDevice();
             break;
         default: // unrecognized menu
             currentMenu = MenuHome();

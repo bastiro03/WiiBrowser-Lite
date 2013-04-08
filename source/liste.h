@@ -39,5 +39,7 @@ History InsUrl( History lista, char *url );
 
 void DistruggiHistory( History lista, int prox );
 void FreeHistory( History lista );
+void DumpList ( History lista, const char * file = NULL );
+History LoadList ( const char * file = NULL );
 
 #endif

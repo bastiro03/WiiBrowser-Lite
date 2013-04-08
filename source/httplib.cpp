@@ -106,9 +106,6 @@ static size_t writedata(void *ptr, size_t size, size_t nmemb, void *stream)
 
 void setmainheaders(CURL *curl_handle, const char *url)
 {
-    char cookies[30];
-    sprintf(cookies, "%s/cookie.csv", Settings.AppPath);
-
     if(!curl_handle)
         return;
 
@@ -124,10 +121,6 @@ void setmainheaders(CURL *curl_handle, const char *url)
     field, so we provide one */
     curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, Agents[Settings.UserAgent]);
     curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0L);
-
-    /* setup cookies engine */
-    curl_easy_setopt(curl_handle, CURLOPT_COOKIEFILE, cookies);
-    curl_easy_setopt(curl_handle, CURLOPT_COOKIEJAR, cookies);
 
     /* proper function to close sockets */
     curl_easy_setopt(curl_handle, CURLOPT_CLOSESOCKETFUNCTION, close_callback);

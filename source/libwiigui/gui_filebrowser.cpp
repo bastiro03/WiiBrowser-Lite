@@ -69,7 +69,7 @@ GuiFileBrowser::GuiFileBrowser(int w, int h)
 	arrowUpBtn->SetImage(arrowUpImg);
 	arrowUpBtn->SetImageOver(arrowUpOverImg);
 	arrowUpBtn->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
-	arrowUpBtn->SetPosition(0, -2);
+	arrowUpBtn->SetPosition(0, -20);
 	arrowUpBtn->SetSelectable(false);
 	arrowUpBtn->SetClickable(false);
 	arrowUpBtn->SetHoldable(true);
@@ -82,6 +82,7 @@ GuiFileBrowser::GuiFileBrowser(int w, int h)
 	arrowDownBtn->SetImage(arrowDownImg);
 	arrowDownBtn->SetImageOver(arrowDownOverImg);
 	arrowDownBtn->SetAlignment(ALIGN_RIGHT, ALIGN_BOTTOM);
+	arrowDownBtn->SetPosition(0, 20);
 	arrowDownBtn->SetSelectable(false);
 	arrowDownBtn->SetClickable(false);
 	arrowDownBtn->SetHoldable(true);
@@ -209,10 +210,10 @@ void GuiFileBrowser::Draw()
 		fileList[i]->Draw();
 	}
 
-	scrollbarImg->Draw();
+	// scrollbarImg->Draw();
 	arrowUpBtn->Draw();
 	arrowDownBtn->Draw();
-	scrollbarBoxBtn->Draw();
+	// scrollbarBoxBtn->Draw();
 
 	this->UpdateEffects();
 }

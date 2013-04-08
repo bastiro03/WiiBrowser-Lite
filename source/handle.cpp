@@ -260,7 +260,7 @@ void HandleFormPad(GuiButton *btnup, GuiButton *btndown, GuiWindow *mainWindow)
     }
 }
 
-void HandleHtmlPad(int *offset, GuiButton *btnup, GuiButton *btndown, Indice ext, Indice Index, GuiWindow *mainWindow)
+void HandleHtmlPad(int *offset, GuiButton *btnup, GuiButton *btndown, Indice ext, Indice Index, GuiWindow *mainWindow, GuiWindow *parentWindow)
 {
     if (btnup->GetState() == STATE_CLICKED || (userInput[0].wpad->btns_h & WPAD_BUTTON_UP))
     {
@@ -298,11 +298,11 @@ void HandleHtmlPad(int *offset, GuiButton *btnup, GuiButton *btndown, Indice ext
         }
     }
 
-    if (userInput[0].wpad->btns_h & WPAD_BUTTON_1)
+    if (hidden && userInput[0].wpad->btns_h & WPAD_BUTTON_1)
     {
         char path[256];
 
-        if (SelectPath(mainWindow, path))
+        if (GuiBrowser(mainWindow, parentWindow, path))
         {
             HaltGui();
             DoMPlayerGuiDraw();

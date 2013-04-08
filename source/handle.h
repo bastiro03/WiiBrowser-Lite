@@ -12,7 +12,7 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
 int HandleMeta(Lista::iterator lista, string *link, struct block *html);
 
 void HandleImgPad(GuiButton *btnup, GuiButton *btndown, GuiImage * image);
-void HandleHtmlPad(int *offset, GuiButton *btnup, GuiButton *btndown, Indice ext, Indice Index, GuiWindow *mainWindow);
+void HandleHtmlPad(int *offset, GuiButton *btnup, GuiButton *btndown, Indice ext, Indice Index, GuiWindow *mainWindow, GuiWindow *parentWindow);
 void HandleMenuBar(string *link, char* url, int *choice, int img, GuiWindow *mainWindow, GuiWindow *parentWindow);
 
 void showBar(GuiWindow *mainWindow, GuiWindow *parentWindow);

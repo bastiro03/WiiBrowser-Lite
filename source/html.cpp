@@ -437,13 +437,23 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
     /* download displayed page or image */
     if (!knownType(HTML->type) || choice == 2)
     {
+        const char *c;
+        FILE *file;
+        char path[260];
+
         if (!choice)
-            choice = WindowPrompt("Download", "Do you want to save the file?", "Yes", "No");
+            choice = WindowPrompt("Download", "Do you want to save the page?", "Yes", "No");
+
         if (choice)
         {
-            FILE *file = SelectFile(parentWindow, HTML->type);
-            if (file)
+            if (GuiBrowser(NULL, parentWindow, path, "Save page"))
+            {
+                if ((c = mime2ext(HTML->type)))
+                    strcat(path, c);
+
+                file = fopen(path, "wb");
                 save(HTML, file);
+            }
         }
         usleep(100*1000);
     }

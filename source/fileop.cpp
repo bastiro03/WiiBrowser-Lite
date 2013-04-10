@@ -4,7 +4,7 @@
 #include "fileop.h"
 #include "filebrowser.h"
 
-bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path)
+bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, const char *label)
 {
     char temp[256];
     char title[100];
@@ -63,7 +63,7 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path)
 	GuiImageData btnOutline(button_png);
 	GuiImageData btnOutlineOver(button_over_png);
 
-	GuiText okBtnTxt("Take screenshot", 24, (GXColor){0, 0, 0, 255});
+	GuiText okBtnTxt(label, 24, (GXColor){0, 0, 0, 255});
 	GuiImage okBtnImg(&btnOutline);
 	GuiImage okBtnImgOver(&btnOutlineOver);
 	GuiButton okBtn(btnOutline.GetWidth(), btnOutline.GetHeight());
@@ -94,12 +94,16 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path)
 	buttonWindow.Append(&InsertURL);
 
     buttonWindow.SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_IN, 30);
-    mainWindow->SetEffect(EFFECT_SLIDE_TOP | EFFECT_SLIDE_OUT, 50);
-    while(mainWindow->GetEffect() > 0)
-        usleep(100);
+    if (mainWindow)
+    {
+        mainWindow->SetEffect(EFFECT_SLIDE_TOP | EFFECT_SLIDE_OUT, 50);
+        while(mainWindow->GetEffect() > 0)
+            usleep(100);
+    }
 
     HaltGui();
-    parentWindow->Remove(mainWindow);
+    if (mainWindow)
+        parentWindow->Remove(mainWindow);
     parentWindow->Append(&buttonWindow);
     parentWindow->ChangeFocus(&buttonWindow);
     ResumeGui();
@@ -163,14 +167,18 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path)
 	}
 
     buttonWindow.SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_OUT, 50);
-    mainWindow->SetEffect(EFFECT_SLIDE_TOP | EFFECT_SLIDE_IN, 30);
+    if (mainWindow)
+        mainWindow->SetEffect(EFFECT_SLIDE_TOP | EFFECT_SLIDE_IN, 30);
     while(buttonWindow.GetEffect() > 0)
         usleep(100);
 
     HaltGui();
     parentWindow->Remove(&buttonWindow);
-    parentWindow->Append(mainWindow);
-    parentWindow->ChangeFocus(mainWindow);
+    if(mainWindow)
+    {
+        parentWindow->Append(mainWindow);
+        parentWindow->ChangeFocus(mainWindow);
+    }
     ResumeGui();
 
     if (isValidPath(path))

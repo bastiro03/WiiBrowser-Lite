@@ -302,7 +302,7 @@ void HandleHtmlPad(int *offset, GuiButton *btnup, GuiButton *btndown, Indice ext
     {
         char path[256];
 
-        if (GuiBrowser(mainWindow, parentWindow, path))
+        if (GuiBrowser(mainWindow, parentWindow, path, "Take screenshot"))
         {
             HaltGui();
             DoMPlayerGuiDraw();

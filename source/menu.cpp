@@ -139,20 +139,30 @@ string parseUrl(string link, const char* url)
 /****************************************************************************
  * Perform downloads
  ***************************************************************************/
-FILE *SelectFile(GuiWindow *mainWindow, char *type);
+bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, const char *label);
 
 bool performDownload(FILE **hfile, char **url)
 {
     int choice;
     char *ct = checkfile(curl_handle, url);
+    const char *c;
+    char path[260];
+
     bool download = (ct != NULL);
+    bool select = false;
 
     if(download)
     {
-        choice = WindowPrompt("Download", "Do you want to save the file?", "Yes", "No");
+        choice = WindowPrompt("Download", "Do you want to download the file?", "Yes", "No");
         if (choice)
-            *hfile = SelectFile(mainWindow, ct);
+            select = GuiBrowser(NULL, mainWindow, path, "Download!");
     }
+
+    if ((c = mime2ext(ct)))
+        strcat(path, c);
+
+    if (select)
+        *hfile = fopen(path, "wb");
     else *hfile = NULL;
 
     free(ct);
@@ -1488,13 +1498,11 @@ static int MenuHome()
     {
         App->SetEffect(EFFECT_SLIDE_OUT | EFFECT_SLIDE_BOTTOM, 50);
         Right->SetEffect(EFFECT_FADE, -50);
-        Left->SetEffect(EFFECT_FADE, -50);
         while(App->GetEffect() > 0) usleep(THREAD_SLEEP);
 
         HaltGui();
         mainWindow->Remove(App);
         mainWindow->Remove(Right);
-        mainWindow->Remove(Left);
         ResumeGui();
     }
 

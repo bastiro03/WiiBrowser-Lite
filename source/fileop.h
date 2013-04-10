@@ -10,7 +10,7 @@
 
 FILE *SelectFile(GuiWindow *mainWindow, char *type);
 bool SelectPath(GuiWindow *mainWindow, char *path);
-bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path);
+bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, const char *label);
 
 bool isValidPath(char *path);
 int makedir (char *newdir);

@@ -224,7 +224,7 @@ struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
     setrequestheaders(curl_handle, GET);
 
     if(curl_handle) {
-        /* we pass our 'chunk' struct to the callback function */
+        /* we pass our 'chunk' struct or 'hfile' to the callback function */
         if(hfile)
         {
             /* send all data to this function  */

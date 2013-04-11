@@ -1648,7 +1648,7 @@ jump:
     mainWindow->SetState(STATE_DEFAULT);
     ResumeGui();
 
-    if(HTML.size < 0)
+    if(HTML.size == -1)
     {
         if(performDownload(&hfile, HTML.data))
             goto jump;

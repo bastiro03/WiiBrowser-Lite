@@ -108,6 +108,7 @@ class SSettings
         char Homepage[256];
         char DefaultFolder[256];
         char UserFolder[256];
+        char Proxy[256];
 
         char *Favorites[N];
         u8 *Thumbnails[N];

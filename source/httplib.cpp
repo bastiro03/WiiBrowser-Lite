@@ -1,7 +1,7 @@
 /*
 **  Created by gave92
 **
-**  Copyright (C) 2012
+**  Copyright (C) 2012 - 2013
 **  ==================
 **
 **  This program is free software; you can redistribute it and/or modify
@@ -52,6 +52,13 @@ enum
     REQUESTS
 };
 
+enum
+{
+    DFOUND = -1,
+    DCOMPLETE = -2,
+    DSTOPPED = -3,
+};
+
 const char Agents[MAXAGENTS][256] =
 {
     "",
@@ -63,7 +70,6 @@ const char Agents[MAXAGENTS][256] =
 };
 
 const struct block emptyblock = {NULL, 0};
-const struct block downloadblock = {NULL, -1};
 
 // -----------------------------------------------------------
 // DATA HANDLING
@@ -149,9 +155,12 @@ void setmainheaders(CURL *curl_handle, const char *url)
     if(!curl_handle)
         return;
 
-    /* send all data to this function  */
+    /* send all data to this function */
     curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
-    // curl_easy_setopt(curl_handle, CURLOPT_PROXY, "127.0.0.1:8580");
+
+    /* set proxy if specified */
+    if(strlen(Settings.Proxy))
+        curl_easy_setopt(curl_handle, CURLOPT_PROXY, Settings.Proxy);
 
     /* follow redirects */
     curl_easy_setopt(curl_handle, CURLOPT_AUTOREFERER, 1);
@@ -190,7 +199,7 @@ void setrequestheaders(CURL *curl_handle, int request)
 
     if(request == HEAD)
     {
-        /* get header only  */
+        /* get header only */
         curl_easy_setopt(curl_handle, CURLOPT_HEADER, 1);
         curl_easy_setopt(curl_handle, CURLOPT_NOBODY, 1);
     }
@@ -276,7 +285,7 @@ struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
         /* we pass our 'chunk' struct or 'hfile' to the callback function */
         if(hfile)
         {
-            /* send all data to this function  */
+            /* send all data to this function */
             curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, writedata);
             curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)hfile);
         }
@@ -357,7 +366,6 @@ struct block customrequest(CURL *curl_handle, const char *url, FILE *hfile)
     struct MemoryStruct head;
     struct MemoryStruct chunk;
 
-    h = downloadblock;
     chunk.memory = (char *)malloc(1);   /* will be grown as needed by the realloc above */
     chunk.size = 0; /* no data at this point */
 
@@ -368,7 +376,7 @@ struct block customrequest(CURL *curl_handle, const char *url, FILE *hfile)
         /* we pass our 'chunk' struct or 'hfile' to the callback function */
         if(hfile)
         {
-            /* send all data to this function  */
+            /* send all data to this function */
             curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, writedata);
             curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)hfile);
         }
@@ -381,15 +389,21 @@ struct block customrequest(CURL *curl_handle, const char *url, FILE *hfile)
 
         if ((res = curl_easy_perform(curl_handle)) != 0)      /*error!*/
         {
-            if (res != CURLE_WRITE_ERROR)
+            if (res == CURLE_ABORTED_BY_CALLBACK)
             {
-                Debug(url);
-                Debug(curl_easy_strerror((CURLcode)res));
-                return emptyblock;
+                h.size = DSTOPPED;
+                return h;
             }
 
-            h.data = head.memory;
-            return h;
+            if (res == CURLE_WRITE_ERROR)
+            {
+                h.data = head.memory;
+                h.size = DFOUND;
+                return h;
+            }
+
+            Debug(curl_easy_strerror((CURLcode)res));
+            return emptyblock;
         }
 
         if(CURLE_OK != curl_easy_getinfo(curl_handle, CURLINFO_CONTENT_TYPE, &ct) || !ct)
@@ -402,7 +416,12 @@ struct block customrequest(CURL *curl_handle, const char *url, FILE *hfile)
 	b.size = chunk.size;
     strcpy(b.type, findChr(ct, ';'));
 
-    fclose(hfile);
+    if(hfile)
+    {
+        h.size = DCOMPLETE;
+        fclose(hfile);
+        return h;
+    }
 	return b;
 }
 

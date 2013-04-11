@@ -83,6 +83,8 @@ void SSettings::SetDefault()
         memset(Favorites[i], 0, 256);
         Thumbnails[i] = NULL;
     }
+
+    memset(Proxy, 0, 256);
 }
 
 bool SSettings::Save()
@@ -118,6 +120,7 @@ bool SSettings::Save()
 	fprintf(file, "RestoreSession = %d\r\n", Restore);
 	fprintf(file, "DefaultFolder = %s\r\n", DefaultFolder);
 	fprintf(file, "Homepage = %s\r\n", Homepage);
+	fprintf(file, "Proxy = %s\r\n", Proxy);
 
 	fprintf(file, "\r\n# Favorites\r\n\r\n");
 	for(int i = 0; i < N; i++)
@@ -327,6 +330,10 @@ bool SSettings::SetSetting(char *name, char *value)
 	}
     else if (strcmp(name, "Homepage") == 0) {
         strncpy(Homepage, value, sizeof(Homepage));
+		return true;
+	}
+    else if (strcmp(name, "Proxy") == 0) {
+        strncpy(Proxy, value, sizeof(Proxy));
 		return true;
 	}
     else if (strncmp(name, "Favorite", 8) == 0) {

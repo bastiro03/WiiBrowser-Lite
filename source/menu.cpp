@@ -141,32 +141,27 @@ string parseUrl(string link, const char* url)
  ***************************************************************************/
 bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, const char *label);
 
-bool performDownload(FILE **hfile, char **url)
+bool performDownload(FILE **hfile, char *mime)
 {
     int choice;
-    char *ct = checkfile(curl_handle, url);
+    bool select = false;
+
     const char *c;
     char path[260];
 
-    bool download = (ct != NULL);
-    bool select = false;
+    choice = WindowPrompt("Download", "Do you want to download the file?", "Yes", "No");
+    if (choice)
+        select = GuiBrowser(NULL, mainWindow, path, "Download!");
 
-    if(download)
-    {
-        choice = WindowPrompt("Download", "Do you want to download the file?", "Yes", "No");
-        if (choice)
-            select = GuiBrowser(NULL, mainWindow, path, "Download!");
-    }
-
-    if ((c = mime2ext(ct)))
+    if ((c = mime2ext(mime)))
         strcat(path, c);
 
     if (select)
         *hfile = fopen(path, "wb");
     else *hfile = NULL;
 
-    free(ct);
-    return download;
+    free(mime);
+    return select;
 }
 
 /****************************************************************************
@@ -1526,7 +1521,6 @@ static int MenuBrowse()
     char *url = NULL;
     FILE *hfile = NULL;
 
-    bool result;
     url = (char*) malloc (sizeof(new_page)+10);
     bzero(url, sizeof(new_page)+10);
 
@@ -1585,19 +1579,6 @@ static int MenuBrowse()
     childWindow.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
     childWindow.SetPosition(0,0);
 
-jump:
-    decode_html_entities_utf8(url, NULL);
-    result = performDownload(&hfile, &url);
-
-    if (result && !hfile)
-    {
-        free(url);
-        return MENU_HOME;
-    }
-
-    save_mem(url);
-    promptWindow.SetEffect(EFFECT_SLIDE_TOP | EFFECT_SLIDE_IN, 50);
-
     msgTxt = new GuiText("Loading...please wait", 20, (GXColor)
     {
         0, 0, 0, 255
@@ -1607,8 +1588,14 @@ jump:
     msgTxt->SetPosition(0,-20);
     msgTxt->SetWrap(true, 400);
 
-    if (result)
+jump:
+    decode_html_entities_utf8(url, NULL);
+    save_mem(url);
+    promptWindow.SetEffect(EFFECT_SLIDE_TOP | EFFECT_SLIDE_IN, 50);
+
+    if(hfile)
     {
+        promptWindow.Remove(&staticTxt);
         promptWindow.Append(actionButton);
         promptWindow.Append(msgTxt);
     }
@@ -1661,6 +1648,15 @@ jump:
     mainWindow->SetState(STATE_DEFAULT);
     ResumeGui();
 
+    if(HTML.size < 0)
+    {
+        if(performDownload(&hfile, HTML.data))
+            goto jump;
+
+        free(url);
+        return MENU_HOME;
+    }
+
     delete(msgTxt);
     delete(actionButton);
 
@@ -1673,7 +1669,7 @@ jump:
         strcpy(url, nurl);
     }
 
-    if (!HTML.size && !result)
+    if (!HTML.size)
     {
         WindowPrompt("WiiBrowser", "Failed", "Ok", NULL);
         free(url);
@@ -1691,7 +1687,7 @@ jump:
     ResumeGui();
 
     string link;
-    if (!result)
+    if (!hfile)
         link = DisplayHTML(&HTML, mainWindow, &childWindow, url);
 
     bzero(new_page, sizeof(new_page));

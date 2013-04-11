@@ -48,6 +48,7 @@ enum
     HEAD,
     POST,
     GET,
+    CUSTOM,
     REQUESTS
 };
 
@@ -62,22 +63,24 @@ const char Agents[MAXAGENTS][256] =
 };
 
 const struct block emptyblock = {NULL, 0};
+const struct block downloadblock = {NULL, -1};
 
 // -----------------------------------------------------------
 // DATA HANDLING
 // -----------------------------------------------------------
 
-char *findChr (const char *str, char chr);
-bool mustdownload(char *content);
-
-int close_callback (void *clientp, curl_socket_t item) {
-	return net_close(item);
-}
-
 struct MemoryStruct {
     char *memory;
     u32 size;
 };
+
+char *findChr (const char *str, char chr);
+bool mustdownload(char *content);
+int parseline(MemoryStruct *memory);
+
+int close_callback (void *clientp, curl_socket_t item) {
+	return net_close(item);
+}
 
 static size_t
 WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp)
@@ -100,6 +103,43 @@ static size_t writedata(void *ptr, size_t size, size_t nmemb, void *stream)
     return written;
 }
 
+static size_t parseheader(void *contents, size_t size, size_t nmemb, void *userp)
+{
+    size_t realsize = size * nmemb;
+    struct MemoryStruct *mem = (struct MemoryStruct *)userp;
+    mem->memory = (char *)malloc(realsize + 1);
+    mem->size = realsize;
+    if (mem->memory == NULL) {
+        Debug("not enough memory (malloc returned NULL)\n");
+        exit(EXIT_FAILURE);
+    }
+    memcpy(mem->memory, contents, realsize);
+    mem->memory[realsize] = 0;
+    return parseline(mem);
+}
+
+int parseline(MemoryStruct *mem)
+{
+    unsigned int i;
+    for(i = 0; i <= mem->size; i++)
+        mem->memory[i] = tolower(mem->memory[i]);
+
+    char buff[50];
+    bzero(buff, sizeof(buff));
+
+    if(!strncmp(mem->memory, "content-type", 12))
+    {
+        sscanf(mem->memory, "content-type: %s", buff);
+        findChr(buff, ';');
+
+        if(mustdownload(buff))
+            return 0;
+    }
+
+    free(mem->memory);
+    return mem->size;
+}
+
 // -----------------------------------------------------------
 // SET HEADERS
 // -----------------------------------------------------------
@@ -111,6 +151,7 @@ void setmainheaders(CURL *curl_handle, const char *url)
 
     /* send all data to this function  */
     curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
+    // curl_easy_setopt(curl_handle, CURLOPT_PROXY, "127.0.0.1:8580");
 
     /* follow redirects */
     curl_easy_setopt(curl_handle, CURLOPT_AUTOREFERER, 1);
@@ -156,7 +197,7 @@ void setrequestheaders(CURL *curl_handle, int request)
 
     else if(request == GET)
     {
-        /* reset handle to perform get  */
+        /* reset handle to perform get */
         curl_easy_setopt(curl_handle, CURLOPT_HTTPGET, 1);
         curl_easy_setopt(curl_handle, CURLOPT_NOPROGRESS, 0);
         curl_easy_setopt(curl_handle, CURLOPT_PROGRESSFUNCTION, showprogress);
@@ -166,6 +207,14 @@ void setrequestheaders(CURL *curl_handle, int request)
     {
 
     }
+
+    else if(request == CUSTOM)
+    {
+        /* reset handle to perform custom get */
+        curl_easy_setopt(curl_handle, CURLOPT_HTTPGET, 1);
+        curl_easy_setopt(curl_handle, CURLOPT_NOPROGRESS, 0);
+        curl_easy_setopt(curl_handle, CURLOPT_PROGRESSFUNCTION, showprogress);
+    }
 }
 
 // -----------------------------------------------------------
@@ -174,7 +223,7 @@ void setrequestheaders(CURL *curl_handle, int request)
 
 struct block headrequest(CURL *curl_handle, const char *url)
 {
-    char *ct=NULL;
+    char *ct = NULL;
     struct block b;
     int res;
 
@@ -212,7 +261,7 @@ struct block headrequest(CURL *curl_handle, const char *url)
 
 struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
 {
-    char *ct=NULL;
+    char *ct = NULL;
     struct block b;
     int res;
 
@@ -256,7 +305,7 @@ struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
 
 struct block postrequest(CURL *curl_handle, const char *url, curl_httppost *data)
 {
-    char *ct=NULL;
+    char *ct = NULL;
     struct block b;
     int res;
 
@@ -296,6 +345,64 @@ struct block postrequest(CURL *curl_handle, const char *url, curl_httppost *data
 	b.size = chunk.size;
     strcpy(b.type, findChr(ct, ';'));
 
+	return b;
+}
+
+struct block customrequest(CURL *curl_handle, const char *url, FILE *hfile)
+{
+    char *ct = NULL;
+    struct block b, h;
+    int res;
+
+    struct MemoryStruct head;
+    struct MemoryStruct chunk;
+
+    h = downloadblock;
+    chunk.memory = (char *)malloc(1);   /* will be grown as needed by the realloc above */
+    chunk.size = 0; /* no data at this point */
+
+    setmainheaders(curl_handle, url);
+    setrequestheaders(curl_handle, CUSTOM);
+
+    if(curl_handle) {
+        /* we pass our 'chunk' struct or 'hfile' to the callback function */
+        if(hfile)
+        {
+            /* send all data to this function  */
+            curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, writedata);
+            curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)hfile);
+        }
+        else
+        {
+            curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, parseheader);
+            curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&chunk);
+            curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, (void *)&head);
+        }
+
+        if ((res = curl_easy_perform(curl_handle)) != 0)      /*error!*/
+        {
+            if (res != CURLE_WRITE_ERROR)
+            {
+                Debug(url);
+                Debug(curl_easy_strerror((CURLcode)res));
+                return emptyblock;
+            }
+
+            h.data = head.memory;
+            return h;
+        }
+
+        if(CURLE_OK != curl_easy_getinfo(curl_handle, CURLINFO_CONTENT_TYPE, &ct) || !ct)
+            return emptyblock;
+    }
+    else
+        return emptyblock;
+
+	b.data = chunk.memory;
+	b.size = chunk.size;
+    strcpy(b.type, findChr(ct, ';'));
+
+    fclose(hfile);
 	return b;
 }
 
@@ -342,7 +449,7 @@ struct block downloadfile(CURL *curl_handle, const char *url, FILE *hfile)
     curl_easy_reset(curl_handle);
 
     if (!mode)
-        return getrequest(curl_handle, url, hfile);
+        return customrequest(curl_handle, url, hfile);
 
     if (strcasestr(mode + 1, "post"))
         return postrequest(curl_handle, url, NULL);
@@ -353,7 +460,7 @@ struct block downloadfile(CURL *curl_handle, const char *url, FILE *hfile)
         return postrequest(curl_handle, url, data);
     }
 
-    return getrequest(curl_handle, url, hfile);
+    return customrequest(curl_handle, url, hfile);
 }
 
 char *checkfile(CURL *curl_handle, char **url)
@@ -416,7 +523,7 @@ void save(struct block *b, FILE *hfile)
 
 bool mustdownload(char content[])
 {
-    if (!strcmp(content, "text/html") || strstr(content, "application/xhtml")
+    if (strstr(content, "text/html") || strstr(content, "application/xhtml")
             || strstr(content, "text") || strstr(content, "image")
                 /*|| strstr(content, "video")*/)
         return false;

@@ -35,7 +35,7 @@
 struct block
 {
     char *data;
-    u32 size;
+    int size;
     char type[TYPE];
 };
 

@@ -81,6 +81,35 @@ int isContainer(string name)
     return checkTag(container, name);
 }
 
+char *strToUrl(string attr)
+{
+    char *link = (char *)attr.c_str();
+    char *dest = (char *)malloc(strlen(link) + 1);
+    memset(dest, 0, strlen(link) + 1);
+
+    if(strncasecmp("javascript", link, 10))
+    {
+        strcpy(dest, link);
+        return dest;
+    }
+
+    int i = strcspn(link, "'\"");
+    if(i >= (int)strlen(link))
+        return dest;
+
+    char ch = link[i];
+    char *p1 = &link[i+1];
+    char *p2;
+
+    if ((ch == '"' || ch == '\'') &&
+            (p2 = strchr(p1, ch)))
+    {
+        strncpy(dest, p1, (p2-p1));
+    }
+
+    return dest;
+}
+
 string stripEntities(string input)
 {
     string text = input;
@@ -109,7 +138,7 @@ vector<Value> splitText(string text, vector<string> parent, int chars, int rows)
     Value value;
     value.mode = parent;
 
-    for (int index = 0; index < text.length(); index += maxLen)
+    for (unsigned int index = 0; index < text.length(); index += maxLen)
     {
         value.text = text.substr(index, MIN(maxLen, text.length() - index));
         data.push_back(value);
@@ -244,7 +273,7 @@ Lista getTag(char * buffer)
 
                     else
                     {
-                        l1.push_back({"text"});
+                        l1.push_back( {"text"});
                         open[text].open=true;
                         open[text].p=&(*l1.rbegin());
                         merge(open[text].p, out);
@@ -344,33 +373,36 @@ Lista getTag(char * buffer)
                 if (isContainer(it->tagName()))
                 {
                     if (it->tagName()=="p")
-                        l1.push_back({"p"});
-                    else l1.push_back({"return"});
+                        l1.push_back( {"p"});
+                    else l1.push_back( {"return"});
                     open[text].open=false;
                 }
                 if (it->tagName() == "title")
                 {
-                    l1.push_back({"title"});
+                    l1.push_back( {"title"});
                     open[title].open=true;
                     open[title].p=&(*l1.rbegin());
                 }
                 else if (it->tagName() == "a")
                 {
-                    l1.push_back({"a"});
-                    l1.rbegin()->attribute.append (it->attribute("href").second);
+                    l1.push_back( {"a"});
+                    char *href = strToUrl(it->attribute("href").second);
+                    l1.rbegin()->attribute.append (href);
+                    free(href);
+
                     open[a].open=true;
                     open[a].p=&(*l1.rbegin());
                     open[text].open=false;
                 }
                 else if (it->tagName() == "img")
                 {
-                    l1.push_back({"img"});
-                    l1.rbegin()->value.push_back ({it->attribute("src").second});
+                    l1.push_back( {"img"});
+                    l1.rbegin()->value.push_back ( {it->attribute("src").second});
                     l1.rbegin()->attribute.append (it->attribute("height").second);
                 }
                 else if (it->tagName() == "form")
                 {
-                    l1.push_back({"form"});
+                    l1.push_back( {"form"});
                     l1.rbegin()->form.action.append (it->attribute("action").second);
                     l1.rbegin()->form.method.append (it->attribute("method").second);
                     l1.rbegin()->form.enctype.append (it->attribute("enctype").second);
@@ -402,13 +434,13 @@ Lista getTag(char * buffer)
                 }
                 else if (it->tagName() == "meta")
                 {
-                    l1.push_back({"meta"});
-                    l1.rbegin()->value.push_back ({it->attribute("http-equiv").second});
+                    l1.push_back( {"meta"});
+                    l1.rbegin()->value.push_back ( {it->attribute("http-equiv").second});
                     l1.rbegin()->attribute.append (it->attribute("content").second);
                 }
                 else if (it->tagName() == "base")
                 {
-                    l1.push_back({"base"});
+                    l1.push_back( {"base"});
                     l1.rbegin()->attribute.append (it->attribute("href").second);
                 }
             }
@@ -421,7 +453,7 @@ Lista getTag(char * buffer)
                     if (it->tagName()=="a")
                     {
                         if (open[a].p->value.size()==0)
-                            open[a].p->value.push_back ({"LINK"});
+                            open[a].p->value.push_back ( {"LINK"});
                         open[a].open=false;
                     }
                     else if (it->tagName()=="title")
@@ -432,8 +464,8 @@ Lista getTag(char * buffer)
                 if (isContainer(it->tagName()))
                 {
                     if (it->tagName()=="p")
-                        l1.push_back({"p"});
-                    else l1.push_back({"return"});
+                        l1.push_back( {"p"});
+                    else l1.push_back( {"return"});
                     open[text].open=false;
                 }
                 else if (it->tagName()=="a")

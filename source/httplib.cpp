@@ -81,8 +81,10 @@ struct MemoryStruct {
 };
 
 char *findChr (const char *str, char chr);
-bool mustdownload(char *content);
 int parseline(MemoryStruct *memory);
+
+bool mustdownload(char *content);
+bool validProxy();
 
 int close_callback (void *clientp, curl_socket_t item) {
 	return net_close(item);
@@ -159,7 +161,7 @@ void setmainheaders(CURL *curl_handle, const char *url)
     curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
 
     /* set proxy if specified */
-    if(strlen(Settings.Proxy))
+    if(validProxy())
         curl_easy_setopt(curl_handle, CURLOPT_PROXY, Settings.Proxy);
 
     /* follow redirects */
@@ -554,4 +556,12 @@ char *findChr (const char *str, char chr) {
     if (c!=NULL)
         *c='\0';
     return (char*)str;
+}
+
+bool validProxy()
+{
+    if(strlen(Settings.Proxy))
+        return true;
+
+    return false;
 }

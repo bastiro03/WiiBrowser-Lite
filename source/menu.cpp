@@ -1114,6 +1114,7 @@ static int MenuSettings()
     sprintf(options.name[i++], "Music");
     sprintf(options.name[i++], "Restore Session");
     sprintf(options.name[i++], "UserAgent");
+    sprintf(options.name[i++], "Proxy (url:port)");
     options.length = i;
 
     GuiText titleTxt("Settings", 28, (GXColor)
@@ -1205,6 +1206,10 @@ static int MenuSettings()
             if (Settings.UserAgent >= MAXAGENTS)
                 Settings.UserAgent = 0;
             break;
+
+        case 9:
+            OnScreenKeyboard(mainWindow, Settings.Proxy, 256);
+            break;
         }
 
         if(ret >= 0 || firstRun)
@@ -1216,6 +1221,7 @@ static int MenuSettings()
             snprintf (options.value[0], 256, "%s", Settings.Homepage);
             snprintf (options.value[1], 256, "%s", Settings.DefaultFolder);
             snprintf (options.value[8], 256, "%s", AgentName[Settings.UserAgent]);
+            snprintf (options.value[9], 256, "%s", Settings.Proxy);
 
             if (Settings.ShowTooltip == 0) sprintf (options.value[2], "Hide");
             else if (Settings.ShowTooltip == 1) sprintf (options.value[2], "Show");

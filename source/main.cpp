@@ -250,6 +250,9 @@ int main(int argc, char *argv[])
     #endif
 
     Settings.Load();
+    if(argc > 1)
+        Settings.SetStartPage(argv[1]);
+
     LoadLanguage();
     __exception_setreload(10);
 

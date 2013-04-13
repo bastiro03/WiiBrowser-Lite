@@ -89,7 +89,12 @@ class SSettings
 		//!Set a Setting
 		//!\param name Settingname
 		//!\param value Settingvalue
-        bool SetSetting(char * name, char * value);
+        bool SetSetting(char *name, char *value);
+        //!Set Start Page
+		void SetStartPage(char *page);
+        //!Get Start Page
+		int GetStartPage(char *dest);
+
         //!Variables
         int Language;
         int Revision;
@@ -106,6 +111,8 @@ class SSettings
         char BootDevice[6];
 
         char Homepage[256];
+        char StartPage[256];
+
         char DefaultFolder[256];
         char UserFolder[256];
         char Proxy[256];

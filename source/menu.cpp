@@ -1277,7 +1277,9 @@ static int MenuSplash()
     ResumeGui();
 
     char myIP[16];
-    int conn = 0, menu = MENU_HOME;
+    int conn = 0;
+    int menu = Settings.GetStartPage(new_page);
+
     s32 ip;
     Init.SetEffect(EFFECT_ROTATE, 100, 90);
 

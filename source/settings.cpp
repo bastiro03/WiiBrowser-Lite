@@ -37,6 +37,7 @@
 #include <dirent.h>
 
 #include "Settings.h"
+#include "menu.h"
 
 #define DEFAULT_APP_PATH    "apps/wiibrowser/"
 #define DEFAULT_HOMEPAGE    "www.google.com/"
@@ -85,6 +86,7 @@ void SSettings::SetDefault()
     }
 
     memset(Proxy, 0, 256);
+    memset(StartPage, 0, 256);
 }
 
 bool SSettings::Save()
@@ -356,7 +358,7 @@ void SSettings::ParseLine(char *line)
     char temp[1024], name[1024], value[1024];
     strncpy(temp, line, sizeof(temp));
 
-    char * eq = strchr(temp, '=');
+    char *eq = strchr(temp, '=');
     if(!eq)
         return;
     *eq = 0;
@@ -470,6 +472,22 @@ void SSettings::ChangeFolder()
     if(absolutePath != ABSOLUTE)
         snprintf(UserFolder, sizeof(UserFolder), "%s%s", BootDevice, DefaultFolder + absolutePath);
     else strncpy(UserFolder, DefaultFolder, sizeof(UserFolder));
+}
+
+void SSettings::SetStartPage(char *page)
+{
+    if(!strcasecmp(page, "homepage"))
+        snprintf(StartPage, 256, Homepage);
+    else snprintf(StartPage, 256, page);
+}
+
+int SSettings::GetStartPage(char *dest)
+{
+    if(!strlen(StartPage))
+        return MENU_HOME;
+
+    snprintf(dest, 256, StartPage);
+    return MENU_BROWSE;
 }
 
 void *LoadFile(char *filepath, int size)

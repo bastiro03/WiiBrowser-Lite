@@ -464,7 +464,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
 
         if (choice)
         {
-            if (GuiBrowser(mainWindow, parentWindow, path, "Save page"))
+            if (GuiBrowser(NULL, parentWindow, path, "Save page"))
             {
                 if ((c = mime2ext(HTML->type)))
                     strcat(path, c);

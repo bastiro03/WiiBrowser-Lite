@@ -476,9 +476,16 @@ void SSettings::ChangeFolder()
 
 void SSettings::SetStartPage(char *page)
 {
-    if(!strcasecmp(page, "homepage"))
-        snprintf(StartPage, 256, Homepage);
-    else snprintf(StartPage, 256, page);
+    int i;
+    if(sscanf(page, "bookmark_%d", &i) == 1)
+    {
+        if(GetUrl(i))
+            strcpy(StartPage, GetUrl(i));
+    }
+
+    else if(!strcasecmp(page, "homepage"))
+        strcpy(StartPage, Homepage);
+    else strncpy(StartPage, page, sizeof(StartPage));
 }
 
 int SSettings::GetStartPage(char *dest)
@@ -486,7 +493,7 @@ int SSettings::GetStartPage(char *dest)
     if(!strlen(StartPage))
         return MENU_HOME;
 
-    snprintf(dest, 256, StartPage);
+    strcpy(dest, StartPage);
     return MENU_BROWSE;
 }
 

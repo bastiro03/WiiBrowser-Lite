@@ -16,6 +16,7 @@
 #include <malloc.h>
 
 #include "filebrowser.h"
+#include "settings.h"
 #include "menu.h"
 
 BROWSERINFO browser;
@@ -219,10 +220,10 @@ int BrowserChangeFolder()
  * BrowseDevice
  * Displays a list of files on the selected device
  ***************************************************************************/
-int BrowseDevice()
+int BrowseDevice(int dev)
 {
 	sprintf(browser.dir, "/");
-	sprintf(rootdir, "sd:/");
+	sprintf(rootdir, "%s:/", DeviceName[dev]);
 	ParseDirectory(); // Parse root directory
 	return browser.numEntries;
 }

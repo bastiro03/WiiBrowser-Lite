@@ -38,6 +38,12 @@ extern const u8		button_click_pcm[];
 extern const u32	button_click_pcm_size;
 
 // Images
+extern const u8		textbox_begin_png[];
+extern const u32	textbox_begin_png_size;
+
+extern const u8		textbox_end_png[];
+extern const u32	textbox_end_png_size;
+
 extern const u8		arrow_r_png[];
 extern const u32	arrow_r_png_size;
 

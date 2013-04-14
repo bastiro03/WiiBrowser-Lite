@@ -40,6 +40,6 @@ int UpdateDirName(int method);
 int FileSortCallback(const void *f1, const void *f2);
 void ResetBrowser();
 int BrowserChangeFolder();
-int BrowseDevice();
+int BrowseDevice(int dev = 0);
 
 #endif

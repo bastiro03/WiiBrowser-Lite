@@ -25,6 +25,9 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, cons
 	}
 
 	int menu = MENU_NONE;
+	int dev = 0;
+	char mount[2][5] = {"SD", "USB"};
+
     GuiTrigger trigA;
 	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
 
@@ -33,24 +36,36 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, cons
 	bzero(path, sizeof(path));
 
     GuiSound btnSoundOver(button_over_pcm, button_over_pcm_size, SOUND_PCM);
-    GuiImageData Textbox(keyboard_textbox_png);
+    GuiImageData Textbox(textbox_end_png);
     GuiImage TextboxImg(&Textbox);
     GuiButton InsertURL(TextboxImg.GetWidth(), TextboxImg.GetHeight());
 
-    GuiText URL("", 20, (GXColor)
-    {
-        0, 0, 0, 255
-    });
+    GuiImageData Device(textbox_begin_png);
+    GuiImage DeviceImg(&Device);
+    GuiButton InsertDEV(DeviceImg.GetWidth(), DeviceImg.GetHeight());
+
+    GuiText URL("", 20, (GXColor){0, 0, 0, 255});
+    GuiText DEV("SD", 20, (GXColor){0, 0, 0, 255});
+
     URL.SetMaxWidth(TextboxImg.GetWidth()-20);
+    URL.SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
+    URL.SetPosition(5,0);
     URL.SetScroll(SCROLL_HORIZONTAL);
 
-    InsertURL.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
-    InsertURL.SetPosition(0,30);
+    InsertURL.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+    InsertURL.SetPosition(screenwidth/2-InsertURL.GetWidth()/2+InsertDEV.GetWidth()/2,30);
     InsertURL.SetLabel(&URL);
     InsertURL.SetImage(&TextboxImg);
     InsertURL.SetSoundOver(&btnSoundOver);
     InsertURL.SetTrigger(&trigA);
-    InsertURL.SetEffectGrow();
+
+    InsertDEV.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+    InsertDEV.SetPosition(InsertURL.GetLeft()-InsertDEV.GetWidth(),30);
+    InsertDEV.SetLabel(&DEV);
+    InsertDEV.SetImage(&DeviceImg);
+    InsertDEV.SetSoundOver(&btnSoundOver);
+    InsertDEV.SetTrigger(&trigA);
+    InsertDEV.SetEffectGrow();
 
     GuiText titleTxt(title, 28, (GXColor){0, 0, 0, 255});
     titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
@@ -92,6 +107,7 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, cons
 	buttonWindow.Append(&cancelBtn);
 	buttonWindow.Append(&fileBrowser);
 	buttonWindow.Append(&InsertURL);
+	buttonWindow.Append(&InsertDEV);
 
     buttonWindow.SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_IN, 30);
     if (mainWindow)
@@ -120,6 +136,19 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, cons
             URL.SetScroll(SCROLL_HORIZONTAL);
         }
 
+        if(InsertDEV.GetState() == STATE_CLICKED)
+        {
+            InsertDEV.ResetState();
+            dev ^= 1;
+
+            if(BrowseDevice(dev) <= 0)
+            {
+                BrowseDevice();
+                dev = 0;
+            }
+            DEV.SetText(mount[dev]);
+        }
+
 		// update file browser based on arrow buttons
 		// set MENU_EXIT if A button pressed on a file
 		for(i=0; i < FILE_PAGESIZE; i++)
@@ -137,8 +166,8 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, cons
 						fileBrowser.TriggerUpdate();
 
 						sprintf(fullpath, "%s%s", rootdir, browser.dir+1); // print current path
-						sprintf(temp, fullpath);
-						URL.SetText(fullpath);
+						sprintf(temp, strchr(fullpath, '/') + 1);
+						URL.SetText(temp);
 					}
 					else
 					{
@@ -151,8 +180,8 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, cons
 					ShutoffRumble();
 					// load file
 					sprintf(fullpath, "%s%s/%s", rootdir, browser.dir+1, browserList[browser.selIndex].filename); // print current path
-					sprintf(temp, fullpath);
-					URL.SetText(fullpath);
+                    sprintf(temp, strchr(fullpath, '/') + 1);
+                    URL.SetText(temp);
 				}
 			}
 		}

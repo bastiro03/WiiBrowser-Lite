@@ -43,6 +43,7 @@ GuiKeyboard::GuiKeyboard(char * t, u32 max)
     }
 	memset(&keyboardEvent, 0, sizeof(keyboardEvent));
 	DeleteDelay = 0;
+	BackDelay = 0;
 
 	width = 540;
 	height = 400;
@@ -136,6 +137,8 @@ GuiKeyboard::GuiKeyboard(char * t, u32 max)
 
 	trigA = new GuiTrigger;
 	trigA->SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
+    trigH = new GuiTrigger;
+	trigH->SetHeldTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
 	trig2 = new GuiTrigger;
 	trig2->SetSimpleTrigger(-1, WPAD_BUTTON_2, 0);
 
@@ -148,10 +151,11 @@ GuiKeyboard::GuiKeyboard(char * t, u32 max)
 	keyBack->SetLabel(keyBackText);
 	keyBack->SetSoundOver(keySoundOver);
 	keyBack->SetSoundClick(keySoundClick);
-	keyBack->SetTrigger(trigA);
+	keyBack->SetTrigger(trigH);
 	keyBack->SetTrigger(trig2);
 	keyBack->SetPosition(10*42+40, 0*42+80);
 	keyBack->SetEffectGrow();
+	keyBack->SetHoldable(true);
 	this->Append(keyBack);
 
 	keyCapsImg = new GuiImage(keyMedium);
@@ -281,6 +285,7 @@ GuiKeyboard::~GuiKeyboard()
 	delete keyLargeOver;
 	delete keySoundOver;
 	delete keySoundClick;
+	delete trigH;
 	delete trigA;
 	delete trig2;
 
@@ -315,6 +320,7 @@ void GuiKeyboard::Update(GuiTrigger * t)
 	bool update = false;
 
 	++DeleteDelay;
+	++BackDelay;
 
     if(t->chan == 0) {
         // Update only once every frame (50-60 times per second)
@@ -370,14 +376,25 @@ void GuiKeyboard::Update(GuiTrigger * t)
 		}
 		keyEnter->SetState(STATE_SELECTED, t->chan);
 	}
-	else if(keyBack->GetState() == STATE_CLICKED        || charCode == 0x08)
+	else if(keyBack->GetState() == STATE_HELD)
 	{
-		if(strlen(kbtextstr) > 0)
+		if(BackDelay > 100)
 		{
-			kbtextstr[strlen(kbtextstr)-1] = 0;
-			kbText->SetText(GetDisplayText(kbtextstr));
+            if(strlen(kbtextstr) > 0)
+            {
+                kbtextstr[strlen(kbtextstr)-1] = 0;
+                kbText->SetText(GetDisplayText(kbtextstr));
+            }
+            BackDelay = 0;
 		}
-		keyBack->SetState(STATE_SELECTED, t->chan);
+	}
+	else if(charCode == 0x08)
+	{
+        if(strlen(kbtextstr) > 0)
+        {
+            kbtextstr[strlen(kbtextstr)-1] = 0;
+            kbText->SetText(GetDisplayText(kbtextstr));
+        }
 	}
 	else if(keyShift->GetState() == STATE_CLICKED       || keyCode == 0xf101)
 	{
@@ -442,7 +459,7 @@ void GuiKeyboard::Update(GuiTrigger * t)
 						}
 					}
 					kbText->SetText(GetDisplayText(kbtextstr));
-                    keyBtn[i][j]->SetState(STATE_SELECTED, t->chan);
+					keyBtn[i][j]->SetState(STATE_SELECTED, t->chan);
 
 					if(shift)
 					{

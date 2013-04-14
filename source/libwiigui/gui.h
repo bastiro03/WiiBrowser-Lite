@@ -955,6 +955,7 @@ class GuiKeyboard : public GuiWindow
 		char kbtextstr[256];
 	protected:
         static bool bInitUSBKeyboard;
+		int BackDelay;
 		int DeleteDelay;
 		Timer keyHeldDelay;
 		keyboard_event keyboardEvent;
@@ -996,6 +997,7 @@ class GuiKeyboard : public GuiWindow
 		GuiSound * keySoundOver;
 		GuiSound * keySoundClick;
 		GuiTrigger * trigA;
+		GuiTrigger * trigH;
 		GuiTrigger * trig2;
 		Key keys[4][11]; // two chars = less space than one pointer
 };

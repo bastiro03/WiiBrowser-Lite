@@ -14,7 +14,7 @@ void DistruggiText( ListaDiTesto lista );
 
 ListaDiBottoni InitButton( void );
 int NoButton( ListaDiBottoni lista );
-ListaDiBottoni InsButton( ListaDiBottoni lista );
+ListaDiBottoni InsButton( ListaDiBottoni lista, int outline = 0 );
 void DistruggiButton( ListaDiBottoni lista );
 
 ListaDiInput InitInput( void );

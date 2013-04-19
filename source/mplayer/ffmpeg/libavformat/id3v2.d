@@ -1,8 +1,11 @@
 libavformat/id3v2.o: libavformat/id3v2.c ../config.h \
  c:/devkitPro/libogc/include/zlib.h c:/devkitPro/libogc/include/zconf.h \
+ c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/include-fixed/limits.h \
+ c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/include-fixed/syslimits.h \
+ c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/../../../../powerpc-eabi/include/limits.h \
+ c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/../../../../powerpc-eabi/include/newlib.h \
  c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/../../../../powerpc-eabi/include/sys/types.h \
  c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/../../../../powerpc-eabi/include/_ansi.h \
- c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/../../../../powerpc-eabi/include/newlib.h \
  c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/../../../../powerpc-eabi/include/sys/config.h \
  c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/../../../../powerpc-eabi/include/machine/ieeefp.h \
  c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/../../../../powerpc-eabi/include/sys/features.h \
@@ -31,9 +34,6 @@ libavformat/id3v2.o: libavformat/id3v2.c ../config.h \
  libavutil/samplefmt.h libavutil/avutil.h libavutil/common.h \
  c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/../../../../powerpc-eabi/include/ctype.h \
  c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/../../../../powerpc-eabi/include/inttypes.h \
- c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/include-fixed/limits.h \
- c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/include-fixed/syslimits.h \
- c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/../../../../powerpc-eabi/include/limits.h \
  c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/../../../../powerpc-eabi/include/math.h \
  c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/../../../../powerpc-eabi/include/machine/fastmath.h \
  c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/../../../../powerpc-eabi/include/stdlib.h \
@@ -62,11 +62,17 @@ c:/devkitPro/libogc/include/zlib.h:
 
 c:/devkitPro/libogc/include/zconf.h:
 
+c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/include-fixed/limits.h:
+
+c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/include-fixed/syslimits.h:
+
+c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/../../../../powerpc-eabi/include/limits.h:
+
+c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/../../../../powerpc-eabi/include/newlib.h:
+
 c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/../../../../powerpc-eabi/include/sys/types.h:
 
 c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/../../../../powerpc-eabi/include/_ansi.h:
-
-c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/../../../../powerpc-eabi/include/newlib.h:
 
 c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/../../../../powerpc-eabi/include/sys/config.h:
 
@@ -127,12 +133,6 @@ libavutil/common.h:
 c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/../../../../powerpc-eabi/include/ctype.h:
 
 c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/../../../../powerpc-eabi/include/inttypes.h:
-
-c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/include-fixed/limits.h:
-
-c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/include-fixed/syslimits.h:
-
-c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/../../../../powerpc-eabi/include/limits.h:
 
 c:\devkitpro\devkitppc\bin\../lib/gcc/powerpc-eabi/4.6.3/../../../../powerpc-eabi/include/math.h:
 

@@ -49,12 +49,13 @@ static int drawMode = 0;
 
 void StartDrawThread();
 void PauseAndGotoGUI();
-void TakeScreenshot();
 void DrawForegroundGui();
 int DrawMPlayerGui();
 int copyScreen = 0;
 extern int pause_gui;
 extern int controlledbygui;
+
+u8* TakeScreenshot(bool global);
 
 //Global variables for brightness and contrast filters
 //Ranges for both should be constrained to [-1.0,1.0]
@@ -497,7 +498,7 @@ inline void DrawMPlayer()
 	if(copyScreen == 1)
 	{
 		if(controlledbygui != 2)
-			TakeScreenshot();
+			TakeScreenshot(1);
 		copyScreen = 2;
 	}
 	else

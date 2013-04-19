@@ -2,7 +2,7 @@
 <app version="1">
   <name>WiiBrowser</name>
   <coder>gave92</coder>
-  <version>rev82</version>
+  <version>rev83</version>
   <release_date>201304161642</release_date>
   <arguments>
 	<arg>homepage</arg>
@@ -14,17 +14,20 @@
     * Display custom web sites
     * Support for HTML and HTTPS connections
     * Support for links and web forms
-    * Capable of downloading files to SD/SDHC card
     * Address bar with on-screen keyboard
+    * File download to USB/SD/SDHC
+    * File upload
+    * Take screenshots
     * Favorites menu
     * Back and Forward navigation
+    * Support for USB keyboard
     * Supported Image Formats: PNG/JPEG/GIF/BMP
     * Image operations: zoom/move
     * Autoupdate feature
 
     Wishlist:
     * Better CSS support
-    * Flash videos!
+    * HTML5/Flash videos
     * Multiple tabs
 	
     Controls (Wii Remote Only):
@@ -53,6 +56,6 @@
     FreeTypeGX: Armin Tamzarian
     Libwiigui: Tantric
     Libogc/DevkitPro: Shagkur and Wintermute
-    Meta.xml: DniMretsaM
+    First meta.xml: DniMretsaM
   </long_description>
 </app>

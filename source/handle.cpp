@@ -9,7 +9,7 @@ void MoveText (int up, int dir, int space, Indice Index);
 void HandleFormPad(GuiButton *btnup, GuiButton *btndown, GuiWindow *mainWindow);
 
 bool hidden=true;
-enum { TEXT=0, BUTTON, HIDDEN, RADIO, TEXTAREA, UNKNOWN };
+enum { TEXT=0, BUTTON, HIDDEN, RADIO, TEXTAREA, UPLOAD, UNKNOWN };
 
 int inputType(ListaDiInput lista);
 int noSubmit(ListaDiBottoni btn);
@@ -51,7 +51,7 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
     {
         if (inputType(lista)==BUTTON)
         {
-            button=InsButton(button);
+            button=InsButton(button, BUTTON);
             GuiImage *ButtonImg=new GuiImage(&Button);
             button->btn=new GuiButton(ButtonImg->GetWidth(), ButtonImg->GetHeight());
             button->label=new GuiText((char*)lista->value.c_str(), 20, (GXColor)
@@ -77,13 +77,46 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
         }
         else if (inputType(lista)==HIDDEN)
         {
-            button=InsButton(button);
+            button=InsButton(button, HIDDEN);
             button->btn=NULL;
+        }
+        else if (inputType(lista)==UPLOAD)
+        {
+            button=InsButton(button, UPLOAD);
+            GuiImage *TextboxImg=new GuiImage(&Textbox);
+            button->btn=new GuiButton(TextboxImg->GetWidth(), TextboxImg->GetHeight());
+            button->label=new GuiText("", 20, (GXColor)
+            {
+                0, 0, 0, 255
+            });
+
+            label=new GuiText("Upload", 20, (GXColor)
+            {
+                0, 0, 255, 255
+            });
+            label->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+            label->SetPosition(0,-25);
+            label->SetMaxWidth(TextboxImg->GetWidth()-5);
+            label->SetScroll(SCROLL_HORIZONTAL);
+            button->btn->SetLabel(label);
+            offset+=25;
+
+            button->btn->SetLabel(button->label,1);
+            button->btn->SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
+            button->btn->SetPosition(0, offset);
+            button->btn->SetImage(TextboxImg);
+            button->btn->SetSoundOver(btnSoundOver);
+            button->btn->SetTrigger(trigA);
+            button->btn->SetEffectGrow();
+            button->btn->SetEffect(EFFECT_FADE, 50);
+            HaltGui();
+            Form.Append(button->btn);
+            ResumeGui();
+            offset+=TextboxImg->GetHeight()+10;
         }
         else if (inputType(lista)==TEXT)
         {
-            button=InsButton(button);
-            button->refs=(Tag*)button;   // Dummy Assignment
+            button=InsButton(button, TEXT);
             GuiImage *TextboxImg=new GuiImage(&Textbox);
             button->btn=new GuiButton(TextboxImg->GetWidth(), TextboxImg->GetHeight());
             button->label=new GuiText("", 20, (GXColor)
@@ -118,9 +151,9 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
         }
         else if (inputType(lista)==RADIO)
         {
-            if (lista->option == "checked")
+            if (lista->option=="checked")
             {
-                button=InsButton(button);
+                button=InsButton(button, RADIO);
                 button->btn=NULL;
             }
             else
@@ -128,8 +161,7 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
         }
         else if (inputType(lista)==TEXTAREA)
         {
-            button=InsButton(button);
-            button->refs=(Tag*)button;   // Dummy Assignment
+            button=InsButton(button, TEXT);
             GuiImage *TextboxImg = new GuiImage(&TextboxImgData);
             TextboxImg->SetScale(0.86);
             button->btn=new GuiButton(TextboxImg->GetRealWidth(), TextboxImg->GetRealHeight());
@@ -168,7 +200,7 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
         }
         else if (inputType(lista)==UNKNOWN)
         {
-            button=InsButton(button);
+            button=InsButton(button, UNKNOWN);
             button->btn=NULL;
         }
         button->url.assign(lista->name);
@@ -194,7 +226,7 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
             {
                 if(bottone->btn && bottone->btn->GetState() == STATE_CLICKED)
                 {
-                    if(bottone->refs)
+                    if(bottone->outline==TEXT)
                     {
                         size_t found=bottone->url.find("=")+1;
                         if (found!=string::npos)
@@ -206,8 +238,22 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
                         bottone->url.append(encode);
                         free(encode);
                     }
+                    else if(bottone->outline==UPLOAD)
+                    {
+                        size_t found=bottone->url.find("=")+1;
+                        if (found!=string::npos)
+                            bottone->url.erase(found);
+                        if(GuiBrowser(&Form, parentWindow, save, "Upload"))
+                        {
+                            bottone->label->SetText(save);
+                            bottone->url.append(save);
+                            bottone->url.append("_UPLOAD");
+                        }
+                        else bottone->label->SetText("");
+                    }
                     else
                         choice=bottone;
+                    bottone->btn->ResetState();
                 }
             }
         }
@@ -215,7 +261,8 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
 
     for (bottone=button; !NoButton(bottone); bottone=bottone->prox)
     {
-        if (!bottone->btn || bottone->refs || bottone==choice)
+        if (!bottone->btn || bottone==choice
+                || bottone->outline==TEXT || bottone->outline==UPLOAD)
         {
             if (bottone->url.length()>1)
             {
@@ -489,6 +536,8 @@ int inputType(ListaDiInput lista)
         return RADIO;
     if (lista->type=="textarea")
         return TEXTAREA;
+    if (lista->type=="file")
+        return UPLOAD;
     return UNKNOWN;
 }
 

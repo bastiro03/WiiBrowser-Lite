@@ -18,7 +18,7 @@ int NoText( ListaDiTesto lista ) {
 ListaDiTesto InsText( ListaDiTesto lista ) {
 	ListaDiTesto punt;
     punt=new Text;
-    punt->prox = lista;
+    punt->prox=lista;
 	return  punt;
 }
 
@@ -38,12 +38,13 @@ int NoButton( ListaDiBottoni lista ) {
     return lista == NULL;
 }
 
-ListaDiBottoni InsButton( ListaDiBottoni lista ) {
+ListaDiBottoni InsButton( ListaDiBottoni lista, int outline ) {
 	ListaDiBottoni punt;
     punt=new Button;
     punt->refs=NULL;
     punt->label=NULL;
-    punt->prox = lista;
+    punt->outline=outline;
+    punt->prox=lista;
 	return  punt;
 }
 

@@ -45,19 +45,24 @@ bool drawGui = false;
  *
  * Copies the current screen into a GX texture
  ***************************************************************************/
-u8* TakeScreenshot()
+u8* TakeScreenshot(bool global)
 {
-    videoScreenshot = (u8 *)memalign(32, vmode->fbWidth * vmode->efbHeight * 4);
-    if(!videoScreenshot)
+    u8 *video = videoScreenshot;
+    if(!global)
+        video = (u8 *)memalign(32, vmode->fbWidth * vmode->efbHeight * 4);
+
+    if(!video)
         exit(0);
 
 	GX_SetTexCopySrc(0, 0, vmode->fbWidth, vmode->efbHeight);
 	GX_SetTexCopyDst(vmode->fbWidth, vmode->efbHeight, GX_TF_RGBA8, GX_FALSE);
-	DCInvalidateRange(videoScreenshot, vmode->fbWidth * vmode->efbHeight * 4);
-	GX_CopyTex(videoScreenshot, GX_FALSE);
+	DCInvalidateRange(video, vmode->fbWidth * vmode->efbHeight * 4);
+	GX_CopyTex(video, GX_FALSE);
 	GX_PixModeSync();
 
-	return videoScreenshot;
+	// if(global)
+        // EnableVideoImg();
+	return video;
 }
 
 void SaveScreenshot(char *path)
@@ -350,6 +355,8 @@ InitVideo2 ()
 
 	GX_SetDrawDoneCallback(Draw_VIDEO);
 	GX_Flush();
+
+	videoScreenshot = (u8 *)memalign(32, vmode->fbWidth * vmode->efbHeight * 4);
 }
 
 }

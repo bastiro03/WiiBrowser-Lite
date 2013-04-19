@@ -36,11 +36,11 @@ LDFLAGS		=	-g $(MACHDEP) -specs=wiimc.spec -Wl
 #---------------------------------------------------------------------------------
 # any extra libraries we wish to link with the project
 #---------------------------------------------------------------------------------
-LIBS	:=	-lfribidi -ljpeg -liconv -ldi -lpng -lz \
+LIBS	:=	-lmplayerwii -lavformat -lavcodec -lswscale -lavutil \
+
+LIBS	+=	-lfribidi -ljpeg -liconv -ldi -lpng -lz \
 				-lcurl -lcyassl -lnetport -lasnd -lvorbisidec \
 					-lfat -lwiiuse -lwiikeyboard -lbte -logc -lfreetype \
-
-# -lmplayerwii -lavformat -lavcodec -lswscale -lavutil \
 
 #---------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level containing

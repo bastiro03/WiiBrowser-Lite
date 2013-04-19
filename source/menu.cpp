@@ -167,7 +167,7 @@ bool performDownload(FILE **hfile, char *mime)
 /****************************************************************************
  * Handle screenshots
  ***************************************************************************/
-#ifndef MPLAYER
+#ifdef MPLAYER
 void DisableVideoImg()
 {
     if(!videoImg)
@@ -896,7 +896,7 @@ void SetupGui()
     guiWindow->Append(bgImg);
     mainWindow = guiWindow;
 
-    #ifndef MPLAYER
+    #ifdef MPLAYER
 	videoImg = new GuiImage();
     videoImg->SetImage(videoScreenshot, vmode->fbWidth, vmode->viHeight);
     videoImg->SetScaleX(screenwidth/(float)vmode->fbWidth);
@@ -1391,10 +1391,10 @@ static int MenuHome()
     Left->SetEffect(EFFECT_FADE, -50);
 
     HaltGui();
-    mainWindow->Remove(Left);
-    mainWindow->Append(Right);
     mainWindow->Append(Splash);
     mainWindow->Append(App);
+    mainWindow->Append(Right);
+    mainWindow->Remove(Left);
     mainWindow->Append(&InsertURL);
     mainWindow->Append(&btnGo);
     mainWindow->Append(&btnExit);
@@ -1816,6 +1816,7 @@ static int MenuFavorites()
     HaltGui();
     mainWindow->Append(App);
     mainWindow->Append(Left);
+    mainWindow->Remove(Right);
     ResumeGui();
 
     int i, choice = 0;

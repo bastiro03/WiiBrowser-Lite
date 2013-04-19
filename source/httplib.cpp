@@ -31,7 +31,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "config.h"
 #include "httplib.h"
+
 #include "main.h"
 #include "menu.h"
 
@@ -435,7 +437,9 @@ struct curl_httppost *multipartform(const char *url)
     char *temp = strrchr(url, '?');
     char *begin = url_decode(temp);
     char *mid = NULL;
+
     char *name, *value;
+    char *file, *path;
 
     /* Fill in the filename field */
     do
@@ -448,11 +452,27 @@ struct curl_httppost *multipartform(const char *url)
         mid++;
         value = strndup(mid, begin-mid);
 
-        curl_formadd(&formpost,
-            &lastptr,
-            CURLFORM_COPYNAME, name,
-            CURLFORM_COPYCONTENTS, value,
-            CURLFORM_END);
+        if(strstr(value, "_UPLOAD"))
+        {
+            path = strrchr(value, '_');
+            file = strndup(value, path-value);
+
+            curl_formadd(&formpost,
+                &lastptr,
+                CURLFORM_COPYNAME, name,
+                CURLFORM_FILE, file,
+                CURLFORM_END);
+
+            free(file);
+        }
+        else
+        {
+            curl_formadd(&formpost,
+                &lastptr,
+                CURLFORM_COPYNAME, name,
+                CURLFORM_COPYCONTENTS, value,
+                CURLFORM_END);
+        }
 
         free(name);
         free(value);
@@ -546,7 +566,10 @@ bool mustdownload(char content[])
 {
     if (strstr(content, "text/html") || strstr(content, "application/xhtml")
             || strstr(content, "text") || strstr(content, "image")
-                /*|| strstr(content, "video")*/)
+#ifdef MPLAYER
+                || strstr(content, "video")
+#endif
+        )
         return false;
     return true;
 }

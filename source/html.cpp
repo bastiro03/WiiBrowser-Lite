@@ -1,11 +1,12 @@
 #include <stdio.h>
+#include "audio.h"
 #include "html.h"
 #include "config.h"
 #define LEN 15
 
 enum html htm;
 char tags [END][LEN]= {"html","head","body","base","meta","title","form","p","a","div",
-                       "br","img","h1","h2","h3","h4","h5","h6","b","big","blockquote","td","dd","dt",/*"center",*/"li","cite","font"
+                       "br","img","h1","h2","h3","h4","h5","h6","b","big","blockquote","pre","td","dd","dt",/*"center",*/"li","cite","font"
                       };
 
 static int threadState;
@@ -70,8 +71,8 @@ int knownType(char type[])
         return TEXT;
     if (strstr(type, "image"))
         return IMAGE;
-    // if (strstr(type, "video"))
-    // return VIDEO;
+    if (strstr(type, "video"))
+        return VIDEO;
     return UNKNOWN;
 }
 
@@ -117,6 +118,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
 
             ResetVideo_Menu();
             DisableVideoImg();
+            InitAudio(); // Initialize audio
             ResumeGui();
         }
     }
@@ -356,7 +358,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
             {
                 HaltGui();
                 DoMPlayerGuiDraw();
-                u8 *video = TakeScreenshot();
+                u8 *video = TakeScreenshot(0);
                 ResumeGui();
 
                 int t = 0;
@@ -449,7 +451,8 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
             usleep(100);
 
         ResetVideo_Menu();
-        DisableVideoImg();
+        // DisableVideoImg();
+        InitAudio(); // Initialize audio
         ResumeGui();
     }
 #endif

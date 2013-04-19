@@ -52,15 +52,15 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, cons
     URL.SetPosition(5,0);
     URL.SetScroll(SCROLL_HORIZONTAL);
 
-    InsertURL.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-    InsertURL.SetPosition(screenwidth/2-InsertURL.GetWidth()/2+InsertDEV.GetWidth()/2,30);
+    InsertURL.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
+    InsertURL.SetPosition(InsertDEV.GetWidth()/2,30);
     InsertURL.SetLabel(&URL);
     InsertURL.SetImage(&TextboxImg);
     InsertURL.SetSoundOver(&btnSoundOver);
     InsertURL.SetTrigger(&trigA);
 
-    InsertDEV.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-    InsertDEV.SetPosition(InsertURL.GetLeft()-InsertDEV.GetWidth(),30);
+    InsertDEV.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
+    InsertDEV.SetPosition(InsertURL.GetLeft()-InsertDEV.GetWidth()/2,30);
     InsertDEV.SetLabel(&DEV);
     InsertDEV.SetImage(&DeviceImg);
     InsertDEV.SetSoundOver(&btnSoundOver);
@@ -108,8 +108,8 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, cons
 	buttonWindow.Append(&fileBrowser);
 	buttonWindow.Append(&InsertURL);
 	buttonWindow.Append(&InsertDEV);
-
     buttonWindow.SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_IN, 30);
+
     if (mainWindow)
     {
         mainWindow->SetEffect(EFFECT_SLIDE_TOP | EFFECT_SLIDE_OUT, 50);
@@ -127,12 +127,17 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, cons
 	while(menu == MENU_NONE)
 	{
 		usleep(100);
+		if(!strlen(URL.GetText()) || URL.GetText()[0] != '/')
+        {
+            sprintf(temp, "//");
+            URL.SetText(temp+1);
+        }
 
         if(InsertURL.GetState() == STATE_CLICKED)
         {
             URL.SetScroll(SCROLL_NONE);
-            OnScreenKeyboard(parentWindow, temp, 256);
-            URL.SetText(temp);
+            OnScreenKeyboard(parentWindow, strchr(temp, '/')+1, 256);
+            URL.SetText(strchr(temp, '/')+1);
             URL.SetScroll(SCROLL_HORIZONTAL);
         }
 
@@ -166,8 +171,8 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, cons
 						fileBrowser.TriggerUpdate();
 
 						sprintf(fullpath, "%s%s", rootdir, browser.dir+1); // print current path
-						sprintf(temp, strchr(fullpath, '/') + 1);
-						URL.SetText(temp);
+                        sprintf(temp, fullpath);
+                        URL.SetText(strchr(temp, '/')+1);
 					}
 					else
 					{
@@ -180,8 +185,8 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, cons
 					ShutoffRumble();
 					// load file
 					sprintf(fullpath, "%s%s/%s", rootdir, browser.dir+1, browserList[browser.selIndex].filename); // print current path
-                    sprintf(temp, strchr(fullpath, '/') + 1);
-                    URL.SetText(temp);
+                    sprintf(temp, fullpath);
+                    URL.SetText(strchr(temp, '/')+1);
 				}
 			}
 		}
@@ -196,18 +201,20 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, cons
 	}
 
     buttonWindow.SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_OUT, 50);
-    if (mainWindow)
-        mainWindow->SetEffect(EFFECT_SLIDE_TOP | EFFECT_SLIDE_IN, 30);
     while(buttonWindow.GetEffect() > 0)
         usleep(100);
+    buttonWindow.SetVisible(false);
+
+    if(mainWindow)
+    {
+        mainWindow->SetEffect(EFFECT_SLIDE_TOP | EFFECT_SLIDE_IN, 30);
+        parentWindow->Append(mainWindow);
+        while(mainWindow->GetEffect() > 0)
+            usleep(100);
+    }
 
     HaltGui();
     parentWindow->Remove(&buttonWindow);
-    if(mainWindow)
-    {
-        parentWindow->Append(mainWindow);
-        parentWindow->ChangeFocus(mainWindow);
-    }
     ResumeGui();
 
     if (isValidPath(path))

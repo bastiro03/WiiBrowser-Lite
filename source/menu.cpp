@@ -39,6 +39,7 @@ extern "C" {
 
 static u8 loadstack[GUITH_STACK] ATTRIBUTE_ALIGN (32);
 static u8 updatestack[GUITH_STACK] ATTRIBUTE_ALIGN (32);
+static u8 guistack[GUITH_STACK] ATTRIBUTE_ALIGN (32);
 
 CURL *curl_handle;
 History history;
@@ -717,9 +718,9 @@ static void *UpdateGUI (void *arg)
 void
 InitGUIThreads()
 {
-    LWP_CreateThread (&guithread, UpdateGUI, NULL, NULL, 0, 70);
-    LWP_CreateThread (&updatethread, UpdateThread, NULL, updatestack, GUITH_STACK, 60);
-    LWP_CreateThread (&loadthread, LoadingThread, NULL, loadstack, GUITH_STACK, 60);
+    LWP_CreateThread (&guithread, UpdateGUI, NULL, guistack, GUITH_STACK, 70);
+    LWP_CreateThread (&updatethread, UpdateThread, NULL, updatestack, GUITH_STACK, 70);
+    LWP_CreateThread (&loadthread, LoadingThread, NULL, loadstack, GUITH_STACK, 70);
 }
 
 void
@@ -1944,13 +1945,6 @@ void Init()
     if(curl_global_init(CURL_GLOBAL_ALL))
         ExitRequested = 1;
     curl_handle = curl_easy_init();
-
-    char cookies[30];
-    sprintf(cookies, "%s/cookie.csv", Settings.AppPath);
-
-    /* setup cookies engine */
-    curl_easy_setopt(curl_handle, CURLOPT_COOKIEFILE, cookies);
-    curl_easy_setopt(curl_handle, CURLOPT_COOKIEJAR, cookies);
 
     #ifdef MPLAYER
     if(!InitMPlayer())

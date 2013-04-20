@@ -11,7 +11,7 @@ void SetFont(GuiText *text, vector<string> mode);
 
 enum
 {
-    THREAD_EXIT=0,
+    THREAD_EXIT = 0,
     THREAD_SUSPEND,
     THREAD_RUN
 };
@@ -24,5 +24,11 @@ enum
     IMAGE,
     VIDEO
 };
+
+typedef struct Arg
+{
+    ListaDiImg lista;
+    char *url;
+} Argument;
 
 #endif

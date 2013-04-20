@@ -159,6 +159,9 @@ void setmainheaders(CURL *curl_handle, const char *url)
     if(!curl_handle)
         return;
 
+    char cookies[30];
+    sprintf(cookies, "%s/cookie.csv", Settings.AppPath);
+
     /* send all data to this function */
     curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
 
@@ -170,6 +173,10 @@ void setmainheaders(CURL *curl_handle, const char *url)
     curl_easy_setopt(curl_handle, CURLOPT_AUTOREFERER, 1);
     curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
     curl_easy_setopt(curl_handle, CURLOPT_NOPROGRESS, 1);
+
+    /* setup cookies engine */
+    curl_easy_setopt(curl_handle, CURLOPT_COOKIEFILE, cookies);
+    curl_easy_setopt(curl_handle, CURLOPT_COOKIEJAR, cookies);
 
     /* some servers don't like requests that are made without a user-agent
     field, so we provide one */

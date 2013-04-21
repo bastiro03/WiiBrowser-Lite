@@ -50,6 +50,21 @@ extern const u32	arrow_r_png_size;
 extern const u8		arrow_l_png[];
 extern const u32	arrow_l_png_size;
 
+extern const u8		progressbar_empty_png[];
+extern const u32	progressbar_empty_png_size;
+
+extern const u8		progressbar_left_png[];
+extern const u32	progressbar_left_png_size;
+
+extern const u8		progressbar_mid_png[];
+extern const u32	progressbar_mid_png_size;
+
+extern const u8		progressbar_right_png[];
+extern const u32	progressbar_right_png_size;
+
+extern const u8		progressbar_line_png[];
+extern const u32	progressbar_line_png_size;
+
 extern const u8		remove_png[];
 extern const u32	remove_png_size;
 

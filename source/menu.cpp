@@ -11,16 +11,15 @@
 #include <gccore.h>
 #include <ogcsys.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 #include <wiiuse/wpad.h>
 
 #include "liste.h"
-#include "menu.h"
 #include "main.h"
 #include "input.h"
+#include "networkop.h"
 
 #include "filelist.h"
 #include "filebrowser.h"
@@ -33,15 +32,15 @@ extern "C" {
 }
 
 #define THREAD_SLEEP    100
-#define MAXLEN          256
+#define MAXLEN          512
 #define N               9
-#define GUITH_STACK 	(16384)
 
 static u8 loadstack[GUITH_STACK] ATTRIBUTE_ALIGN (32);
 static u8 updatestack[GUITH_STACK] ATTRIBUTE_ALIGN (32);
 static u8 guistack[GUITH_STACK] ATTRIBUTE_ALIGN (32);
 
 CURL *curl_handle;
+CURLM *curl_multi;
 History history;
 
 char new_page[MAXLEN];
@@ -68,9 +67,9 @@ static GuiImageData * SplashImage = NULL;
 static GuiImage * Splash = NULL;
 static GuiImage * videoImg = NULL;
 
-static GuiWindow * mainWindow = NULL;
 static GuiWindow * guiWindow = NULL;
 static GuiWindow * videoWindow = NULL;
+GuiWindow * mainWindow = NULL;
 
 static lwp_t guithread = LWP_THREAD_NULL;
 static lwp_t updatethread = LWP_THREAD_NULL;
@@ -721,11 +720,19 @@ InitGUIThreads()
     LWP_CreateThread (&guithread, UpdateGUI, NULL, guistack, GUITH_STACK, 70);
     LWP_CreateThread (&updatethread, UpdateThread, NULL, updatestack, GUITH_STACK, 70);
     LWP_CreateThread (&loadthread, LoadingThread, NULL, loadstack, GUITH_STACK, 70);
+    LWP_CreateThread (&networkthread, NetworkThread, NULL, networkstack, GUITH_STACK, 70);
 }
 
 void
 StopGUIThreads()
 {
+    if(networkthread != LWP_THREAD_NULL)
+    {
+        StopNetwork();
+        LWP_JoinThread(networkthread, NULL);
+        networkthread = LWP_THREAD_NULL;
+    }
+
     if(loadthread != LWP_THREAD_NULL)
     {
         StopLoading();
@@ -948,6 +955,8 @@ void SetupGui()
 
     videoWindow = new GuiWindow(screenwidth, screenheight);
     videoWindow->Append(App);
+
+    LWP_ResumeThread(networkthread);
     ResumeGui();
 }
 
@@ -1323,6 +1332,41 @@ static int MenuSplash()
     return menu;
 }
 
+void ShowDownloads()
+{
+    manager->SetEffect(EFFECT_SLIDE_TOP | EFFECT_SLIDE_IN, 50);
+
+    HaltGui();
+    mainWindow->SetState(STATE_DISABLED);
+    mainWindow->Append(manager);
+    mainWindow->ChangeFocus(manager);
+    ResumeGui();
+
+    int x, y;
+
+    while(1)
+    {
+        if (userInput[0].wpad->ir.valid)
+        {
+            x = userInput[0].wpad->ir.x;
+            y = userInput[0].wpad->ir.y;
+
+            if ((userInput[0].wpad->btns_d & WPAD_BUTTON_A) && !manager->IsInside(x, y))
+                break;
+        }
+        usleep(100);
+    }
+
+    manager->SetEffect(EFFECT_SLIDE_TOP | EFFECT_SLIDE_OUT, 50);
+    while(manager->GetEffect() > 0)
+        usleep(100);
+
+    HaltGui();
+    mainWindow->Remove(manager);
+    mainWindow->SetState(STATE_DEFAULT);
+    ResumeGui();
+}
+
 /****************************************************************************
  * MenuHome
  ***************************************************************************/
@@ -1432,6 +1476,12 @@ static int MenuHome()
             App->btnSett->ResetState();
         }
 
+        else if(App->btnSave->GetState() == STATE_CLICKED)
+        {
+            ShowDownloads();
+            App->btnSave->ResetState();
+        }
+
         else if(App->btnHome->GetState() == STATE_CLICKED)
         {
             strcpy(new_page,Settings.Homepage);
@@ -1446,7 +1496,7 @@ static int MenuHome()
             if (history->prec)
             {
                 history=history->prec;
-                strncpy(new_page,history->url.c_str(),256);
+                strncpy(new_page,history->url.c_str(),512);
                 strcpy(prev_page,new_page);
                 URL.SetText(new_page);
             }
@@ -1458,7 +1508,7 @@ static int MenuHome()
             if (history->prox)
             {
                 history=history->prox;
-                strncpy(new_page,history->url.c_str(),256);
+                strncpy(new_page,history->url.c_str(),512);
                 strcpy(prev_page,new_page);
                 URL.SetText(new_page);
             }
@@ -1660,7 +1710,7 @@ jump:
     if(HTML.size == -1)
     {
         if(performDownload(&hfile, HTML.data))
-            goto jump;
+            AddHandle(curl_multi, url, hfile);
 
         free(url);
         return MENU_HOME;
@@ -1714,8 +1764,6 @@ jump:
         strcpy(url,(char*)link.c_str());
         goto jump;
     }
-
-    free(url);
     return MENU_HOME;
 }
 
@@ -1749,7 +1797,7 @@ void SwapImage(GuiFavorite *Block, int i, int j)
 
 void SwapUrls(int i, int j)
 {
-    char utemp[256];
+    char utemp[512];
     strcpy(utemp, Settings.GetUrl(i));
     strcpy(Settings.Favorites[i], Settings.Favorites[j]);
     strcpy(Settings.Favorites[j], utemp);
@@ -1771,6 +1819,8 @@ int findEmpty()
 static int MenuFavorites()
 {
     bool editing = false;
+    App->ChangeButtons(editing ? EDITING : FAVORITES);
+
     strcpy(new_page,prev_page);
     prevMenu = MENU_HOME;
 
@@ -1831,7 +1881,7 @@ static int MenuFavorites()
             for (i = 0; i<N; i++)
                 Block[i].SetEditing(editing);
 
-            App->ChangeButtons(editing ? FAVORITES : HOMEPAGE);
+            App->ChangeButtons(editing ? EDITING : FAVORITES);
             App->btnSett->ResetState();
         }
 
@@ -1935,16 +1985,39 @@ static int MenuFavorites()
 /****************************************************************************
  * MainMenu
  ***************************************************************************/
+void LoadSession()
+{
+    char cookies[256];
+    sprintf(cookies, "%s/cookie.csv", Settings.AppPath);
+    history = LoadList();
+
+    /* setup cookies engine */
+    curl_easy_setopt(curl_handle, CURLOPT_COOKIEFILE, cookies);
+    curl_easy_setopt(curl_handle, CURLOPT_COOKIESESSION, 1L);
+}
+
+void DeleteSession()
+{
+    char path[256];
+    history = InitHistory();
+
+    sprintf(path, "%s/cookie.csv", Settings.AppPath);
+    remove(path);
+    sprintf(path, "%s/history.txt", Settings.AppPath);
+    remove(path);
+}
+
 void Init()
 {
-    memset(prev_page, 0, sizeof(prev_page));
-    if (Settings.Restore)
-        history = LoadList();
-    else history = InitHistory();
-
     if(curl_global_init(CURL_GLOBAL_ALL))
         ExitRequested = 1;
+
     curl_handle = curl_easy_init();
+    memset(prev_page, 0, sizeof(prev_page));
+
+    if (Settings.Restore)
+        LoadSession();
+    else DeleteSession();
 
     #ifdef MPLAYER
     if(!InitMPlayer())
@@ -1978,6 +2051,12 @@ void Cleanup()
     delete pointer[1];
     delete pointer[2];
     delete pointer[3];
+
+    char cookies[30];
+    sprintf(cookies, "%s/cookie.csv", Settings.AppPath);
+
+    /* setup cookies engine */
+    curl_easy_setopt(curl_handle, CURLOPT_COOKIEJAR, cookies);
 
     curl_easy_cleanup(curl_handle);
     curl_global_cleanup();

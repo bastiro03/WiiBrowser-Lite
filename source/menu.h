@@ -15,7 +15,7 @@
 #undef DEBUG
 
 #include <libwiigui/gui.h>
-#include <curl/curl.h>
+#include <curl/multi.h>
 
 #include <ogcsys.h>
 #include <update.h>
@@ -35,8 +35,10 @@ bool VideoImgVisible();
 bool LoadYouTubeFile(char *newurl, char *data);
 
 extern u8 HWButton;
-extern CURL *curl_handle;
 extern char new_page[];
+
+extern CURL *curl_handle;
+extern CURLM *curl_multi;
 
 enum
 {

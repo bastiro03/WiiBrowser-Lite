@@ -72,6 +72,7 @@ const char Agents[MAXAGENTS][256] =
 };
 
 const struct block emptyblock = {NULL, 0};
+static int firstRun = true;
 
 // -----------------------------------------------------------
 // DATA HANDLING
@@ -159,9 +160,6 @@ void setmainheaders(CURL *curl_handle, const char *url)
     if(!curl_handle)
         return;
 
-    char cookies[30];
-    sprintf(cookies, "%s/cookie.csv", Settings.AppPath);
-
     /* send all data to this function */
     curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
 
@@ -173,10 +171,6 @@ void setmainheaders(CURL *curl_handle, const char *url)
     curl_easy_setopt(curl_handle, CURLOPT_AUTOREFERER, 1);
     curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
     curl_easy_setopt(curl_handle, CURLOPT_NOPROGRESS, 1);
-
-    /* setup cookies engine */
-    curl_easy_setopt(curl_handle, CURLOPT_COOKIEFILE, cookies);
-    curl_easy_setopt(curl_handle, CURLOPT_COOKIEJAR, cookies);
 
     /* some servers don't like requests that are made without a user-agent
     field, so we provide one */
@@ -240,88 +234,6 @@ void setrequestheaders(CURL *curl_handle, int request)
 // -----------------------------------------------------------
 // REQUEST FUNCTIONS
 // -----------------------------------------------------------
-
-struct block headrequest(CURL *curl_handle, const char *url)
-{
-    char *ct = NULL;
-    struct block b;
-    int res;
-
-    struct MemoryStruct chunk;
-    chunk.memory = (char *)malloc(1);   /* will be grown as needed by the realloc above */
-    chunk.size = 0; /* no data at this point */
-
-    setmainheaders(curl_handle, url);
-    setrequestheaders(curl_handle, HEAD);
-
-    if(curl_handle) {
-        /* we pass our 'chunk' struct to the callback function */
-        curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&chunk);
-        curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 0);
-
-        if ((res = curl_easy_perform(curl_handle)) != 0)      /*error!*/
-        {
-            Debug(url);
-            Debug(curl_easy_strerror((CURLcode)res));
-            return emptyblock;
-        }
-
-        if(CURLE_OK != curl_easy_getinfo(curl_handle, CURLINFO_CONTENT_TYPE, &ct) || !ct)
-            return emptyblock;
-    }
-    else
-        return emptyblock;
-
-	b.data = chunk.memory;
-	b.size = chunk.size;
-    strcpy(b.type, findChr(ct, ';'));
-
-	return b;
-}
-
-struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
-{
-    char *ct = NULL;
-    struct block b;
-    int res;
-
-    struct MemoryStruct chunk;
-    chunk.memory = (char *)malloc(1);   /* will be grown as needed by the realloc above */
-    chunk.size = 0; /* no data at this point */
-
-    setmainheaders(curl_handle, url);
-    setrequestheaders(curl_handle, GET);
-
-    if(curl_handle) {
-        /* we pass our 'chunk' struct or 'hfile' to the callback function */
-        if(hfile)
-        {
-            /* send all data to this function */
-            curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, writedata);
-            curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)hfile);
-        }
-        else curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&chunk);
-
-        if ((res = curl_easy_perform(curl_handle)) != 0)      /*error!*/
-        {
-            Debug(url);
-            Debug(curl_easy_strerror((CURLcode)res));
-            return emptyblock;
-        }
-
-        if(CURLE_OK != curl_easy_getinfo(curl_handle, CURLINFO_CONTENT_TYPE, &ct) || !ct)
-            return emptyblock;
-    }
-    else
-        return emptyblock;
-
-	b.data = chunk.memory;
-	b.size = chunk.size;
-    strcpy(b.type, findChr(ct, ';'));
-
-    fclose(hfile);
-	return b;
-}
 
 struct block postrequest(CURL *curl_handle, const char *url, curl_httppost *data)
 {
@@ -494,7 +406,10 @@ struct block downloadfile(CURL *curl_handle, const char *url, FILE *hfile)
 {
     const char *mode = strrchr(url, '\\');
     url = findChr(url, '\\');
-    curl_easy_reset(curl_handle);
+
+    if (firstRun)
+        firstRun = false;
+    else curl_easy_reset(curl_handle);
 
     if (!mode)
         return customrequest(curl_handle, url, hfile);
@@ -509,27 +424,6 @@ struct block downloadfile(CURL *curl_handle, const char *url, FILE *hfile)
     }
 
     return customrequest(curl_handle, url, hfile);
-}
-
-char *checkfile(CURL *curl_handle, char **url)
-{
-    struct block head;
-    head = headrequest(curl_handle, *url);
-    char *new_url = NULL;
-
-    if(head.size == 0)
-        return NULL;
-    free(head.data);
-
-    if(CURLE_OK == curl_easy_getinfo(curl_handle, CURLINFO_REDIRECT_URL, &new_url) && new_url)
-    {
-        *url = (char*)realloc((*url), strlen(new_url)+1);
-        strcpy((*url), new_url);
-    }
-
-    if(mustdownload(head.type))
-        return strdup(head.type);
-    return NULL;
 }
 
 // -----------------------------------------------------------

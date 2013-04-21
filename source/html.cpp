@@ -344,7 +344,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
 
                 else if (lista->name == "base")
                 {
-                    snprintf(url, 256, lista->attribute.c_str());
+                    snprintf(url, 512, lista->attribute.c_str());
                 }
 
                 else if (lista->name == "return")

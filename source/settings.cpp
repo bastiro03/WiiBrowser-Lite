@@ -80,8 +80,8 @@ void SSettings::SetDefault()
 
     for(int i = 0; i < N; i++)
     {
-        Favorites[i] = new char[256];
-        memset(Favorites[i], 0, 256);
+        Favorites[i] = new char[512];
+        memset(Favorites[i], 0, 512);
         Thumbnails[i] = NULL;
     }
 
@@ -340,7 +340,7 @@ bool SSettings::SetSetting(char *name, char *value)
 	}
     else if (strncmp(name, "Favorite", 8) == 0) {
         if (sscanf(name, "Favorite(%d)", &i) == 1) {
-            strncpy(Favorites[i], value, 256);
+            strncpy(Favorites[i], value, 512);
         }
 		return true;
 	}
@@ -454,7 +454,7 @@ void SSettings::Remove(int f)
         return;
 
     char filepath[256];
-    bzero(Favorites[f], 256);
+    bzero(Favorites[f], 512);
     snprintf(filepath, sizeof(filepath), "%s/thumbnails/thumb_%d.gxt", AppPath, f);
 
     if(Thumbnails[f])

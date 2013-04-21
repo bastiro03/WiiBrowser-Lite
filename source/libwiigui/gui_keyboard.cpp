@@ -378,7 +378,7 @@ void GuiKeyboard::Update(GuiTrigger * t)
 	}
 	else if(keyBack->GetState() == STATE_HELD)
 	{
-		if(BackDelay > 100)
+		if(BackDelay > 80)
 		{
             if(strlen(kbtextstr) > 0)
             {

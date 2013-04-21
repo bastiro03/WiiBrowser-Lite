@@ -249,6 +249,9 @@ void GuiImage::ColorStripe(int shift)
  */
 void GuiImage::Draw()
 {
+    if(force && !this->IsVisible())
+        this->UpdateEffects();
+
 	if(!image || width == 0 || height == 0 || !this->IsVisible() || tile == 0)
 		return;
 

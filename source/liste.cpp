@@ -173,7 +173,7 @@ History InsUrl( History lista, char *url ) {
     }
     punt->prox = NULL;
     punt->prec = lista;
-	return  punt;
+	return punt;
 }
 
 void DistruggiHistory( History lista, int prox ) {
@@ -208,8 +208,8 @@ void DumpList ( History lista, const char * file ) {
 }
 
 History LoadList ( const char * file ) {
-    char path[256];
-    snprintf(path, 256, "%s/history.txt", Settings.AppPath);
+    char path[512];
+    snprintf(path, 512, "%s/history.txt", Settings.AppPath);
     FILE * fp=fopen(path, "r");
     if (!fp)
         return NULL;

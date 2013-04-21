@@ -62,6 +62,7 @@ extern FreeTypeGX *fontSystem[];
 #define MAX_KEYBOARD_DISPLAY	32
 
 #define MAX_LINES 				50
+#define MAX_DOWNLOADS 			5
 
 typedef void (*UpdateCallback)(void * e);
 
@@ -122,6 +123,7 @@ enum BUTTONS
     NONE,
     NAVIGATION,
     FAVORITES,
+    EDITING,
     HOMEPAGE,
 };
 
@@ -277,6 +279,10 @@ class GuiElement
 		//!Gets the current y coordinate of the element
 		//!\return y coordinate
 		int GetYPosition();
+        //!Sets the current x coordinate of the element
+		void SetXPosition(int x);
+		//!Sets the current y coordinate of the elementa
+		void SetYPosition(int y);
 		//!Gets the current leftmost coordinate of the element
 		//!Considers horizontal alignment, x offset, width, and parent element's GetLeft() / GetWidth() values
 		//!\return left coordinate
@@ -433,6 +439,8 @@ class GuiElement
 		//!Sets the element's visibility
 		//!\param v Visibility (true = visible)
 		virtual void SetVisible(bool v);
+        //!Sets the element's effect option
+		virtual void SetForce(bool v);
 		//!Sets the element's focus
 		//!\param f Focus (true = in focus)
 		virtual void SetFocus(int f);
@@ -495,6 +503,7 @@ class GuiElement
 		bool clickable; //!< Whether or not this element is clickable (can change to CLICKED state)
 		bool holdable; //!< Whether or not this element is holdable (can change to HELD state)
 		bool visible; //!< Visibility of the element. If false, Draw() is skipped
+		bool force; //!< Always UpdateEffects() if true
 		bool rumble; //!< Wiimote rumble (on/off) - set to on when this element requests a rumble event
 };
 
@@ -1110,6 +1119,49 @@ class GuiSwitch : public GuiWindow
         GuiTooltip *Tooltip;
     protected:
         int direction;
+};
+
+//!Favorite buttons
+class GuiDownloadManager : public GuiWindow
+{
+	public:
+		GuiDownloadManager();
+		~GuiDownloadManager();
+
+        int * CreateBar();
+        void RemoveBar(int * i);
+        void Update(GuiTrigger * t);
+
+        void SetProgress(int d, float p);
+        bool CancelDownload(int d);
+
+        GuiImageData *progressLeft;
+        GuiImageData *progressMid;
+        GuiImageData *progressRight;
+        GuiImageData *progressEmpty;
+        GuiImageData *progressLine;
+        GuiImageData *btnOutline;
+        GuiImageData *btnOutlineOver;
+        GuiImageData *dialogBox;
+
+        GuiImage *dialogBoxImg;
+        GuiImage *progressEmptyImg[MAX_DOWNLOADS];
+        GuiImage *progressLeftImg[MAX_DOWNLOADS];
+        GuiImage *progressMidImg[MAX_DOWNLOADS];
+        GuiImage *progressLineImg[MAX_DOWNLOADS];
+        GuiImage *progressRightImg[MAX_DOWNLOADS];
+
+        GuiText *titleTxt;
+        GuiTrigger *trigA;
+        GuiSound *btnSoundOver;
+        GuiText *downloads[MAX_DOWNLOADS];
+
+        GuiButton *cancelBtn[MAX_DOWNLOADS];
+        GuiImage *cancelBtnImg[MAX_DOWNLOADS];
+        GuiImage *cancelBtnImgOver[MAX_DOWNLOADS];
+    protected:
+        int baroffset;
+        int maxtile;
 };
 
 //!Favorite buttons

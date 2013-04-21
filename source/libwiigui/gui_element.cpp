@@ -38,6 +38,7 @@ GuiElement::GuiElement()
 	selectable = false;
 	clickable = false;
 	holdable = false;
+	force = false;
 	visible = true;
 	focus = -1; // cannot be focused
 	updateCB = NULL;
@@ -210,6 +211,11 @@ bool GuiElement::IsVisible()
 void GuiElement::SetVisible(bool v)
 {
 	visible = v;
+}
+
+void GuiElement::SetForce(bool v)
+{
+	force = v;
 }
 
 void GuiElement::SetAlpha(int a)
@@ -623,6 +629,16 @@ int GuiElement::GetXPosition()
 int GuiElement::GetYPosition()
 {
 	return yoffset;
+}
+
+void GuiElement::SetXPosition(int x)
+{
+	xoffset = x;
+}
+
+void GuiElement::SetYPosition(int y)
+{
+	yoffset = y;
 }
 
 void GuiElement::SetAlignment(int hor, int vert)

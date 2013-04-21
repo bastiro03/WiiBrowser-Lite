@@ -167,7 +167,6 @@ GuiToolbar::GuiToolbar(int set)
     if (buttons == HOMEPAGE)
     {
         btnReload->SetState(STATE_DISABLED);
-        btnSave->SetState(STATE_DISABLED);
     }
 
     if (buttons == NAVIGATION)
@@ -281,28 +280,27 @@ void GuiToolbar::ChangeButtons(int set)
     {
         Save->SetImage(imgSave);
         SaveOver->SetImage(imgSaveOver);
-        // Reload->SetImage(imgReload);
-        // ReloadOver->SetImage(imgReloadOver);
 
-        SaveTooltip->SetText(gettext("Download"));
-        // ReloadTooltip->SetText(gettext("Refresh"));
-
-        btnSave->SetState(STATE_DISABLED);
-        // btnReload->SetState(STATE_DISABLED);
+        SaveTooltip->SetText(gettext("Download Manager"));
+        btnSave->SetState(STATE_DEFAULT);
     }
 
     else if (buttons == FAVORITES)
     {
+        Save->SetImage(imgSave);
+        Save->SetImage(imgSaveOver);
+
+        SaveTooltip->SetText(gettext("Download Manager"));
+        btnSave->SetState(STATE_DISABLED);
+    }
+
+    else if (buttons == EDITING)
+    {
         Save->SetImage(imgFavorites);
         SaveOver->SetImage(imgFavoritesOver);
-        // Reload->SetImage(imgEdit);
-        // ReloadOver->SetImage(imgEditOver);
 
         SaveTooltip->SetText(gettext("Add bookmark"));
-        // ReloadTooltip->SetText(gettext("Edit"));
-
         btnSave->SetState(STATE_DEFAULT);
-        // btnReload->SetState(STATE_DEFAULT);
     }
 }
 

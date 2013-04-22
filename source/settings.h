@@ -61,6 +61,14 @@ enum {
 	LANG_LENGTH
 };
 
+enum
+{
+    DISABLED = 0,
+    STABLE,
+    NIGHTLY,
+    CHANNELS
+};
+
 class SSettings
 {
     public:
@@ -99,10 +107,10 @@ class SSettings
         int Language;
         int Revision;
         int UserAgent;
+        int Autoupdate;
 
         bool ShowTooltip;
         bool ShowThumbs;
-        bool Autoupdate;
         bool Restore;
         bool Music;
 
@@ -119,7 +127,6 @@ class SSettings
 
         char *Favorites[N];
         u8 *Thumbnails[N];
-
     protected:
         //!Find value
         void ParseLine(char *line);

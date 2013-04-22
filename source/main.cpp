@@ -84,13 +84,6 @@ bool InitMPlayer()
     if(AppPath[0] == 0)
         return false;
 
-    if(chdir(AppPath) != 0)
-    {
-        wchar_t msg[512];
-        swprintf(msg, 512, L"%s %s", gettext("Unable to change path to"), AppPath);
-        return false;
-    }
-
     // check if subtitle font file exists
     struct stat st;
     char filepath[1024];
@@ -252,6 +245,9 @@ int main(int argc, char *argv[])
     Settings.Load();
     if(argc > 1)
         Settings.SetStartPage(argv[1]);
+
+    if(chdir(Settings.AppPath) != 0) // set working directory
+        return EXIT_FAILURE;
 
     LoadLanguage();
     __exception_setreload(10);

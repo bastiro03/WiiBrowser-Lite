@@ -609,10 +609,8 @@ static void *UpdateThread (void *arg)
 
         if(installUpdate)
         {
-            ShowAction("Downloading...");
             if(downloadUpdate(appversion))
                 ExitRequested = true;
-            CancelAction();
         }
     }
     return NULL;
@@ -1194,7 +1192,9 @@ static int MenuSettings()
             break;
 
         case 4:
-            Settings.Autoupdate = !Settings.Autoupdate;
+            Settings.Autoupdate++;
+             if (Settings.Autoupdate >= CHANNELS)
+                Settings.Autoupdate = 0;
             break;
 
         case 5:
@@ -1239,7 +1239,8 @@ static int MenuSettings()
             else if (Settings.ShowThumbs == 1) sprintf (options.value[3], "Show");
 
             if (Settings.Autoupdate == 0) sprintf (options.value[4], "Disabled");
-            else if (Settings.Autoupdate == 1) sprintf (options.value[4], "Enabled");
+            else if (Settings.Autoupdate == 1) sprintf (options.value[4], "Stable");
+            else if (Settings.Autoupdate == 2) sprintf (options.value[4], "Nightly");
 
             if (Settings.Language == LANG_JAPANESE) sprintf (options.value[5], "Japanese");
             else if (Settings.Language == LANG_ENGLISH) sprintf (options.value[5], "English");
@@ -2005,6 +2006,9 @@ void DeleteSession()
     remove(path);
     sprintf(path, "%s/history.txt", Settings.AppPath);
     remove(path);
+
+    /* setup cookies engine */
+    curl_easy_setopt(curl_handle, CURLOPT_COOKIEFILE, path);
 }
 
 void Init()

@@ -42,6 +42,7 @@ struct block
 extern const struct block emptyblock;
 struct block downloadfile(CURL *curl_handle, const char *url, FILE *hfile);
 void save(struct block *b, FILE *hfile);
+bool validProxy();
 
 void DebugInt(u32 msg);
 void Debug(const char *msg);

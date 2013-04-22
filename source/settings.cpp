@@ -64,10 +64,10 @@ void SSettings::SetDefault()
 {
     Language = LANG_ENGLISH;
     UserAgent = LIBCURL;
+    Autoupdate = STABLE;
     Revision = 0;
 
     ShowTooltip = true;
-    Autoupdate = true;
     Music = true;
     Restore = true;
     ShowThumbs = true;

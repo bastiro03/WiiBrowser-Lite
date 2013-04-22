@@ -25,10 +25,4 @@ enum
     VIDEO
 };
 
-typedef struct Arg
-{
-    ListaDiImg lista;
-    char *url;
-} Argument;
-
 #endif

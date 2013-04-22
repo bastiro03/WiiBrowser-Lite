@@ -85,9 +85,7 @@ struct MemoryStruct {
 
 char *findChr (const char *str, char chr);
 int parseline(MemoryStruct *memory);
-
 bool mustdownload(char *content);
-bool validProxy();
 
 int close_callback (void *clientp, curl_socket_t item) {
 	return net_close(item);

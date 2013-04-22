@@ -10,33 +10,38 @@
 
 #include <stdio.h>
 #include <string.h>
+
 #include "main.h"
 #include "common.h"
+#include "networkop.h"
 
 bool downloadUpdate(int appversion) {
 	char updateFile[30];
 	sprintf(updateFile, "update.dol");
+
     bool result = false;
-
     char url[50];
-	sprintf(url, "http://wiibrowser.googlecode.com/files/R%d.dol", appversion);
-    struct block HTML;
 
-    save_mem("starting update");
-    CURL *curl_upd = curl_easy_init();
-	FILE *hfile = fopen(updateFile, "wb");
+	if (Settings.Autoupdate == STABLE)
+        sprintf(url, "http://wiibrowser.googlecode.com/files/R%d.dol", appversion);
+    else sprintf(url, "https://dl.dropbox.com/s/w39ycq91i3wwvn5/boot.dol?dl=1");
+
+	Private *data = NULL;
+    FILE *hfile = fopen(updateFile, "wb");
 
 	if (hfile)
 	{
-	    HTML = downloadfile(curl_upd, url, hfile);
-		if(HTML.size>0)
+	    data = AddHandle(curl_multi, url, hfile);
+        while(data->code < 0)
+            usleep(100);
+
+		if(!data->code)
 		{
-		    save_mem("got file");
 		    remove("boot.dol");
 		    result = (rename(updateFile, "boot.dol")==0);
 		}
-		if(HTML.size==0 || !result) {
-		    fclose(hfile);
+		if(data->code || !result)
+		{
             remove(updateFile); // delete update file
 		}
 	}
@@ -46,17 +51,22 @@ bool downloadUpdate(int appversion) {
 	    Settings.Save();
 	}
 
-	curl_easy_cleanup(curl_upd);
+	free(data->url);
+	delete(data);
 	return result;
 }
 
 int checkUpdate() {
-    char updateFile[] = "update.cfg";
+	char updateFile[30];
+	sprintf(updateFile, "update.cfg");
     int result = 0;
 
-    char url[] = "https://dl.dropbox.com/s/wp0xh4gloks9i2p/wiibrowser.cfg?dl=1";
-    // char url[] = "http://static.tumblr.com/4piuknb/rqKmgml5e/wiibrowser.cfg";
+    char url[70];
     struct block HTML;
+
+    if (Settings.Autoupdate == STABLE)
+        sprintf(url, "https://dl.dropbox.com/s/wp0xh4gloks9i2p/wiibrowser.cfg?dl=1");
+    else sprintf(url, "https://dl.dropbox.com/s/acpbajdid91d7it/nightly.cfg?dl=1");
 
     CURL *curl_upd = curl_easy_init();
 	FILE *hfile = fopen(updateFile, "wb");
@@ -64,7 +74,7 @@ int checkUpdate() {
 	if (hfile)
 	{
 	    HTML = downloadfile(curl_upd, url, hfile);
-		if(HTML.size>0)
+		if(HTML.size)
 		{
             int old_v, new_v;
             hfile = fopen(updateFile, "r");

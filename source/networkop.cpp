@@ -1,3 +1,4 @@
+#include "main.h"
 #include "networkop.h"
 
 u8 networkstack[GUITH_STACK] ATTRIBUTE_ALIGN (32);
@@ -35,28 +36,41 @@ static size_t writedata(void *ptr, size_t size, size_t nmemb, void *stream)
     return written;
 }
 
-void AddHandle(CURLM *cm, char *url, FILE *file)
+Private *AddHandle(CURLM *cm, char *url, FILE *file)
 {
-    CURL *eh = curl_easy_init();
     if(!file || !cm)
-        return;
+        return NULL;
+
+    int *bar = manager->CreateBar();
+    if(!bar)
+        return NULL;
+
+    CURL *eh = curl_easy_init();
+    if(!eh)
+        return NULL;
+
+    Private *data = new Private;
+    data->bar = bar;
+    data->file = file;
+    data->url = strdup(url);
+    data->code = -1;
 
     curl_easy_setopt(eh, CURLOPT_WRITEFUNCTION, writedata);
     curl_easy_setopt(eh, CURLOPT_WRITEDATA, (void *)file);
-    curl_easy_setopt(eh, CURLOPT_URL, strdup(url));
+    curl_easy_setopt(eh, CURLOPT_URL, data->url);
+
+    /* set proxy if specified */
+    if(validProxy())
+        curl_easy_setopt(eh, CURLOPT_PROXY, Settings.Proxy);
 
     /* follow redirects */
     curl_easy_setopt(eh, CURLOPT_AUTOREFERER, 1);
     curl_easy_setopt(eh, CURLOPT_FOLLOWLOCATION, 1);
 
-    int *bar = manager->CreateBar();
-    if(!bar)
-        return;
-
     curl_easy_setopt(eh, CURLOPT_NOPROGRESS, 0);
     curl_easy_setopt(eh, CURLOPT_PROGRESSFUNCTION, showmultiprogress);
-    curl_easy_setopt(eh, CURLOPT_PROGRESSDATA, bar);
-    curl_easy_setopt(eh, CURLOPT_PRIVATE, bar);
+    curl_easy_setopt(eh, CURLOPT_PROGRESSDATA, data->bar);
+    curl_easy_setopt(eh, CURLOPT_PRIVATE, data);
 
     /* some servers don't like requests that are made without a user-agent
     field, so we provide one */
@@ -68,6 +82,7 @@ void AddHandle(CURLM *cm, char *url, FILE *file)
 
     curl_multi_add_handle(cm, eh);
     LWP_ResumeThread(networkthread);
+    return data;
 }
 
 void *NetworkThread (void *arg)
@@ -97,12 +112,14 @@ void *NetworkThread (void *arg)
         {
             if (msg->msg == CURLMSG_DONE)
             {
-                int *url;
+                Private *data;
                 CURL *e = msg->easy_handle;
-                curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &url);
+                curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &data);
                 curl_multi_remove_handle(curl_multi, e);
                 curl_easy_cleanup(e);
-                manager->RemoveBar(url);
+                manager->RemoveBar(data->bar);
+                data->code = msg->data.result;
+                fclose(data->file);
             }
         }
     }

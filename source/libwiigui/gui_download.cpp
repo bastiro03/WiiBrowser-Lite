@@ -187,7 +187,7 @@ int* GuiDownloadManager::CreateBar()
 
     if(*ret == MAXD)
     {
-        delete(ret);
+        free(ret);
         return NULL;
     }
 
@@ -248,7 +248,7 @@ void GuiDownloadManager::RemoveBar(int *i)
             progressRightImg[j]->SetEffect(EFFECT_SLIDE_TO, 1, to_p);
         }
     }
-    delete(i);
+    free(i);
 }
 
 void GuiDownloadManager::Update(GuiTrigger * t)

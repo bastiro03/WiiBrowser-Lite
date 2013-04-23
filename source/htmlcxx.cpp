@@ -189,15 +189,14 @@ string search(string id, tree<HTML::Node>::iterator it)
 
 tree<HTML::Node>::iterator thtml(tree<HTML::Node>::iterator it, tree<HTML::Node>::iterator end, string dest)
 {
-    tree<HTML::Node>::iterator k = it;
     for (; it!=end; it++)
     {
         if (!it->isTag())
             continue;
         if (!strcasecmp(it->tagName().c_str(), dest.c_str()))
-            return it;
+            break;
     }
-    return k;
+    return it;
 }
 
 void merge(Tag *tag, vector<Value> out)
@@ -235,8 +234,25 @@ Lista getTag(char * buffer)
         vector<string> parent;
         vector<Value> out;
 
-        last open[all]= { {false},{false},{false},{false} };
+        last open[all] = { {false},{false},{false},{false} };
         it=thtml(it,end,"html");
+
+        if(it==end)
+        {
+            decode=(char*)malloc(html.length()+1);
+            decode_html_entities_utf8(strcpy(decode, html.c_str()),NULL);
+            string item(decode);
+            free(decode);
+
+            out = splitText(item, parent, 50, 40);
+            if(checkchr(item))
+            {
+                l1.push_back( {"text"});
+                open[text].open=true;
+                open[text].p=&(*l1.rbegin());
+                merge(open[text].p, out);
+            }
+        }
 
         if(css_code.length())
         {

@@ -1,11 +1,18 @@
+#include <list>
 #include "main.h"
 #include "networkop.h"
 
+using namespace std;
+
 u8 networkstack[GUITH_STACK] ATTRIBUTE_ALIGN (32);
 lwp_t networkthread = LWP_THREAD_NULL;
+GuiDownloadManager *manager = NULL;
 
 static int networkThreadHalt = 0;
-GuiDownloadManager* manager = NULL;
+static list<Private *> queue;
+
+bool AddHandle(Private *data);
+void PopQueue();
 
 /****************************************************************************
  * NetworkThread
@@ -18,10 +25,10 @@ int showmultiprogress(void *bar,
                     double ultotal,
                     double ulnow)
 {
-    int i = *(int *)bar;
-    manager->SetProgress(i, done*100.0/total);
+    Private *data = (Private *)bar;
+    manager->SetProgress(data, done*100.0/total);
 
-    if(manager->CancelDownload(i))
+    if(manager->CancelDownload(data->bar))
         return 1;
     return 0;
 }
@@ -36,27 +43,66 @@ static size_t writedata(void *ptr, size_t size, size_t nmemb, void *stream)
     return written;
 }
 
-Private *AddHandle(CURLM *cm, char *url, FILE *file)
+Private *PushQueue(CURLM *cm, char *url, FILE *file, bool keep)
 {
     if(!file || !cm)
         return NULL;
 
-    int *bar = manager->CreateBar();
-    if(!bar)
-        return NULL;
+    Private *data = new Private;
+    data->bar = NULL;
+    data->file = file;
+    data->url = strdup(url);
+    data->keep = keep;
+    data->code = -1;
+
+    queue.push_back(data);
+    LWP_ResumeThread(networkthread);
+    return data;
+}
+
+void PopQueue()
+{
+    queue.pop_front();
+}
+
+void UpdateQueue()
+{
+    while(!queue.empty())
+    {
+        if(AddHandle(queue.front()))
+            PopQueue();
+        else break;
+    }
+}
+
+void CompleteDownload(CURLMsg *msg)
+{
+    Private *data;
+    curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &data);
+
+    manager->RemoveBar(data->bar);
+    data->code = msg->data.result;
+    fclose(data->file);
+
+    if(!data->keep)
+    {
+        free(data->url);
+        delete(data);
+    }
+}
+
+bool AddHandle(Private *data)
+{
+    data->bar = manager->CreateBar();
+    if(!data->bar)
+        return false;
 
     CURL *eh = curl_easy_init();
     if(!eh)
-        return NULL;
-
-    Private *data = new Private;
-    data->bar = bar;
-    data->file = file;
-    data->url = strdup(url);
-    data->code = -1;
+        return false;
 
     curl_easy_setopt(eh, CURLOPT_WRITEFUNCTION, writedata);
-    curl_easy_setopt(eh, CURLOPT_WRITEDATA, (void *)file);
+    curl_easy_setopt(eh, CURLOPT_WRITEDATA, (void *)data->file);
     curl_easy_setopt(eh, CURLOPT_URL, data->url);
 
     /* set proxy if specified */
@@ -69,7 +115,7 @@ Private *AddHandle(CURLM *cm, char *url, FILE *file)
 
     curl_easy_setopt(eh, CURLOPT_NOPROGRESS, 0);
     curl_easy_setopt(eh, CURLOPT_PROGRESSFUNCTION, showmultiprogress);
-    curl_easy_setopt(eh, CURLOPT_PROGRESSDATA, data->bar);
+    curl_easy_setopt(eh, CURLOPT_PROGRESSDATA, data);
     curl_easy_setopt(eh, CURLOPT_PRIVATE, data);
 
     /* some servers don't like requests that are made without a user-agent
@@ -80,9 +126,8 @@ Private *AddHandle(CURLM *cm, char *url, FILE *file)
     /* proper function to close sockets */
     curl_easy_setopt(eh, CURLOPT_CLOSESOCKETFUNCTION, netclose_callback);
 
-    curl_multi_add_handle(cm, eh);
-    LWP_ResumeThread(networkthread);
-    return data;
+    curl_multi_add_handle(curl_multi, eh);
+    return true;
 }
 
 void *NetworkThread (void *arg)
@@ -98,28 +143,25 @@ void *NetworkThread (void *arg)
        uses */
     curl_multi_setopt(curl_multi, CURLMOPT_MAXCONNECTS, (long)MAXD);
 
-    while (1)
+    while(1)
     {
         if(!U)
             LWP_SuspendThread(networkthread);
         if (networkThreadHalt)
             break;
 
+        UpdateQueue();
         curl_multi_perform(curl_multi, &U);
-		usleep(10*1000);
+		usleep(50*1000);
 
         while ((msg = curl_multi_info_read(curl_multi, &Q)))
         {
             if (msg->msg == CURLMSG_DONE)
             {
-                Private *data;
                 CURL *e = msg->easy_handle;
-                curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &data);
                 curl_multi_remove_handle(curl_multi, e);
                 curl_easy_cleanup(e);
-                manager->RemoveBar(data->bar);
-                data->code = msg->data.result;
-                fclose(data->file);
+                CompleteDownload(msg);
             }
         }
     }
@@ -135,4 +177,14 @@ void StopNetwork()
 
     LWP_ResumeThread(networkthread);
     networkThreadHalt = 1;
+}
+
+Private *AddDownload(CURLM *cm, char *url, FILE *file)
+{
+    return PushQueue(cm, url, file, false);
+}
+
+Private *AddUpdate(CURLM *cm, char *url, FILE *file)
+{
+    return PushQueue(cm, url, file, true);
 }

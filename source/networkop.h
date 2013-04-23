@@ -16,11 +16,14 @@ typedef struct data
     int *bar;
     FILE *file;
     int code;
+    bool keep;
 } Private;
 
 void *NetworkThread (void *arg);
-Private *AddHandle(CURLM *cm, char *url, FILE *file);
 void StopNetwork();
+
+Private *AddUpdate(CURLM *cm, char *url, FILE *file);
+Private *AddDownload(CURLM *cm, char *url, FILE *file);
 
 extern GuiWindow *mainWindow;
 extern GuiDownloadManager *manager;

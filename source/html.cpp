@@ -435,6 +435,26 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
         {
             HandleMenuBar(&link, url, &choice, 1, mainWindow, parentWindow);
             HandleImgPad(btnup, btndown, image);
+
+            if (choice == 2)
+            {
+                const char *c;
+                char path[260];
+                FILE *file;
+
+                if (!hidden)
+                    hideBar(mainWindow, parentWindow);
+
+                if (GuiBrowser(mainWindow, parentWindow, path, "Save image"))
+                {
+                    if ((c = mime2ext(HTML->type)))
+                        strcat(path, c);
+
+                    file = fopen(path, "wb");
+                    save(HTML, file);
+                }
+                choice = 0;
+            }
         }
 
         HaltGui();

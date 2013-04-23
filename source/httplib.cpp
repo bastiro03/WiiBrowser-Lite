@@ -50,7 +50,6 @@ enum
     HEAD,
     POST,
     GET,
-    CUSTOM,
     REQUESTS
 };
 
@@ -219,14 +218,6 @@ void setrequestheaders(CURL *curl_handle, int request)
     {
 
     }
-
-    else if(request == CUSTOM)
-    {
-        /* reset handle to perform custom get */
-        curl_easy_setopt(curl_handle, CURLOPT_HTTPGET, 1);
-        curl_easy_setopt(curl_handle, CURLOPT_NOPROGRESS, 0);
-        curl_easy_setopt(curl_handle, CURLOPT_PROGRESSFUNCTION, showprogress);
-    }
 }
 
 // -----------------------------------------------------------
@@ -278,7 +269,7 @@ struct block postrequest(CURL *curl_handle, const char *url, curl_httppost *data
 	return b;
 }
 
-struct block customrequest(CURL *curl_handle, const char *url, FILE *hfile)
+struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
 {
     char *ct = NULL;
     struct block b, h;
@@ -291,7 +282,7 @@ struct block customrequest(CURL *curl_handle, const char *url, FILE *hfile)
     chunk.size = 0; /* no data at this point */
 
     setmainheaders(curl_handle, url);
-    setrequestheaders(curl_handle, CUSTOM);
+    setrequestheaders(curl_handle, GET);
 
     if(curl_handle) {
         /* we pass our 'chunk' struct or 'hfile' to the callback function */
@@ -410,7 +401,7 @@ struct block downloadfile(CURL *curl_handle, const char *url, FILE *hfile)
     else curl_easy_reset(curl_handle);
 
     if (!mode)
-        return customrequest(curl_handle, url, hfile);
+        return getrequest(curl_handle, url, hfile);
 
     if (strcasestr(mode + 1, "post"))
         return postrequest(curl_handle, url, NULL);
@@ -421,7 +412,7 @@ struct block downloadfile(CURL *curl_handle, const char *url, FILE *hfile)
         return postrequest(curl_handle, url, data);
     }
 
-    return customrequest(curl_handle, url, hfile);
+    return getrequest(curl_handle, url, hfile);
 }
 
 // -----------------------------------------------------------

@@ -1701,7 +1701,8 @@ jump:
 
     usleep(500*1000);
     promptWindow.SetEffect(EFFECT_SLIDE_TOP | EFFECT_SLIDE_OUT, 50);
-    while(promptWindow.GetEffect() > 0) usleep(THREAD_SLEEP);
+    while(promptWindow.GetEffect() > 0)
+        usleep(THREAD_SLEEP);
 
     HaltGui();
     mainWindow->Remove(&promptWindow);
@@ -1711,7 +1712,7 @@ jump:
     if(HTML.size == -1)
     {
         if(performDownload(&hfile, HTML.data))
-            AddHandle(curl_multi, url, hfile);
+            AddDownload(curl_multi, url, hfile);
 
         free(url);
         return MENU_HOME;

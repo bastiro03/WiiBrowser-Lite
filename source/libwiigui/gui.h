@@ -109,7 +109,8 @@ enum
 enum
 {
 	SCROLL_NONE,
-	SCROLL_HORIZONTAL
+	SCROLL_HORIZONTAL,
+	SCROLL_DOTTED
 };
 
 enum textSets
@@ -1132,8 +1133,8 @@ class GuiDownloadManager : public GuiWindow
         void RemoveBar(int * i);
         void Update(GuiTrigger * t);
 
-        void SetProgress(int d, float p);
-        bool CancelDownload(int d);
+        void SetProgress(void * p, float t);
+        bool CancelDownload(int * d);
 
         GuiImageData *progressLeft;
         GuiImageData *progressMid;
@@ -1154,7 +1155,9 @@ class GuiDownloadManager : public GuiWindow
         GuiText *titleTxt;
         GuiTrigger *trigA;
         GuiSound *btnSoundOver;
+
         GuiText *downloads[MAX_DOWNLOADS];
+        GuiText *progress[MAX_DOWNLOADS];
 
         GuiButton *cancelBtn[MAX_DOWNLOADS];
         GuiImage *cancelBtnImg[MAX_DOWNLOADS];

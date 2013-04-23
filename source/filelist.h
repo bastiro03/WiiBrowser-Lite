@@ -137,6 +137,9 @@ extern const u32	button_large_over_png_size;
 extern const u8		dialogue_box_png[];
 extern const u32	dialogue_box_png_size;
 
+extern const u8		downloads_box_png[];
+extern const u32	downloads_box_png_size;
+
 extern const u8		bg_options_png[];
 extern const u32	bg_options_png_size;
 

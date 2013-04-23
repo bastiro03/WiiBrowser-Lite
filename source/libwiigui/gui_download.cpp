@@ -9,17 +9,20 @@
  ***************************************************************************/
 
 #include "main.h"
+#include "networkop.h"
 #include "gui.h"
 
-#define MAXD 3
+#define MAXB    5
+#define OFF     55
+#define BASE    140
 
 /**
  * Constructor for the GuiDownloadManager class.
  */
 GuiDownloadManager::GuiDownloadManager()
 {
-	width = 448;
-	height = 288;
+	width = 548;
+	height = 388;
 	focus = 0; // allow focus
 
 	alignmentHor = ALIGN_CENTRE;
@@ -30,7 +33,7 @@ GuiDownloadManager::GuiDownloadManager()
 	btnOutline = new GuiImageData(remove_png);
 	btnOutlineOver = new GuiImageData(remove_over_png);
 
-	dialogBox = new GuiImageData(dialogue_box_png);
+	dialogBox = new GuiImageData(downloads_box_png);
 	dialogBoxImg = new GuiImage(dialogBox);
 
 	progressLeft = new GuiImageData(progressbar_left_png);
@@ -39,7 +42,7 @@ GuiDownloadManager::GuiDownloadManager()
 	progressLine = new GuiImageData(progressbar_line_png);
 	progressEmpty = new GuiImageData(progressbar_empty_png);
 
-	baroffset = 448/2 - progressEmpty->GetWidth()/2;
+	baroffset = 548/2 - progressEmpty->GetWidth()/2 - btnOutline->GetWidth()/2;
 	maxtile = (progressEmpty->GetWidth()-16)/4;
 
 	trigA = new GuiTrigger;
@@ -57,11 +60,15 @@ GuiDownloadManager::GuiDownloadManager()
         progressEmptyImg[i] = new GuiImage(progressEmpty);
         progressEmptyImg[i]->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
         progressEmptyImg[i]->SetPosition(baroffset, 0);
+
+        progressEmptyImg[i]->SetForce(true);
         progressEmptyImg[i]->SetVisible(false);
 
         progressLeftImg[i] = new GuiImage(progressLeft);
         progressLeftImg[i]->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
         progressLeftImg[i]->SetPosition(baroffset, 0);
+
+        progressLeftImg[i]->SetForce(true);
         progressLeftImg[i]->SetVisible(false);
 
         progressMidImg[i] = new GuiImage(progressMid);
@@ -69,26 +76,39 @@ GuiDownloadManager::GuiDownloadManager()
         progressMidImg[i]->SetPosition(baroffset+8, 0);
         progressMidImg[i]->SetTile(0);
 
+        progressMidImg[i]->SetForce(true);
+        progressMidImg[i]->SetVisible(false);
+
         progressLineImg[i] = new GuiImage(progressLine);
         progressLineImg[i]->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
         progressLineImg[i]->SetPosition(baroffset+8, 0);
+
+        progressLineImg[i]->SetForce(true);
         progressLineImg[i]->SetVisible(false);
 
         progressRightImg[i] = new GuiImage(progressRight);
         progressRightImg[i]->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
-        progressRightImg[i]->SetPosition(-baroffset, 0);
+        progressRightImg[i]->SetPosition(-baroffset - btnOutline->GetWidth(), 0);
 
         progressRightImg[i]->SetForce(true);
         progressRightImg[i]->SetVisible(false);
 
         downloads[i] = new GuiText("", 20, (GXColor){0, 0, 0, 255});
+        downloads[i]->SetMaxWidth(270);
         downloads[i]->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+        downloads[i]->SetScroll(SCROLL_DOTTED);
         downloads[i]->SetVisible(false);
+
+        progress[i] = new GuiText("", 20, (GXColor){0, 0, 0, 255});
+        progress[i]->SetMaxWidth(100);
+        progress[i]->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
+        progress[i]->SetVisible(false);
 
         cancelBtnImg[i] = new GuiImage(btnOutline);
         cancelBtnImgOver[i] = new GuiImage(btnOutlineOver);
         cancelBtn[i] = new GuiButton(btnOutline->GetWidth(), btnOutline->GetHeight());
-        cancelBtn[i]->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+        cancelBtn[i]->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
+        cancelBtn[i]->SetScale(0.75);
 
         cancelBtn[i]->SetImage(cancelBtnImg[i]);
         cancelBtn[i]->SetImageOver(cancelBtnImgOver[i]);
@@ -98,7 +118,9 @@ GuiDownloadManager::GuiDownloadManager()
         cancelBtn[i]->SetVisible(false);
 
         this->Append(downloads[i]);
+        this->Append(progress[i]);
         this->Append(cancelBtn[i]);
+
         this->Append(progressEmptyImg[i]);
         this->Append(progressLeftImg[i]);
         this->Append(progressMidImg[i]);
@@ -135,22 +157,31 @@ GuiDownloadManager::~GuiDownloadManager()
         delete(progressRightImg);
 
         delete(downloads[i]);
+        delete(progress[i]);
+
         delete(cancelBtn[i]);
         delete(cancelBtnImg[i]);
         delete(cancelBtnImgOver[i]);
     }
 }
 
-void GuiDownloadManager::SetProgress(int d, float p)
+void GuiDownloadManager::SetProgress(void *p, float t)
 {
-    char msg[20];
-    sprintf(msg, "Loading...%2.2f%%", p);
-    int tile = 0;
+    char msg[50];
+    char prg[10];
+    Private *data = (Private *)p;
 
-    if(p > 2.0)
+    char *url = strrchr(data->url, '/')+1;
+    snprintf(msg, 50, "%s", url);
+    snprintf(prg, 10, "<%2.2f%%>", t);
+
+    int tile = 0;
+    int d = *(data->bar);
+
+    if(t > 2.0)
     {
         progressLeftImg[d]->SetVisible(true);
-        tile = (maxtile+2)*(p-2.0)/100;
+        tile = (maxtile+2)*(t-2.0)/100;
         if(tile > maxtile) tile = maxtile;
         progressMidImg[d]->SetTile(tile);
         progressLineImg[d]->SetXPosition(baroffset+8 + tile*4);
@@ -165,53 +196,57 @@ void GuiDownloadManager::SetProgress(int d, float p)
 
     if(downloads[d])
         downloads[d]->SetText(msg);
+    if(progress[d])
+        progress[d]->SetText(prg);
 }
 
-bool GuiDownloadManager::CancelDownload(int d)
+bool GuiDownloadManager::CancelDownload(int *d)
 {
-    if (!cancelBtn[d])
+    if (!cancelBtn[*d])
         return false;
 
-    return (cancelBtn[d]->GetState() == STATE_CLICKED);
+    return (cancelBtn[*d]->GetState() == STATE_CLICKED);
 }
 
 int* GuiDownloadManager::CreateBar()
 {
     int *ret = (int *)malloc(sizeof(int));
 
-    for (*ret = 0; *ret<MAXD; (*ret)++)
+    for (*ret = 0; *ret<MAXB; (*ret)++)
     {
         if(!downloads[*ret]->IsVisible())
             break;
     }
 
-    if(*ret == MAXD)
+    if(*ret == MAXB)
     {
         free(ret);
         return NULL;
     }
 
     int top = 0;
-    for (int j = 0; j<MAXD; j++)
+    for (int j = 0; j<MAXB; j++)
     {
         if(downloads[j]->IsVisible())
             top += 1;
     }
 
-    downloads[*ret]->SetPosition(20, (top-1)*50 + 140);
+    downloads[*ret]->SetPosition(20, (top-1)*OFF + BASE);
     downloads[*ret]->SetVisible(true);
+    progress[*ret]->SetPosition(-20, (top-1)*OFF + BASE);
+    progress[*ret]->SetVisible(true);
 
-    cancelBtn[*ret]->SetPosition(390, (top-1)*50 + 125);
+    cancelBtn[*ret]->SetPosition(-30, (top-1)*OFF + BASE+17);
     cancelBtn[*ret]->SetVisible(true);
+    cancelBtn[*ret]->SetState(STATE_DEFAULT);
 
-    progressLeftImg[*ret]->SetYPosition((top-1)*50 + 165);
-    progressLineImg[*ret]->SetYPosition((top-1)*50 + 165);
-    progressMidImg[*ret]->SetYPosition((top-1)*50 + 165);
-    progressRightImg[*ret]->SetYPosition((top-1)*50 + 165);
-    progressEmptyImg[*ret]->SetYPosition((top-1)*50 + 165);
+    progressLeftImg[*ret]->SetYPosition((top-1)*OFF + BASE+30);
+    progressLineImg[*ret]->SetYPosition((top-1)*OFF + BASE+30);
+    progressMidImg[*ret]->SetYPosition((top-1)*OFF + BASE+30);
+    progressRightImg[*ret]->SetYPosition((top-1)*OFF + BASE+30);
+    progressEmptyImg[*ret]->SetYPosition((top-1)*OFF + BASE+30);
 
-    progressLeftImg[*ret]->SetVisible(true);
-    progressLineImg[*ret]->SetVisible(true);
+    progressMidImg[*ret]->SetTile(0);
     progressMidImg[*ret]->SetVisible(true);
     progressEmptyImg[*ret]->SetVisible(true);
     return ret;
@@ -220,6 +255,7 @@ int* GuiDownloadManager::CreateBar()
 void GuiDownloadManager::RemoveBar(int *i)
 {
     downloads[*i]->SetVisible(false);
+    progress[*i]->SetVisible(false);
     cancelBtn[*i]->SetVisible(false);
 
     progressEmptyImg[*i]->SetVisible(false);
@@ -229,16 +265,19 @@ void GuiDownloadManager::RemoveBar(int *i)
     progressRightImg[*i]->SetVisible(false);
 
     int to_d, to_b, to_p;
+    int wait = -1;
 
-    for (int j = 0; j<MAXD; j++)
+    for (int j = 0; j<MAXB; j++)
     {
         if(downloads[j]->IsVisible() && downloads[j]->GetYPosition()>downloads[*i]->GetYPosition())
         {
-            to_d = downloads[j]->GetYPosition()-50;
-            to_b = cancelBtn[j]->GetYPosition()-50;
-            to_p = progressEmptyImg[j]->GetYPosition()-50;
+            to_d = downloads[j]->GetYPosition()-OFF;
+            to_b = cancelBtn[j]->GetYPosition()-OFF;
+            to_p = progressEmptyImg[j]->GetYPosition()-OFF;
+            wait = j;
 
             downloads[j]->SetEffect(EFFECT_SLIDE_TO, 1, to_d);
+            progress[j]->SetEffect(EFFECT_SLIDE_TO, 1, to_d);
             cancelBtn[j]->SetEffect(EFFECT_SLIDE_TO, 1, to_b);
 
             progressEmptyImg[j]->SetEffect(EFFECT_SLIDE_TO, 1, to_p);
@@ -247,6 +286,12 @@ void GuiDownloadManager::RemoveBar(int *i)
             progressLineImg[j]->SetEffect(EFFECT_SLIDE_TO, 1, to_p);
             progressRightImg[j]->SetEffect(EFFECT_SLIDE_TO, 1, to_p);
         }
+    }
+
+    if(wait >= 0)
+    {
+        while (progressRightImg[wait]->GetEffect() > 0)
+            usleep(100);
     }
     free(i);
 }

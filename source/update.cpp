@@ -31,7 +31,7 @@ bool downloadUpdate(int appversion) {
 
 	if (hfile)
 	{
-	    data = AddHandle(curl_multi, url, hfile);
+	    data = AddUpdate(curl_multi, url, hfile);
         while(data->code < 0)
             usleep(100);
 

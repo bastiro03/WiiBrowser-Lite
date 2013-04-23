@@ -565,6 +565,14 @@ void GuiText::Draw()
                 textDyn[0][--len] = 0;
 		}
 
+		if(textScroll == SCROLL_DOTTED)
+		{
+		    int len = wcslen(textDyn[0]);
+
+            if((font ? font : fontSystem[currentSize])->getWidth(text) > maxWidth && len > 3)
+                swprintf(&textDyn[0][len-3], 3, L"...");
+		}
+
 		if(textScroll == SCROLL_HORIZONTAL)
 		{
 			if((font ? font : fontSystem[currentSize])->getWidth(text) > maxWidth && (FrameTimer % textScrollDelay == 0))

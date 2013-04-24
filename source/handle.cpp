@@ -353,6 +353,7 @@ void HandleHtmlPad(int *offset, GuiButton *btnup, GuiButton *btndown, Indice ext
         {
             HaltGui();
             DoMPlayerGuiDraw();
+            correctPath(path, "image/png", SCREENSHOT);
             SaveScreenshot(path);
             ResumeGui();
         }

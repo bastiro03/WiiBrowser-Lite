@@ -77,14 +77,23 @@ static int firstRun = true;
 // DATA HANDLING
 // -----------------------------------------------------------
 
+struct HeaderStruct {
+    char *memory;
+    u32 size;
+    bool download;
+    char filename[TYPE];
+};
+
 struct MemoryStruct {
     char *memory;
     u32 size;
 };
 
 char *findChr (const char *str, char chr);
-int parseline(MemoryStruct *memory);
 bool mustdownload(char *content);
+
+int parseline(HeaderStruct *mem, size_t realsize);
+void fillstruct(CURL *handle, HeaderStruct *head, struct block *dest);
 
 int close_callback (void *clientp, curl_socket_t item) {
 	return net_close(item);
@@ -114,38 +123,44 @@ static size_t writedata(void *ptr, size_t size, size_t nmemb, void *stream)
 static size_t parseheader(void *contents, size_t size, size_t nmemb, void *userp)
 {
     size_t realsize = size * nmemb;
-    struct MemoryStruct *mem = (struct MemoryStruct *)userp;
-    mem->memory = (char *)malloc(realsize + 1);
-    mem->size = realsize;
+    struct HeaderStruct *mem = (struct HeaderStruct *)userp;
+    mem->memory = (char *)realloc(mem->memory, mem->size + realsize + 1);
     if (mem->memory == NULL) {
-        Debug("not enough memory (malloc returned NULL)\n");
+        Debug("not enough memory (realloc returned NULL)\n");
         exit(EXIT_FAILURE);
     }
-    memcpy(mem->memory, contents, realsize);
-    mem->memory[realsize] = 0;
-    return parseline(mem);
+    memcpy(&(mem->memory[mem->size]), contents, realsize);
+    mem->memory[mem->size+=realsize] = 0;
+    return parseline(mem, realsize);
 }
 
-int parseline(MemoryStruct *mem)
+int parseline(HeaderStruct *mem, size_t realsize)
 {
     unsigned int i;
-    for(i = 0; i <= mem->size; i++)
+    for(i = mem->size - realsize; i <= mem->size; i++)
         mem->memory[i] = tolower(mem->memory[i]);
 
+    char *line = &mem->memory[mem->size - realsize];
     char buff[50];
     bzero(buff, sizeof(buff));
 
-    if(!strncmp(mem->memory, "content-type", 12))
+    if(!strncmp(line, "content-type", 12))
     {
-        sscanf(mem->memory, "content-type: %s", buff);
+        sscanf(line, "content-type: %s", buff);
         findChr(buff, ';');
 
         if(mustdownload(buff))
-            return 0;
+            mem->download = 1;
     }
 
-    free(mem->memory);
-    return mem->size;
+    if(!strncmp(line, "content-disposition", 19))
+    {
+        strcpy(mem->filename, line);
+    }
+
+    else if(!strncmp(line, "\r\n", 2))
+        return (!mem->download) * realsize;
+    return realsize;
 }
 
 // -----------------------------------------------------------
@@ -227,13 +242,14 @@ void setrequestheaders(CURL *curl_handle, int request)
 struct block postrequest(CURL *curl_handle, const char *url, curl_httppost *data)
 {
     char *ct = NULL;
+    char *post = findChr(url, '?');
+
     struct block b;
     int res;
-
     struct MemoryStruct chunk;
+
     chunk.memory = (char *)malloc(1);   /* will be grown as needed by the realloc above */
     chunk.size = 0;
-    url = findChr(url, '?');
 
     setmainheaders(curl_handle, url);
     setrequestheaders(curl_handle, POST);
@@ -243,7 +259,7 @@ struct block postrequest(CURL *curl_handle, const char *url, curl_httppost *data
         curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&chunk);
 
         if (data == NULL)
-            curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, &url[strlen(url)+1]);
+            curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, post+1);
         else curl_easy_setopt(curl_handle, CURLOPT_HTTPPOST, data);
 
         if ((res = curl_easy_perform(curl_handle)) != 0)      /*error!*/
@@ -264,8 +280,9 @@ struct block postrequest(CURL *curl_handle, const char *url, curl_httppost *data
 
 	b.data = chunk.memory;
 	b.size = chunk.size;
-    strcpy(b.type, findChr(ct, ';'));
 
+    findChr(ct, ';');
+    strcpy(b.type, ct);
 	return b;
 }
 
@@ -275,11 +292,15 @@ struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
     struct block b, h;
     int res;
 
-    struct MemoryStruct head;
+    struct HeaderStruct head;
     struct MemoryStruct chunk;
 
     chunk.memory = (char *)malloc(1);   /* will be grown as needed by the realloc above */
     chunk.size = 0; /* no data at this point */
+
+    head.memory = (char *)malloc(1);   /* will be grown as needed by the realloc above */
+    head.size = 0; /* no data at this point */
+    head.download = 0; /* not yet known at this point */
 
     setmainheaders(curl_handle, url);
     setrequestheaders(curl_handle, GET);
@@ -309,8 +330,8 @@ struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
 
             if (res == CURLE_WRITE_ERROR)
             {
-                h.data = head.memory;
-                h.size = DFOUND;
+                fillstruct(curl_handle, &head, &h);
+                free(head.memory);
                 return h;
             }
 
@@ -326,7 +347,9 @@ struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
 
 	b.data = chunk.memory;
 	b.size = chunk.size;
-    strcpy(b.type, findChr(ct, ';'));
+
+    findChr(ct, ';');
+    strcpy(b.type, ct);
 
     if(hfile)
     {
@@ -394,7 +417,7 @@ struct curl_httppost *multipartform(const char *url)
 struct block downloadfile(CURL *curl_handle, const char *url, FILE *hfile)
 {
     const char *mode = strrchr(url, '\\');
-    url = findChr(url, '\\');
+    findChr(url, '\\');
 
     if (firstRun)
         firstRun = false;
@@ -468,7 +491,7 @@ char *findChr (const char *str, char chr) {
     char *c=strrchr(str, chr);
     if (c!=NULL)
         *c='\0';
-    return (char*)str;
+    return (char*)c;
 }
 
 bool validProxy()
@@ -477,4 +500,36 @@ bool validProxy()
         return true;
 
     return false;
+}
+
+void trimline(char *init, struct block *dest)
+{
+    dest->data = (char *)malloc(TYPE);
+
+    if(init[0] == '"')
+    {
+        findChr(init, '"');
+        strcpy(dest->data, init+1);
+    }
+    else strcpy(dest->data, init);
+}
+
+void fillstruct(CURL *handle, HeaderStruct *head, struct block *dest)
+{
+    char *ct = NULL;
+    char *ft;
+    dest->size = DFOUND;
+
+    if(CURLE_OK == curl_easy_getinfo(curl_handle, CURLINFO_CONTENT_TYPE, &ct) && ct)
+    {
+        findChr(ct, ';');
+        strcpy(dest->type, ct);
+    }
+
+    if(strstr(head->filename, "filename"))
+    {
+        if((ft = findChr(head->filename, '=')))
+            trimline(ft+1, dest);
+    }
+    else dest->data = NULL;
 }

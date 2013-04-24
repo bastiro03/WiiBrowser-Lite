@@ -129,8 +129,8 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, cons
 		usleep(100);
 		if(!strlen(URL.GetText()) || URL.GetText()[0] != '/')
         {
-            sprintf(temp, "//");
-            URL.SetText(temp+1);
+            sprintf(temp, rootdir);
+            URL.SetText(strchr(temp, '/'));
         }
 
         if(InsertURL.GetState() == STATE_CLICKED)
@@ -248,17 +248,16 @@ bool SelectPath(GuiWindow *mainWindow, char *path)
 
 bool isValidPath(char *name)
 {
+    bool ret = false;
     char *l, *path;
-    l = strrchr(name, '/');
-    if (strlen(name) > 0) {
-        if (l == NULL) return true;
-        path = strndup(name, l+1-name);
-        if(!strchr("./", *(l+1))) {
-            makedir(path); // attempt to make dir
-            return true;
-        }
-    }
-    return false;
+    if (!(l = strrchr(name, '/')))
+        return ret;
+
+    path = strndup(name, l+1-name);
+    if(makedir(path)) // attempt to make dir
+        ret = true;
+    free(path);
+    return ret;
 }
 
 static int mymkdir(const char* dirname)

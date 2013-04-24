@@ -4,9 +4,11 @@
 #include <errno.h>
 #include <fcntl.h>
 
-#include "liste.h"
 #include "main.h"
 #include "menu.h"
+
+#include "liste.h"
+#include "stringop.h"
 
 FILE *SelectFile(GuiWindow *mainWindow, char *type);
 bool SelectPath(GuiWindow *mainWindow, char *path);

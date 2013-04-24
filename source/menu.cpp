@@ -21,13 +21,14 @@
 #include "input.h"
 #include "networkop.h"
 
-#include "filelist.h"
 #include "filebrowser.h"
+#include "fileop.h"
+#include "filelist.h"
+
 #include "utils/mem2_manager.h"
 #include "config.h"
 
 extern "C" {
-#include "entities.h"
 #include "mplayer/stream/url.h"
 }
 
@@ -139,28 +140,24 @@ string parseUrl(string link, const char* url)
 /****************************************************************************
  * Perform downloads
  ***************************************************************************/
-bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, const char *label);
-
-bool performDownload(FILE **hfile, char *mime)
+bool performDownload(FILE **hfile, char *url, struct block *html)
 {
     int choice;
     bool select = false;
-
-    const char *c;
     char path[260];
 
     choice = WindowPrompt("Download", "Do you want to download the file?", "Yes", "No");
     if (choice)
         select = GuiBrowser(NULL, mainWindow, path, "Download!");
 
-    if ((c = mime2ext(mime)))
-        strcat(path, c);
-
     if (select)
+    {
+        downloadPath(html, url, path);
         *hfile = fopen(path, "wb");
+    }
     else *hfile = NULL;
 
-    free(mime);
+    free(html->data);
     return select;
 }
 
@@ -1711,7 +1708,7 @@ jump:
 
     if(HTML.size == -1)
     {
-        if(performDownload(&hfile, HTML.data))
+        if(performDownload(&hfile, url, &HTML))
             AddDownload(curl_multi, url, hfile);
 
         free(url);

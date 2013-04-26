@@ -96,7 +96,7 @@ GuiToolbar::GuiToolbar(int set)
         WWWTooltip->SetOffset(-15,-50);
 
         ForwardTooltip = new GuiTooltip(gettext("Go forward"));
-        SaveTooltip = new GuiTooltip(gettext("Download"));
+        SaveTooltip = new GuiTooltip(gettext("Download manager"));
         HomeTooltip = new GuiTooltip(gettext("Homepage"));
         ReloadTooltip = new GuiTooltip(gettext("Refresh"));
         SettTooltip = new GuiTooltip(gettext("Settings"));
@@ -281,16 +281,16 @@ void GuiToolbar::ChangeButtons(int set)
         Save->SetImage(imgSave);
         SaveOver->SetImage(imgSaveOver);
 
-        SaveTooltip->SetText(gettext("Download Manager"));
+        SaveTooltip->SetText(gettext("Download manager"));
         btnSave->SetState(STATE_DEFAULT);
     }
 
     else if (buttons == FAVORITES)
     {
         Save->SetImage(imgSave);
-        Save->SetImage(imgSaveOver);
+        SaveOver->SetImage(imgSaveOver);
 
-        SaveTooltip->SetText(gettext("Download Manager"));
+        SaveTooltip->SetText(gettext("Download manager"));
         btnSave->SetState(STATE_DISABLED);
     }
 

@@ -118,7 +118,7 @@ GuiFileBrowser::GuiFileBrowser(int w, int h)
 		fileList[i]->SetImageOver(fileListBg[i]);
 		fileList[i]->SetPosition(2,30*i+3);
 		fileList[i]->SetTrigger(trigA);
-		fileList[i]->SetTrigger(trig2);
+		// fileList[i]->SetTrigger(trig2);
 		fileList[i]->SetSoundClick(btnSoundClick);
 	}
 }

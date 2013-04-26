@@ -81,7 +81,7 @@ struct HeaderStruct {
     char *memory;
     u32 size;
     bool download;
-    char filename[TYPE];
+    char filename[256];
 };
 
 struct MemoryStruct {
@@ -504,7 +504,7 @@ bool validProxy()
 
 void trimline(char *init, struct block *dest)
 {
-    dest->data = (char *)malloc(TYPE);
+    dest->data = (char *)malloc(256);
 
     if(init[0] == '"')
     {

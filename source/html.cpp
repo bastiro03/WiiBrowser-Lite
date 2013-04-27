@@ -44,7 +44,7 @@ static void *DownloadImage (void *arg)
                 if (threadState==THREAD_EXIT || threadState==THREAD_SUSPEND) break;
                 if (!lista->fetched && !lista->img->GetImage() && lista->tag)
                 {
-                    string tmp=adjustUrl(lista->tag->value[0].text, (char*)arg);
+                    string tmp=adjustUrl(lista->tag->value[0].text, *(char**)arg);
                     struct block THREAD = downloadfile(curl_handle, tmp.c_str(), NULL);
                     if(THREAD.size>0 && strstr(THREAD.type, "image"))
                     {
@@ -127,9 +127,9 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
 
     if (type == WEB)
     {
-        l1=getTag((char*)HTML->data);
+        l1=getTag((char*)HTML->data, url);
         lista=l1.begin();
-        LWP_CreateThread (&thread, DownloadImage, (void*)url, NULL, 0, 70);
+        LWP_CreateThread (&thread, DownloadImage, (void*)&url, NULL, 0, 70);
 
         unsigned int i;
         while (!choice)
@@ -296,7 +296,8 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
 
                 else if (lista->name=="base")
                 {
-                    snprintf(url, 256, lista->attribute.c_str());
+                    url = (char*)realloc(url, lista->attribute.size()+1);
+                    strcpy(url, lista->attribute.c_str());
                 }
 
                 else if (lista->name=="return")

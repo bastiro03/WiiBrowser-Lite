@@ -10,6 +10,7 @@
 
 #include "liste.h"
 #include "main.h"
+#include "ruleset.h"
 
 #define VERSION "0.6"
 
@@ -210,10 +211,11 @@ typedef struct
     Tag* p;
 } last;
 
-Lista getTag(char * buffer)
+Lista getTag(char * buffer, char * url)
 {
     bool parse_css=true;
     bool parsed=true;
+    char *decode=NULL;
 
     string css_code;
     tree<HTML::Node> dom;
@@ -222,9 +224,10 @@ Lista getTag(char * buffer)
     try
     {
         string html(buffer);
+        apply_ruleset(&html, url);
+
         HTML::ParserDom parser;
         CSS::Parser css_parser;
-        char *decode=NULL;
 
         //Dump all text of the document
         dom = parser.parseTree(html);

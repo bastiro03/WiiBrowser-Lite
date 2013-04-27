@@ -243,20 +243,27 @@ struct block postrequest(CURL *curl_handle, const char *url, curl_httppost *data
 {
     char *ct = NULL;
     char *post = findChr(url, '?');
-
-    struct block b;
+    struct block b, h;
     int res;
+
+    struct HeaderStruct head;
     struct MemoryStruct chunk;
 
     chunk.memory = (char *)malloc(1);   /* will be grown as needed by the realloc above */
-    chunk.size = 0;
+    chunk.size = 0; /* no data at this point */
+
+    head.memory = (char *)malloc(1);   /* will be grown as needed by the realloc above */
+    head.size = 0; /* no data at this point */
+    head.download = 0; /* not yet known at this point */
 
     setmainheaders(curl_handle, url);
     setrequestheaders(curl_handle, POST);
 
     if(curl_handle) {
         /* we pass our 'chunk' struct to the callback function */
+        curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, parseheader);
         curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&chunk);
+        curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, (void *)&head);
 
         if (data == NULL)
             curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, post+1);
@@ -266,6 +273,15 @@ struct block postrequest(CURL *curl_handle, const char *url, curl_httppost *data
         {
             if (data)
                 curl_formfree(data);
+
+            if (res == CURLE_WRITE_ERROR)
+            {
+                fillstruct(curl_handle, &head, &h);
+                free(head.memory);
+                return h;
+            }
+
+            Debug(curl_easy_strerror((CURLcode)res));
             return emptyblock;
         }
 
@@ -280,6 +296,7 @@ struct block postrequest(CURL *curl_handle, const char *url, curl_httppost *data
 
 	b.data = chunk.memory;
 	b.size = chunk.size;
+	free(head.memory);
 
     findChr(ct, ';');
     strcpy(b.type, ct);
@@ -350,6 +367,7 @@ struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
 
     findChr(ct, ';');
     strcpy(b.type, ct);
+    free(head.memory);
 
     if(hfile)
     {

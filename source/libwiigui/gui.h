@@ -962,7 +962,7 @@ class GuiKeyboard : public GuiWindow
 		GuiKeyboard(char * t, u32 m);
 		~GuiKeyboard();
 		void Update(GuiTrigger * t);
-		char kbtextstr[256];
+		char kbtextstr[512];
 	protected:
         static bool bInitUSBKeyboard;
 		int BackDelay;

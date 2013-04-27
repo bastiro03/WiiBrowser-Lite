@@ -92,7 +92,7 @@ extern enum html {HTML,HEAD,BODY,BASE,META,TITLE,FORM,P,A,DIV,BR,IMG,H1,H2,H3,H4
 extern char tags [END][LEN];
 extern History history;
 
-extern Lista getTag(char *buffer);
+extern Lista getTag(char *buffer, char *url);
 extern int checkTag(vector<string> tag, string name);
 
 extern void OnScreenKeyboard(GuiWindow *keyboardWindow, char *var, u16 maxlen);

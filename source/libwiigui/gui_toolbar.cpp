@@ -96,7 +96,7 @@ GuiToolbar::GuiToolbar(int set)
         WWWTooltip->SetOffset(-15,-50);
 
         ForwardTooltip = new GuiTooltip(gettext("Go forward"));
-        SaveTooltip = new GuiTooltip(gettext("Download manager"));
+        SaveTooltip = new GuiTooltip(gettext("Download"));
         HomeTooltip = new GuiTooltip(gettext("Homepage"));
         ReloadTooltip = new GuiTooltip(gettext("Refresh"));
         SettTooltip = new GuiTooltip(gettext("Settings"));
@@ -167,6 +167,7 @@ GuiToolbar::GuiToolbar(int set)
     if (buttons == HOMEPAGE)
     {
         btnReload->SetState(STATE_DISABLED);
+        SaveTooltip->SetText(gettext("Download manager"));
     }
 
     if (buttons == NAVIGATION)

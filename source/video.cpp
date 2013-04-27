@@ -18,7 +18,6 @@
 
 #include "input.h"
 #include "menu.h"
-#include "utils/mem2_manager.h"
 #include "utils/pngu.h"
 
 extern "C" {

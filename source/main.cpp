@@ -27,8 +27,8 @@
 #include "main.h"
 
 #include "FreeTypeGX.h"
-#include "utils/mem2_manager.h"
 #include "config.h"
+#include "utils/mem2.h"
 
 #ifdef MPLAYER
 
@@ -182,6 +182,7 @@ void ExitApp()
     FreeHistory(history);
     StopGUIThreads();
     Cleanup();
+	MEM2_cleanup();
     if (HWButton)
         SYS_ResetSystem(HWButton, 0, 0);
     exit(0);
@@ -214,6 +215,9 @@ int main(int argc, char *argv[])
     SYS_SetResetCallback(WiiResetPressed);
     SYS_SetPowerCallback(WiiPowerPressed);
     WPAD_SetPowerButtonCallback(WiimotePowerPressed);
+
+    // Initialize 52 MB (max is 53469152 bytes though)
+    MEM2_init(52);
 
     InitVideo(); // Initialize video
     SetupPads(); // Initialize input

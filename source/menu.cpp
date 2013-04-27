@@ -24,8 +24,6 @@
 #include "filebrowser.h"
 #include "fileop.h"
 #include "filelist.h"
-
-#include "utils/mem2_manager.h"
 #include "config.h"
 
 extern "C" {

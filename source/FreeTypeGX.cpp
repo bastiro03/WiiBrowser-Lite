@@ -22,6 +22,11 @@
 
 #include "FreeTypeGX.h"
 #include "filelist.h"
+#include "utils/mem2_manager.h"
+
+#define ft_malloc(x) mem2_malloc(x,MEM2_OTHER)
+#define ft_free(x) mem2_free(x,MEM2_OTHER)
+#define ft_memalign(x,y) mem2_memalign(x,y,MEM2_OTHER)
 
 FreeTypeGX *fontSystem[MAX_FONT_SIZE+1];
 
@@ -761,4 +766,42 @@ void FreeTypeGX::copyFeatureToFramebuffer(f32 featureWidth, f32 featureHeight, i
     GX_End();
 
     this->setDefaultMode();
+}
+
+// overloaded new operator
+void *FreeTypeGX::operator new(size_t size)
+{
+	void *p = ft_malloc(size);
+
+	if (!p)
+	{
+		std::bad_alloc ba;
+		throw ba;
+	}
+	return p;
+}
+
+// overloaded delete operator
+void FreeTypeGX::operator delete(void *p)
+{
+	ft_free(p);
+}
+
+// overloaded new operator for arrays
+void *FreeTypeGX::operator new[](size_t size)
+{
+	void *p = ft_malloc(size);
+
+	if (!p)
+	{
+		std::bad_alloc ba;
+		throw ba;
+	}
+	return p;
+}
+
+// overloaded delete operator for arrays
+void FreeTypeGX::operator delete[](void *p)
+{
+	ft_free(p);
 }

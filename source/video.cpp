@@ -18,7 +18,9 @@
 
 #include "input.h"
 #include "menu.h"
+
 #include "utils/pngu.h"
+#include "utils/mem2_manager.h"
 
 extern "C" {
 
@@ -48,7 +50,7 @@ u8* TakeScreenshot(bool global)
 {
     u8 *video = videoScreenshot;
     if(!global)
-        video = (u8 *)memalign(32, vmode->fbWidth * vmode->efbHeight * 4);
+        video = (u8 *)mem2_malloc(vmode->fbWidth * vmode->efbHeight * 4, MEM2_VIDEO);
 
     if(!video)
         exit(0);
@@ -355,7 +357,7 @@ InitVideo2 ()
 	GX_SetDrawDoneCallback(Draw_VIDEO);
 	GX_Flush();
 
-	videoScreenshot = (u8 *)memalign(32, vmode->fbWidth * vmode->efbHeight * 4);
+	videoScreenshot = (u8 *)mem2_malloc(vmode->fbWidth * vmode->efbHeight * 4, MEM2_VIDEO);
 }
 
 }

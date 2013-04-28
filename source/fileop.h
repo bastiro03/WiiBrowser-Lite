@@ -16,5 +16,6 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, cons
 
 bool isValidPath(char *path);
 int makedir (char *newdir);
+void show_mem();
 
 #endif

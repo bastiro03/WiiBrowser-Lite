@@ -38,6 +38,7 @@
 
 #include "Settings.h"
 #include "menu.h"
+#include "utils/mem2_manager.h"
 
 #define DEFAULT_APP_PATH    "apps/wiibrowser/"
 #define DEFAULT_HOMEPAGE    "www.google.com/"
@@ -459,7 +460,7 @@ void SSettings::Remove(int f)
 
     if(Thumbnails[f])
     {
-        delete(Thumbnails[f]);
+        mem2_free(Thumbnails[f], MEM2_VIDEO);
         Thumbnails[f] = NULL;
         remove(filepath);
     }
@@ -503,7 +504,7 @@ void *LoadFile(char *filepath, int size)
         return NULL;
     }
 
-    u8 *buffer = new u8[size];
+    u8 *buffer = (u8 *)mem2_malloc(size, MEM2_VIDEO);
     if(!buffer)
         return NULL;
 

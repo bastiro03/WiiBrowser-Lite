@@ -28,7 +28,7 @@
 
 #include "FreeTypeGX.h"
 #include "config.h"
-#include "utils/mem2.h"
+#include "utils/mem2_manager.h"
 
 #ifdef MPLAYER
 
@@ -182,7 +182,6 @@ void ExitApp()
     FreeHistory(history);
     StopGUIThreads();
     Cleanup();
-	MEM2_cleanup();
     if (HWButton)
         SYS_ResetSystem(HWButton, 0, 0);
     exit(0);
@@ -216,9 +215,6 @@ int main(int argc, char *argv[])
     SYS_SetPowerCallback(WiiPowerPressed);
     WPAD_SetPowerButtonCallback(WiimotePowerPressed);
 
-    // Initialize 52 MB (max is 53469152 bytes though)
-    MEM2_init(52);
-
     InitVideo(); // Initialize video
     SetupPads(); // Initialize input
     InitAudio(); // Initialize audio
@@ -229,10 +225,13 @@ int main(int argc, char *argv[])
     u32 size = ( (1024*MAX_HEIGHT)+((MAX_WIDTH-1024)*MAX_HEIGHT) + (1024*(MAX_HEIGHT/2)*2) ) + // textures
                (vmode->fbWidth * vmode->efbHeight * 4) + // videoScreenshot
                (32*1024); // padding
+    #endif
+
+    u32 size = 10*(vmode->fbWidth * vmode->efbHeight * 4) + // thumbnails
+               (32*1024); // padding
 
     AddMem2Area (size, MEM2_VIDEO);
     AddMem2Area (2*1024*1024, MEM2_OTHER); // vars + ttf
-    #endif
 
     InitVideo2();
     InitFreeType(); // Initialize font system

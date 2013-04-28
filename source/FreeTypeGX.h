@@ -288,6 +288,12 @@ class FreeTypeGX {
 		FreeTypeGX(FT_UInt pixelSize, const uint8_t* fontBuffer = NULL, FT_Long bufferSize = 0);
 		~FreeTypeGX();
 
+		//!Operator overload: new, delete, new[] and delete[]
+		void *operator new(size_t size);
+		void operator delete(void *p);
+		void *operator new[](size_t size);
+		void operator delete[](void *p);
+
         void ChangeFontSize(FT_UInt pixelSize);
 		void setVertexFormat(uint8_t vertexIndex);
 		void setCompatibilityMode(uint32_t compatibilityMode);

@@ -31,14 +31,14 @@ INCLUDES	:=	source source/mplayer
 CFLAGS		=	-g -O3 -Wall $(MACHDEP) $(INCLUDE)  \
 				-D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -Wframe-larger-than=8192
 CXXFLAGS	=	-std=gnu++0x $(CFLAGS)
-LDFLAGS		=   -g $(MACHDEP) -Wl,-Map,$(notdir $@).map,-wrap,malloc,-wrap,free,-wrap,memalign,-wrap,calloc,-wrap,realloc,-wrap,malloc_usable_size
+LDFLAGS		=   -g $(MACHDEP) -Wl
 
 #---------------------------------------------------------------------------------
 # any extra libraries we wish to link with the project
 #---------------------------------------------------------------------------------
-LIBS	:=	-lmplayerwii -lavformat -lavcodec -lswscale -lavutil \
+# LIBS	:=	-lmplayerwii -lavformat -lavcodec -lswscale -lavutil \
 
-LIBS	+=	-lfribidi -ljpeg -liconv -ldi -lpng -lz \
+LIBS	:=	-lfribidi -ljpeg -liconv -ldi -lpng -lz \
 				-lcurl -lcyassl -lnetport -lasnd -lvorbisidec \
 					-lfat -lwiiuse -lwiikeyboard -lbte -logc -lfreetype \
 

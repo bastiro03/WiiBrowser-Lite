@@ -74,6 +74,7 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, cons
 	GuiFileBrowser fileBrowser(552, 248);
 	fileBrowser.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	fileBrowser.SetPosition(0, 108);
+	fileBrowser.SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_IN, 30);
 
 	GuiImageData btnOutline(button_png);
 	GuiImageData btnOutlineOver(button_over_png);
@@ -105,7 +106,6 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, cons
 	GuiWindow buttonWindow(screenwidth, screenheight);
 	buttonWindow.Append(&okBtn);
 	buttonWindow.Append(&cancelBtn);
-	buttonWindow.Append(&fileBrowser);
 	buttonWindow.Append(&InsertURL);
 	buttonWindow.Append(&InsertDEV);
     buttonWindow.SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_IN, 30);
@@ -121,7 +121,7 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, cons
     if (mainWindow)
         parentWindow->Remove(mainWindow);
     parentWindow->Append(&buttonWindow);
-    parentWindow->ChangeFocus(&buttonWindow);
+    parentWindow->Append(&fileBrowser);
     ResumeGui();
 
 	while(menu == MENU_NONE)
@@ -200,9 +200,12 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, cons
 		    menu = MENU_HOME;
 	}
 
+    fileBrowser.SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_OUT, 50);
     buttonWindow.SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_OUT, 50);
     while(buttonWindow.GetEffect() > 0)
         usleep(100);
+
+    fileBrowser.SetVisible(false);
     buttonWindow.SetVisible(false);
 
     if(mainWindow)
@@ -215,6 +218,7 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, cons
 
     HaltGui();
     parentWindow->Remove(&buttonWindow);
+    parentWindow->Remove(&fileBrowser);
     ResumeGui();
 
     if (isValidPath(path))

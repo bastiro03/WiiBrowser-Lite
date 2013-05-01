@@ -66,8 +66,10 @@ extern "C" {
     void UpdatePointer();
     void DoMPlayerGuiDraw();
 
+    void SetPointer (bool drag, int chan);
     void ShowAction (const char *msg);
     void SetMessage (const char *msg);
+
     void CancelAction();
     bool CancelDownload();
 #ifdef __cplusplus

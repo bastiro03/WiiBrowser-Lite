@@ -637,7 +637,6 @@ void StopUpdateThread()
 static void *UpdateGUI (void *arg)
 {
     int i, guiRun = 1;
-    bool DrawArrow = false;
 
     while(guiRun)
     {
@@ -666,17 +665,7 @@ static void *UpdateGUI (void *arg)
                 mainWindow->Update(&userInput[i]);
                 if(userInput[i].wpad->btns_d & (WPAD_BUTTON_HOME | WPAD_CLASSIC_BUTTON_HOME))
                     ExitRequested = true; // exit program
-
-                if(userInput[i].wpad->btns_h & (WPAD_BUTTON_B | WPAD_CLASSIC_BUTTON_B))
-                    DrawArrow = true;
             }
-
-            if(DrawArrow)
-            {
-                pointer[0]->SetImage(pointerGrabImg[0]);
-                DrawArrow = false;
-            }
-            else pointer[0]->SetImage(pointerImg[0]);
 
             if(HWButton)
                 ExitRequested = true; // exit program
@@ -873,9 +862,19 @@ static void DragCallback(void *ptr)
 
     if (b->GetState() == STATE_HELD)
     {
+        SetPointer(true, chan);
+    }
+    else
+    {
+        SetPointer(false, chan);
+    }
+}
+
+void SetPointer(bool drag, int chan)
+{
+    if (drag)
+    {
         pointer[chan]->SetImage(pointerGrabImg[chan]);
-        if (!userInput[chan].wpad->ir.valid)
-            return;
     }
     else
     {

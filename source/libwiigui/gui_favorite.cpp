@@ -101,8 +101,10 @@ void GuiFavorite::SetEditing(bool e)
         this->Block->SetTrigger(trigH, 0);
         this->Remove->SetEffect(EFFECT_FADE, 30);
         this->Remove->SetState(STATE_DEFAULT);
-        this->Block->GetIcon()->SetEffect(EFFECT_RUMBLE,2,5);
         this->BlockImg->SetEffect(EFFECT_RUMBLE,2,5);
+
+        if(this->Block->GetIcon())
+            this->Block->GetIcon()->SetEffect(EFFECT_RUMBLE,2,5);
     }
 
     else
@@ -110,10 +112,14 @@ void GuiFavorite::SetEditing(bool e)
         this->Block->SetTrigger(trigA, 0);
         this->Remove->SetEffect(EFFECT_FADE, -30);
         this->Remove->SetState(STATE_DISABLED);
-        this->Block->GetIcon()->StopEffect(EFFECT_RUMBLE);
-        this->Block->GetIcon()->SetAngle(0);
         this->BlockImg->StopEffect(EFFECT_RUMBLE);
         this->BlockImg->SetAngle(0);
+
+        if(this->Block->GetIcon())
+        {
+            this->Block->GetIcon()->StopEffect(EFFECT_RUMBLE);
+            this->Block->GetIcon()->SetAngle(0);
+        }
     }
 }
 

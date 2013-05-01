@@ -28,7 +28,9 @@
 
 #include "FreeTypeGX.h"
 #include "config.h"
-#include "utils/mem2_manager.h"
+
+// #include "utils/mem2_manager.h"
+#include "utils/mem2.hpp"
 
 #ifdef MPLAYER
 
@@ -230,8 +232,9 @@ int main(int argc, char *argv[])
     u32 size = 10*(vmode->fbWidth * vmode->efbHeight * 4) + // thumbnails
                (32*1024); // padding
 
-    AddMem2Area (size, MEM2_VIDEO);
-    AddMem2Area (2*1024*1024, MEM2_OTHER); // vars + ttf
+    // AddMem2Area (size, MEM2_VIDEO);
+    // AddMem2Area (2*1024*1024, MEM2_OTHER); // vars + ttf
+    MEM_init();
 
     InitVideo2();
     InitFreeType(); // Initialize font system

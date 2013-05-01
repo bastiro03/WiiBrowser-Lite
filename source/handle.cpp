@@ -1,3 +1,4 @@
+#include "menu.h"
 #include "handle.h"
 
 GuiToolbar *Toolbar = NULL;
@@ -399,7 +400,9 @@ void HandleHtmlPad(int *offset, GuiButton *btnup, GuiButton *btndown, Indice ext
                     MoveText(1,1,dist/8, Index);
             }
         }
+        SetPointer(true, 0);
     }
+    else SetPointer(false, 0);
 }
 
 void HandleImgPad(GuiButton *btnup, GuiButton *btndown, GuiImage * image)
@@ -476,7 +479,9 @@ void HandleImgPad(GuiButton *btnup, GuiButton *btndown, GuiImage * image)
             else if (disty < -10)
                 MoveWind(1,+1,disty/8, image);
         }
+        SetPointer(true, 0);
     }
+    else SetPointer(false, 0);
 }
 
 void MoveWind (int up, int dir, int space, GuiImage * image)
@@ -629,6 +634,9 @@ void HandleMenuBar(string *link, char* url, int *choice, int img, GuiWindow *mai
                 *choice=1;
             }
         }
+
+        if(*choice)
+            SetPointer(false, 0);
     }
 
     if (Toolbar)

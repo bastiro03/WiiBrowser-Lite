@@ -3,7 +3,7 @@
 #include "html.h"
 
 #include "config.h"
-#include "utils/mem2_manager.h"
+// #include "utils/mem2_manager.h"
 #define LEN 15
 
 enum html htm;
@@ -368,7 +368,8 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                 if ((t = Settings.FindUrl(new_page)) >= 0
                         || (t = Settings.FindUrl(url)) >= 0)
                     Settings.Thumbnails[t] = video;
-                else mem2_free(video, MEM2_VIDEO);
+                else free(video);
+                // else mem2_free(video, MEM2_VIDEO);
                 done = true;
             }
 
@@ -419,6 +420,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
     {
         GuiImageData image_data((u8*)HTML->data, HTML->size);
         image = new GuiImage(&image_data);
+        image->SetEffect(EFFECT_FADE, 50);
         image->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
         image->SetPosition(0,0);
 
@@ -431,10 +433,10 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
         mainWindow->Append(scrollWindow);
         ResumeGui();
 
-        while (!choice && !(userInput[0].wpad->btns_d & WPAD_BUTTON_B))
+        while (!choice)
         {
-            HandleMenuBar(&link, url, &choice, 1, mainWindow, parentWindow);
             HandleImgPad(btnup, btndown, image);
+            HandleMenuBar(&link, url, &choice, 1, mainWindow, parentWindow);
 
             if (choice == 2)
             {
@@ -453,6 +455,10 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                 choice = 0;
             }
         }
+
+        image->SetEffect(EFFECT_FADE, -50);
+        while (image->GetEffect()>0)
+            usleep(100);
 
         HaltGui();
         mainWindow->Remove(image);

@@ -13,69 +13,78 @@ typedef string TipoElemento;
 
 enum {image,guitext,guibutton,null};
 
-typedef struct Input {
-  TipoElemento name;
-  TipoElemento type;
-  TipoElemento value;
-  TipoElemento option;
-  TipoElemento label;
-  struct Input *prox;
+typedef struct Input
+{
+    TipoElemento name;
+    TipoElemento type;
+    TipoElemento value;
+    TipoElemento option;
+    TipoElemento label;
+    struct Input *prox;
 } Input;
 
-typedef struct Value {
-  TipoElemento text;
-  vector<string> mode;
+typedef struct Value
+{
+    TipoElemento text;
+    vector<string> mode;
 } Value;
 
-typedef struct Form {
-  TipoElemento action;
-  TipoElemento method;
-  TipoElemento enctype;
-  Input *input;
+typedef struct Form
+{
+    TipoElemento action;
+    TipoElemento method;
+    TipoElemento enctype;
+    Input *input;
 } Form;
 
-typedef struct Tag {
-  TipoElemento name;
-  TipoElemento attribute;
-  vector<Value> value;
-  struct Form form;
+typedef struct Tag
+{
+    TipoElemento name;
+    TipoElemento attribute;
+    vector<Value> value;
+    struct Form form;
 } Tag;
 
-typedef struct Text {
-  GuiText *txt;
-  struct Text *prox;
+typedef struct Text
+{
+    GuiText *txt;
+    struct Text *prox;
 } Text;
 
-typedef struct Image {
-  GuiImageData *imgdata;
-  GuiImage *img;
-  bool fetched;
-  struct Tag *tag;
-  struct Image *prox;
+typedef struct Image
+{
+    GuiImageData *imgdata;
+    GuiImage *img;
+    bool fetched;
+    struct Tag *tag;
+    struct Image *prox;
 } Image;
 
-typedef struct Button {
-  GuiButton *btn;
-  GuiText *label;
-  GuiTooltip *tooltip;
-  TipoElemento url;
-  int outline;
-  struct Tag *refs;
-  struct Button *prox;
+typedef struct Button
+{
+    GuiButton *btn;
+    GuiText *label;
+    GuiTooltip *tooltip;
+    TipoElemento url;
+    int outline;
+    struct Tag *refs;
+    struct Button *prox;
 } Button;
 
-typedef struct Index {
-  GuiElement *elem;
-  int content;
-  int screenSize;
-  struct Index *prec;
-  struct Index *prox;
+typedef struct Index
+{
+    GuiElement *elem;
+    int content;
+    int screenSize;
+    struct Index *prec;
+    struct Index *prox;
 } Index;
 
-typedef struct Url {
-  TipoElemento url;
-  struct Url *prec;
-  struct Url *prox;
+typedef struct Url
+{
+    TipoElemento url;
+    struct Url *prec;
+    struct Url *prox;
 } Url;
 
 typedef Text * ListaDiTesto;
@@ -87,7 +96,11 @@ typedef list<Tag> Lista;
 typedef Index * Indice;
 typedef Url * History;
 
-extern enum html {HTML,HEAD,BODY,BASE,META,TITLE,FORM,P,A,DIV,BR,IMG,H1,H2,H3,H4,H5,H6,B,BIG,BLOCKQUOTE,PRE,TD,DD,DT,/*CENTER,*/LI,CITE,FONT,END} htm;
+extern enum html {
+    HTML,HEAD,BODY,BASE,META,TITLE,FORM,P,A,DIV,BR,IMG,
+    H1,H2,H3,H4,H5,H6,B,BIG,BLOCKQUOTE,PRE,TD,DD,DT,/*CENTER,*/LI,CITE,FONT,END
+}
+htm;
 
 extern char tags [END][LEN];
 extern History history;
@@ -111,7 +124,7 @@ extern void ResumeGui();
 #ifdef __cplusplus
 extern "C" {
 #endif
-extern void HaltGui();
+    extern void HaltGui();
 #ifdef __cplusplus
 }
 #endif

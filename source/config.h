@@ -1,6 +1,8 @@
 #ifndef _CONFIG_H_
 #define _CONFIG_H_
 
-#undef MPLAYER
+#undef  MPLAYER
+#undef  DOCWRITE
+#undef	IFRAME
 
 #endif

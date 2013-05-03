@@ -1733,7 +1733,7 @@ jump:
 
     if (!history || strcmp(history->url.c_str(),url))
         history=InsUrl(history,url);
-    sleep(1);
+    usleep(500*1000);
 
     HaltGui();
     mainWindow->SetState(STATE_DISABLED);

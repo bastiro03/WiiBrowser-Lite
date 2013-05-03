@@ -2,7 +2,7 @@
 <app version="1">
   <name>WiiBrowser</name>
   <coder>gave92</coder>
-  <version>rev92</version>
+  <version>rev96</version>
   <release_date>201304280150</release_date>
   <arguments>
 	<arg>homepage</arg>

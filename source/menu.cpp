@@ -58,7 +58,6 @@ static GuiImageData * pointer[4];
 static const u8 * pointerImg[4];
 static const u8 * pointerGrabImg[4];
 
-static GuiSound * bgMusic = NULL;
 static GuiImage * bgImg = NULL;
 static GuiButton * actionButton = NULL;
 
@@ -909,12 +908,6 @@ void SetupGui()
     fadeAnim = EFFECT_FADE;
     prevMenu = MENU_HOME;
 
-    bgMusic = new GuiSound(bg_music_ogg, bg_music_ogg_size, SOUND_OGG);
-    bgMusic->SetVolume(50);
-    bgMusic->SetLoop(true);
-    if(Settings.Music)
-        bgMusic->Play(); // startup music
-
     pointerImg[0] = player1_point_png;
     pointerImg[1] = player2_point_png;
     pointerImg[2] = player3_point_png;
@@ -1113,7 +1106,6 @@ static int MenuSettings()
     sprintf(options.name[i++], "Show Thumbnails");
     sprintf(options.name[i++], "Autoupdate");
     sprintf(options.name[i++], "Language");
-    sprintf(options.name[i++], "Music");
     sprintf(options.name[i++], "Restore Session");
     sprintf(options.name[i++], "UserAgent");
     sprintf(options.name[i++], "Proxy (url:port)");
@@ -1198,20 +1190,16 @@ static int MenuSettings()
             break;
 
         case 6:
-            Settings.Music = !Settings.Music;
-            break;
-
-        case 7:
             Settings.Restore = !Settings.Restore;
             break;
 
-        case 8:
+        case 7:
             Settings.UserAgent++;
             if (Settings.UserAgent >= MAXAGENTS)
                 Settings.UserAgent = 0;
             break;
 
-        case 9:
+        case 8:
             OnScreenKeyboard(mainWindow, Settings.Proxy, 256);
             break;
         }
@@ -1224,8 +1212,8 @@ static int MenuSettings()
 
             snprintf (options.value[0], 256, "%s", Settings.Homepage);
             snprintf (options.value[1], 256, "%s", Settings.DefaultFolder);
-            snprintf (options.value[8], 256, "%s", AgentName[Settings.UserAgent]);
-            snprintf (options.value[9], 256, "%s", Settings.Proxy);
+            snprintf (options.value[7], 256, "%s", AgentName[Settings.UserAgent]);
+            snprintf (options.value[8], 256, "%s", Settings.Proxy);
 
             if (Settings.ShowTooltip == 0) sprintf (options.value[2], "Hide");
             else if (Settings.ShowTooltip == 1) sprintf (options.value[2], "Show");
@@ -1240,10 +1228,8 @@ static int MenuSettings()
             else if (Settings.Language == LANG_ENGLISH) sprintf (options.value[5], "English");
             else if (Settings.Language == LANG_GERMAN) sprintf (options.value[5], "German");
 
-            if (Settings.Music == 0) sprintf (options.value[6], "Off");
-            else if (Settings.Music == 1) sprintf (options.value[6], "On");
-            if (Settings.Restore == 0) sprintf (options.value[7], "Start new");
-            else if (Settings.Restore == 1) sprintf (options.value[7], "Restore");
+            if (Settings.Restore == 0) sprintf (options.value[6], "Start new");
+            else if (Settings.Restore == 1) sprintf (options.value[6], "Restore");
 
             optionBrowser.TriggerUpdate();
         }
@@ -1670,7 +1656,7 @@ jump:
     HTML = downloadfile(curl_handle, url, hfile);
 
 #ifdef DEBUG
-    FILE *pFile = fopen ("page.htm", "rb");
+    FILE *pFile = fopen ("sd:/page.htm", "rb");
     fseek (pFile, 0, SEEK_END);
     int size = ftell(pFile);
     rewind (pFile);
@@ -2032,10 +2018,7 @@ void Init()
 
 void Cleanup()
 {
-    bgMusic->Stop();
-
     delete trigA;
-    delete bgMusic;
     delete bgImg;
 
     delete SplashImage;

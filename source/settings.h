@@ -112,7 +112,6 @@ class SSettings
         bool ShowTooltip;
         bool ShowThumbs;
         bool Restore;
-        bool Music;
 
         char AppPath[256];
         char ConfigPath[256];

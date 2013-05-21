@@ -22,15 +22,15 @@
 
 #include "FreeTypeGX.h"
 #include "filelist.h"
-// #include "utils/mem2_manager.h"
+#include "utils/mem2_manager.h"
 
-// #define ft_malloc(x) mem2_malloc(x,MEM2_OTHER)
-// #define ft_free(x) mem2_free(x,MEM2_OTHER)
-// #define ft_memalign(x,y) mem2_memalign(x,y,MEM2_OTHER)
+#define ft_malloc(x) mem2_malloc(x,MEM2_OTHER)
+#define ft_free(x) mem2_free(x,MEM2_OTHER)
+#define ft_memalign(x,y) mem2_memalign(x,y,MEM2_OTHER)
 
-#define ft_malloc(x) malloc(x)
-#define ft_free(x) free(x)
-#define ft_memalign(x,y) memalign(x,y)
+// #define ft_malloc(x) malloc(x)
+// #define ft_free(x) free(x)
+// #define ft_memalign(x,y) memalign(x,y)
 
 FreeTypeGX *fontSystem[MAX_FONT_SIZE+1];
 

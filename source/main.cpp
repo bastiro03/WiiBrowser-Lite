@@ -28,9 +28,8 @@
 
 #include "FreeTypeGX.h"
 #include "config.h"
-
-// #include "utils/mem2_manager.h"
-#include "utils/mem2.hpp"
+#include "fileop.h"
+#include "utils/mem2_manager.h"
 
 #ifdef MPLAYER
 
@@ -232,9 +231,8 @@ int main(int argc, char *argv[])
     u32 size = 10*(vmode->fbWidth * vmode->efbHeight * 4) + // thumbnails
                (32*1024); // padding
 
-    // AddMem2Area (size, MEM2_VIDEO);
-    // AddMem2Area (2*1024*1024, MEM2_OTHER); // vars + ttf
-    MEM_init();
+    AddMem2Area (size, MEM2_VIDEO);
+    AddMem2Area (2*1024*1024, MEM2_OTHER); // vars + ttf
 
     InitVideo2();
     InitFreeType(); // Initialize font system
@@ -253,7 +251,7 @@ int main(int argc, char *argv[])
         Settings.SetStartPage(argv[1]);
 
     if(chdir(Settings.AppPath) != 0) // set working directory
-        return EXIT_FAILURE;
+        save_mem("CHDIR failed");
 
     LoadLanguage();
     __exception_setreload(10);

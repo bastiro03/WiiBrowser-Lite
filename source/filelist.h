@@ -28,9 +28,6 @@ extern const u8		en_lang[];
 extern const u32	en_lang_size;
 
 // Sounds
-extern const u8		bg_music_ogg[];
-extern const u32	bg_music_ogg_size;
-
 extern const u8		button_over_pcm[];
 extern const u32	button_over_pcm_size;
 

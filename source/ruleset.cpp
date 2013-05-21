@@ -47,9 +47,10 @@ void apply_ruleset(string *html, char *url)
 
     for(substr_b = 0; (substr_b = html->find("\\n", substr_b)) != string::npos;)
         html->erase(substr_b, 2);
+#endif
 
     /* iframe html tag */
-#elif defined IFRAME
+#ifdef IFRAME
     for(substr_b = 0; (substr_b = html->find("<iframe", substr_b)) != string::npos;)
     {
         substr_e = html->find("src=", substr_b) + 5;

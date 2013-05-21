@@ -3,7 +3,7 @@
 #include "html.h"
 
 #include "config.h"
-// #include "utils/mem2_manager.h"
+#include "utils/mem2_manager.h"
 #define LEN 15
 
 enum html htm;
@@ -368,8 +368,8 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                 if ((t = Settings.FindUrl(new_page)) >= 0
                         || (t = Settings.FindUrl(url)) >= 0)
                     Settings.Thumbnails[t] = video;
-                else free(video);
-                // else mem2_free(video, MEM2_VIDEO);
+                // else free(video);
+                else mem2_free(video, MEM2_VIDEO);
                 done = true;
             }
 

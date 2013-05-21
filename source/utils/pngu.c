@@ -13,11 +13,12 @@
 #include "pngu.h"
 
 #include "video.h"
+#include "mem2_manager.h"
 
 //only texture in mem2, internal memory managed by gcc
-#define png_malloc malloc
-#define png_free free
-#define png_memalign memalign
+#define png_malloc(x) mem2_malloc(x,MEM2_GUI)
+#define png_free(x) mem2_free(x,MEM2_GUI)
+#define png_memalign(x,y) mem2_memalign(x,y,MEM2_GUI)
 
 // Constants
 #define PNGU_SOURCE_BUFFER				1
@@ -739,7 +740,7 @@ int PNGU_EncodeFromEFB (IMGCTX ctx, u32 width, u32 height, u32 stride)
 {
     int res;
     u32 x,y, tmpy, tmpxy, regval, val;
-    unsigned char * tmpbuffer = (unsigned char *)malloc(width*height*3);
+    unsigned char * tmpbuffer = (unsigned char *)png_malloc(width*height*3);
     memset(tmpbuffer, 0, width*height*3);
 
     for(y=0; y < height; y++)
@@ -758,6 +759,6 @@ int PNGU_EncodeFromEFB (IMGCTX ctx, u32 width, u32 height, u32 stride)
     }
 
     res = PNGU_EncodeFromRGB (ctx, width, height, tmpbuffer, stride);
-    free(tmpbuffer);
+    png_free(tmpbuffer);
     return res;
 }

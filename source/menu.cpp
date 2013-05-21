@@ -54,7 +54,10 @@ static GuiSwitch * Left = NULL;
 static GuiToolbar * App = NULL;
 static GuiTrigger * trigA = NULL;
 
+static GuiImageData * pointerData[4];
+static GuiImageData * pointerGrabData[4];
 static GuiImageData * pointer[4];
+
 static const u8 * pointerImg[4];
 static const u8 * pointerGrabImg[4];
 
@@ -873,11 +876,11 @@ void SetPointer(bool drag, int chan)
 {
     if (drag)
     {
-        pointer[chan]->SetImage(pointerGrabImg[chan]);
+        pointer[chan] = pointerGrabData[chan];
     }
     else
     {
-        pointer[chan]->SetImage(pointerImg[chan]);
+        pointer[chan] = pointerData[chan];
     }
 }
 
@@ -918,10 +921,12 @@ void SetupGui()
     pointerGrabImg[3] = player4_grab_png;
 
 #ifdef HW_RVL
-    pointer[0] = new GuiImageData(pointerImg[0]);
-    pointer[1] = new GuiImageData(pointerImg[1]);
-    pointer[2] = new GuiImageData(pointerImg[2]);
-    pointer[3] = new GuiImageData(pointerImg[3]);
+    for (int i = 0; i < 4; i++)
+    {
+        pointerData[i] = new GuiImageData(pointerImg[i]);
+        pointerGrabData[i] = new GuiImageData(pointerGrabImg[i]);
+        pointer[i] = pointerData[i];
+    }
 #endif
 
     Right = new GuiSwitch(0);
@@ -2029,10 +2034,11 @@ void Cleanup()
     delete Left;
     delete App;
 
-    delete pointer[0];
-    delete pointer[1];
-    delete pointer[2];
-    delete pointer[3];
+    for (int i = 0; i < 4; i++)
+    {
+        delete pointerData[i];
+        delete pointerGrabData[i];
+    }
 
     char cookies[30];
     sprintf(cookies, "%s/cookie.csv", Settings.AppPath);

@@ -1,18 +1,18 @@
 /*************************************************
  *                                                *
- *  EasyBMP Cross-Platform Windows Bitmap Library * 
+ *  EasyBMP Cross-Platform Windows Bitmap Library *
  *                                                *
  *  Author: Paul Macklin                          *
  *   email: macklin01@users.sourceforge.net       *
  * support: http://easybmp.sourceforge.net        *
  *                                                *
- *          file: EasyBMP.cpp                     * 
+ *          file: EasyBMP.cpp                     *
  *    date added: 03-31-2006                      *
  * date modified: 12-01-2006                      *
  *       version: 1.06                            *
  *                                                *
  *   License: BSD (revised/modified)              *
- * Copyright: 2005-6 by the EasyBMP Project       * 
+ * Copyright: 2005-6 by the EasyBMP Project       *
  *                                                *
  * description: Actual source file                *
  *                                                *
@@ -25,17 +25,23 @@
 #include <string.h>
 
 #include "video.h"
+#include "mem2_manager.h"
 
-#define DefaultXPelsPerMeter 3780 // set to a default of 96 dpi 
+#define DefaultXPelsPerMeter 3780 // set to a default of 96 dpi
 #define DefaultYPelsPerMeter 3780 // set to a default of 96 dpi
+
+//only texture in mem2, internal memory managed by gcc
+#define bmp_malloc(x) mem2_malloc(x,MEM2_GUI)
+#define bmp_free(x) mem2_free(x,MEM2_GUI)
+#define bmp_memalign(x,y) mem2_memalign(x,y,MEM2_GUI)
 
 typedef unsigned char ebmpBYTE;
 typedef unsigned short ebmpWORD;
 typedef unsigned int ebmpDWORD;
 
 // it's easier to use a struct than a class
-// because we can read/write all four of the bytes 
-// at once (as we can count on them being continuous 
+// because we can read/write all four of the bytes
+// at once (as we can count on them being continuous
 // in memory
 
 typedef struct RGBApixel
@@ -138,7 +144,7 @@ class BMFH
 		ebmpWORD bfReserved1;
 		ebmpWORD bfReserved2;
 		ebmpDWORD bfOffBits;
-	
+
 		BMFH();
 		void display(void);
 		void SwitchEndianess(void);
@@ -158,7 +164,7 @@ class BMIH
 		ebmpDWORD biYPelsPerMeter;
 		ebmpDWORD biClrUsed;
 		ebmpDWORD biClrImportant;
-	
+
 		BMIH();
 		void display(void);
 		void SwitchEndianess(void);
@@ -210,7 +216,7 @@ void BMIH::SwitchEndianess(void)
 class BMP
 {
 	private:
-	
+
 		int BitDepth;
 		int Width;
 		int Height;
@@ -218,22 +224,22 @@ class BMP
 		RGBApixel* Colors;
 		int XPelsPerMeter;
 		int YPelsPerMeter;
-	
+
 		bool EasyBMPwarnings;
-	
+
 		ebmpBYTE* MetaData1;
 		int SizeOfMetaData1;
 		ebmpBYTE* MetaData2;
 		int SizeOfMetaData2;
-	
+
 		bool Read32bitRow(ebmpBYTE* Buffer, int BufferSize, int Row);
 		bool Read24bitRow(ebmpBYTE* Buffer, int BufferSize, int Row);
 		bool Read8bitRow(ebmpBYTE* Buffer, int BufferSize, int Row);
 		bool Read4bitRow(ebmpBYTE* Buffer, int BufferSize, int Row);
 		bool Read1bitRow(ebmpBYTE* Buffer, int BufferSize, int Row);
-	
+
 	public:
-	
+
 		int TellBitDepth(void);
 		int TellWidth(void);
 		int TellHeight(void);
@@ -241,22 +247,22 @@ class BMP
 		void SetDPI(int HorizontalDPI, int VerticalDPI);
 		int TellVerticalDPI(void);
 		int TellHorizontalDPI(void);
-	
+
 		BMP();
 		BMP(BMP& Input);
 		~BMP();
 		RGBApixel* operator()(int i, int j);
-	
+
 		RGBApixel GetPixel(int i, int j) const;
-	
+
 		bool CreateStandardColorTable(void);
-	
+
 		bool SetSize(int NewWidth, int NewHeight);
 		bool SetBitDepth(int NewDepth);
-	
+
 		RGBApixel GetColor(int ColorNumber);
 		bool SetColor(int ColorNumber, RGBApixel NewColor);
-	
+
 		bool Read(struct BMPFile *bmpFile);
 		u8 * DecodeTo4x4RGB8(u8 *dst);
 };
@@ -302,7 +308,7 @@ BMP::BMP(BMP& Input)
 
 	SetBitDepth(Input.TellBitDepth());
 
-	// set the correct pixel size 
+	// set the correct pixel size
 
 	SetSize(Input.TellWidth(), Input.TellHeight());
 
@@ -320,7 +326,7 @@ BMP::BMP(BMP& Input)
 		}
 	}
 
-	// get all the pixels 
+	// get all the pixels
 
 	for (int j = 0; j < Height; j++)
 	{
@@ -533,7 +539,7 @@ RGBApixel BMP::GetColor(int ColorNumber)
 
 bool BMP::Read(struct BMPFile *bmpFile)
 {
-	// read the file header 
+	// read the file header
 
 	BMFH bmfh;
 	bool NotCorrupted = true;
@@ -626,7 +632,7 @@ bool BMP::Read(struct BMPFile *bmpFile)
 		return false;
 	}
 
-	// if bmih.biCompression > 3, then something strange is going on 
+	// if bmih.biCompression > 3, then something strange is going on
 	// it's probably an OS2 bitmap file.
 
 	if (bmih.biCompression > 3)
@@ -681,7 +687,7 @@ bool BMP::Read(struct BMPFile *bmpFile)
 
 	if (BitDepth < 16)
 	{
-		// determine the number of colors specified in the 
+		// determine the number of colors specified in the
 		// color table
 
 		int NumberOfColorsToRead = ((int) bmfh.bfOffBits - 54) / 4;
@@ -730,7 +736,7 @@ bool BMP::Read(struct BMPFile *bmpFile)
 		delete[] TempSkipBYTE;
 	}
 
-	// This code reads 1, 4, 8, 24, and 32-bpp files 
+	// This code reads 1, 4, 8, 24, and 32-bpp files
 	// with a more-efficient buffered technique.
 
 	int i, j;
@@ -799,7 +805,7 @@ bool BMP::Read(struct BMPFile *bmpFile)
 		ebmpWORD GreenMask = 992; // bits 7-11
 		ebmpWORD RedMask = 31744; // bits 2-6
 
-		// read the bit fields, if necessary, to 
+		// read the bit fields, if necessary, to
 		// override the default 5-5-5 mask
 
 		if (bmih.biCompression != 0)
@@ -982,7 +988,7 @@ bool BMP::CreateStandardColorTable(void)
 		int i = 0;
 		int j, k, ell;
 
-		// do an easy loop, which works for all but colors 
+		// do an easy loop, which works for all but colors
 		// 0 to 9 and 246 to 255
 		for (ell = 0; ell < 4; ell++)
 		{
@@ -999,7 +1005,7 @@ bool BMP::CreateStandardColorTable(void)
 			}
 		}
 
-		// now redo the first 8 colors  
+		// now redo the first 8 colors
 		i = 0;
 		for (ell = 0; ell < 2; ell++)
 		{
@@ -1029,7 +1035,7 @@ bool BMP::CreateStandardColorTable(void)
 		Colors[i].Green = 202;
 		Colors[i].Blue = 240;
 
-		// overwrite colors 246 to 255 
+		// overwrite colors 246 to 255
 		i = 246;
 		Colors[i].Red = 255;
 		Colors[i].Green = 251;
@@ -1223,7 +1229,7 @@ u8 * BMP::DecodeTo4x4RGB8(u8 *dstPtr)
 	if(dstPtr)
 		dst = dstPtr; // use existing allocation
 	else
-		dst = (u8 *)memalign (32, len);
+		dst = (u8 *)bmp_memalign (32, len);
 
 	if(!dst)
 		return NULL;

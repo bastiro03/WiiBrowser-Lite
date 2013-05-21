@@ -66,7 +66,7 @@ static u32 __lwp_heap_block_size(heap_cntrl *theheap,void *ptr)
 
 
 typedef struct {
-	heap_cntrl heap; 
+	heap_cntrl heap;
 	void *heap_ptr;
  	u32 size;
  	void *old_arena2hi;
@@ -89,17 +89,17 @@ static void initMem2Areas()
 	for(i = 0; i < MEM2_MAX; i++)
 	{
 		mem2_areas[i].heap_ptr = NULL;
- 		mem2_areas[i].size = 0; 
- 		mem2_areas[i].old_arena2hi = NULL;		
-#ifdef DEBUG_MEM2_LEVEL		
+ 		mem2_areas[i].size = 0;
+ 		mem2_areas[i].old_arena2hi = NULL;
+#ifdef DEBUG_MEM2_LEVEL
 		mem2_areas[i].allocated = 0;
 		mem2_areas[i].top_allocated = 0;
 #endif
 	}
 	_inited=true;
 }
- 
-void ClearMem2Area (const int area) 
+
+void ClearMem2Area (const int area)
 {
 	if(area >= MEM2_MAX)
 		return;
@@ -109,7 +109,7 @@ void ClearMem2Area (const int area)
 	__lwp_heap_init(&mem2_areas[area].heap, mem2_areas[area].heap_ptr, mem2_areas[area].size, 32);
 }
 
-bool AddMem2Area (u32 size, const int index)  
+bool AddMem2Area (u32 size, const int index)
 {
 	u32 level;
 
@@ -143,12 +143,12 @@ bool AddMem2Area (u32 size, const int index)
 
 	mem2_areas[index].old_arena2hi = SYS_GetArena2Hi();
 	mem2_areas[index].heap_ptr = (void *)ROUNDDOWN32(((u32)SYS_GetArena2Hi() - size));
-	
+
 	if((u32)mem2_areas[index].heap_ptr < (u32)SYS_GetArena2Lo())
 	{
 #ifdef DEBUG_MEM2_LEVEL
 		printf("not enough mem2: %i   max free mem2: %d\n",index, (u32) (SYS_GetArena2Hi() - SYS_GetArena2Lo()));
-#endif		
+#endif
 		mem2_areas[index].old_arena2hi = NULL;
 		mem2_areas[index].heap_ptr = NULL;
 		_CPU_ISR_Restore(level);
@@ -165,7 +165,7 @@ bool AddMem2Area (u32 size, const int index)
 bool RemoveMem2Area(const int area)
 {
 	u32 level;
-	
+
 	_CPU_ISR_Disable(level);
 
 	if(area >= MEM2_MAX || mem2_areas[area].size == 0)
@@ -173,7 +173,7 @@ bool RemoveMem2Area(const int area)
 		_CPU_ISR_Restore(level);
 		return false;
 	}
-	
+
 	// a lower area is already inited - we cannot deinit this one yet
 	int i;
 
@@ -184,10 +184,10 @@ bool RemoveMem2Area(const int area)
 
 		if(mem2_areas[i].old_arena2hi < mem2_areas[area].old_arena2hi)
 		{
-#ifdef DEBUG_MEM2_LEVEL		
+#ifdef DEBUG_MEM2_LEVEL
 			if(DEBUG_MEM2_LEVEL)
 				printf("RemoveMem2Area FAILED: %i\n", area);
-#endif		
+#endif
 			_CPU_ISR_Restore(level);
 			return false;
 		}
@@ -205,7 +205,7 @@ bool RemoveMem2Area(const int area)
 	mem2_areas[area].size = 0;
 	mem2_areas[area].old_arena2hi = NULL;
 
-#ifdef DEBUG_MEM2_LEVEL		
+#ifdef DEBUG_MEM2_LEVEL
 	mem2_areas[area].allocated = 0;
 	mem2_areas[area].top_allocated = 0;
 #endif
@@ -214,7 +214,7 @@ bool RemoveMem2Area(const int area)
 	return true;
 }
 
- 
+
 void* _mem2_memalign(u8 align, u32 size, const int area, const char *file, int line)
 {
 	void *ptr;
@@ -222,18 +222,18 @@ void* _mem2_memalign(u8 align, u32 size, const int area, const char *file, int l
 	if(size == 0)
 		return NULL;
 
-	if(mem2_areas[area].size==0) 
+	if(mem2_areas[area].size==0)
 	{
 #ifdef DEBUG_MEM2_LEVEL
 		printf("mem2 malloc error: area %i not found. File: %s:%i\n",area, file, line);
-#endif		
+#endif
 		return NULL; // area not found
 	}
- 
-	ptr = __lwp_heap_allocate(&mem2_areas[area].heap, size); 
 
-#ifdef DEBUG_MEM2_LEVEL		
-	if(ptr == NULL || (mem2_areas[area].allocated + size > mem2_areas[area].size) ) 
+	ptr = __lwp_heap_allocate(&mem2_areas[area].heap, size);
+
+#ifdef DEBUG_MEM2_LEVEL
+	if(ptr == NULL || (mem2_areas[area].allocated + size > mem2_areas[area].size) )
 	{
 		printf("Error not enough mem in malloc, size: %u  area: %i  allocated: %u	top allocated: %u. File: %s:%i\n",size,area,mem2_areas[area].allocated,mem2_areas[area].top_allocated, file, line);
 		return NULL;
@@ -242,9 +242,9 @@ void* _mem2_memalign(u8 align, u32 size, const int area, const char *file, int l
 	if(ptr == NULL) return NULL;
 #endif
 
-#ifdef DEBUG_MEM2_LEVEL		
+#ifdef DEBUG_MEM2_LEVEL
  		mem2_areas[area].allocated += __lwp_heap_block_size(&mem2_areas[area].heap,ptr);
- 	
+
 	if(mem2_areas[area].allocated > mem2_areas[area].top_allocated) mem2_areas[area].top_allocated = mem2_areas[area].allocated;
 
 	if(DEBUG_MEM2_LEVEL == 2)
@@ -259,7 +259,7 @@ void* _mem2_malloc(u32 size, const int area, const char *file, int line)
 }
 
 void _mem2_free(void *ptr, const int area, const char *file, int line)
-{ 
+{
 	if(!ptr)
 		return;
 
@@ -267,29 +267,29 @@ void _mem2_free(void *ptr, const int area, const char *file, int line)
 	{
 #ifdef DEBUG_MEM2_LEVEL
 		printf("mem2 free error: area %i not found. File: %s:%i\n",area, file, line);
-#endif		
+#endif
 		return; // area not found
 	}
 
 #ifndef DEBUG_MEM2_LEVEL
 	__lwp_heap_free(&mem2_areas[area].heap, ptr);
 #else
-	u32 size=__lwp_heap_block_size(&mem2_areas[area].heap,ptr); 
-	 
+	u32 size=__lwp_heap_block_size(&mem2_areas[area].heap,ptr);
+
 	if(size == 0)
 	{
 		printf("mem2 free error: block not found in area %i. File: %s:%i\n",area, file, line);
 		return;
 	}
-	
+
 	mem2_areas[area].allocated -= size;
 
 	if(DEBUG_MEM2_LEVEL == 2)
  		printf("mem2 free: %u	area: %i  allocated: %u  top allocated: %u. File: %s:%i\n",size,area,mem2_areas[area].allocated,mem2_areas[area].top_allocated, file, line);
- 
+
 	__lwp_heap_free(&mem2_areas[area].heap, ptr);
 #endif
-	
+
  }
 
 void* _mem2_realloc(void *ptr, u32 newsize, const int area, const char *file, int line)
@@ -302,21 +302,21 @@ void* _mem2_realloc(void *ptr, u32 newsize, const int area, const char *file, in
 		_mem2_free(ptr, area, file, line);
 		return NULL;
 	}
-	
+
 	if(mem2_areas[area].size==0)
 	{
 #ifdef DEBUG_MEM2_LEVEL
 		printf("mem2 free error: area %i not found. File: %s:%i\n",area, file, line);
-#endif		
+#endif
 		return NULL; // area not found
 	}
 
-	u32 size=__lwp_heap_block_size(&mem2_areas[area].heap, ptr); 		
+	u32 size=__lwp_heap_block_size(&mem2_areas[area].heap, ptr);
 
 	if(size>newsize) size = newsize;
-	
+
 	newptr = _mem2_malloc(newsize, area, file, line);
-	
+
 	if(newptr == NULL) return NULL;
 	memcpy(newptr, ptr, size);
 	_mem2_free(ptr, area, file, line);
@@ -370,12 +370,12 @@ static void PrintAreaInfo(int index)
 {
 	heap_iblock info;
 
-	if(mem2_areas[index].size == 0) return;	
+	if(mem2_areas[index].size == 0) return;
 
 	printf("Area: %i. Allocated: %u. Top Allocated: %u\n",index,mem2_areas[index].allocated,mem2_areas[index].top_allocated);
 	__lwp_heap_getinfo(&mem2_areas[index].heap,&info);
-	printf("Area: %i. free blocks: %u  free size: %u  used blocks: %u  used_size: %u\n",index, 
-			info.free_blocks,info.free_size,info.used_blocks,info.used_size); 
+	printf("Area: %i. free blocks: %u  free size: %u  used blocks: %u  used_size: %u\n",index,
+			info.free_blocks,info.free_size,info.used_blocks,info.used_size);
 }
 #endif
 
@@ -400,5 +400,3 @@ void *__wrap_memcpy(void * destination, const void * source, size_t size)
 {
 	return fast_memcpy_Gekko(destination, source, size);
 }
-
-

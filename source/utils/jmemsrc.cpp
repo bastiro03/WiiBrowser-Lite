@@ -23,12 +23,13 @@
 #include <jerror.h>
 #include <gctypes.h>
 
+#include "utils/mem2_manager.h"
 #include "video.h"
 
 //only texture in mem2, internal memory managed by gcc
-#define jpg_malloc malloc
-#define jpg_free free
-#define jpg_memalign memalign
+#define jpg_malloc(x) mem2_malloc(x,MEM2_GUI)
+#define jpg_free(x) mem2_free(x,MEM2_GUI)
+#define jpg_memalign(x,y) mem2_memalign(x,y,MEM2_GUI)
 
 // ******************************************************************************************
 // ******************************************************************************************
@@ -108,13 +109,13 @@ void *scaler_alloc(int dw, int dh, int sw, int sh, int bpp,
 		void (*callback)(void *data, unsigned char *row, int len),
 		void *data)
 {
-	scaler *s=(scaler *)malloc(sizeof(scaler));
+	scaler *s=(scaler *)jpg_malloc(sizeof(scaler));
 	if(s)
 	{
 		s->bytewidth = sw * bpp;
 		s->obytewidth = dw * bpp;
-		s->accum = (unsigned char *)malloc(s->bytewidth);
-		s->output = (unsigned char *)malloc(s->obytewidth);
+		s->accum = (unsigned char *)jpg_malloc(s->bytewidth);
+		s->output = (unsigned char *)jpg_malloc(s->obytewidth);
 		s->sw = sw;
 		s->sh = sh;
 		s->dw = dw;
@@ -129,10 +130,10 @@ void *scaler_alloc(int dw, int dh, int sw, int sh, int bpp,
 		else
 		{
 			if(s->accum)
-				free(s->accum);
+				jpg_free(s->accum);
 			if(s->output)
-				free(s->output);
-			free(s);
+				jpg_free(s->output);
+			jpg_free(s);
 			s=0;
 		}
 	}
@@ -145,10 +146,10 @@ void scaler_free(void *p)
 	if(s)
 	{
 		if(s->accum)
-			free(s->accum);
+			jpg_free(s->accum);
 		if(s->output)
-			free(s->output);
-		free(s);
+			jpg_free(s->output);
+		jpg_free(s);
 	}
 }
 
@@ -355,7 +356,7 @@ static u8 * RawTo4x4RGBA(u8 *src, u32 width, u32 height, u32 rowsize, int * dstW
 	if(dstPtr)
 		dst = dstPtr; // use existing allocation
 	else
-		dst = (u8 *)memalign (32, len);
+		dst = (u8 *)jpg_memalign (32, len);
 
 	if(!dst)
 		return NULL;
@@ -417,7 +418,7 @@ u8 * DecodeJPEG(const u8 *src, u32 len, int *width, int *height, u8 *dstPtr)
 	jpeg_memory_src(&cinfo, src, len);
 	jpeg_read_header(&cinfo, TRUE);
 	if(cinfo.jpeg_color_space == JCS_GRAYSCALE)
-		cinfo.out_color_space = JCS_RGB; 
+		cinfo.out_color_space = JCS_RGB;
 
 	jpeg_calc_output_dimensions(&cinfo);
 	jpeg_start_decompress(&cinfo);

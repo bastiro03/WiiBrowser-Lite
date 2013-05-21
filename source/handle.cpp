@@ -367,6 +367,7 @@ void HandleHtmlPad(int *offset, GuiButton *btnup, GuiButton *btndown, Indice ext
             usleep(15000);
             MoveText(0,-1,(*offset), Index);
             *offset=0;
+            show_mem();
         }
     }
 

@@ -232,7 +232,6 @@ int main(int argc, char *argv[])
                (32*1024); // padding
 
     AddMem2Area (size, MEM2_VIDEO);
-    AddMem2Area (5*1024*1024, MEM2_OTHER); // vars + ttf
     AddMem2Area (20*1024*1024, MEM2_GUI); // gui
 
     InitVideo2();

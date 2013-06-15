@@ -11,14 +11,13 @@
 #include <ogc/lwp_heap.h>
 #include <ogc/system.h>
 #include <ogc/machine/processor.h>
+
+#include <stdio.h>
 #include <string.h>
 #include <malloc.h>
 #include <unistd.h>
 #include "mem2_manager.h"
 
-#ifdef DEBUG_MEM2_LEVEL
-#include <stdio.h>
-#endif
 /*** from libogc (lwp_heap.inl) ****/
 
 static __inline__ heap_block* __lwp_heap_blockat(heap_block *block,u32 offset)
@@ -227,7 +226,8 @@ void* _mem2_memalign(u8 align, u32 size, const int area, const char *file, int l
 #ifdef DEBUG_MEM2_LEVEL
 		printf("mem2 malloc error: area %i not found. File: %s:%i\n",area, file, line);
 #endif
-		return NULL; // area not found
+        if(area != MEM2_OTHER || !AddMem2Area(15*1024*1024, area))
+            return NULL; // area not found
 	}
 
 	ptr = __lwp_heap_allocate(&mem2_areas[area].heap, size);
@@ -365,31 +365,30 @@ u32 mem2_size(const int i)
 	return info.free_size;
 }
 
-#ifdef DEBUG_MEM2_LEVEL
 static void PrintAreaInfo(int index)
 {
 	heap_iblock info;
 
 	if(mem2_areas[index].size == 0) return;
 
-	printf("Area: %i. Allocated: %u. Top Allocated: %u\n",index,mem2_areas[index].allocated,mem2_areas[index].top_allocated);
+	FILE *file = fopen("debug.txt", "a");
+
+	// fprintf(file, "Area: %i. Allocated: %u. Top Allocated: %u\n",index,mem2_areas[index].allocated,mem2_areas[index].top_allocated);
 	__lwp_heap_getinfo(&mem2_areas[index].heap,&info);
-	printf("Area: %i. free blocks: %u  free size: %u  used blocks: %u  used_size: %u\n",index,
+	fprintf(file, "Area: %i. free blocks: %u  free size: %u  used blocks: %u  used_size: %u\r\n",index,
 			info.free_blocks,info.free_size,info.used_blocks,info.used_size);
+
+    fclose(file);
 }
-#endif
 
 void ShowAreaInfo(const int area) //if area == -1 print all areas info
 {
-#ifdef DEBUG_MEM2_LEVEL
-
 	int i;
 
 	if(area>=0)
 		PrintAreaInfo(area);
 	else
 		for(i = 0; i < MEM2_MAX; i++) PrintAreaInfo(i);
-#endif
 }
 
 void *__real_memcpy(void * , const void * , size_t );

@@ -3,6 +3,7 @@
 
 #include "fileop.h"
 #include "filebrowser.h"
+#include "utils/mem2_manager.h"
 
 bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, const char *label)
 {
@@ -317,8 +318,9 @@ int makedir (char *newdir)
 void show_mem()
 {
     FILE *file = fopen("debug.txt", "a");
-	fprintf(file, "m1(%.4f) m2(%.4f)\n",
+	fprintf(file, "m1(%.4f) m2(%.4f)\r\n",
             ((float)((char*)SYS_GetArena1Hi()-(char*)SYS_GetArena1Lo()))/0x100000,
             ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
     fclose(file);
+    ShowAreaInfo(-1);
 }

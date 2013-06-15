@@ -37,6 +37,45 @@ FreeTypeGX *fontSystem[MAX_FONT_SIZE+1];
 static FT_Byte * MainFont = (FT_Byte *) font_regular_ttf;
 static u32 MainFontSize = font_regular_ttf_size;
 
+// Standard operators
+// overloaded new operator
+void * operator new(size_t size)
+{
+	void *p = mem2_malloc(size,MEM2_OTHER);
+
+	if (!p)
+	{
+		std::bad_alloc ba;
+		throw ba;
+	}
+	return p;
+}
+
+// overloaded delete operator
+void  operator delete(void *p)
+{
+	mem2_free(p,MEM2_OTHER);
+}
+
+// overloaded new operator for arrays
+void * operator new[](size_t size)
+{
+	void *p = mem2_malloc(size,MEM2_OTHER);
+
+	if (!p)
+	{
+		std::bad_alloc ba;
+		throw ba;
+	}
+	return p;
+}
+
+// overloaded delete operator for arrays
+void  operator delete[](void *p)
+{
+	mem2_free(p,MEM2_OTHER);
+}
+
 void InitFreeType()
 {
     for(int i=0; i<=MAX_FONT_SIZE; i++)

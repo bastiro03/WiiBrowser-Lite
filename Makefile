@@ -28,8 +28,7 @@ INCLUDES	:=	source source/mplayer
 # options for code generation
 #---------------------------------------------------------------------------------
 
-CFLAGS		=	-g -O3 -Wall $(MACHDEP) $(INCLUDE)  \
-				-D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -Wframe-larger-than=8192
+CFLAGS		=	-g -O3 -Wall $(MACHDEP) $(INCLUDE)
 CXXFLAGS	=	-std=gnu++0x $(CFLAGS)
 LDFLAGS		=	-g -ggdb $(MACHDEP) -Wl
 

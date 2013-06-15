@@ -429,7 +429,7 @@ static u8 * PNGU_DecodeTo4x4RGBA8 (IMGCTX ctx, u32 width, u32 height, int * dstW
 	if(dstPtr)
 		dst = dstPtr; // use existing allocation
 	else
-		dst = memalign (32, len);
+		dst = png_memalign (32, len);
 
 	if(!dst)
 		return NULL;

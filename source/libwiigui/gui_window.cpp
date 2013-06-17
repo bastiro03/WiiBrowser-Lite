@@ -50,6 +50,13 @@ void GuiWindow::Insert(GuiElement* e, u32 index)
 	e->SetParent(this);
 }
 
+void GuiWindow::BInsert(GuiElement* e)
+{
+    if(_elements.size() > 0)
+        Insert(e, _elements.size() - 1);
+    else Insert(e, 0);
+}
+
 void GuiWindow::Remove(GuiElement* e)
 {
 	if (e == NULL)

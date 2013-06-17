@@ -46,10 +46,16 @@
 
 #include "mem2_manager.h"
 
-//only texture in mem2, internal memory managed by gcc
+/*
 #define gif_malloc(x) mem2_malloc(x,MEM2_GUI)
 #define gif_free(x) mem2_free(x,MEM2_GUI)
 #define gif_memalign(x,y) mem2_memalign(x,y,MEM2_GUI)
+*/
+
+//only texture in mem2, internal memory managed by gcc
+#define gif_malloc(x) malloc(x)
+#define gif_free(x) free(x)
+#define gif_memalign(x,y) memalign(x,y)
 
 #define GIF_TRANSPARENT 	0x01
 #define GIF_NOT_TRANSPARENT	-1

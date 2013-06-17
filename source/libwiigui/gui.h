@@ -529,6 +529,9 @@ class GuiWindow : public GuiElement
 		//!\param e The GuiElement to insert. If it is already in the GuiWindow, it is removed first
 		//!\param i Index in which to insert the element
 		void Insert(GuiElement* e, u32 i);
+		//!Inserts a GuiElement into the GuiWindow at the right index
+		//!\param e The GuiElement to insert. If it is already in the GuiWindow, it is removed first
+		void BInsert(GuiElement* e);
 		//!Removes the specified GuiElement from the GuiWindow
 		//!\param e GuiElement to be removed
 		void Remove(GuiElement* e);

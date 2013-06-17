@@ -175,7 +175,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                     text->txt->SetWrap(true, 400);
                     text->txt->SetEffect(EFFECT_FADE, 50);
                     HaltGui();
-                    mainWindow->Append(text->txt);
+                    mainWindow->BInsert(text->txt);
                     ResumeGui();
                     Index=InsIndex(Index);
                     Index->elem=text->txt;
@@ -217,7 +217,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                         btn->btn->SetEffect(EFFECT_FADE, 50);
 
                         HaltGui();
-                        mainWindow->Append(btn->btn);
+                        mainWindow->BInsert(btn->btn);
                         ResumeGui();
                         Index=InsIndex(Index);
                         Index->elem=btn->btn;
@@ -236,7 +236,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                         img->img->SetPosition(coordX+40, coordY);
                         img->tag=&(*lista);
                         HaltGui();
-                        mainWindow->Append(img->img);
+                        mainWindow->BInsert(img->img);
                         ResumeGui();
                         Index=InsIndex(Index);
                         Index->elem=img->img;
@@ -255,7 +255,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                             img->img->SetPosition(coordX+40, coordY);
                             img->img->SetEffect(EFFECT_FADE, 50);
                             HaltGui();
-                            mainWindow->Append(img->img);
+                            mainWindow->BInsert(img->img);
                             ResumeGui();
                             Index=InsIndex(Index);
                             Index->elem=img->img;
@@ -283,7 +283,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
 
                     btn->btn->SetEffect(EFFECT_FADE, 50);
                     HaltGui();
-                    mainWindow->Append(btn->btn);
+                    mainWindow->BInsert(btn->btn);
                     ResumeGui();
                     Index=InsIndex(Index);
                     Index->elem=btn->btn;
@@ -346,7 +346,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                         text->txt->SetEffect(EFFECT_FADE, 50);
                         SetFont(text->txt, lista->value[i].mode);
                         HaltGui();
-                        mainWindow->Append(text->txt);
+                        mainWindow->BInsert(text->txt);
                         ResumeGui();
                         offset+=text->txt->GetTextWidth();
                         Index=InsIndex(Index);

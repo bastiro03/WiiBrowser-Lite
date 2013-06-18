@@ -441,13 +441,15 @@ int SSettings::FindUrl(char *url)
     return -1;
 }
 
-void SSettings::Remove(int f)
+void SSettings::Remove(int f, bool update)
 {
     if(f < 0 || f >= N)
         return;
 
+    if(!update)
+        bzero(Favorites[f], 512);
+
     char filepath[256];
-    bzero(Favorites[f], 512);
     snprintf(filepath, sizeof(filepath), "%s/thumbnails/thumb_%d.gxt", AppPath, f);
 
     if(Thumbnails[f])

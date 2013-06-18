@@ -367,7 +367,10 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                 int t = 0;
                 if ((t = Settings.FindUrl(new_page)) >= 0
                         || (t = Settings.FindUrl(url)) >= 0)
+                {
+                    Settings.Remove(t, 1);
                     Settings.Thumbnails[t] = video;
+                }
                 // else free(video);
                 else mem2_free(video, MEM2_VIDEO);
                 done = true;

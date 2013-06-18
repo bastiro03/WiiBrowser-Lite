@@ -89,7 +89,7 @@ class SSettings
         //!Return index
         int FindUrl(char *url);
         //!Remove favorite
-        void Remove(int f);
+        void Remove(int f, bool update = false);
         //!Save Settings
         bool Save();
 		//!Reset Settings

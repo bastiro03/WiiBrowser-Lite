@@ -1,12 +1,76 @@
-#include "ruleset.h"
-#include "menu.h"
-#include "main.h"
-
+#include <string.h>
+#include <stdlib.h>
 #include "common.h"
 #include "config.h"
 
-#include <string.h>
-#include <stdlib.h>
+#include "menu.h"
+#include "main.h"
+#include "ruleset.h"
+
+extern "C"
+{
+    #include <lua/lua.h>
+    #include <lua/lauxlib.h>
+    #include <lua/lualib.h>
+}
+
+/* call a function `f' defined in Lua */
+const char *func (lua_State *L, const char *url, const char *html)
+{
+    const char *ret = NULL;
+
+    /* push functions and arguments */
+    lua_getglobal(L, "main");  /* function to be called */
+    lua_pushstring(L, url);   /* push 1st argument */
+    lua_pushstring(L, html);   /* push 2nd argument */
+
+    /* do the call (2 arguments, 1 result) */
+    if (lua_pcall(L, 2, 1, 0) != 0)
+        printf("%s", lua_tostring(L, -1));
+
+    /* retrieve result */
+    if (lua_isstring(L, -1))
+        ret = lua_tostring(L, -1);
+
+    lua_pop(L, 1);  /* pop returned value */
+    return ret;
+}
+
+bool executeLua(string *html, char *url)
+{
+    /*
+     * All Lua contexts are held in this structure. We work with it almost
+     * all the time.
+     */
+    lua_State *L = lua_open();
+
+    /* Load Lua libraries */
+    luaL_openlibs(L);
+
+    /* Load the file containing the script we are going to run */
+    int status = luaL_loadfile(L, "scripts/main.lua");
+    if (status)
+    {
+        /* If something went wrong, error message is at the top of */
+        /* the stack */
+        fprintf(stderr, "Couldn't load file: %s\n", lua_tostring(L, -1));
+        return false;
+    }
+
+    /* Initial run through of file */
+    if(lua_pcall(L,0,0,0)) {
+		printf("\n\nFailed running file initially - Could be a syntax error\n");
+		return false;
+	}
+
+	const char *ret = func(L, url, html->c_str());
+	if(ret)
+        *html = ret;
+
+	/* Cya, Lua */
+    lua_close(L);
+    return true;
+}
 
 void apply_ruleset(string *html, char *url)
 {
@@ -83,7 +147,12 @@ void apply_ruleset(string *html, char *url)
     }
 #endif
 
-    /* javascript coolrom.com */
+    if(Settings.ExecLua)
+        executeLua(html, url);
+}
+
+/*
+    // javascript coolrom.com
     if(!strncmp(url, "http://coolrom.com/dlpop.php", 28))
     {
         if((substr_b = html->find("<font size=\"3\">")) == string::npos)
@@ -95,4 +164,4 @@ void apply_ruleset(string *html, char *url)
 
         html->insert(pos, *html, substr_b, span);
     }
-}
+*/

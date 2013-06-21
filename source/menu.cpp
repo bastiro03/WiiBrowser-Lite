@@ -1143,7 +1143,8 @@ static int MenuAdvanced()
     OptionList options;
     sprintf(options.name[i++], "UserAgent");
     sprintf(options.name[i++], "Render IFrames");
-    sprintf(options.name[i++], "Document.Write");
+    sprintf(options.name[i++], "Execute Lua scripts");
+    sprintf(options.name[i++], "Document.write");
     sprintf(options.name[i++], "Proxy (url:port)");
     options.length = i;
 
@@ -1208,9 +1209,12 @@ static int MenuAdvanced()
             Settings.IFrame = !Settings.IFrame;
             break;
         case 2:
-            Settings.DocWrite = !Settings.DocWrite;
+            Settings.ExecLua = !Settings.ExecLua;
             break;
         case 3:
+            Settings.DocWrite = !Settings.DocWrite;
+            break;
+        case 4:
             OnScreenKeyboard(mainWindow, Settings.Proxy, 256);
             break;
         }
@@ -1222,12 +1226,14 @@ static int MenuAdvanced()
                 Settings.Language = LANG_JAPANESE;
 
             snprintf (options.value[0], 256, "%s", AgentName[Settings.UserAgent]);
-            snprintf (options.value[3], 256, "%s", Settings.Proxy);
+            snprintf (options.value[4], 256, "%s", Settings.Proxy);
 
             if (Settings.IFrame == 0) sprintf (options.value[1], "Off");
             else if (Settings.IFrame == 1) sprintf (options.value[1], "On");
-            if (Settings.DocWrite == 0) sprintf (options.value[2], "Disabled");
-            else if (Settings.DocWrite == 1) sprintf (options.value[2], "Enabled");
+            if (Settings.ExecLua == 0) sprintf (options.value[2], "Off");
+            else if (Settings.ExecLua == 1) sprintf (options.value[2], "On");
+            if (Settings.DocWrite == 0) sprintf (options.value[3], "Disabled");
+            else if (Settings.DocWrite == 1) sprintf (options.value[3], "Enabled");
 
             optionBrowser.TriggerUpdate();
         }

@@ -109,10 +109,6 @@ class SSettings
         int UserAgent;
         int Autoupdate;
 
-        bool DocWrite;
-        bool IFrame;
-        bool CleanExit;
-
         bool ShowTooltip;
         bool ShowThumbs;
         bool Restore;
@@ -127,6 +123,11 @@ class SSettings
         char DefaultFolder[256];
         char UserFolder[256];
         char Proxy[256];
+
+        bool DocWrite;
+        bool IFrame;
+        bool CleanExit;
+        bool ExecLua;
 
         char *Favorites[N];
         u8 *Thumbnails[N];

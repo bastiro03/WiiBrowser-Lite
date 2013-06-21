@@ -71,6 +71,10 @@ void SSettings::SetDefault()
     ShowTooltip = true;
     Restore = true;
     ShowThumbs = true;
+    CleanExit = true;
+
+    IFrame = false;
+    DocWrite = false;
 
     sprintf(Homepage, DEFAULT_HOMEPAGE);
     sprintf(AppPath, "%s%s", BootDevice, DEFAULT_APP_PATH);
@@ -89,7 +93,7 @@ void SSettings::SetDefault()
     memset(StartPage, 0, 256);
 }
 
-bool SSettings::Save()
+bool SSettings::Save(bool clean)
 {
     if(!FindConfig())
         return false;
@@ -114,18 +118,23 @@ bool SSettings::Save()
 	fprintf(file, "# Main Settings\r\n\r\n");
 	fprintf(file, "Language = %d\r\n", Language);
 	fprintf(file, "Revision = %d\r\n", Revision);
-	fprintf(file, "UserAgent = %d\r\n", UserAgent);
 	fprintf(file, "Autoupdate = %d\r\n", Autoupdate);
 	fprintf(file, "ShowTooltip = %d\r\n", ShowTooltip);
 	fprintf(file, "ShowThumbnails = %d\r\n", ShowThumbs);
 	fprintf(file, "RestoreSession = %d\r\n", Restore);
 	fprintf(file, "DefaultFolder = %s\r\n", DefaultFolder);
 	fprintf(file, "Homepage = %s\r\n", Homepage);
-	fprintf(file, "Proxy = %s\r\n", Proxy);
 
 	fprintf(file, "\r\n# Favorites\r\n\r\n");
 	for(int i = 0; i < N; i++)
         fprintf(file, "Favorite(%d) = %s\r\n", i, Favorites[i]);
+
+    fprintf(file, "\r\n# Advanced\r\n\r\n");
+	fprintf(file, "UserAgent = %d\r\n", UserAgent);
+	fprintf(file, "IFrame = %d\r\n", IFrame);
+	fprintf(file, "DocWrite = %d\r\n", DocWrite);
+	fprintf(file, "CleanExit = %d\r\n", clean);
+	fprintf(file, "Proxy = %s\r\n", Proxy);
     fclose(file);
 
     // save thumbnails
@@ -232,7 +241,7 @@ bool SSettings::Load()
         save_mem("BROKEN");
         #endif
 
-        this->Save();
+        this->Save(0);
         return false;
     }
 
@@ -271,7 +280,7 @@ bool SSettings::Reset()
 {
     this->SetDefault();
 
-    if(this->Save())
+    if(this->Save(0))
         return true;
 
 	return false;
@@ -287,13 +296,13 @@ bool SSettings::SetSetting(char *name, char *value)
 		}
 		return true;
 	}
-	if (strcmp(name, "Revision") == 0) {
+	else if (strcmp(name, "Revision") == 0) {
 		if (sscanf(value, "%d", &i) == 1) {
 			Revision = i;
 		}
 		return true;
 	}
-	if (strcmp(name, "UserAgent") == 0) {
+	else if (strcmp(name, "UserAgent") == 0) {
 		if (sscanf(value, "%d", &i) == 1) {
 			UserAgent = i;
 		}
@@ -340,6 +349,24 @@ bool SSettings::SetSetting(char *name, char *value)
     else if (strcmp(name, "DefaultFolder") == 0) {
 	    snprintf(DefaultFolder, sizeof(DefaultFolder), value);
 	    this->ChangeFolder();
+		return true;
+	}
+    else if (strcmp(name, "IFrame") == 0) {
+		if (sscanf(value, "%d", &i) == 1) {
+			IFrame = i;
+		}
+		return true;
+	}
+    else if (strcmp(name, "DocWrite") == 0) {
+		if (sscanf(value, "%d", &i) == 1) {
+			DocWrite = i;
+		}
+		return true;
+	}
+    else if (strcmp(name, "CleanExit") == 0) {
+		if (sscanf(value, "%d", &i) == 1) {
+			CleanExit = i;
+		}
 		return true;
 	}
 

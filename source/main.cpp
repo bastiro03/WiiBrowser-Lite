@@ -174,7 +174,7 @@ int ExitRequested = 0;
 
 void ExitApp()
 {
-    Settings.Save();
+    Settings.Save(1);
     ShutoffRumble();
     StopGX();
     ShutdownAudio();

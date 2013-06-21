@@ -2,7 +2,7 @@
 #define _CONFIG_H_
 
 #undef  MPLAYER
-#undef  DOCWRITE
-#undef	IFRAME
+#define DOCWRITE
+#define	IFRAME
 
 #endif

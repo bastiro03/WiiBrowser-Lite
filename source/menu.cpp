@@ -476,7 +476,7 @@ void StopLoading()
  * presenting a user with a choice
  ***************************************************************************/
 int
-WindowPrompt(const char *title, const char *msg, const char *btn1Label, const char *btn2Label)
+WindowPrompt(const char *title, const char *msg, const char *btn1Label, const char *btn2Label, const char *longText)
 {
     int choice = -1;
 
@@ -496,6 +496,7 @@ WindowPrompt(const char *title, const char *msg, const char *btn1Label, const ch
     });
     titleTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
     titleTxt.SetPosition(0,40);
+
     GuiText msgTxt(msg, 22, (GXColor)
     {
         0, 0, 0, 255
@@ -503,6 +504,15 @@ WindowPrompt(const char *title, const char *msg, const char *btn1Label, const ch
     msgTxt.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
     msgTxt.SetPosition(0,-20);
     msgTxt.SetWrap(true, 400);
+
+    GuiLongText msgLongTxt(longText, 22, (GXColor)
+    {
+        0, 0, 0, 255
+    });
+    msgLongTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+    msgLongTxt.SetPosition(20,130);
+    msgLongTxt.SetLinesToDraw(8);
+    msgLongTxt.SetMaxWidth(400);
 
     GuiText btn1Txt(btn1Label, 22, (GXColor)
     {
@@ -551,6 +561,12 @@ WindowPrompt(const char *title, const char *msg, const char *btn1Label, const ch
     promptWindow.Append(&titleTxt);
     promptWindow.Append(&msgTxt);
 
+    if(longText)
+    {
+        msgTxt.SetPosition(0,-52);
+        promptWindow.Append(&msgLongTxt);
+    }
+
     if(btn1Label)
         promptWindow.Append(&btn1);
 
@@ -590,23 +606,40 @@ WindowPrompt(const char *title, const char *msg, const char *btn1Label, const ch
  ***************************************************************************/
 static void *UpdateThread (void *arg)
 {
-    int appversion = 0;
+    struct update upd;
+    char message[512];
+    char caption[50];
+    char *longText = NULL;
+
     while(1)
     {
         LWP_SuspendThread(updatethread);
-        if(updateThreadHalt || !(appversion=checkUpdate()))
+        if(updateThreadHalt)
+            return NULL;
+
+        upd = checkUpdate();
+        if(!upd.appversion)
             return NULL;
         usleep(500*1000);
 
+        if(strlen(upd.changelog) > 0)
+        {
+            sprintf(caption, "Changelog rev%d", upd.appversion);
+            sprintf(message, upd.changelog);
+            longText = message;
+        }
+        else sprintf(caption, "An update is available!");
+
         bool installUpdate = WindowPrompt(
                                  "Update Available",
-                                 "An update is available!",
+                                 caption,
                                  "Update now",
-                                 "Update later");
+                                 "Update later",
+                                 longText);
 
         if(installUpdate)
         {
-            if(downloadUpdate(appversion))
+            if(downloadUpdate(upd.appversion))
                 ExitRequested = true;
         }
     }
@@ -1098,25 +1131,24 @@ static int MenuBrowseDevice()
 /****************************************************************************
  * MenuSettings
  ***************************************************************************/
-static int MenuSettings()
+static int MenuAdvanced()
 {
     int menu = MENU_NONE;
     int ret, i = 0;
+    char version[50];
+
     bool firstRun = true;
+    bool changed = false;
 
     OptionList options;
-    sprintf(options.name[i++], "Homepage");
-    sprintf(options.name[i++], "Save Folder");
-    sprintf(options.name[i++], "Show Tooltips");
-    sprintf(options.name[i++], "Show Thumbnails");
-    sprintf(options.name[i++], "Autoupdate");
-    sprintf(options.name[i++], "Language");
-    sprintf(options.name[i++], "Restore Session");
     sprintf(options.name[i++], "UserAgent");
+    sprintf(options.name[i++], "Render IFrames");
+    sprintf(options.name[i++], "Document.Write");
     sprintf(options.name[i++], "Proxy (url:port)");
     options.length = i;
 
-    GuiText titleTxt("Settings", 28, (GXColor)
+    sprintf(version, "WiiBrowser Rev%d", Settings.Revision);
+    GuiText titleTxt(version, 28, (GXColor)
     {
         0, 0, 0, 255
     });
@@ -1162,6 +1194,144 @@ static int MenuSettings()
     {
         usleep(THREAD_SLEEP);
         ret = optionBrowser.GetClickedOption();
+        if(ret >= 0)
+            changed = true;
+
+        switch (ret)
+        {
+        case 0:
+            Settings.UserAgent++;
+            if (Settings.UserAgent >= MAXAGENTS)
+                Settings.UserAgent = 0;
+            break;
+        case 1:
+            Settings.IFrame = !Settings.IFrame;
+            break;
+        case 2:
+            Settings.DocWrite = !Settings.DocWrite;
+            break;
+        case 3:
+            OnScreenKeyboard(mainWindow, Settings.Proxy, 256);
+            break;
+        }
+
+        if(ret >= 0 || firstRun)
+        {
+            firstRun = false;
+            if (Settings.Language > LANG_GERMAN)
+                Settings.Language = LANG_JAPANESE;
+
+            snprintf (options.value[0], 256, "%s", AgentName[Settings.UserAgent]);
+            snprintf (options.value[3], 256, "%s", Settings.Proxy);
+
+            if (Settings.IFrame == 0) sprintf (options.value[1], "Off");
+            else if (Settings.IFrame == 1) sprintf (options.value[1], "On");
+            if (Settings.DocWrite == 0) sprintf (options.value[2], "Disabled");
+            else if (Settings.DocWrite == 1) sprintf (options.value[2], "Enabled");
+
+            optionBrowser.TriggerUpdate();
+        }
+
+        if(backBtn.GetState() == STATE_CLICKED)
+        {
+            if(changed)
+                Settings.Save(0);
+            menu = prevMenu;
+        }
+    }
+
+    w.SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_OUT, 30);
+    while(w.GetEffect() > 0)
+        usleep(THREAD_SLEEP);
+
+    HaltGui();
+    mainWindow->Remove(&w);
+    ResumeGui();
+    return menu;
+}
+
+static int MenuSettings()
+{
+    int menu = MENU_NONE;
+    int ret, i = 0;
+    bool firstRun = true;
+    bool changed = false;
+
+    OptionList options;
+    sprintf(options.name[i++], "Homepage");
+    sprintf(options.name[i++], "Save Folder");
+    sprintf(options.name[i++], "Show Tooltips");
+    sprintf(options.name[i++], "Show Thumbnails");
+    sprintf(options.name[i++], "Autoupdate");
+    sprintf(options.name[i++], "Language");
+    sprintf(options.name[i++], "Restore Session");
+    options.length = i;
+
+    GuiText titleTxt("Settings", 28, (GXColor)
+    {
+        0, 0, 0, 255
+    });
+    titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+    titleTxt.SetPosition(50,50);
+
+    GuiSound btnSoundOver(button_over_pcm, button_over_pcm_size, SOUND_PCM);
+    GuiImageData btnOutline(button_png);
+    GuiImageData btnOutlineOver(button_over_png);
+
+    GuiText backBtnTxt("Go Back", 22, (GXColor)
+    {
+        0, 0, 0, 255
+    });
+    GuiImage backBtnImg(&btnOutline);
+    GuiImage backBtnImgOver(&btnOutlineOver);
+    GuiButton backBtn(btnOutline.GetWidth(), btnOutline.GetHeight());
+    backBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
+    backBtn.SetPosition(50, -35);
+    backBtn.SetLabel(&backBtnTxt);
+    backBtn.SetImage(&backBtnImg);
+    backBtn.SetImageOver(&backBtnImgOver);
+    backBtn.SetSoundOver(&btnSoundOver);
+    backBtn.SetTrigger(trigA);
+    backBtn.SetEffectGrow();
+
+    GuiText devBtnTxt("Advanced", 22, (GXColor)
+    {
+        0, 0, 0, 255
+    });
+    GuiImage devBtnImg(&btnOutline);
+    GuiImage devBtnImgOver(&btnOutlineOver);
+    GuiButton devBtn(btnOutline.GetWidth(), btnOutline.GetHeight());
+    devBtn.SetAlignment(ALIGN_RIGHT, ALIGN_BOTTOM);
+    devBtn.SetPosition(-50, -35);
+    devBtn.SetLabel(&devBtnTxt);
+    devBtn.SetImage(&devBtnImg);
+    devBtn.SetImageOver(&devBtnImgOver);
+    devBtn.SetSoundOver(&btnSoundOver);
+    devBtn.SetTrigger(trigA);
+    devBtn.SetEffectGrow();
+
+    GuiOptionBrowser optionBrowser(552, 248, &options);
+    optionBrowser.SetPosition(0, 108);
+    optionBrowser.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
+    optionBrowser.SetCol2Position(185);
+
+    GuiWindow w(screenwidth, screenheight);
+    w.Append(&backBtn);
+    w.Append(&devBtn);
+    w.Append(&optionBrowser);
+    w.Append(&titleTxt);
+    w.SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_IN, 30);
+
+    HaltGui();
+    mainWindow->Append(&w);
+    ResumeGui();
+
+    while(menu == MENU_NONE)
+    {
+        usleep(THREAD_SLEEP);
+        ret = optionBrowser.GetClickedOption();
+        if(ret >= 0)
+            changed = true;
 
         switch (ret)
         {
@@ -1197,16 +1367,6 @@ static int MenuSettings()
         case 6:
             Settings.Restore = !Settings.Restore;
             break;
-
-        case 7:
-            Settings.UserAgent++;
-            if (Settings.UserAgent >= MAXAGENTS)
-                Settings.UserAgent = 0;
-            break;
-
-        case 8:
-            OnScreenKeyboard(mainWindow, Settings.Proxy, 256);
-            break;
         }
 
         if(ret >= 0 || firstRun)
@@ -1217,8 +1377,6 @@ static int MenuSettings()
 
             snprintf (options.value[0], 256, "%s", Settings.Homepage);
             snprintf (options.value[1], 256, "%s", Settings.DefaultFolder);
-            snprintf (options.value[7], 256, "%s", AgentName[Settings.UserAgent]);
-            snprintf (options.value[8], 256, "%s", Settings.Proxy);
 
             if (Settings.ShowTooltip == 0) sprintf (options.value[2], "Hide");
             else if (Settings.ShowTooltip == 1) sprintf (options.value[2], "Show");
@@ -1241,16 +1399,27 @@ static int MenuSettings()
 
         if(backBtn.GetState() == STATE_CLICKED)
         {
-            Settings.Save();
             menu = prevMenu;
+        }
+        if(devBtn.GetState() == STATE_CLICKED)
+        {
+            menu = MENU_DEVELOPER;
         }
     }
 
-    w.SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_OUT, 30);
-    while(w.GetEffect() > 0) usleep(THREAD_SLEEP);
+    if(changed)
+        Settings.Save(0);
+
+    if(menu == MENU_HOME)
+        w.SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_OUT, 50);
+    else w.SetEffect(EFFECT_SLIDE_TOP | EFFECT_SLIDE_OUT, 50);
+
+    while(w.GetEffect() > 0)
+        usleep(THREAD_SLEEP);
 
     HaltGui();
     mainWindow->Remove(&w);
+    ResumeGui();
     return menu;
 }
 
@@ -1723,7 +1892,10 @@ jump:
     }
 
     if (!history || strcmp(history->url.c_str(),url))
+    {
         history=InsUrl(history,url);
+        DumpList(history);
+    }
     usleep(500*1000);
 
     HaltGui();
@@ -2005,9 +2177,12 @@ void Init()
     curl_handle = curl_easy_init();
     memset(prev_page, 0, sizeof(prev_page));
 
-    if (Settings.Restore)
-        LoadSession();
-    else DeleteSession();
+    if (!Settings.Restore && Settings.CleanExit)
+    {
+        Settings.Save(0);
+        DeleteSession();
+    }
+    else LoadSession();
 
     #ifdef MPLAYER
     if(!InitMPlayer())
@@ -2055,6 +2230,8 @@ void MainMenu(int menu)
 {
     int currentMenu = menu;
     Init();
+    if(!Settings.CleanExit)
+        WindowPrompt("Oops.. this is embarrassing", "The app didn't close correctly, the previous session has been automatically restored", "OK", NULL);
 
     while(currentMenu != MENU_EXIT)
     {
@@ -2068,6 +2245,9 @@ void MainMenu(int menu)
             break;
         case MENU_SETTINGS:
             currentMenu = MenuSettings();
+            break;
+        case MENU_DEVELOPER:
+            currentMenu = MenuAdvanced();
             break;
         case MENU_FAVORITES:
             currentMenu = MenuFavorites();

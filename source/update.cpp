@@ -15,6 +15,28 @@
 #include "common.h"
 #include "networkop.h"
 
+int readFile(FILE *hfile, struct update *result)
+{
+    char line[512];
+    int new_v;
+    int gettext = -1;
+
+    fscanf (hfile, "APPVERSION: R%d", &new_v);
+
+	while (fgets(line, sizeof(line), hfile))
+	{
+        if(gettext >= 0)
+        {
+            strcpy(result->changelog+gettext, line);
+            gettext = strlen(result->changelog);
+        }
+
+		else if (!strncmp(line, "# Changelog", 11))
+            gettext = 0;
+	}
+    return new_v;
+}
+
 bool downloadUpdate(int appversion) {
 	char updateFile[30];
 	sprintf(updateFile, "update.dol");
@@ -48,7 +70,7 @@ bool downloadUpdate(int appversion) {
 	if (result)
 	{
 	    Settings.Revision = appversion;
-	    Settings.Save();
+	    Settings.Save(0);
 	}
 
 	free(data->url);
@@ -56,13 +78,14 @@ bool downloadUpdate(int appversion) {
 	return result;
 }
 
-int checkUpdate() {
+struct update checkUpdate() {
 	char updateFile[30];
 	sprintf(updateFile, "update.cfg");
-    int result = 0;
-
     char url[70];
+
+    struct update result;
     struct block HTML;
+    result.appversion = 0;
 
     if (Settings.Autoupdate == STABLE)
         sprintf(url, "https://dl.dropbox.com/s/wp0xh4gloks9i2p/wiibrowser.cfg?dl=1");
@@ -79,10 +102,10 @@ int checkUpdate() {
             int old_v, new_v;
             hfile = fopen(updateFile, "r");
             old_v = Settings.Revision;
-            fscanf (hfile, "APPVERSION: R%d", &new_v);
+            new_v = readFile(hfile, &result);
 
             if (new_v>old_v)
-                result = new_v;
+                result.appversion = new_v;
 		}
         fclose(hfile);
         remove(updateFile); // delete update file

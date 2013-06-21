@@ -91,7 +91,7 @@ class SSettings
         //!Remove favorite
         void Remove(int f, bool update = false);
         //!Save Settings
-        bool Save();
+        bool Save(bool clean);
 		//!Reset Settings
         bool Reset();
 		//!Set a Setting
@@ -108,6 +108,10 @@ class SSettings
         int Revision;
         int UserAgent;
         int Autoupdate;
+
+        bool DocWrite;
+        bool IFrame;
+        bool CleanExit;
 
         bool ShowTooltip;
         bool ShowThumbs;

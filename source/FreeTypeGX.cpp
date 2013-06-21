@@ -530,13 +530,25 @@ uint16_t FreeTypeGX::drawLongText(int16_t x, int16_t y, const wchar_t *text, GXC
 
 	while (text[i])
 	{
-		if (maxWidth > 0 && x_pos > startWidth+maxWidth) {
+		if (maxWidth > 0 && x_pos > startWidth+maxWidth)
+		{
+            cur_line++;
+			x_pos = 0;
+			y_offset += lineDistance;
 
+			if(text[i] == ' ')
+			{
+                i++;
+                continue;
+			}
+
+            /*
 			while(text[i] != 0 && text[i] != '\n')
 				i++;
 
 			if(!text[i])
 				break;
+            */
 		}
 
 		if(text[i] == '\n') {

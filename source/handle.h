@@ -2,7 +2,7 @@
 #include "video.h"
 #include "fileop.h"
 
-#define MAXLEN 256
+#define MAXLEN 512
 
 extern "C" {
 #include "urlcode.h"

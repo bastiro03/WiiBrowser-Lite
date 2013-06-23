@@ -36,6 +36,7 @@ GuiOptionBrowser::GuiOptionBrowser(int w, int h, OptionList * l)
 	bgOptionsImg = new GuiImage(bgOptions);
 	bgOptionsImg->SetParent(this);
 	bgOptionsImg->SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
+	bgOptionsImg->SetScaleY((float)height/bgOptionsImg->GetHeight());
 
 	bgOptionsEntry = new GuiImageData(bg_options_entry_png);
 

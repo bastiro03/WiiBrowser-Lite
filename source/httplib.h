@@ -41,6 +41,8 @@ struct block
 
 extern const struct block emptyblock;
 struct block downloadfile(CURL *curl_handle, const char *url, FILE *hfile);
+bool postcomment(CURL *curl_handle, char *name, char *content);
+
 void save(struct block *b, FILE *hfile);
 bool validProxy();
 

@@ -1141,11 +1141,9 @@ static int MenuAdvanced()
     bool changed = false;
 
     OptionList options;
-    sprintf(options.name[i++], "UserAgent");
     sprintf(options.name[i++], "Render IFrames");
     sprintf(options.name[i++], "Execute Lua scripts");
     sprintf(options.name[i++], "Document.write");
-    sprintf(options.name[i++], "Proxy (url:port)");
     options.length = i;
 
     sprintf(version, "WiiBrowser Rev%d", Settings.Revision);
@@ -1154,7 +1152,7 @@ static int MenuAdvanced()
         0, 0, 0, 255
     });
     titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-    titleTxt.SetPosition(50,50);
+    titleTxt.SetPosition(50,45);
 
     GuiSound btnSoundOver(button_over_pcm, button_over_pcm_size, SOUND_PCM);
     GuiImageData btnOutline(button_png);
@@ -1176,20 +1174,71 @@ static int MenuAdvanced()
     backBtn.SetTrigger(trigA);
     backBtn.SetEffectGrow();
 
-    GuiOptionBrowser optionBrowser(552, 248, &options);
-    optionBrowser.SetPosition(0, 108);
+    GuiText sendBtnTxt("Send report", 22, (GXColor)
+    {
+        0, 0, 0, 255
+    });
+    GuiImage sendBtnImg(&btnOutline);
+    GuiImage sendBtnImgOver(&btnOutlineOver);
+    GuiButton sendBtn(btnOutline.GetWidth(), btnOutline.GetHeight());
+    sendBtn.SetAlignment(ALIGN_RIGHT, ALIGN_BOTTOM);
+    sendBtn.SetPosition(-50, -35);
+    sendBtn.SetLabel(&sendBtnTxt);
+    sendBtn.SetImage(&sendBtnImg);
+    sendBtn.SetImageOver(&sendBtnImgOver);
+    sendBtn.SetSoundOver(&btnSoundOver);
+    sendBtn.SetTrigger(trigA);
+    sendBtn.SetEffectGrow();
+
+    GuiImageData TextboxImgData(bg_options_png, bg_options_png_size);
+    GuiImage TextboxImg(&TextboxImgData);
+    TextboxImg.SetScaleX((float)552/TextboxImg.GetWidth());
+    TextboxImg.SetScaleY((float)120/TextboxImg.GetHeight());
+    GuiButton postComment(TextboxImg.GetRealWidth(), TextboxImg.GetRealHeight());
+
+    GuiText Post("Report bug", 20, (GXColor)
+    {
+        0, 0, 0, 255
+    });
+    Post.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+    Post.SetPosition(0,-25);
+    postComment.SetLabel(&Post);
+
+    GuiLongText Content("", 20, (GXColor)
+    {
+        0, 0, 0, 255
+    });
+    Content.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+    Content.SetLinesToDraw(TextboxImg.GetRealHeight()/25);
+    Content.SetMaxWidth(TextboxImg.GetRealWidth()-45);
+    Content.SetPosition(20, 25);
+
+    postComment.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
+    postComment.SetPosition(0,250);
+    postComment.SetLabel(&Content, 1);
+    postComment.SetImage(&TextboxImg);
+    postComment.SetSoundOver(&btnSoundOver);
+    postComment.SetTrigger(trigA);
+
+    GuiOptionBrowser optionBrowser(552, 93, &options);
+    optionBrowser.SetPosition(0, 103);
     optionBrowser.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
     optionBrowser.SetCol2Position(185);
 
     GuiWindow w(screenwidth, screenheight);
     w.Append(&backBtn);
+    w.Append(&sendBtn);
     w.Append(&optionBrowser);
     w.Append(&titleTxt);
+    w.Append(&postComment);
     w.SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_IN, 30);
 
     HaltGui();
     mainWindow->Append(&w);
     ResumeGui();
+
+    char dataToSend[2048];
+    memset(dataToSend, 0, sizeof(dataToSend));
 
     while(menu == MENU_NONE)
     {
@@ -1201,41 +1250,49 @@ static int MenuAdvanced()
         switch (ret)
         {
         case 0:
-            Settings.UserAgent++;
-            if (Settings.UserAgent >= MAXAGENTS)
-                Settings.UserAgent = 0;
-            break;
-        case 1:
             Settings.IFrame = !Settings.IFrame;
             break;
-        case 2:
+        case 1:
             Settings.ExecLua = !Settings.ExecLua;
             break;
-        case 3:
+        case 2:
             Settings.DocWrite = !Settings.DocWrite;
-            break;
-        case 4:
-            OnScreenKeyboard(mainWindow, Settings.Proxy, 256);
             break;
         }
 
         if(ret >= 0 || firstRun)
         {
             firstRun = false;
-            if (Settings.Language > LANG_GERMAN)
-                Settings.Language = LANG_JAPANESE;
 
-            snprintf (options.value[0], 256, "%s", AgentName[Settings.UserAgent]);
-            snprintf (options.value[4], 256, "%s", Settings.Proxy);
-
-            if (Settings.IFrame == 0) sprintf (options.value[1], "Off");
-            else if (Settings.IFrame == 1) sprintf (options.value[1], "On");
-            if (Settings.ExecLua == 0) sprintf (options.value[2], "Off");
-            else if (Settings.ExecLua == 1) sprintf (options.value[2], "On");
-            if (Settings.DocWrite == 0) sprintf (options.value[3], "Disabled");
-            else if (Settings.DocWrite == 1) sprintf (options.value[3], "Enabled");
+            if (Settings.IFrame == 0) sprintf (options.value[0], "Off");
+            else if (Settings.IFrame == 1) sprintf (options.value[0], "On");
+            if (Settings.ExecLua == 0) sprintf (options.value[1], "Off");
+            else if (Settings.ExecLua == 1) sprintf (options.value[1], "On");
+            if (Settings.DocWrite == 0) sprintf (options.value[2], "Disabled");
+            else if (Settings.DocWrite == 1) sprintf (options.value[2], "Enabled");
 
             optionBrowser.TriggerUpdate();
+        }
+
+        if(sendBtn.GetState() == STATE_CLICKED)
+        {
+            if(strlen(dataToSend) > 0)
+            {
+                postcomment(curl_handle, "Anonymous", dataToSend);
+                WindowPrompt("Send report", "Thanks, your comment was posted at: http://wiibrowser.altervista.org/", "Ok", NULL);
+            }
+
+            memset(dataToSend, 0, sizeof(dataToSend));
+            Content.SetText(dataToSend);
+            sendBtn.ResetState();
+        }
+
+        if(postComment.GetState() == STATE_CLICKED)
+        {
+            snprintf(dataToSend, 1024, Content.GetText());
+            OnScreenKeyboard(mainWindow, dataToSend, 1024);
+            Content.SetText(dataToSend);
+            postComment.ResetState();
         }
 
         if(backBtn.GetState() == STATE_CLICKED)
@@ -1271,6 +1328,8 @@ static int MenuSettings()
     sprintf(options.name[i++], "Autoupdate");
     sprintf(options.name[i++], "Language");
     sprintf(options.name[i++], "Restore Session");
+    sprintf(options.name[i++], "UserAgent");
+    sprintf(options.name[i++], "Proxy (url:port)");
     options.length = i;
 
     GuiText titleTxt("Settings", 28, (GXColor)
@@ -1278,7 +1337,7 @@ static int MenuSettings()
         0, 0, 0, 255
     });
     titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-    titleTxt.SetPosition(50,50);
+    titleTxt.SetPosition(50,45);
 
     GuiSound btnSoundOver(button_over_pcm, button_over_pcm_size, SOUND_PCM);
     GuiImageData btnOutline(button_png);
@@ -1317,7 +1376,7 @@ static int MenuSettings()
     devBtn.SetEffectGrow();
 
     GuiOptionBrowser optionBrowser(552, 248, &options);
-    optionBrowser.SetPosition(0, 108);
+    optionBrowser.SetPosition(0, 103);
     optionBrowser.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
     optionBrowser.SetCol2Position(185);
 
@@ -1373,6 +1432,16 @@ static int MenuSettings()
         case 6:
             Settings.Restore = !Settings.Restore;
             break;
+
+        case 7:
+            Settings.UserAgent++;
+            if (Settings.UserAgent >= MAXAGENTS)
+                Settings.UserAgent = 0;
+            break;
+
+        case 8:
+            OnScreenKeyboard(mainWindow, Settings.Proxy, 256);
+            break;
         }
 
         if(ret >= 0 || firstRun)
@@ -1383,6 +1452,8 @@ static int MenuSettings()
 
             snprintf (options.value[0], 256, "%s", Settings.Homepage);
             snprintf (options.value[1], 256, "%s", Settings.DefaultFolder);
+            snprintf (options.value[7], 256, "%s", AgentName[Settings.UserAgent]);
+            snprintf (options.value[8], 256, "%s", Settings.Proxy);
 
             if (Settings.ShowTooltip == 0) sprintf (options.value[2], "Hide");
             else if (Settings.ShowTooltip == 1) sprintf (options.value[2], "Show");

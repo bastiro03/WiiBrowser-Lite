@@ -303,6 +303,21 @@ struct block postrequest(CURL *curl_handle, const char *url, curl_httppost *data
 	return b;
 }
 
+bool postcomment(CURL *curl_handle, char *name, char *content)
+{
+    char request[512];
+    char *r = request;
+
+    r += sprintf(r, "http://www.htmlcommentbox.com/post?");
+    r += sprintf(r, "ajax=true&page=http%%3A%%2F%%2Fwiibrowser.altervista.org%%2Fmainsite%%2Ftracker.php");
+    r += sprintf(r, "&refer=http%%3A%%2F%%2Fwiibrowser.altervista.org%%2Fmainsite%%2Ftracker.php%%23HCB_comment_box&opts=16862");
+    r += sprintf(r, "&mod=%%241%%24wq1rdBcg%%249ZNKlgbkqbvBdR6hqvyy91&replies_to=&name=%s&content=%s", name, content);
+
+    struct block html = postrequest(curl_handle, request, NULL);
+    free(html.data);
+    return (html.size > 0);
+}
+
 struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
 {
     char *ct = NULL;

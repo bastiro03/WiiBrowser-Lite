@@ -97,14 +97,17 @@ void apply_ruleset(string *html, char *url)
             for(substr_e = 0; (substr_e = ext.find("document.write(", substr_e)) != string::npos;)
             {
                 substr_e += 15;
-                pos = ext.find("\");", substr_e) + 1;
+                string temp = ")";
+
+                pos = ext.find(ext.at(substr_e)+temp, substr_e) + 1;
                 span = pos - substr_e;
                 tok = ext.substr(substr_e, span);
 
-                for(ins = 0; (ins = tok.find("\"", ins)) != string::npos; ins++)
+                char delim = tok.at(0);
+                for(ins = 0; (ins = tok.find(delim, ins)) != string::npos; ins++)
                 {
                     ins += 1;
-                    last = tok.find("\"", ins);
+                    last = tok.find(delim, ins);
                     temp.append(tok.substr(ins, last - ins));
                     ins = last;
                 }

@@ -713,13 +713,21 @@ int getTime(string url)
 
 string getUrl(int *choice, string url)
 {
-    int str,found;
-    if ((str=url.find("url="))!=string::npos)
+    int span,found;
+    char *str;
+
+    for(span = 0; (span = url.find("\"", span))!=string::npos;)
+        url.erase(span, 1);
+    for(span = 0; (span = url.find("'", span))!=string::npos;)
+        url.erase(span, 1);
+
+    if ((str=strcasestr(url.c_str(), "url="))!=NULL)
     {
+        span = str-url.c_str();
         while ((found=url.find("&#39;"))!=string::npos)
             url.erase (found,5);
         *choice=1;
-        return url.substr(str+4);
+        return url.substr(span+4);
     }
     return "";
 }

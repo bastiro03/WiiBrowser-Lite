@@ -42,10 +42,10 @@ bool downloadUpdate(int appversion) {
 	sprintf(updateFile, "update.dol");
 
     bool result = false;
-    char url[50];
+    char url[100];
 
 	if (Settings.Autoupdate == STABLE)
-        sprintf(url, "http://wiibrowser.googlecode.com/files/R%d.dol", appversion);
+        sprintf(url, "http://wiibrowser.altervista.org/mainsite/getfile.php?file=R%d.dol&update=1&uuid=%s&mode=U", appversion, Settings.Uuid);
     else sprintf(url, "https://dl.dropbox.com/s/w39ycq91i3wwvn5/boot.dol?dl=1");
 
 	Private *data = NULL;
@@ -69,7 +69,7 @@ bool downloadUpdate(int appversion) {
 	}
 	if (result)
 	{
-	    Settings.Revision = appversion;
+	    Settings.RevInt = appversion;
 	    Settings.Save(0);
 	}
 
@@ -88,7 +88,7 @@ struct update checkUpdate() {
     result.appversion = 0;
 
     if (Settings.Autoupdate == STABLE)
-        sprintf(url, "https://dl.dropbox.com/s/wp0xh4gloks9i2p/wiibrowser.cfg?dl=1");
+        sprintf(url, "http://wiibrowser.altervista.org/downloads/wiibrowser.cfg");
     else sprintf(url, "https://dl.dropbox.com/s/acpbajdid91d7it/nightly.cfg?dl=1");
 
     CURL *curl_upd = curl_easy_init();
@@ -101,7 +101,7 @@ struct update checkUpdate() {
 		{
             int old_v, new_v;
             hfile = fopen(updateFile, "r");
-            old_v = Settings.Revision;
+            old_v = Settings.RevInt;
             new_v = readFile(hfile, &result);
 
             if (new_v>old_v)

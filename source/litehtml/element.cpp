@@ -2253,4 +2253,3 @@ int litehtml::element::line_height() const
 {
 	return m_line_height;
 }
-

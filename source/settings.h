@@ -105,9 +105,9 @@ class SSettings
 
         //!Variables
         int Language;
-        int Revision;
         int UserAgent;
         int Autoupdate;
+        int RevInt;
 
         bool ShowTooltip;
         bool ShowThumbs;
@@ -119,6 +119,8 @@ class SSettings
 
         char Homepage[256];
         char StartPage[256];
+        char Revision[7];
+        char Uuid[20];
 
         char DefaultFolder[256];
         char UserFolder[256];

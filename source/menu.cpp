@@ -1146,7 +1146,7 @@ static int MenuAdvanced()
     sprintf(options.name[i++], "Document.write");
     options.length = i;
 
-    sprintf(version, "WiiBrowser Rev%d", Settings.Revision);
+    sprintf(version, "WiiBrowser %s", Settings.Revision);
     GuiText titleTxt(version, 28, (GXColor)
     {
         0, 0, 0, 255

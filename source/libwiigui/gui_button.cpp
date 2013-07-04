@@ -379,14 +379,10 @@ void GuiButton::Update(GuiTrigger * t)
 					{
 						if(state == STATE_SELECTED)
 						{
-							if(!t->wpad->ir.valid || (imageOver[1] && state == STATE_SELECTED) ?
-                                imageOver[1]->IsInside(t->wpad->ir.x, t->wpad->ir.y) : this->IsInside(t->wpad->ir.x, t->wpad->ir.y))
-							{
-								this->SetState(STATE_CLICKED, t->chan);
+                            this->SetState(STATE_CLICKED, t->chan);
 
-								if(soundClick)
-									soundClick->Play();
-							}
+                            if(soundClick)
+                                soundClick->Play();
 						}
 						else if(trigger[i]->type == TRIGGER_BUTTON_ONLY)
 						{

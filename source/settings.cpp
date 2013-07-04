@@ -83,7 +83,7 @@ void SSettings::SetDefault()
     sprintf(UserFolder, AppPath);
 
     sprintf(Uuid, "WIIB-00000000");
-    sprintf(Revision, "Rev107");
+    sprintf(Revision, "Rev000");
     sscanf(Revision, "Rev%d", &RevInt);
 
     for(int i = 0; i < N; i++)

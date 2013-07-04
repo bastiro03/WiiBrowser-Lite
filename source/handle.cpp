@@ -590,10 +590,13 @@ void hideBar(GuiWindow *mainWindow, GuiWindow *parentWindow)
 
 void HandleMenuBar(string *link, char* url, int *choice, int img, GuiWindow *mainWindow, GuiWindow *parentWindow)
 {
-    if ((img ? userInput[0].wpad->btns_d & WPAD_BUTTON_1 : userInput[0].wpad->btns_d & WPAD_BUTTON_PLUS) && hidden)
-        showBar(mainWindow, parentWindow);
-    if ((img ? userInput[0].wpad->btns_d & WPAD_BUTTON_2 : userInput[0].wpad->btns_d & WPAD_BUTTON_MINUS) && !hidden)
-        hideBar(mainWindow, parentWindow);
+    if (!(userInput[0].wpad->btns_h & WPAD_BUTTON_B))
+    {
+        if ((img ? userInput[0].wpad->btns_d & WPAD_BUTTON_1 : userInput[0].wpad->btns_d & WPAD_BUTTON_PLUS) && hidden)
+            showBar(mainWindow, parentWindow);
+        if ((img ? userInput[0].wpad->btns_d & WPAD_BUTTON_2 : userInput[0].wpad->btns_d & WPAD_BUTTON_MINUS) && !hidden)
+            hideBar(mainWindow, parentWindow);
+    }
 
     if (hidden)
     {

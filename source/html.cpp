@@ -32,6 +32,8 @@ static void *DownloadImage (void *arg)
 {
     ListaDiImg lista;
     isRunning=true;
+    CURL *curl_img=curl_easy_init();
+
     while(threadState!=THREAD_EXIT)
     {
         if (threadState==THREAD_SUSPEND)
@@ -47,7 +49,7 @@ static void *DownloadImage (void *arg)
                 if (!lista->fetched && !lista->img->GetImage() && lista->tag)
                 {
                     string tmp=adjustUrl(lista->tag->value[0].text, *(char**)arg);
-                    struct block THREAD = downloadfile(curl_handle, tmp.c_str(), NULL);
+                    struct block THREAD = downloadfile(curl_img, tmp.c_str(), NULL);
                     if(THREAD.size>0 && strstr(THREAD.type, "image"))
                     {
                         lista->imgdata=new GuiImageData ((u8*)THREAD.data, THREAD.size);
@@ -61,6 +63,8 @@ static void *DownloadImage (void *arg)
             }
         }
     }
+
+    curl_easy_cleanup(curl_img);
     isRunning=false;
     return NULL;
 }
@@ -228,6 +232,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
 
                 else if (lista->name=="img" && !lista->value.empty() && lista->value[0].text.length()>0)
                 {
+                    HaltThread(thread);
                     string tmp=adjustUrl(lista->value[0].text, url);
                     if (lista->attribute.length()!=0)
                     {
@@ -245,7 +250,6 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                     }
                     else
                     {
-                        HaltThread(thread);
                         struct block IMAGE = downloadfile(curl_handle, tmp.c_str(), NULL);
                         if(IMAGE.size>0 && strstr(IMAGE.type, "image"))
                         {
@@ -263,8 +267,8 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                             Index->content=null;
                         }
                         free(IMAGE.data);
-                        ResumeThread(thread);
                     }
+                    ResumeThread(thread);
                 }
 
                 else if (lista->name=="form")

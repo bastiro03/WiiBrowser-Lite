@@ -130,8 +130,8 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, cons
 		usleep(100);
 		if(!strlen(URL.GetText()) || URL.GetText()[0] != '/')
         {
-            sprintf(temp, rootdir);
-            URL.SetText(strchr(temp, '/'));
+            sprintf(temp, "%s/", rootdir);
+            URL.SetText(strchr(temp, '/')+1);
         }
 
         if(InsertURL.GetState() == STATE_CLICKED)
@@ -140,6 +140,8 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, cons
             OnScreenKeyboard(parentWindow, strchr(temp, '/')+1, 256);
             URL.SetText(strchr(temp, '/')+1);
             URL.SetScroll(SCROLL_HORIZONTAL);
+
+            InsertURL.ResetState();
         }
 
         if(InsertDEV.GetState() == STATE_CLICKED)
@@ -171,7 +173,7 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, cons
 						fileBrowser.fileList[0]->SetState(STATE_SELECTED);
 						fileBrowser.TriggerUpdate();
 
-						sprintf(fullpath, "%s%s", rootdir, browser.dir+1); // print current path
+						sprintf(fullpath, "%s%s/", rootdir, browser.dir+1); // print current path
                         sprintf(temp, fullpath);
                         URL.SetText(strchr(temp, '/')+1);
 					}

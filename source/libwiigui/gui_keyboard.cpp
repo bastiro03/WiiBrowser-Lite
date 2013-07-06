@@ -150,7 +150,7 @@ GuiKeyboard::GuiKeyboard(char * t, u32 max)
 	keyBack->SetImageOver(keyBackOverImg);
 	keyBack->SetLabel(keyBackText);
 	keyBack->SetSoundOver(keySoundOver);
-	keyBack->SetSoundClick(keySoundClick);
+	keyBack->SetSoundHold(keySoundClick);
 	keyBack->SetTrigger(trigH);
 	keyBack->SetTrigger(trig2);
 	keyBack->SetPosition(10*42+40, 0*42+80);
@@ -367,7 +367,7 @@ void GuiKeyboard::Update(GuiTrigger * t)
 		}
 		keySpace->SetState(STATE_SELECTED, t->chan);
 	}
-    if(keyEnter->GetState() == STATE_CLICKED            || charCode == 0x0d)
+    else if(keyEnter->GetState() == STATE_CLICKED            || charCode == 0x0d)
 	{
 		if(strlen(kbtextstr) < kbtextmaxlen)
 		{

@@ -271,7 +271,10 @@ bool SSettings::Load()
     for (int i = 0; i < N; i++)
     {
         snprintf(filepath, sizeof(filepath), "%s/thumbnails/thumb_%d.gxt", AppPath, i);
-        Thumbnails[i] = (u8 *)LoadFile(filepath, size);
+
+        if (Favorites[i][0])
+            Thumbnails[i] = (u8 *)LoadFile(filepath, size);
+        else remove(filepath);
     }
 
     #ifdef DEBUG

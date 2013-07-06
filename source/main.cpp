@@ -247,8 +247,8 @@ int main(int argc, char *argv[])
     #endif
 
     Settings.Load();
-    // if(argc > 1)
-        // Settings.SetStartPage(argv[1]);
+    if(argc > 1)
+        Settings.SetStartPage(argv[1]);
 
     if(chdir(Settings.AppPath) != 0) // set working directory
         save_mem("CHDIR failed");

@@ -28,6 +28,7 @@
 
 extern "C" {
 #include "mplayer/stream/url.h"
+#include "urlcode.h"
 }
 
 #define THREAD_SLEEP    100
@@ -1806,6 +1807,16 @@ bool CancelDownload()
     return (actionButton->GetState() == STATE_CLICKED);
 }
 
+char *omniBox()
+{
+    char *url = (char*) malloc (sizeof(new_page)+100);
+    char *encode = url_encode(new_page);
+
+    sprintf(url, "http://www.google.com/search?hl=en&source=hp&biw=&bih=&q=%s&btnG=Google+Search&gbv=1", encode);
+    free(encode);
+    return url;
+}
+
 static int MenuBrowse()
 {
     char *nurl = NULL;
@@ -1814,6 +1825,7 @@ static int MenuBrowse()
 
     url = (char*) malloc (sizeof(new_page)+10);
     bzero(url, sizeof(new_page)+10);
+    bool searchWord = true;
 
     if (strncmp(new_page,"http",4))
         strcpy(url,"http://");
@@ -1940,6 +1952,12 @@ jump:
     mainWindow->SetState(STATE_DEFAULT);
     ResumeGui();
 
+    delete(msgTxt);
+    delete(actionButton);
+
+    msgTxt = NULL;
+    actionButton = NULL;
+
     if(HTML.size == -1)
     {
         if(performDownload(&hfile, url, &HTML))
@@ -1949,12 +1967,6 @@ jump:
         return MENU_HOME;
     }
 
-    delete(msgTxt);
-    delete(actionButton);
-
-    msgTxt = NULL;
-    actionButton = NULL;
-
     if (CURLE_OK == curl_easy_getinfo(curl_handle, CURLINFO_EFFECTIVE_URL, &nurl))
     {
         url = (char*) realloc (url,strlen(nurl)+1);
@@ -1963,9 +1975,17 @@ jump:
 
     if (!HTML.size)
     {
-        WindowPrompt("WiiBrowser", "Failed", "Ok", NULL);
         free(url);
-        return MENU_HOME;
+
+        if (!searchWord)
+        {
+            WindowPrompt("WiiBrowser", "Failed", "Ok", NULL);
+            return MENU_HOME;
+        }
+
+        searchWord = false;
+        url = omniBox();
+        goto jump;
     }
 
     if (!history || strcmp(history->url.c_str(),url))
@@ -2067,7 +2087,7 @@ static int MenuFavorites()
     GuiFavorite Block[N];
     prevMenu = MENU_FAVORITES;
 
-    for (int i = 0, xpos = 40, ypos = 20; i < N; i++)
+    for (int i = 0, xpos = 40, ypos = 40; i < N; i++)
     {
         Block[i].SetInit(xpos, ypos);
         Block[i].SetEffect(EFFECT_SLIDE_IN | EFFECT_SLIDE_RIGHT, 50);

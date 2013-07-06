@@ -446,6 +446,9 @@ void GuiButton::Update(GuiTrigger * t)
 				else if(held && state == STATE_CLICKED && stateChan == t->chan)
 				{
 					this->SetState(STATE_HELD, t->chan);
+
+                    if(soundHold)
+                        soundHold->Play();
 				}
 			}
 		}

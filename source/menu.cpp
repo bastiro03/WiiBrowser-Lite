@@ -612,37 +612,34 @@ static void *UpdateThread (void *arg)
     char caption[50];
     char *longText = NULL;
 
-    while(1)
+    LWP_SuspendThread(updatethread);
+    if(updateThreadHalt)
+        return NULL;
+
+    upd = checkUpdate();
+    if(!upd.appversion)
+        return NULL;
+    usleep(500*1000);
+
+    if(strlen(upd.changelog) > 0)
     {
-        LWP_SuspendThread(updatethread);
-        if(updateThreadHalt)
-            return NULL;
+        sprintf(caption, "Changelog rev%d", upd.appversion);
+        sprintf(message, upd.changelog);
+        longText = message;
+    }
+    else sprintf(caption, "An update is available!");
 
-        upd = checkUpdate();
-        if(!upd.appversion)
-            return NULL;
-        usleep(500*1000);
+    bool installUpdate = WindowPrompt(
+                            "Update Available",
+                            caption,
+                            "Update now",
+                            "Update later",
+                            longText);
 
-        if(strlen(upd.changelog) > 0)
-        {
-            sprintf(caption, "Changelog rev%d", upd.appversion);
-            sprintf(message, upd.changelog);
-            longText = message;
-        }
-        else sprintf(caption, "An update is available!");
-
-        bool installUpdate = WindowPrompt(
-                                 "Update Available",
-                                 caption,
-                                 "Update now",
-                                 "Update later",
-                                 longText);
-
-        if(installUpdate)
-        {
-            if(downloadUpdate(upd.appversion))
-                ExitRequested = true;
-        }
+    if(installUpdate)
+    {
+        if(downloadUpdate(upd.appversion))
+            ExitRequested = true;
     }
     return NULL;
 }
@@ -1560,8 +1557,6 @@ static int MenuSplash()
     if (conn == IP_ERR)
         WindowPrompt("Error reading IP address", "Application exiting. Please check connection settings", "Ok", NULL);
 
-    if(Settings.Autoupdate)
-        ResumeUpdateThread();
     return menu;
 }
 
@@ -1605,6 +1600,9 @@ void ShowDownloads()
  ***************************************************************************/
 static int MenuHome()
 {
+    if(Settings.Autoupdate)
+        ResumeUpdateThread();
+
     App->ChangeButtons(HOMEPAGE);
     prevMenu = MENU_HOME;
     strcpy(new_page,prev_page);

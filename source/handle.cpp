@@ -90,6 +90,9 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
             {
                 0, 0, 0, 255
             });
+            button->label->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
+            button->label->SetMaxWidth(TextboxImg->GetWidth()-5);
+            button->label->SetScroll(SCROLL_HORIZONTAL);
 
             label=new GuiText("Upload", 20, (GXColor)
             {
@@ -124,6 +127,10 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
             {
                 0, 0, 0, 255
             });
+            button->label->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
+            button->label->SetMaxWidth(TextboxImg->GetWidth()-5);
+            button->label->SetScroll(SCROLL_HORIZONTAL);
+
             if (lista->label!="noLabel")
             {
                 label=new GuiText((char*)lista->label.c_str(), 20, (GXColor)
@@ -137,6 +144,7 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
                 button->btn->SetLabel(label);
                 offset+=25;
             }
+
             button->btn->SetLabel(button->label,1);
             button->btn->SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
             button->btn->SetPosition(0, offset);

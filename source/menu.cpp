@@ -589,11 +589,18 @@ WindowPrompt(const char *title, const char *msg, const char *btn1Label, const ch
             choice = 1;
         else if(btn2.GetState() == STATE_CLICKED)
             choice = 0;
+
+        if(ExitRequested)
+            choice = 0;
     }
 
     promptWindow.SetEffect(EFFECT_SLIDE_TOP | EFFECT_SLIDE_OUT, 50);
-    while(promptWindow.GetEffect() > 0) usleep(THREAD_SLEEP);
-    HaltGui();
+    while(promptWindow.GetEffect() > 0)
+        usleep(THREAD_SLEEP);
+
+    if(!ExitRequested)
+        HaltGui();
+
     mainWindow->Remove(&promptWindow);
     mainWindow->SetState(STATE_DEFAULT);
     ResumeGui();

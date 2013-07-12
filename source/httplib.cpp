@@ -414,7 +414,10 @@ struct curl_httppost *multipartform(const char *url)
 
         begin = strchr(begin, '&');
         mid++;
-        value = strndup(mid, begin-mid);
+
+        if (!begin)
+            value = strdup(mid);
+        else value = strndup(mid, begin-mid);
 
         if(strstr(value, "_UPLOAD"))
         {
@@ -441,7 +444,7 @@ struct curl_httppost *multipartform(const char *url)
         free(name);
         free(value);
     }
-    while ((begin = strchr(begin, '&')));
+    while (begin);
 
     free(begin);
     return formpost;

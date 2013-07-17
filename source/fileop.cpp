@@ -3,7 +3,6 @@
 
 #include "fileop.h"
 #include "filebrowser.h"
-#include "utils/mem2_manager.h"
 
 bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, const char *label)
 {
@@ -324,5 +323,4 @@ void show_mem()
             ((float)((char*)SYS_GetArena1Hi()-(char*)SYS_GetArena1Lo()))/0x100000,
             ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
     fclose(file);
-    ShowAreaInfo(-1);
 }

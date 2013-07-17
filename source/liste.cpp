@@ -193,7 +193,7 @@ void FreeHistory( History lista ) {
 
 void DumpList ( History lista, const char * file ) {
     char path[256];
-    snprintf(path, 256, "%s/history.txt", Settings.AppPath);
+    snprintf(path, 256, "%s/appdata/history.txt", Settings.AppPath);
     FILE * fp=fopen(path, "w");
     if (!fp)
         return;
@@ -209,7 +209,7 @@ void DumpList ( History lista, const char * file ) {
 
 History LoadList ( const char * file ) {
     char path[512];
-    snprintf(path, 512, "%s/history.txt", Settings.AppPath);
+    snprintf(path, 512, "%s/appdata/history.txt", Settings.AppPath);
     FILE * fp=fopen(path, "r");
     if (!fp)
         return NULL;

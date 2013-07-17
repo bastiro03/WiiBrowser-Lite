@@ -3,7 +3,6 @@
 #include "html.h"
 
 #include "config.h"
-#include "utils/mem2_manager.h"
 #define LEN 15
 
 enum html htm;
@@ -85,6 +84,8 @@ int knownType(char type[])
 string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainWindow, char *url)
 {
     static lwp_t thread = LWP_THREAD_NULL;
+    char *title = NULL;
+
     int type = knownType(HTML->type);
     int coordX = 0, coordY, offset = 0, choice = 0;
     bool done = false;
@@ -169,7 +170,8 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                 if (lista->name=="title" && !lista->value.empty())
                 {
                     text=InsText(text);
-                    text->txt = new GuiText((char*)lista->value[0].text.c_str(), 30, (GXColor)
+                    title = (char*)lista->value[0].text.c_str();
+                    text->txt = new GuiText(title, 30, (GXColor)
                     {
                         0, 0, 0, 255
                     });
@@ -375,8 +377,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                     Settings.Remove(t, 1);
                     Settings.Thumbnails[t] = video;
                 }
-                // else free(video);
-                else mem2_free(video, MEM2_VIDEO);
+                else free(video);
                 done = true;
             }
 
@@ -389,7 +390,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
             }
 
             HandleHtmlPad(&coordX, btnup, btndown, ext, Index, mainWindow, parentWindow);
-            HandleMenuBar(&link, url, &choice, 0, mainWindow, parentWindow);
+            HandleMenuBar(&link, url, new_page, title, &choice, 0, mainWindow, parentWindow);
 
             if (choice == 2)
             {
@@ -443,7 +444,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
         while (!choice)
         {
             HandleImgPad(btnup, btndown, image);
-            HandleMenuBar(&link, url, &choice, 1, mainWindow, parentWindow);
+            HandleMenuBar(&link, url, new_page, NULL, &choice, 1, mainWindow, parentWindow);
 
             if (choice == 2)
             {

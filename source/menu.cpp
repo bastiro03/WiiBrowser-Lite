@@ -49,6 +49,7 @@ static char Message[MAXLEN];
 
 static int fadeAnim;
 static int prevMenu;
+static int currPage;
 
 static GuiSwitch * Right = NULL;
 static GuiSwitch * Left = NULL;
@@ -948,6 +949,7 @@ void SetupGui()
     throbber = new GuiImageData(loading_png);
     fadeAnim = EFFECT_FADE;
     prevMenu = MENU_HOME;
+    currPage = 0;
 
     pointerImg[0] = player1_point_png;
     pointerImg[1] = player2_point_png;
@@ -998,6 +1000,7 @@ static int MenuBrowseDevice()
 	int i;
 
 	ShutoffRumble();
+	prevMenu = MENU_BROWSE_DEVICE;
 
 	// populate initial directory listing
 	if(BrowseDevice() <= 0)
@@ -1304,10 +1307,11 @@ static int MenuAdvanced()
         {
             if(changed)
                 Settings.Save(0);
-            menu = prevMenu;
+            menu = MENU_HOME;
         }
     }
 
+    prevMenu = MENU_DEVELOPER;
     w.SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_OUT, 30);
     while(w.GetEffect() > 0)
         usleep(THREAD_SLEEP);
@@ -1334,6 +1338,7 @@ static int MenuSettings()
     sprintf(options.name[i++], "Language");
     sprintf(options.name[i++], "Restore Session");
     sprintf(options.name[i++], "UserAgent");
+    sprintf(options.name[i++], "Click sound");
     sprintf(options.name[i++], "Proxy (url:port)");
     options.length = i;
 
@@ -1445,6 +1450,10 @@ static int MenuSettings()
             break;
 
         case 8:
+            Settings.MuteSound = !Settings.MuteSound;
+            break;
+
+        case 9:
             OnScreenKeyboard(mainWindow, Settings.Proxy, 256);
             break;
         }
@@ -1458,7 +1467,7 @@ static int MenuSettings()
             snprintf (options.value[0], 256, "%s", Settings.Homepage);
             snprintf (options.value[1], 256, "%s", Settings.DefaultFolder);
             snprintf (options.value[7], 256, "%s", AgentName[Settings.UserAgent]);
-            snprintf (options.value[8], 256, "%s", Settings.Proxy);
+            snprintf (options.value[9], 256, "%s", Settings.Proxy);
 
             if (Settings.ShowTooltip == 0) sprintf (options.value[2], "Hide");
             else if (Settings.ShowTooltip == 1) sprintf (options.value[2], "Show");
@@ -1475,13 +1484,15 @@ static int MenuSettings()
 
             if (Settings.Restore == 0) sprintf (options.value[6], "Start new");
             else if (Settings.Restore == 1) sprintf (options.value[6], "Restore");
+            if (Settings.MuteSound == 0) sprintf (options.value[8], "On");
+            else if (Settings.MuteSound == 1) sprintf (options.value[8], "Off");
 
             optionBrowser.TriggerUpdate();
         }
 
         if(backBtn.GetState() == STATE_CLICKED)
         {
-            menu = prevMenu;
+            menu = MENU_HOME;
         }
         if(devBtn.GetState() == STATE_CLICKED)
         {
@@ -1496,6 +1507,7 @@ static int MenuSettings()
         w.SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_OUT, 50);
     else w.SetEffect(EFFECT_SLIDE_TOP | EFFECT_SLIDE_OUT, 50);
 
+    prevMenu = MENU_SETTINGS;
     while(w.GetEffect() > 0)
         usleep(THREAD_SLEEP);
 
@@ -1514,6 +1526,7 @@ static int MenuSplash()
 {
     GuiImageData InitData(loading_png);
     GuiImage Init(&InitData);
+    prevMenu = MENU_SPLASH;
 
     Init.SetAlignment(2,5);
     Init.SetScale(0.60);
@@ -1611,7 +1624,6 @@ static int MenuHome()
         ResumeUpdateThread();
 
     App->ChangeButtons(HOMEPAGE);
-    prevMenu = MENU_HOME;
     strcpy(new_page,prev_page);
 
     GuiSound btnSoundOver(button_over_pcm, button_over_pcm_size, SOUND_PCM);
@@ -1666,7 +1678,7 @@ static int MenuHome()
     btnGo.SetEffect(fadeAnim, 50);
     btnExit.SetEffect(fadeAnim, 50);
 
-    if (fadeAnim == EFFECT_FADE)
+    if (prevMenu != MENU_TOPSITES)
         App->SetEffect(fadeAnim, 50);
     Splash->SetEffect(fadeAnim, 50);
     Right->SetEffect(EFFECT_FADE, 50);
@@ -1684,6 +1696,8 @@ static int MenuHome()
     ResumeGui();
 
     int choice = 0;
+    prevMenu = MENU_HOME;
+
     while(!choice)
     {
         if (btnGo.GetState() != STATE_SELECTED)
@@ -1762,7 +1776,7 @@ static int MenuHome()
                 userInput[0].wpad->btns_d & WPAD_BUTTON_PLUS)
         {
             fadeAnim = EFFECT_SLIDE_OUT | EFFECT_SLIDE_LEFT;
-            choice = MENU_FAVORITES;
+            choice = MENU_TOPSITES;
         }
 
         else if(btnExit.GetState() == STATE_CLICKED)
@@ -1786,7 +1800,7 @@ static int MenuHome()
     mainWindow->Remove(&btnExit);
     ResumeGui();
 
-    if(choice != MENU_FAVORITES)
+    if(choice != MENU_TOPSITES)
     {
         App->SetEffect(EFFECT_SLIDE_OUT | EFFECT_SLIDE_BOTTOM, 50);
         Right->SetEffect(EFFECT_FADE, -50);
@@ -1842,6 +1856,7 @@ static int MenuBrowse()
 
     GuiImageData dialogBox(dialogue_box_png, dialogue_box_png_size);
     GuiImage dialogBoxImg(&dialogBox);
+    prevMenu = MENU_BROWSE;
 
     GuiText title("WiiBrowser", 26, (GXColor)
     {
@@ -2028,7 +2043,7 @@ jump:
     return MENU_HOME;
 }
 
-bool Held(GuiFavorite *Block)
+bool Held(vector<GuiFavorite>& Block)
 {
     for (int i=0; i<N; i++)
     {
@@ -2038,7 +2053,7 @@ bool Held(GuiFavorite *Block)
     return false;
 }
 
-void SwapPos(GuiFavorite *Block, int i, int j)
+void SwapPos(vector<GuiFavorite>& Block, int i, int j)
 {
     int xtemp = Block[i].xpos;
     int ytemp = Block[i].ypos;
@@ -2049,7 +2064,7 @@ void SwapPos(GuiFavorite *Block, int i, int j)
     Block[j].SetPosition(xtemp, ytemp);
 }
 
-void SwapImage(GuiFavorite *Block, int i, int j)
+void SwapImage(vector<GuiFavorite>& Block, int i, int j)
 {
     u8 *itemp = Settings.Thumbnails[i];
     Settings.Thumbnails[i] = Settings.Thumbnails[j];
@@ -2060,8 +2075,8 @@ void SwapUrls(int i, int j)
 {
     char utemp[512];
     strcpy(utemp, Settings.GetUrl(i));
-    strcpy(Settings.Favorites[i], Settings.Favorites[j]);
-    strcpy(Settings.Favorites[j], utemp);
+    strcpy(Settings.TopSites[i], Settings.TopSites[j]);
+    strcpy(Settings.TopSites[j], utemp);
 }
 
 int findEmpty()
@@ -2075,28 +2090,26 @@ int findEmpty()
 }
 
 /****************************************************************************
- * MenuFavorites
+ * Top Sites
  ***************************************************************************/
-static int MenuFavorites()
+static int MenuTopSites()
 {
     bool editing = false;
     App->ChangeButtons(editing ? EDITING : FAVORITES);
-
     strcpy(new_page,prev_page);
-    prevMenu = MENU_HOME;
 
-    fadeAnim = EFFECT_SLIDE_IN | EFFECT_SLIDE_LEFT;
+    fadeAnim = EFFECT_SLIDE_IN | EFFECT_SLIDE_RIGHT;
     Right->Button->SetState(STATE_SELECTED);
-    Right->SetEffect(EFFECT_FADE, -50);
 
-    GuiFavorite Block[N];
-    prevMenu = MENU_FAVORITES;
+    vector<GuiFavorite> Block(N, GuiFavorite(TOPSITE));
+    prevMenu = MENU_TOPSITES;
 
     for (int i = 0, xpos = 40, ypos = 40; i < N; i++)
     {
         Block[i].SetInit(xpos, ypos);
-        Block[i].SetEffect(EFFECT_SLIDE_IN | EFFECT_SLIDE_RIGHT, 50);
+        Block[i].SetEffect(fadeAnim, 50);
         Block[i].SetPosition(xpos,ypos);
+
         Block[i].Block->SetUpdateCallback(DragCallback);
         Block[i].Label->SetText(Settings.GetUrl(i));
 
@@ -2128,7 +2141,7 @@ static int MenuFavorites()
     HaltGui();
     mainWindow->Append(App);
     mainWindow->Append(Left);
-    mainWindow->Remove(Right);
+    mainWindow->Append(Right);
     ResumeGui();
 
     int i, choice = 0;
@@ -2159,7 +2172,7 @@ static int MenuFavorites()
 
             if((i = findEmpty()) >= 0)
             {
-                strcpy(Settings.Favorites[i],prev_page);
+                strcpy(Settings.TopSites[i],prev_page);
                 Block[i].Label->SetText(Settings.GetUrl(i));
             }
         }
@@ -2168,7 +2181,15 @@ static int MenuFavorites()
                 App->btnWWW->GetState() == STATE_CLICKED || userInput[0].wpad->btns_d & WPAD_BUTTON_MINUS)
         {
             App->btnWWW->ResetState();
+            fadeAnim = EFFECT_SLIDE_OUT | EFFECT_SLIDE_RIGHT;
             choice = MENU_HOME;
+        }
+
+        else if(Right->Button->GetState() == STATE_CLICKED ||
+                userInput[0].wpad->btns_d & WPAD_BUTTON_PLUS)
+        {
+            fadeAnim = EFFECT_SLIDE_OUT | EFFECT_SLIDE_LEFT;
+            choice = MENU_FAVORITES;
         }
 
         for (i = 0; i < N; i++)
@@ -2220,7 +2241,7 @@ static int MenuFavorites()
     }
 
     for (i = 0; i < N; i++)
-        Block[i].SetEffect(EFFECT_SLIDE_OUT | EFFECT_SLIDE_RIGHT, 50);
+        Block[i].SetEffect(fadeAnim, 50);
     while(Block[N-1].GetEffect() > 0) usleep(THREAD_SLEEP);
 
     HaltGui();
@@ -2240,6 +2261,309 @@ static int MenuFavorites()
         ResumeGui();
     }
 
+    fadeAnim = EFFECT_SLIDE_IN | EFFECT_SLIDE_LEFT;
+    return choice;
+}
+
+/****************************************************************************
+ * MenuFavorites
+ ***************************************************************************/
+typedef struct page
+{
+    struct favorite *ret;
+    int n_url;
+} page;
+
+struct page GetPage(int page)
+{
+    struct page str;
+    struct favorite *elem, *ret = NULL;
+    struct favorite temp;
+
+    char *item;
+    int i, j;
+
+    for (i = 0, j = 0; i<N; j++)
+    {
+        if (page)
+        {
+            elem = Settings.GetFav(j+9*(page-1));
+            if(!elem)
+                break;
+
+            strcpy(temp.url, elem->url);
+            strcpy(temp.name, elem->name);
+        }
+        else
+        {
+            item = Settings.GetUrl(j);
+            if(!item)
+                break;
+
+            strcpy(temp.url, item);
+            strcpy(temp.name, item);
+        }
+
+        ret = (struct favorite*)realloc(ret, (i+1)*sizeof(struct favorite));
+        ret[i++] = temp;
+    }
+
+    str.ret = ret;
+    str.n_url = i;
+    return str;
+}
+
+static int MenuFavorites()
+{
+    int choice = 0, n_rec = 0;
+    int i, xpos, ypos;
+    struct page Page;
+
+    Page = GetPage(currPage);
+    History hst = history;
+    strcpy(new_page,prev_page);
+
+    fadeAnim = EFFECT_SLIDE_IN | EFFECT_SLIDE_LEFT;
+    Right->Button->SetState(STATE_SELECTED);
+    Right->SetEffect(EFFECT_FADE, -50);
+
+    vector<GuiFavorite> Block(N, GuiFavorite(FAVORITE));
+    vector<GuiFavorite> Recent(N, GuiFavorite(FAVORITE));
+    prevMenu = MENU_FAVORITES;
+
+    // favorites
+    for (i = 0; i < N; i++)
+    {
+        Block[i].SetEffect(EFFECT_FADE, 50);
+        Block[i].Block->SetUpdateCallback(DragCallback);
+        Block[i].Block->SetLabel(Block[i].Label);
+    }
+
+    for (i = 0, xpos = 40, ypos = 100; i < Page.n_url; i++)
+    {
+        if(strlen(Page.ret[i].name))
+            Block[i].Label->SetText(Page.ret[i].name);
+        else Block[i].Label->SetText(Page.ret[i].url);
+
+        Block[i].SetPosition(xpos, ypos);
+        Block[i].SetEffect(EFFECT_SLIDE_IN | EFFECT_SLIDE_RIGHT, 50);
+        ypos += Block[i].GetDataHeight()+15;
+
+        if(ypos > screenheight-90)
+        {
+            xpos += Block[i].GetDataWidth()+35;
+            ypos = 100;
+        }
+    }
+
+    GuiImageData btnImgData(button_next_png, button_next_png_size);
+    GuiImageData btnImgDataOver(button_next_over_png, button_next_over_png_size);
+    GuiImage btnImg(&btnImgData);
+    GuiImage btnImgOver(&btnImgDataOver);
+
+    GuiSound btnSoundOver(button_over_pcm, button_over_pcm_size, SOUND_PCM);
+    btnImg.SetScaleX(0.83);
+    btnImgOver.SetScaleX(0.83);
+
+    GuiButton btnNext(btnImg.GetRealWidth(), btnImg.GetRealHeight());
+    btnNext.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+    btnNext.SetEffect(EFFECT_SLIDE_IN | EFFECT_SLIDE_RIGHT, 50);
+    btnNext.SetPosition(xpos, ypos);
+    btnNext.SetImage(&btnImg);
+    btnNext.SetImageOver(&btnImgOver);
+    btnNext.SetSoundOver(&btnSoundOver);
+    btnNext.SetTrigger(trigA);
+    btnNext.SetEffectGrow();
+
+    // recent sites
+    for (i = 0, xpos = 434, ypos = 100; i < 5; i++)
+    {
+        if (!hst || !(hst = hst->prec))
+            break;
+
+        Recent[i].SetInit(xpos, ypos);
+        Recent[i].SetEffect(EFFECT_SLIDE_IN | EFFECT_SLIDE_RIGHT, 50);
+        Recent[i].SetPosition(xpos,ypos);
+
+        Recent[i].Block->SetUpdateCallback(DragCallback);
+        Recent[i].Label->SetText(hst->url.c_str());
+        Recent[i].Block->SetLabel(Recent[i].Label);
+
+        ypos += Recent[i].GetDataHeight()+15;
+        if(ypos > screenheight-90)
+        {
+            xpos += Recent[i].GetDataWidth()+35;
+            ypos = 100;
+        }
+        n_rec = i+1;
+    }
+
+    HaltGui();
+    for (int i = 0; i < Page.n_url; i++)
+        mainWindow->Append(&Block[i]);
+    for (int i = 0; i < n_rec; i++)
+        mainWindow->Append(&Recent[i]);
+    ResumeGui();
+
+    GuiText bookTxt("", 28, (GXColor)
+    {
+        0, 0, 0, 255
+    });
+    bookTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+    bookTxt.SetPosition(40,40);
+    bookTxt.SetEffect(EFFECT_FADE, 30);
+
+    if(!currPage)
+        bookTxt.SetText("Top Sites");
+    else bookTxt.SetText("Bookmarks");
+
+    GuiText histTxt("Recent History", 28, (GXColor)
+    {
+        0, 0, 0, 255
+    });
+    histTxt.SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
+    histTxt.SetPosition(-40,40);
+    histTxt.SetEffect(EFFECT_FADE, 30);
+
+    HaltGui();
+    mainWindow->Append(&btnNext);
+    ResumeGui();
+
+    while(btnNext.GetEffect() > 0)
+        usleep(THREAD_SLEEP);
+
+    Left->SetEffect(EFFECT_FADE, 50);
+    HaltGui();
+    mainWindow->Append(Left);
+    mainWindow->Append(&bookTxt);
+    mainWindow->Append(&histTxt);
+    mainWindow->Remove(Right);
+    ResumeGui();
+
+    while(!choice)
+    {
+        usleep(THREAD_SLEEP);
+
+        if(Left->Button->GetState() == STATE_CLICKED ||
+                userInput[0].wpad->btns_d & WPAD_BUTTON_MINUS)
+        {
+            choice = MENU_HOME;
+        }
+
+        if(btnNext.GetState() == STATE_CLICKED ||
+                userInput[0].wpad->btns_d & WPAD_BUTTON_PLUS)
+        {
+            currPage++;
+
+            free(Page.ret);
+            Page = GetPage(currPage);
+            btnNext.ResetState();
+
+            if(!Page.n_url)
+            {
+                bookTxt.SetText("Top Sites");
+                Page = GetPage(0);
+                currPage = 0;
+            }
+            else bookTxt.SetText("Bookmarks");
+
+            for (i = 0, xpos = 40, ypos = 100; i < Page.n_url; i++)
+            {
+                Block[i].SetPosition(xpos, ypos);
+
+                ypos += Block[i].GetDataHeight()+15;
+                if(ypos > screenheight-90)
+                {
+                    xpos += Block[i].GetDataWidth()+35;
+                    ypos = 100;
+                }
+            }
+
+            btnNext.SetPosition(xpos, ypos);
+            HaltGui();
+
+            for (i = 0; i < Page.n_url; i++)
+            {
+                if(strlen(Page.ret[i].name))
+                    Block[i].Label->SetText(Page.ret[i].name);
+                else Block[i].Label->SetText(Page.ret[i].url);
+
+                mainWindow->Append(&Block[i]);
+            }
+
+            for (i = Page.n_url; i < N; i++)
+                mainWindow->Remove(&Block[i]);
+
+            mainWindow->Append(Left);
+            ResumeGui();
+        }
+
+        for (i = 0; i < Page.n_url; i++)
+        {
+            if(Block[i].Block->GetState() == STATE_SELECTED)
+                Block[i].Label->SetScroll(SCROLL_HORIZONTAL);
+            else Block[i].Label->SetScroll(SCROLL_NONE);
+
+            if(Block[i].Block->GetState() == STATE_CLICKED &&
+                    Left->Button->GetState() == STATE_DEFAULT)
+            {
+                strcpy(new_page,Page.ret[i].url);
+                strcpy(prev_page,new_page);
+                Block[i].Block->ResetState();
+            }
+        }
+
+        for (i = 0; i < n_rec; i++)
+        {
+            if(Recent[i].Block->GetState() == STATE_SELECTED)
+                Recent[i].Label->SetScroll(SCROLL_HORIZONTAL);
+            else Recent[i].Label->SetScroll(SCROLL_NONE);
+
+            if(Recent[i].Block->GetState() == STATE_CLICKED &&
+                    Left->Button->GetState() == STATE_DEFAULT)
+            {
+                strcpy(new_page,Recent[i].Label->GetText());
+                strcpy(prev_page,new_page);
+                Recent[i].Block->ResetState();
+            }
+        }
+    }
+
+    for (i = 0; i < Page.n_url; i++)
+        Block[i].SetEffect(EFFECT_SLIDE_OUT | EFFECT_SLIDE_RIGHT, 50);
+    for (i = 0; i < n_rec; i++)
+        Recent[i].SetEffect(EFFECT_SLIDE_OUT | EFFECT_SLIDE_RIGHT, 50);
+
+    btnNext.SetEffect(EFFECT_SLIDE_OUT | EFFECT_SLIDE_RIGHT, 50);
+    bookTxt.SetEffect(EFFECT_FADE, -30);
+    histTxt.SetEffect(EFFECT_FADE, -30);
+
+    while(Page.n_url && Block[Page.n_url-1].GetEffect() > 0)
+        usleep(THREAD_SLEEP);
+
+    HaltGui();
+    mainWindow->Remove(&btnNext);
+    mainWindow->Remove(&bookTxt);
+    mainWindow->Remove(&histTxt);
+
+    for (i = 0; i < Page.n_url; i++)
+        mainWindow->Remove(&Block[i]);
+    for (i = 0; i < n_rec; i++)
+        mainWindow->Remove(&Recent[i]);
+    ResumeGui();
+
+    if(choice != MENU_HOME)
+    {
+        Left->SetEffect(EFFECT_FADE, -50);
+        while(Left->GetEffect() > 0)
+            usleep(THREAD_SLEEP);
+
+        HaltGui();
+        mainWindow->Remove(Left);
+        ResumeGui();
+    }
+
+    free(Page.ret);
     return choice;
 }
 
@@ -2249,7 +2573,7 @@ static int MenuFavorites()
 void LoadSession()
 {
     char cookies[256];
-    sprintf(cookies, "%s/cookie.csv", Settings.AppPath);
+    sprintf(cookies, "%s/appdata/cookie.csv", Settings.AppPath);
     history = LoadList();
 
     /* setup cookies engine */
@@ -2262,9 +2586,9 @@ void DeleteSession()
     char path[256];
     history = InitHistory();
 
-    sprintf(path, "%s/cookie.csv", Settings.AppPath);
+    sprintf(path, "%s/appdata/cookie.csv", Settings.AppPath);
     remove(path);
-    sprintf(path, "%s/history.txt", Settings.AppPath);
+    sprintf(path, "%s/appdata/history.txt", Settings.AppPath);
     remove(path);
 
     /* setup cookies engine */
@@ -2318,7 +2642,7 @@ void Cleanup()
     }
 
     char cookies[30];
-    sprintf(cookies, "%s/cookie.csv", Settings.AppPath);
+    sprintf(cookies, "%s/appdata/cookie.csv", Settings.AppPath);
 
     /* setup cookies engine */
     curl_easy_setopt(curl_handle, CURLOPT_COOKIEJAR, cookies);
@@ -2353,6 +2677,9 @@ void MainMenu(int menu)
             break;
         case MENU_FAVORITES:
             currentMenu = MenuFavorites();
+            break;
+        case MENU_TOPSITES:
+            currentMenu = MenuTopSites();
             break;
         case MENU_BROWSE:
             currentMenu = MenuBrowse();

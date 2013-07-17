@@ -22,59 +22,15 @@
 
 #include "FreeTypeGX.h"
 #include "filelist.h"
-#include "utils/mem2_manager.h"
 
-#define ft_malloc(x) mem2_malloc(x,MEM2_OTHER)
-#define ft_free(x) mem2_free(x,MEM2_OTHER)
-#define ft_memalign(x,y) mem2_memalign(x,y,MEM2_OTHER)
-
-// #define ft_malloc(x) malloc(x)
-// #define ft_free(x) free(x)
-// #define ft_memalign(x,y) memalign(x,y)
+#define ft_malloc(x) malloc(x)
+#define ft_free(x) free(x)
+#define ft_memalign(x,y) memalign(x,y)
 
 FreeTypeGX *fontSystem[MAX_FONT_SIZE+1];
 
 static FT_Byte * MainFont = (FT_Byte *) font_regular_ttf;
 static u32 MainFontSize = font_regular_ttf_size;
-
-// Standard operators
-// overloaded new operator
-void * operator new(size_t size)
-{
-	void *p = mem2_malloc(size,MEM2_OTHER);
-
-	if (!p)
-	{
-		std::bad_alloc ba;
-		throw ba;
-	}
-	return p;
-}
-
-// overloaded delete operator
-void  operator delete(void *p)
-{
-	mem2_free(p,MEM2_OTHER);
-}
-
-// overloaded new operator for arrays
-void * operator new[](size_t size)
-{
-	void *p = mem2_malloc(size,MEM2_OTHER);
-
-	if (!p)
-	{
-		std::bad_alloc ba;
-		throw ba;
-	}
-	return p;
-}
-
-// overloaded delete operator for arrays
-void  operator delete[](void *p)
-{
-	mem2_free(p,MEM2_OTHER);
-}
 
 void InitFreeType()
 {

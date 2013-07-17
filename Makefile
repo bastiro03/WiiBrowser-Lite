@@ -41,7 +41,7 @@ LDFLAGS		=	-g -ggdb $(MACHDEP) -Wl
 
 LIBS	:=	-lfribidi -ljpeg -liconv -ldi -lpng -lz \
 				-lcurl -lcyassl -lnetport -lasnd -lvorbisidec \
-					-llua -lm -lfat -lwiiuse -lwiikeyboard -lbte -logc -lfreetype \
+					 -lmxml -llua -lm -lfat -lwiiuse -lwiikeyboard -lbte -logc -lfreetype \
 
 #---------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level containing

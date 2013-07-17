@@ -38,7 +38,7 @@ namespace htmlcxx {
 				bool isComment() const { return this->mComment; }
 				void isComment(bool comment){ this->mComment = comment; }
 
-                inline std::string content(const std::string& html) const { return html.substr(this->mOffset + this->mText.length(), this->mLength - (this->mText.length() + this->mClosingText.length())); }
+                inline std::string content(const std::string& html) const { return html.substr(this->mOffset /*+ this->mText.length()*/, this->mLength /*- (this->mText.length() + this->mClosingText.length())*/); }
 
 				std::pair<bool, std::string> attribute(const std::string &attr) const
 				{

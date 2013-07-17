@@ -125,6 +125,12 @@ extern const u32	button_png_size;
 extern const u8		button_over_png[];
 extern const u32	button_over_png_size;
 
+extern const u8		button_next_png[];
+extern const u32	button_next_png_size;
+
+extern const u8		button_next_over_png[];
+extern const u32	button_next_over_png_size;
+
 extern const u8		button_large_png[];
 extern const u32	button_large_png_size;
 

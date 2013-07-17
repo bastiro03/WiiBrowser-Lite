@@ -72,11 +72,42 @@ bool executeLua(string *html, char *url)
     return true;
 }
 
+string javascript_write(string ext, string replace, string end)
+{
+    int substr_e;
+    int span, pos;
+    int ins, last;
+
+    string tok, temp;
+
+    for(substr_e = 0; (substr_e = ext.find(replace, substr_e)) != string::npos;)
+    {
+        substr_e += replace.length();
+
+        char delim = ext.at(substr_e);
+        if(delim != '"' && delim != '\'')
+            continue;
+
+        pos = ext.find(ext.at(substr_e)+end, substr_e) + 1;
+        span = pos - substr_e;
+        tok = ext.substr(substr_e, span);
+
+        for(ins = 0; (ins = tok.find(delim, ins)) != string::npos; ins++)
+        {
+            ins += 1;
+            last = tok.find(delim, ins);
+            temp.append(tok.substr(ins, last - ins));
+            ins = last;
+        }
+    }
+
+    return temp;
+}
+
 void apply_ruleset(string *html, char *url)
 {
     int substr_b, substr_e;
     int span, pos, tagend;
-    int ins, last;
 
     string ext, tok;
     struct block frame;
@@ -94,27 +125,10 @@ void apply_ruleset(string *html, char *url)
             string temp;
             ext = html->substr(substr_b, span);
 
-            for(substr_e = 0; (substr_e = ext.find("document.write(", substr_e)) != string::npos;)
-            {
-                substr_e += 15;
-                string end = ")";
+            temp.append(javascript_write(ext, "document.write(", ")"));
+            temp.append(javascript_write(ext, "document.writeln(", ")"));
+            temp.append(javascript_write(ext, "innerHTML=", ";"));
 
-                char delim = ext.at(substr_e);
-                if(delim != '"' && delim != '\'')
-                    continue;
-
-                pos = ext.find(ext.at(substr_e)+end, substr_e) + 1;
-                span = pos - substr_e;
-                tok = ext.substr(substr_e, span);
-
-                for(ins = 0; (ins = tok.find(delim, ins)) != string::npos; ins++)
-                {
-                    ins += 1;
-                    last = tok.find(delim, ins);
-                    temp.append(tok.substr(ins, last - ins));
-                    ins = last;
-                }
-            }
             span = tagend - substr_b;
             html->replace(substr_b, span, temp);
         }

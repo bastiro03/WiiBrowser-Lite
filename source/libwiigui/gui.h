@@ -128,6 +128,13 @@ enum BUTTONS
     HOMEPAGE,
 };
 
+enum OUTLINE
+{
+    TOPSITE,
+    FAVORITE,
+    RECENT,
+};
+
 typedef struct _paddata {
 	u16 btns_d;
 	u16 btns_u;
@@ -1096,6 +1103,8 @@ class GuiToolbar : public GuiWindow
         GuiTooltip *SaveTooltip;
         GuiTooltip *HomeTooltip;
         GuiTooltip *ReloadTooltip;
+
+        bool checked;
     protected:
         int buttons;
 };
@@ -1125,7 +1134,7 @@ class GuiSwitch : public GuiWindow
         int direction;
 };
 
-//!Favorite buttons
+//!Download manager
 class GuiDownloadManager : public GuiWindow
 {
 	public:
@@ -1174,7 +1183,8 @@ class GuiDownloadManager : public GuiWindow
 class GuiFavorite : public GuiWindow
 {
 	public:
-		GuiFavorite();
+		GuiFavorite(int outl);
+		GuiFavorite(const GuiFavorite&);
 		~GuiFavorite();
 
 		void Update(GuiTrigger * t);
@@ -1205,6 +1215,7 @@ class GuiFavorite : public GuiWindow
         GuiImage *Thumb;
         GuiText *Label;
     protected:
+        int outline;
         bool editing;
 };
 

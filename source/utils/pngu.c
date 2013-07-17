@@ -10,15 +10,14 @@
 #include <stdio.h>
 #include <malloc.h>
 #include <png.h>
-#include "pngu.h"
 
+#include "pngu.h"
 #include "video.h"
-#include "mem2_manager.h"
 
 //only texture in mem2, internal memory managed by gcc
-#define png_malloc(x) mem2_malloc(x,MEM2_GUI)
-#define png_free(x) mem2_free(x,MEM2_GUI)
-#define png_memalign(x,y) mem2_memalign(x,y,MEM2_GUI)
+#define png_malloc(x) malloc(x)
+#define png_free(x) free(x)
+#define png_memalign(x,y) memalign(x,y)
 
 // Constants
 #define PNGU_SOURCE_BUFFER				1

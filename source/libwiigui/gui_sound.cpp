@@ -11,6 +11,8 @@
  ***************************************************************************/
 
 #include "gui.h"
+#include "../settings.h"
+#include "../main.h"
 
 /**
  * Constructor for the GuiSound class.
@@ -40,6 +42,8 @@ void GuiSound::Play()
 {
 	#ifndef NO_SOUND
 	int vol;
+	if(Settings.MuteSound)
+        return;
 
 	switch(type)
 	{

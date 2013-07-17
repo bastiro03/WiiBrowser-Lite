@@ -29,7 +29,6 @@
 #include "FreeTypeGX.h"
 #include "config.h"
 #include "fileop.h"
-#include "utils/mem2_manager.h"
 
 #ifdef MPLAYER
 
@@ -228,12 +227,6 @@ int main(int argc, char *argv[])
                (32*1024); // padding
     #endif
 
-    u32 size = 10*(vmode->fbWidth * vmode->efbHeight * 4) + // thumbnails
-               (32*1024); // padding
-
-    AddMem2Area (size, MEM2_VIDEO);
-    AddMem2Area (20*1024*1024, MEM2_GUI); // gui
-
     InitVideo2();
     InitFreeType(); // Initialize font system
 
@@ -254,7 +247,7 @@ int main(int argc, char *argv[])
         save_mem("CHDIR failed");
 
     LoadLanguage();
-    __exception_setreload(10);
+    __exception_setreload(30);
 
     ResetVideo_Menu();
     MainMenu(MENU_SPLASH);

@@ -19,6 +19,7 @@ GuiToolbar::GuiToolbar(int set)
     buttons = set;
 	focus = 0; // allow focus
 	selectable = true;
+	checked = false;
 
     imgToolbar = new GuiImageData(toolbar_png, toolbar_png_size);
     this->SetPosition(0,60);
@@ -172,7 +173,8 @@ GuiToolbar::GuiToolbar(int set)
 
     if (buttons == NAVIGATION)
     {
-        btnSett->SetState(STATE_DISABLED);
+        Sett->SetImage(imgFavorites);
+        SettOver->SetImage(imgFavoritesOver);
     }
 
     width = screenwidth;

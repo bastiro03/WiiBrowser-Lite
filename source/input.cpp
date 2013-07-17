@@ -21,7 +21,9 @@
 #include "menu.h"
 #include "video.h"
 #include "input.h"
+
 #include "libwiigui/gui.h"
+#include "settings.h"
 
 #include "mplayer/input/input.h"
 #include "mplayer/osdep/gx_supp.h"
@@ -104,6 +106,12 @@ void ShutoffRumble()
 
 void DoRumble(int i)
 {
+    if(Settings.MuteSound)
+    {
+        WPAD_Rumble(i, 0); // rumble off
+        return;
+    }
+
 	if(rumbleRequest[i] && rumbleCount[i] < 3)
 	{
 		WPAD_Rumble(i, 1); // rumble on

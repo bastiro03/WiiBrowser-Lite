@@ -23,13 +23,12 @@
 #include <jerror.h>
 #include <gctypes.h>
 
-#include "utils/mem2_manager.h"
 #include "video.h"
 
 //only texture in mem2, internal memory managed by gcc
-#define jpg_malloc(x) mem2_malloc(x,MEM2_GUI)
-#define jpg_free(x) mem2_free(x,MEM2_GUI)
-#define jpg_memalign(x,y) mem2_memalign(x,y,MEM2_GUI)
+#define jpg_malloc(x) malloc(x)
+#define jpg_free(x) free(x)
+#define jpg_memalign(x,y) memalign(x,y)
 
 // ******************************************************************************************
 // ******************************************************************************************

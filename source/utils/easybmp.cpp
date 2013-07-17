@@ -25,15 +25,14 @@
 #include <string.h>
 
 #include "video.h"
-#include "mem2_manager.h"
 
 #define DefaultXPelsPerMeter 3780 // set to a default of 96 dpi
 #define DefaultYPelsPerMeter 3780 // set to a default of 96 dpi
 
 //only texture in mem2, internal memory managed by gcc
-#define bmp_malloc(x) mem2_malloc(x,MEM2_GUI)
-#define bmp_free(x) mem2_free(x,MEM2_GUI)
-#define bmp_memalign(x,y) mem2_memalign(x,y,MEM2_GUI)
+#define bmp_malloc(x) malloc(x)
+#define bmp_free(x) free(x)
+#define bmp_memalign(x,y) memalign(x,y)
 
 typedef unsigned char ebmpBYTE;
 typedef unsigned short ebmpWORD;

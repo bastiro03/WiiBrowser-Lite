@@ -91,7 +91,7 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
                 0, 0, 0, 255
             });
             button->label->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-            button->label->SetMaxWidth(TextboxImg->GetWidth()-5);
+            button->label->SetMaxWidth(TextboxImg->GetWidth()-45);
             button->label->SetScroll(SCROLL_HORIZONTAL);
 
             label=new GuiText("Upload", 20, (GXColor)
@@ -128,7 +128,7 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
                 0, 0, 0, 255
             });
             button->label->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-            button->label->SetMaxWidth(TextboxImg->GetWidth()-5);
+            button->label->SetMaxWidth(TextboxImg->GetWidth()-45);
             button->label->SetScroll(SCROLL_HORIZONTAL);
 
             if (lista->label!="noLabel")
@@ -567,12 +567,29 @@ int noSubmit(ListaDiBottoni btn)
     return 1;
 }
 
-void showBar(GuiWindow *mainWindow, GuiWindow *parentWindow)
+void ToggleFavBtn(GuiToolbar *toolbar, char *url, char *orig)
+{
+    if (Settings.IsBookmarked(url) >= 0 ||
+            Settings.IsBookmarked(orig) >= 0)
+    {
+        toolbar->checked = true;
+        toolbar->Sett->SetImage(Toolbar->imgFavoritesOver);
+    }
+    else
+    {
+        toolbar->checked = false;
+        toolbar->Sett->SetImage(Toolbar->imgFavorites);
+    }
+}
+
+void showBar(GuiWindow *mainWindow, GuiWindow *parentWindow, char *url, char *orig)
 {
     if (!Toolbar)
         Toolbar = new GuiToolbar(NAVIGATION);
     ToggleButtons(Toolbar, true);
+    ToggleFavBtn(Toolbar, url, orig);
     Toolbar->SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_IN, 20);
+
     hidden=false;
     HaltGui();
     mainWindow->SetState(STATE_DISABLED);
@@ -596,12 +613,12 @@ void hideBar(GuiWindow *mainWindow, GuiWindow *parentWindow)
     hidden=true;
 }
 
-void HandleMenuBar(string *link, char* url, int *choice, int img, GuiWindow *mainWindow, GuiWindow *parentWindow)
+void HandleMenuBar(string *link, char* url, char* orig, char *title, int *choice, int img, GuiWindow *mainWindow, GuiWindow *parentWindow)
 {
     if (!(userInput[0].wpad->btns_h & WPAD_BUTTON_B))
     {
         if ((img ? userInput[0].wpad->btns_d & WPAD_BUTTON_1 : userInput[0].wpad->btns_d & WPAD_BUTTON_PLUS) && hidden)
-            showBar(mainWindow, parentWindow);
+            showBar(mainWindow, parentWindow, url, orig);
         if ((img ? userInput[0].wpad->btns_d & WPAD_BUTTON_2 : userInput[0].wpad->btns_d & WPAD_BUTTON_MINUS) && !hidden)
             hideBar(mainWindow, parentWindow);
     }
@@ -662,6 +679,26 @@ void HandleMenuBar(string *link, char* url, int *choice, int img, GuiWindow *mai
         {
             Toolbar->btnSave->ResetState();
             *choice=2;
+        }
+
+        if (Toolbar->btnSett->GetState() == STATE_CLICKED)
+        {
+            Toolbar->btnSett->ResetState();
+
+            if (!Toolbar->checked)
+            {
+                if (WindowPrompt("Add Favorite", "Add this site to favorites?", "Yes", "No"))
+                    Settings.AddFavorite(url, title);
+            }
+            else
+            {
+                if (WindowPrompt("Remove Favorite", "Remove this site from favorites?", "Yes", "No"))
+                {
+                    Settings.DelFavorite(url);
+                    Settings.DelFavorite(orig);
+                }
+            }
+            ToggleFavBtn(Toolbar, url, orig);
         }
 
         if (Toolbar->btnHome->GetState() == STATE_CLICKED)

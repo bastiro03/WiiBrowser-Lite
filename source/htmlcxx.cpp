@@ -504,3 +504,40 @@ Lista getTag(char * buffer, char * url)
     }
     return l1;
 }
+
+string ParseList(char *buffer)
+{
+    tree<HTML::Node> dom;
+    string res, html(buffer);
+    HTML::ParserDom parser;
+
+    res.append("<!DOCTYPE NETSCAPE-Bookmark-file-1>");
+    res.append("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
+
+    res.append("<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"></meta>");
+    res.append("<title>Bookmarks</title>");
+    res.append("<dl>");
+
+    //Dump all links of the document
+    dom = parser.parseTree(html);
+    tree<HTML::Node>::iterator it = dom.begin();
+    tree<HTML::Node>::iterator end = dom.end();
+
+    for (; it!=end; ++it)
+    {
+        if (!stricmp(it->tagName().c_str(), "a"))
+        {
+            it->parseAttributes();
+            string attr = it->attribute("href").second;
+            string content = it->content(html);
+
+            if(attr.length() > 0)
+            {
+                res.append("<dt>" + content + "</dt>");
+            }
+        }
+    }
+
+    res.append("</dl>");
+    return res;
+}

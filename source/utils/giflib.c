@@ -44,8 +44,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include "mem2_manager.h"
-
 /*
 #define gif_malloc(x) mem2_malloc(x,MEM2_GUI)
 #define gif_free(x) mem2_free(x,MEM2_GUI)

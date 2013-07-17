@@ -14,7 +14,7 @@
 #include "../utils/jmemsrc.h"
 #include "../utils/easybmp.h"
 #include "../utils/giflib.h"
-#include "../utils/mem2_manager.h"
+// #include "../utils/mem2_manager.h"
 
 #include "gui.h"
 
@@ -59,9 +59,7 @@ GuiImageData::~GuiImageData()
 {
 	if(data)
 	{
-	    if (((u32)data & 0x10000000) != 0)
-            mem2_free(data, MEM2_GUI);
-        else free(data);
+        free(data);
 		data = NULL;
 	}
 }

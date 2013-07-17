@@ -14,11 +14,12 @@
 /**
  * Constructor for the GuiFavorite class.
  */
-GuiFavorite::GuiFavorite()
+GuiFavorite::GuiFavorite(int outl)
 {
     editing = 0;
     xpos = 0;
     ypos = 0;
+    outline = outl;
 
     btnSound = new GuiSound(button_over_pcm, button_over_pcm_size, SOUND_PCM);
     trigA = new GuiTrigger();
@@ -26,14 +27,30 @@ GuiFavorite::GuiFavorite()
     trigH = new GuiTrigger();
     trigH->SetHeldTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
 
-    BlockData = new GuiImageData(button_large_png);
-    BlockDataOver = new GuiImageData(button_large_over_png);
+    if(outline == TOPSITE)
+    {
+        BlockData = new GuiImageData(button_large_png);
+        BlockDataOver = new GuiImageData(button_large_over_png);
+    }
+
+    else if(outline == FAVORITE)
+    {
+        BlockData = new GuiImageData(button_png);
+        BlockDataOver = new GuiImageData(button_over_png);
+    }
+
     RemoveData = new GuiImageData(remove_png);
     RemoveDataOver = new GuiImageData(remove_over_png);
-
     BlockImg = new GuiImage(BlockData);
     BlockImgOver = new GuiImage(BlockDataOver);
-    Block = new GuiButton(BlockData->GetWidth(), BlockData->GetHeight());
+
+    if(outline == FAVORITE)
+    {
+        BlockImg->SetScaleX(0.83);
+        BlockImgOver->SetScaleX(0.83);
+    }
+
+    Block = new GuiButton(GetDataWidth(), GetDataHeight());
     Block->SetHoldable(true);
     Block->SetImage(BlockImg);
     Block->SetImageOver(BlockImgOver);
@@ -57,7 +74,78 @@ GuiFavorite::GuiFavorite()
     Remove->SetSoundOver(btnSound);
     Remove->SetTrigger(trigA);
     Remove->SetEffectGrow();
-    Remove->SetPosition(BlockData->GetWidth()-30,-20);
+    Remove->SetPosition(GetDataWidth()-30,-20);
+    Remove->SetState(STATE_DISABLED);
+    Remove->SetVisible(false);
+
+    this->Append(Block);
+    this->Append(Remove);
+}
+
+/**
+ * Copy constructor for the GuiFavorite class.
+ */
+GuiFavorite::GuiFavorite(const GuiFavorite& ref)
+{
+    editing = 0;
+    xpos = 0;
+    ypos = 0;
+    outline = ref.outline;
+
+    btnSound = new GuiSound(button_over_pcm, button_over_pcm_size, SOUND_PCM);
+    trigA = new GuiTrigger();
+    trigA->SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
+    trigH = new GuiTrigger();
+    trigH->SetHeldTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
+
+    if(outline == TOPSITE)
+    {
+        BlockData = new GuiImageData(button_large_png);
+        BlockDataOver = new GuiImageData(button_large_over_png);
+    }
+
+    else if(outline == FAVORITE)
+    {
+        BlockData = new GuiImageData(button_png);
+        BlockDataOver = new GuiImageData(button_over_png);
+    }
+
+    RemoveData = new GuiImageData(remove_png);
+    RemoveDataOver = new GuiImageData(remove_over_png);
+    BlockImg = new GuiImage(BlockData);
+    BlockImgOver = new GuiImage(BlockDataOver);
+
+    if(outline == FAVORITE)
+    {
+        BlockImg->SetScaleX(0.83);
+        BlockImgOver->SetScaleX(0.83);
+    }
+
+    Block = new GuiButton(GetDataWidth(), GetDataHeight());
+    Block->SetHoldable(true);
+    Block->SetImage(BlockImg);
+    Block->SetImageOver(BlockImgOver);
+    Block->SetSoundOver(btnSound);
+    Block->SetTrigger(trigA);
+    Block->SetEffectGrow();
+
+    Label = new GuiText("", 20, (GXColor) {0, 0, 0, 255});
+    Label->SetMaxWidth(GetDataWidth() - 25);
+
+    Thumb = new GuiImage;
+    Thumb->SetScaleX((GetDataWidth() - 10)/(float)640);
+    Thumb->SetScaleY((GetDataHeight() - 8)/(float)480);
+    Thumb->SetPosition(4, 4);
+
+    RemoveImg = new GuiImage(RemoveData);
+    RemoveImgOver = new GuiImage(RemoveDataOver);
+    Remove = new GuiButton(RemoveData->GetWidth(), RemoveData->GetHeight());
+    Remove->SetImage(RemoveImg);
+    Remove->SetImageOver(RemoveImgOver);
+    Remove->SetSoundOver(btnSound);
+    Remove->SetTrigger(trigA);
+    Remove->SetEffectGrow();
+    Remove->SetPosition(GetDataWidth()-30,-20);
     Remove->SetState(STATE_DISABLED);
     Remove->SetVisible(false);
 
@@ -131,12 +219,12 @@ void GuiFavorite::SetInit(int x, int y)
 
 int GuiFavorite::GetDataWidth()
 {
-    return BlockData->GetWidth();
+    return BlockImg->GetRealWidth();
 }
 
 int GuiFavorite::GetDataHeight()
 {
-    return BlockData->GetHeight();
+    return BlockImg->GetRealHeight();
 }
 
 void GuiFavorite::Update(GuiTrigger * t)

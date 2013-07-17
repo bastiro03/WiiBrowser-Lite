@@ -69,6 +69,12 @@ enum
     CHANNELS
 };
 
+typedef struct favorite
+{
+    char url[512];
+    char name[512];
+} favorite;
+
 class SSettings
 {
     public:
@@ -85,11 +91,19 @@ class SSettings
         //!Find the config file in the default paths
         bool FindConfig();
         //!Return favorite
+        struct favorite *GetFav(int f);
+        //!Return top site
         char *GetUrl(int f);
         //!Return index
         int FindUrl(char *url);
-        //!Remove favorite
+        //!Remove top site
         void Remove(int f, bool update = false);
+        //!Check if url is in favorites
+        int IsBookmarked(char *url);
+        //!Add favorite
+        void AddFavorite(char *url, char *title);
+        //!Remove favorite
+        void DelFavorite(char *url);
         //!Save Settings
         bool Save(bool clean);
 		//!Reset Settings
@@ -109,6 +123,7 @@ class SSettings
         int Autoupdate;
         int RevInt;
 
+        bool MuteSound;
         bool ShowTooltip;
         bool ShowThumbs;
         bool Restore;
@@ -131,8 +146,10 @@ class SSettings
         bool CleanExit;
         bool ExecLua;
 
-        char *Favorites[N];
+        char *TopSites[N];
         u8 *Thumbnails[N];
+
+        struct favorite *Favorites;
     protected:
         //!Find value
         void ParseLine(char *line);
@@ -146,8 +163,15 @@ class SSettings
         bool CheckIntegrity(const char *path);
         //!Check path
         bool IsWritable(const char *path);
+        //!Load favorites
+        bool LoadFavorites();
+        //!Save favorites
+        bool SaveFavorites();
+        //!Create XML file
+        bool CreateXMLFile();
         //!Variables
         FILE * file;
+        int num_fav;
 };
 
 enum

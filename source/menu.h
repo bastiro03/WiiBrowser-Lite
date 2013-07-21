@@ -39,6 +39,7 @@ extern char new_page[];
 
 extern CURL *curl_handle;
 extern CURLM *curl_multi;
+extern CURLSH *curl_share;
 
 enum
 {

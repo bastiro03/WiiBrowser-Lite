@@ -112,8 +112,12 @@ bool AddHandle(Private *data)
     /* follow redirects */
     curl_easy_setopt(eh, CURLOPT_AUTOREFERER, 1);
     curl_easy_setopt(eh, CURLOPT_FOLLOWLOCATION, 1);
-
     curl_easy_setopt(eh, CURLOPT_NOPROGRESS, 0);
+
+    /* setup cookies engine */
+    curl_easy_setopt(eh, CURLOPT_COOKIEFILE, "");
+    curl_easy_setopt(eh, CURLOPT_SHARE, curl_share);
+
     curl_easy_setopt(eh, CURLOPT_PROGRESSFUNCTION, showmultiprogress);
     curl_easy_setopt(eh, CURLOPT_PROGRESSDATA, data);
     curl_easy_setopt(eh, CURLOPT_PRIVATE, data);

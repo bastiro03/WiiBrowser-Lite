@@ -41,6 +41,9 @@ static u8 guistack[GUITH_STACK] ATTRIBUTE_ALIGN (32);
 
 CURL *curl_handle;
 CURLM *curl_multi;
+CURLSH *curl_share;
+
+mutex_t m_mutex;
 History history;
 
 char new_page[MAXLEN];
@@ -2595,12 +2598,30 @@ void DeleteSession()
     curl_easy_setopt(curl_handle, CURLOPT_COOKIEFILE, path);
 }
 
+void Lock(CURL *handle, curl_lock_data data, curl_lock_access access,void *useptr )
+{
+    LWP_MutexLock(m_mutex);
+}
+
+/* unlock callback */
+void Unlock(CURL *handle, curl_lock_data data, void *useptr )
+{
+    LWP_MutexUnlock(m_mutex);
+}
+
 void Init()
 {
     if(curl_global_init(CURL_GLOBAL_ALL))
         ExitRequested = 1;
+    LWP_MutexInit(&m_mutex, 0);
+
+    curl_share = curl_share_init();
+    curl_share_setopt(curl_share, CURLSHOPT_LOCKFUNC, Lock);
+    curl_share_setopt(curl_share, CURLSHOPT_UNLOCKFUNC, Unlock);
+    curl_share_setopt(curl_share, CURLSHOPT_SHARE, CURL_LOCK_DATA_COOKIE);
 
     curl_handle = curl_easy_init();
+    curl_easy_setopt(curl_handle, CURLOPT_SHARE, curl_share);
     memset(prev_page, 0, sizeof(prev_page));
 
     if (!Settings.Restore && Settings.CleanExit)
@@ -2646,9 +2667,12 @@ void Cleanup()
 
     /* setup cookies engine */
     curl_easy_setopt(curl_handle, CURLOPT_COOKIEJAR, cookies);
-
     curl_easy_cleanup(curl_handle);
+
+    curl_share_cleanup(curl_share);
     curl_global_cleanup();
+
+    LWP_MutexDestroy(m_mutex);
     mainWindow = NULL;
 }
 

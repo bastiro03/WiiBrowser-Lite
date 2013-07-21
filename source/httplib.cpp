@@ -90,6 +90,7 @@ struct MemoryStruct {
 };
 
 char *findChr (const char *str, char chr);
+char *findRchr (const char *str, char chr);
 bool mustdownload(char *content);
 
 int parseline(HeaderStruct *mem, size_t realsize);
@@ -153,7 +154,7 @@ int parseline(HeaderStruct *mem, size_t realsize)
             mem->download = 1;
     }
 
-    if(!strncmp(line, "content-disposition", 19))
+    else if(!strncmp(line, "content-disposition", 19))
     {
         strcpy(mem->filename, line);
     }
@@ -242,7 +243,7 @@ void setrequestheaders(CURL *curl_handle, int request)
 struct block postrequest(CURL *curl_handle, const char *url, curl_httppost *data)
 {
     char *ct = NULL;
-    char *post = findChr(url, '?');
+    char *post = findRchr(url, '?');
     struct block b, h;
     int res;
 
@@ -453,7 +454,7 @@ struct curl_httppost *multipartform(const char *url)
 struct block downloadfile(CURL *curl_handle, const char *url, FILE *hfile)
 {
     const char *mode = strrchr(url, '\\');
-    findChr(url, '\\');
+    findRchr(url, '\\');
 
     if (firstRun)
         firstRun = false;
@@ -523,10 +524,19 @@ bool mustdownload(char content[])
     return true;
 }
 
-char *findChr (const char *str, char chr) {
-    char *c=strrchr(str, chr);
-    if (c!=NULL)
-        *c='\0';
+char *findChr (const char *str, char chr)
+{
+    char *c = strchr(str, chr);
+    if (c != NULL)
+        *c = '\0';
+    return (char*)c;
+}
+
+char *findRchr (const char *str, char chr)
+{
+    char *c = strrchr(str, chr);
+    if (c != NULL)
+        *c = '\0';
     return (char*)c;
 }
 
@@ -544,7 +554,7 @@ void trimline(char *init, struct block *dest)
 
     if(init[0] == '"')
     {
-        findChr(init, '"');
+        findChr(init+1, '"');
         strcpy(dest->data, init+1);
     }
     else strcpy(dest->data, init);
@@ -562,10 +572,9 @@ void fillstruct(CURL *handle, HeaderStruct *head, struct block *dest)
         strcpy(dest->type, ct);
     }
 
-    if(strstr(head->filename, "filename"))
+    if((ft = strstr(head->filename, "filename=")))
     {
-        if((ft = findChr(head->filename, '=')))
-            trimline(ft+1, dest);
+        trimline(ft+9, dest);
     }
     else dest->data = NULL;
 }

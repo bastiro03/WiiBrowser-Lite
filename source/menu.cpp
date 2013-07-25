@@ -24,6 +24,8 @@
 #include "filebrowser.h"
 #include "fileop.h"
 #include "filelist.h"
+
+#include "textoperations/texteditor.h"
 #include "config.h"
 
 extern "C" {
@@ -814,9 +816,11 @@ extern "C" void ShutdownGui()
  * Opens an on-screen keyboard window, with the data entered being stored
  * into the specified variable.
  ***************************************************************************/
-void OnScreenKeyboard(GuiWindow *keyboardWindow, char *var, u16 maxlen)
+int OnScreenKeyboard(GuiWindow *keyboardWindow, char *var, u16 maxlen)
 {
     int save = -1;
+    if(!keyboardWindow)
+        keyboardWindow = mainWindow;
 
     GuiKeyboard keyboard(var, maxlen);
 
@@ -858,9 +862,11 @@ void OnScreenKeyboard(GuiWindow *keyboardWindow, char *var, u16 maxlen)
     cancelBtn.SetTrigger(trigA);
     cancelBtn.SetEffectGrow();
 
+    HaltGui();
     keyboard.Append(&okBtn);
     keyboard.Append(&cancelBtn);
     keyboard.SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_IN, 30);
+    ResumeGui();
 
     HaltGui();
     keyboardWindow->SetState(STATE_DISABLED);
@@ -884,12 +890,15 @@ void OnScreenKeyboard(GuiWindow *keyboardWindow, char *var, u16 maxlen)
     }
 
     keyboard.SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_OUT, 50);
-    while(keyboard.GetEffect() > 0) usleep(THREAD_SLEEP);
+    while(keyboard.GetEffect() > 0)
+        usleep(THREAD_SLEEP);
 
     HaltGui();
     keyboardWindow->Remove(&keyboard);
     keyboardWindow->SetState(STATE_DEFAULT);
     ResumeGui();
+
+    return save;
 }
 
 /****************************************************************************
@@ -2598,6 +2607,7 @@ void DeleteSession()
     curl_easy_setopt(curl_handle, CURLOPT_COOKIEFILE, path);
 }
 
+/* lock callback */
 void Lock(CURL *handle, curl_lock_data data, curl_lock_access access,void *useptr )
 {
     LWP_MutexLock(m_mutex);
@@ -2679,9 +2689,23 @@ void Cleanup()
 void MainMenu(int menu)
 {
     int currentMenu = menu;
+    bool exitwindow = false;
+
     Init();
     if(!Settings.CleanExit)
         WindowPrompt("Oops.. this is embarrassing", "The app didn't close correctly, the previous session has been automatically restored", "OK", NULL);
+
+    // TextEditor * Editor = TextEditor::LoadFileEd("sd://apps/wiibrowser/wiibrowser.cfg");
+    // mainWindow->Append(Editor);
+
+    // while(!exitwindow)
+    // {
+        // usleep(100);
+
+        // if(Editor->GetState() == STATE_CLOSED)
+            // exitwindow = true;
+    // }
+    // while(1);
 
     while(currentMenu != MENU_EXIT)
     {

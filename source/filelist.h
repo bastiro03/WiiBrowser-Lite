@@ -41,6 +41,9 @@ extern const u32	textbox_begin_png_size;
 extern const u8		textbox_end_png[];
 extern const u32	textbox_end_png_size;
 
+extern const u8		textreader_box_png[];
+extern const u32	textreader_box_png_size;
+
 extern const u8		arrow_r_png[];
 extern const u32	arrow_r_png_size;
 
@@ -61,6 +64,21 @@ extern const u32	progressbar_right_png_size;
 
 extern const u8		progressbar_line_png[];
 extern const u32	progressbar_line_png_size;
+
+extern const u8		textpointer_img_png[];
+extern const u32	textpointer_img_png_size;
+
+extern const u8		close_png[];
+extern const u32	close_png_size;
+
+extern const u8		close_over_png[];
+extern const u32	close_over_png_size;
+
+extern const u8		maximize_dis_png[];
+extern const u32	maximize_dis_png_size;
+
+extern const u8		minimize_dis_png[];
+extern const u32	minimize_dis_png_size;
 
 extern const u8		remove_png[];
 extern const u32	remove_png_size;

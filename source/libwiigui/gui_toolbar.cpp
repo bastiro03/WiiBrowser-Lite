@@ -175,6 +175,7 @@ GuiToolbar::GuiToolbar(int set)
     {
         Sett->SetImage(imgFavorites);
         SettOver->SetImage(imgFavoritesOver);
+        SettTooltip->SetText(gettext("Favorites"));
     }
 
     width = screenwidth;

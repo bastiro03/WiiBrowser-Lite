@@ -77,6 +77,26 @@ wchar_t* charToWideChar(const char* strChar)
     return strWChar;
 }
 
+char* wideCharToChar(const wchar_t* strWChar, int len)
+{
+    int size = (len > 0) ? len : wcslen(strWChar) + 1;
+    char *strChar = new (std::nothrow) char[size];
+    if(!strChar)
+        return NULL;
+
+    int bt = wcstombs(strChar, strWChar, wcslen(strWChar));
+    if (bt > 0)
+    {
+        strChar[bt] = (char)'\0';
+        return strChar;
+    }
+
+    char *tempDest = strChar;
+    while((*tempDest++ = *strWChar++));
+
+    return strChar;
+}
+
 /**
  * Default constructor for the FreeTypeGX class for WiiXplorer.
  */

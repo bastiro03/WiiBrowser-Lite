@@ -48,7 +48,7 @@
 
 void *LoadFile(char *filepath, int size);
 void WriteFile(char *filepath, int size, void *buffer);
-static unsigned int GetFileSize(const char *filename);
+unsigned int GetFileSize(const char *filename);
 
 static mxml_node_t *xml = NULL;
 static mxml_node_t *node = NULL;
@@ -656,7 +656,7 @@ bool SSettings::CreateXMLFile()
     return true;
 }
 
-static unsigned int
+unsigned int
 GetFileSize(const char *filename)
 {
     struct stat sb;

@@ -281,6 +281,7 @@ void GuiLongText::CalcLineOffsets()
 
 void GuiLongText::Draw()
 {
+    textDynNum = TextLines.size();
 	if((u32)curLineStart >= TextLines.size())
 		return;
 

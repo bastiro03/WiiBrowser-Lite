@@ -108,7 +108,7 @@ extern History history;
 extern Lista getTag(char *buffer, char *url);
 extern int checkTag(vector<string> tag, string name);
 
-extern void OnScreenKeyboard(GuiWindow *keyboardWindow, char *var, u16 maxlen);
+extern int OnScreenKeyboard(GuiWindow *keyboardWindow, char *var, u16 maxlen);
 extern int WindowPrompt(const char *title, const char *msg, const char *btn1Label, const char *btn2Label, const char *longText = NULL);
 extern void ToggleButtons(GuiToolbar *toolbar, bool checkState = 0);
 

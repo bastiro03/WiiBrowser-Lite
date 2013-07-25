@@ -309,15 +309,45 @@ void GuiElement::SetState(int s, int c)
 {
 	state = s;
 	stateChan = c;
+	StateChanged(this, s, c);
+
+    if(c < 0 || c > 3)
+        return;
+
+	POINT p = {0, 0};
+
+    if (userInput[c].wpad)
+    {
+        if (userInput[c].wpad->ir.valid)
+        {
+            p.x = userInput[c].wpad->ir.x - GetLeft();
+            p.y = userInput[c].wpad->ir.y - GetTop();
+        }
+    }
+
+	if (s == STATE_CLICKED)
+	{
+        Clicked(this, c, p);
+	}
+	else if (s == STATE_HELD)
+	{
+        Held(this, c, p);
+	}
 }
 
 void GuiElement::ResetState()
 {
+    int prevState = state;
+	int prevStateChan = stateChan;
+
 	if(state != STATE_DISABLED)
 	{
 		state = STATE_DEFAULT;
 		stateChan = -1;
 	}
+
+	if (prevState == STATE_HELD)
+		Released(this, prevStateChan);
 }
 
 void GuiElement::SetClickable(bool c)
@@ -527,28 +557,28 @@ void GuiElement::UpdateEffects()
 				xoffsetDyn -= effectAmount;
 
 				if(xoffsetDyn <= -screenwidth)
-					effects = 0; // shut off effect
+				    effects = 0; // shut off effect
 			}
 			else if(effects & EFFECT_SLIDE_RIGHT)
 			{
 				xoffsetDyn += effectAmount;
 
 				if(xoffsetDyn >= screenwidth)
-					effects = 0; // shut off effect
+				    effects = 0; // shut off effect
 			}
 			else if(effects & EFFECT_SLIDE_TOP)
 			{
 				yoffsetDyn -= effectAmount;
 
 				if(yoffsetDyn <= -screenheight)
-					effects = 0; // shut off effect
+				    effects = 0; // shut off effect
 			}
 			else if(effects & EFFECT_SLIDE_BOTTOM)
 			{
 				yoffsetDyn += effectAmount;
 
 				if(yoffsetDyn >= screenheight)
-					effects = 0; // shut off effect
+				    effects = 0; // shut off effect
 			}
 		}
 	}

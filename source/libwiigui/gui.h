@@ -49,6 +49,7 @@
 #include "video.h"
 #include "filelist.h"
 #include "input.h"
+#include "sigslot.h"
 #include "oggplayer.h"
 
 extern FreeTypeGX *fontSystem[];
@@ -82,7 +83,8 @@ enum
 	STATE_SELECTED,
 	STATE_CLICKED,
 	STATE_HELD,
-	STATE_DISABLED
+	STATE_DISABLED,
+	STATE_CLOSED
 };
 
 enum
@@ -146,6 +148,12 @@ typedef struct _paddata {
 	u8 triggerL;
 	u8 triggerR;
 } PADData;
+
+typedef struct point
+{
+    int x;
+    int y;
+} POINT;
 
 #define EFFECT_SLIDE_TOP			1
 #define EFFECT_SLIDE_BOTTOM			2
@@ -474,6 +482,12 @@ class GuiElement
 		virtual void Draw();
 		//!Called constantly to redraw the element's tooltip
 		virtual void DrawTooltip();
+		//!Sigslots
+		sigslot::signal3<GuiElement *, int, POINT> Clicked;
+		sigslot::signal3<GuiElement *, int, POINT> Held;
+		sigslot::signal2<GuiElement *, int> Released;
+		sigslot::signal2<GuiElement *, bool> VisibleChanged;
+		sigslot::signal3<GuiElement *, int, int> StateChanged;
 	protected:
 		GuiTrigger * trigger[3]; //!< GuiTriggers (input actions) that this element responds to
 		UpdateCallback updateCB; //!< Callback function to call when this element is updated
@@ -745,6 +759,8 @@ class GuiText : public GuiElement, public Document
 		//!Sets the text of the GuiText element
 		//!\param t UTF-8 Text
 		void SetWText(wchar_t * t);
+		//!Get fontsize
+		int GetFontSize() { return size; };
 		//!Gets the translated text length of the GuiText element
 		int GetLength();
         //!Gets the total line number
@@ -770,6 +786,11 @@ class GuiText : public GuiElement, public Document
 		//!Sets the maximum width of the drawn texture image
 		//!\param w Maximum width
 		void SetMaxWidth(int w);
+        //! virtual function used in child classes
+		virtual int GetStartWidth() { return 0; };
+		//!Get current Textline (for position calculation)
+        const wchar_t * GetDynText(int ind = 0);
+        virtual const wchar_t * GetTextLine(int ind) { return GetDynText(ind); };
 		//!Gets the original text
 		char * GetText();
 		//!Gets the max width of the text
@@ -971,6 +992,7 @@ class GuiKeyboard : public GuiWindow
 	public:
 		GuiKeyboard(char * t, u32 m);
 		~GuiKeyboard();
+		sigslot::signal1<wchar_t> keyPressed;
 		void Update(GuiTrigger * t);
 		char kbtextstr[512];
 	protected:

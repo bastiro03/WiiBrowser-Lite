@@ -443,6 +443,14 @@ void GuiText::Select(GuiTrigger * t)
 	}
 }
 
+const wchar_t * GuiText::GetDynText(int ind)
+{
+	if(ind < 0 || ind >= (int) textDynNum)
+		return text;
+
+	return textDyn[ind];
+}
+
 /**
  * Draw the text on screen
  */

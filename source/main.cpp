@@ -247,7 +247,7 @@ int main(int argc, char *argv[])
         save_mem("CHDIR failed");
 
     LoadLanguage();
-    __exception_setreload(30);
+    __exception_setreload(10);
 
     ResetVideo_Menu();
     MainMenu(MENU_SPLASH);

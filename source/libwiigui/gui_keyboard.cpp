@@ -354,7 +354,7 @@ void GuiKeyboard::Update(GuiTrigger * t)
 			keyCode = keyboardEvent.modifiers;
 
 			if(charCode != 0 || keyCode != 0)
-                DeleteDelay = 0;
+			    DeleteDelay = 0;
 		}
 	}
 

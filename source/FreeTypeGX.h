@@ -246,6 +246,8 @@ const GXColor ftgxWhite = (GXColor){0xff, 0xff, 0xff, 0xff}; /**< Constant color
 
 bool SetupDefaultFont(const char * customfontpath);
 wchar_t* charToWideChar(const char* p);
+char* wideCharToChar(const wchar_t* p, int len);
+
 void InitFreeType();
 void ClearFontData();
 

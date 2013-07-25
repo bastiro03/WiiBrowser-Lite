@@ -28,7 +28,6 @@
 #include <unistd.h>
 #include "TextOperations/TextEditor.h"
 #include "common.h"
-#include "menu.h"
 
 #define FONTSIZE    18
 
@@ -145,10 +144,6 @@ TextEditor::TextEditor(const wchar_t *intext, int LinesToDraw, const char *path)
  */
 TextEditor::~TextEditor()
 {
-    SetEffect(EFFECT_SLIDE_TOP | EFFECT_SLIDE_OUT, 50);
-    while(this->GetEffect() > 0)
-        usleep(50);
-
     this->RemoveAll();
 
     /** Buttons **/
@@ -213,15 +208,15 @@ void TextEditor::WriteTextFile(const char * path)
 {
     FILE * f = fopen(path, "wb");
     if(!f)
-    {
         return;
-    }
 
-    std::string FullText = MainFileTxt->GetText();
+    const wchar_t * FullWText = MainFileTxt->GetDynText(-1);
+    char *FullText = wideCharToChar(FullWText, 0);
 
-    fwrite(FullText.c_str(), 1, strlen(FullText.c_str())+1, f);
-
+    fwrite(FullText, 1, strlen(FullText)+1, f);
     fclose(f);
+
+    delete FullText;
 }
 
 void TextEditor::ResetState()
@@ -257,14 +252,10 @@ int TextEditor::GetState()
             WriteTextFile(filepath);
             state = STATE_CLOSED;
         }
-        else if(choice == 2)
+        else if(choice == 0)
         {
             //to revert the state reset
             state = STATE_CLOSED;
-        }
-        else
-        {
-            this->SetState(STATE_DEFAULT);
         }
     }
 
@@ -393,11 +384,13 @@ TextEditor * TextEditor::LoadFileEd(const char *filepath)
 
     char *string = (char*)LoadFile((char *)filepath, GetFileSize(filepath));
     wchar_t *wstring = charToWideChar(string);
+    free(string);
 
     TextEditor * Editor = new TextEditor(wstring, 9, filepath);
 	Editor->SetEffect(EFFECT_SLIDE_TOP | EFFECT_SLIDE_IN, 50);
 	Editor->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
 	Editor->SetPosition(0, 0);
 
+    delete(wstring);
 	return Editor;
 }

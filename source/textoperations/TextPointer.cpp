@@ -133,7 +133,7 @@ void TextPointer::PositionChanged(int chan, int x, int y)
 
 	while(line[i] != 0 && line[i] != '\n')
 	{
-		w += fontSystem[fontsize]->getCharWidth(line[i]);
+		w += fontSystem[fontsize]->getCharWidth(line[i], i > 0 ? line[i-1] : 0);
 
 		if(w > TextPtr->GetMaxWidth())
 			break;
@@ -188,7 +188,7 @@ void TextPointer::SetLetterPosition(int LetterPos)
 	Position_X = -TextPtr->GetStartWidth();
 
 	for(int i = 0; i < LetterPos; ++i)
-		Position_X += fontSystem[fontsize]->getCharWidth(line[i]);
+		Position_X += fontSystem[fontsize]->getCharWidth(line[i], i > 0 ? line[i-1] : 0);
 
 	LetterNumInLine = LetterPos;
 	Marking = false;

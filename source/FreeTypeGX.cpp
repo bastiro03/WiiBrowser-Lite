@@ -637,8 +637,9 @@ uint16_t FreeTypeGX::getWidth(const wchar_t *text)
 /**
  * Single char width
 */
-uint16_t FreeTypeGX::getCharWidth(const wchar_t wChar)
+uint16_t FreeTypeGX::getCharWidth(const wchar_t wChar, const wchar_t prevChar)
 {
+    uint16_t strWidth = 0;
     ftgxCharData * glyphData = NULL;
 
     std::map<wchar_t, ftgxCharData>::iterator itr = fontData.find(wChar);
@@ -653,10 +654,16 @@ uint16_t FreeTypeGX::getCharWidth(const wchar_t wChar)
 
     if(glyphData != NULL)
     {
-        return glyphData->glyphAdvanceX;
+        if (ftKerningEnabled && prevChar != 0x0000)
+        {
+            FT_Vector pairDelta;
+            FT_Get_Kerning(ftFace, fontData[prevChar].glyphIndex, glyphData->glyphIndex, FT_KERNING_DEFAULT, &pairDelta);
+            strWidth += pairDelta.x >> 6;
+        }
+        strWidth += glyphData->glyphAdvanceX;
     }
 
-    return 0;
+    return strWidth;
 }
 
 /**

@@ -862,11 +862,9 @@ int OnScreenKeyboard(GuiWindow *keyboardWindow, char *var, u16 maxlen)
     cancelBtn.SetTrigger(trigA);
     cancelBtn.SetEffectGrow();
 
-    HaltGui();
     keyboard.Append(&okBtn);
     keyboard.Append(&cancelBtn);
     keyboard.SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_IN, 30);
-    ResumeGui();
 
     HaltGui();
     keyboardWindow->SetState(STATE_DISABLED);
@@ -2695,17 +2693,26 @@ void MainMenu(int menu)
     if(!Settings.CleanExit)
         WindowPrompt("Oops.. this is embarrassing", "The app didn't close correctly, the previous session has been automatically restored", "OK", NULL);
 
-    // TextEditor * Editor = TextEditor::LoadFileEd("sd://apps/wiibrowser/wiibrowser.cfg");
-    // mainWindow->Append(Editor);
+    TextEditor * Editor = TextEditor::LoadFileEd("sd://apps/wiibrowser/wiibrowser.cfg");
+    mainWindow->Append(Editor);
 
-    // while(!exitwindow)
-    // {
-        // usleep(100);
+    while(!exitwindow)
+    {
+        usleep(100);
 
-        // if(Editor->GetState() == STATE_CLOSED)
-            // exitwindow = true;
-    // }
-    // while(1);
+        if(Editor->GetState() == STATE_CLOSED)
+            exitwindow = true;
+    }
+
+    Editor->SetEffect(EFFECT_SLIDE_TOP | EFFECT_SLIDE_OUT, 50);
+    while(Editor->GetEffect() > 0)
+        usleep(50);
+
+    HaltGui();
+    mainWindow->Remove(Editor);
+    ResumeGui();
+
+    delete(Editor);
 
     while(currentMenu != MENU_EXIT)
     {

@@ -10,25 +10,54 @@
  * GUI class definitions
  ***************************************************************************/
 
+#include <string>
+
 #include "gui.h"
 #include "wiikeyboard/usbkeyboard.h"
+
+#define MAX_KEYBOARD_DISPLAY	390
 
 static char tmptxt[MAX_KEYBOARD_DISPLAY];
 bool GuiKeyboard::bInitUSBKeyboard = true;
 
-static char * GetDisplayText(char * t)
+int CalcMaxLine(char * t)
+{
+    int len = strlen(t);
+    wchar_t *wt = charToWideChar(t);
+    int w, startPos = 0;
+
+    for(int i = 0; i < len; i++)
+    {
+        w = fontSystem[20]->getWidth(&wt[i]);
+        if(w < MAX_KEYBOARD_DISPLAY)
+            break;
+
+        startPos++;
+    }
+
+    delete wt;
+    return startPos;
+}
+
+char * GuiKeyboard::GetDisplayText(char * t)
 {
 	if(!t)
 		return NULL;
 
 	int len = strlen(t);
+    int n = 0;
+    int startPos = CalcMaxLine(t);
 
-	if(len < MAX_KEYBOARD_DISPLAY)
-		return t;
+    for(int i = startPos; i < len; ++i)
+    {
+        tmptxt[n] = t[i];
+        ++n;
+    }
 
-	strncpy(tmptxt, &t[len-MAX_KEYBOARD_DISPLAY+1], MAX_KEYBOARD_DISPLAY);
-	tmptxt[MAX_KEYBOARD_DISPLAY-1] = 0;
-	return &tmptxt[0];
+    tmptxt[n] = 0;
+    CurrentFirstLetter = startPos;
+
+	return tmptxt;
 }
 
 /**
@@ -44,6 +73,14 @@ GuiKeyboard::GuiKeyboard(char * t, u32 max)
 	memset(&keyboardEvent, 0, sizeof(keyboardEvent));
 	DeleteDelay = 0;
 	BackDelay = 0;
+	CurrentFirstLetter = 0;
+
+	if(t)
+	{
+        CurrentFirstLetter = CalcMaxLine(t);
+        if(CurrentFirstLetter < 0)
+            CurrentFirstLetter = 0;
+	}
 
 	width = 540;
 	height = 400;
@@ -120,10 +157,40 @@ GuiKeyboard::GuiKeyboard(char * t, u32 max)
 	keyTextboxImg->SetPosition(0, 0);
 	this->Append(keyTextboxImg);
 
-	kbText = new GuiText(GetDisplayText(kbtextstr), 20, (GXColor){0, 0, 0, 0xff});
-	kbText->SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
-	kbText->SetPosition(0, 13);
+	kbText = new GuiLongText(GetDisplayText(kbtextstr), 20, (GXColor){0, 0, 0, 0xff});
+	kbText->SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
+	kbText->SetLinesToDraw(1);
 	this->Append(kbText);
+
+    trigHeldA = new GuiTrigger;
+	trigHeldA->SetHeldTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
+    trigLeft = new GuiTrigger;
+	trigLeft->SetButtonOnlyTrigger(-1, WPAD_BUTTON_LEFT | WPAD_CLASSIC_BUTTON_LEFT, PAD_BUTTON_LEFT);
+    trigRight = new GuiTrigger;
+	trigRight->SetButtonOnlyTrigger(-1, WPAD_BUTTON_RIGHT | WPAD_CLASSIC_BUTTON_RIGHT, PAD_BUTTON_RIGHT);
+
+    GoRight = new GuiButton(1, 1);
+	GoRight->SetSoundClick(keySoundClick);
+	GoRight->SetTrigger(trigRight);
+    GoRight->Clicked.connect(this, &GuiKeyboard::OnPositionMoved);
+	this->Append(GoRight);
+
+	GoLeft = new GuiButton(1, 1);
+	GoLeft->SetSoundClick(keySoundClick);
+	GoLeft->SetTrigger(trigLeft);
+    GoLeft->Clicked.connect(this, &GuiKeyboard::OnPositionMoved);
+	this->Append(GoLeft);
+
+    TextPointerBtn = new TextPointer(kbText, 0);
+	TextPointerBtn->SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
+	TextPointerBtn->SetPosition(7, 13);
+    TextPointerBtn->SetHoldable(true);
+    TextPointerBtn->SetTrigger(trigHeldA);
+    TextPointerBtn->Held.connect(this, &GuiKeyboard::OnPointerHeld);
+	this->Append(TextPointerBtn);
+
+    TextPointerBtn->PositionChanged(0, 0, 0);
+    TextPointerBtn->SetLetterPosition(MAX_KEYBOARD_DISPLAY-1);
 
 	key = new GuiImageData(keyboard_key_png);
 	keyOver = new GuiImageData(keyboard_key_over_png);
@@ -256,6 +323,9 @@ GuiKeyboard::GuiKeyboard(char * t, u32 max)
 GuiKeyboard::~GuiKeyboard()
 {
 	delete kbText;
+	delete TextPointerBtn;
+	delete GoRight;
+    delete GoLeft;
 	delete keyTextbox;
 	delete keyTextboxImg;
 	delete keyCapsText;
@@ -287,6 +357,9 @@ GuiKeyboard::~GuiKeyboard()
 	delete keySoundClick;
 	delete trigH;
 	delete trigA;
+	delete trigHeldA;
+	delete trigLeft;
+	delete trigRight;
 	delete trig2;
 
 	for(int i=0; i<4; i++)
@@ -302,6 +375,91 @@ GuiKeyboard::~GuiKeyboard()
 			}
 		}
 	}
+}
+
+void GuiKeyboard::AddChar(int pos, char Char)
+{
+    if(pos < 0)
+        return;
+
+    std::string temp(kbtextstr);
+    temp.insert(pos, 1, Char);
+    strcpy(kbtextstr, temp.c_str());
+
+    MoveText(1);
+}
+
+void GuiKeyboard::RemoveChar(int pos)
+{
+	if (pos < 0 || pos >= (int) strlen(kbtextstr))
+		return;
+
+    std::string temp(kbtextstr);
+    temp.erase(pos, 1);
+    strcpy(kbtextstr, temp.c_str());
+
+    MoveText(-1);
+}
+
+void GuiKeyboard::MoveText(int n)
+{
+    int LettDiff;
+    LettDiff = CalcMaxLine(kbtextstr) - CurrentFirstLetter + n;
+
+    CurrentFirstLetter = CalcMaxLine(kbtextstr);
+    kbText->SetText(GetDisplayText(kbtextstr));
+    TextPointerBtn->UpdateWidth();
+
+    wchar_t *wstr = charToWideChar(kbtextstr);
+    int strlength = fontSystem[20]->getWidth(wstr);
+    delete(wstr);
+
+    if(strlength > MAX_KEYBOARD_DISPLAY)
+        TextPointerBtn->SetLetterPosition(TextPointerBtn->GetCurrentLetter());
+    else
+        TextPointerBtn->SetLetterPosition(TextPointerBtn->GetCurrentLetter()+LettDiff);
+}
+
+void GuiKeyboard::OnPointerHeld(GuiElement *sender, int pointer, POINT p)
+{
+    TextPointerBtn->PositionChanged(pointer, p.x, p.y);
+}
+
+void GuiKeyboard::OnPositionMoved(GuiElement *sender, int pointer, POINT p)
+{
+    sender->ResetState();
+
+    if(sender == GoLeft)
+    {
+        int currentPointLetter = TextPointerBtn->GetCurrentLetter();
+        currentPointLetter--;
+        if(currentPointLetter < 0)
+        {
+            currentPointLetter = 0;
+            CurrentFirstLetter--;
+            if(CurrentFirstLetter < 0)
+                CurrentFirstLetter = 0;
+        }
+        kbText->SetText(GetDisplayText(kbtextstr));
+        TextPointerBtn->UpdateWidth();
+        TextPointerBtn->SetLetterPosition(currentPointLetter);
+    }
+    else if(sender == GoRight)
+    {
+        int currentPointLetter = TextPointerBtn->GetCurrentLetter();
+        currentPointLetter++;
+        int strlength = strlen(kbtextstr);
+        if(currentPointLetter > (MAX_KEYBOARD_DISPLAY-1) || currentPointLetter > strlength)
+        {
+            currentPointLetter--;
+            CurrentFirstLetter++;
+            if(CurrentFirstLetter > (strlength-MAX_KEYBOARD_DISPLAY+1))
+                CurrentFirstLetter = strlength-MAX_KEYBOARD_DISPLAY+1;
+        }
+        kbText->SetText(GetDisplayText(kbtextstr));
+        TextPointerBtn->UpdateWidth();
+        TextPointerBtn->SetLetterPosition(currentPointLetter);
+    }
 }
 
 void GuiKeyboard::Update(GuiTrigger * t)
@@ -362,8 +520,7 @@ void GuiKeyboard::Update(GuiTrigger * t)
 	{
 		if(strlen(kbtextstr) < kbtextmaxlen)
 		{
-			kbtextstr[strlen(kbtextstr)] = ' ';
-			kbText->SetText(kbtextstr);
+			AddChar(CurrentFirstLetter+TextPointerBtn->GetCurrentLetter(), ' ');
 		}
 		keySpace->SetState(STATE_SELECTED, t->chan);
 	}
@@ -371,8 +528,7 @@ void GuiKeyboard::Update(GuiTrigger * t)
 	{
 		if(strlen(kbtextstr) < kbtextmaxlen)
 		{
-			kbtextstr[strlen(kbtextstr)] = '\n';
-			kbText->SetText(kbtextstr);
+			AddChar(CurrentFirstLetter+TextPointerBtn->GetCurrentLetter(), '\n');
 		}
 		keyEnter->SetState(STATE_SELECTED, t->chan);
 	}
@@ -382,8 +538,7 @@ void GuiKeyboard::Update(GuiTrigger * t)
 		{
             if(strlen(kbtextstr) > 0)
             {
-                kbtextstr[strlen(kbtextstr)-1] = 0;
-                kbText->SetText(GetDisplayText(kbtextstr));
+                RemoveChar(CurrentFirstLetter+TextPointerBtn->GetCurrentLetter()-1);
             }
             BackDelay = 0;
 		}
@@ -392,8 +547,7 @@ void GuiKeyboard::Update(GuiTrigger * t)
 	{
         if(strlen(kbtextstr) > 0)
         {
-            kbtextstr[strlen(kbtextstr)-1] = 0;
-            kbText->SetText(GetDisplayText(kbtextstr));
+            RemoveChar(CurrentFirstLetter+TextPointerBtn->GetCurrentLetter()-1);
         }
 	}
 	else if(keyShift->GetState() == STATE_CLICKED       || keyCode == 0xf101)
@@ -414,9 +568,8 @@ void GuiKeyboard::Update(GuiTrigger * t)
 	{
 		if(strlen(kbtextstr) < kbtextmaxlen)
 		{
-            kbtextstr[strlen(kbtextstr)] = charCode;
+		    AddChar(CurrentFirstLetter+TextPointerBtn->GetCurrentLetter(), charCode);
         }
-		kbText->SetText(GetDisplayText(kbtextstr));
 
 		if(shift)
         {
@@ -451,14 +604,14 @@ void GuiKeyboard::Update(GuiTrigger * t)
 					{
 						if(shift || caps)
 						{
-							kbtextstr[strlen(kbtextstr)] = keys[i][j].chShift;
+							AddChar(CurrentFirstLetter+TextPointerBtn->GetCurrentLetter(), keys[i][j].chShift);
 						}
 						else
 						{
-							kbtextstr[strlen(kbtextstr)] = keys[i][j].ch;
+							AddChar(CurrentFirstLetter+TextPointerBtn->GetCurrentLetter(), keys[i][j].ch);
 						}
 					}
-					kbText->SetText(GetDisplayText(kbtextstr));
+
 					keyBtn[i][j]->SetState(STATE_SELECTED, t->chan);
 
 					if(shift)

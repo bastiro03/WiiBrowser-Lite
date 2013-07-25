@@ -304,7 +304,7 @@ class FreeTypeGX {
 		uint16_t drawLongText(int16_t x, int16_t y, const wchar_t *text, GXColor color, uint16_t textStyle, uint16_t lineDistance, uint16_t maxLines, uint16_t startWidth, uint16_t maxWidth);
 
 		uint16_t getWidth(const wchar_t *text);
-        uint16_t getCharWidth(const wchar_t wChar);
+        uint16_t getCharWidth(const wchar_t wChar, const wchar_t prevChar = 0);
 		uint16_t getHeight(const wchar_t *text);
 		void getOffset(const wchar_t *text, ftgxDataOffset* offset, uint16_t widthLimit = 0);
 };

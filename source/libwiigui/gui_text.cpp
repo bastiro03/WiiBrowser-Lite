@@ -414,6 +414,11 @@ void GuiText::SetModel(int model)
     textModel = model;
 }
 
+int GuiText::GetTextMaxWidth()
+{
+    return maxWidth;
+}
+
 /**
  * Update the text on screen
  */

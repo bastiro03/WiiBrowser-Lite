@@ -59,9 +59,8 @@ extern FreeTypeGX *fontSystem[];
 #define SCROLL_DELAY_DECREASE	300
 #define FILE_PAGESIZE 			8
 #define PAGESIZE 				8
-#define MAX_OPTIONS 			150
-#define MAX_KEYBOARD_DISPLAY	32
 
+#define MAX_OPTIONS 			150
 #define MAX_LINES 				50
 #define MAX_DOWNLOADS 			5
 
@@ -276,7 +275,7 @@ class GuiTrigger
 extern GuiTrigger userInput[4];
 
 //!Primary GUI class. Most other classes inherit from this class.
-class GuiElement
+class GuiElement : public sigslot::has_slots<>
 {
 	public:
 		//!Constructor
@@ -761,6 +760,8 @@ class GuiText : public GuiElement, public Document
 		void SetWText(wchar_t * t);
 		//!Get fontsize
 		int GetFontSize() { return size; };
+		//!Get the max textwidth
+        int GetTextMaxWidth();
 		//!Gets the translated text length of the GuiText element
 		int GetLength();
         //!Gets the total line number
@@ -986,6 +987,8 @@ typedef struct _keytype {
 	char ch, chShift;
 } Key;
 
+#include "textoperations/TextPointer.h"
+
 //!On-screen keyboard
 class GuiKeyboard : public GuiWindow
 {
@@ -995,7 +998,13 @@ class GuiKeyboard : public GuiWindow
 		sigslot::signal1<wchar_t> keyPressed;
 		void Update(GuiTrigger * t);
 		char kbtextstr[512];
+		void AddChar(int pos, char Char);
+        void RemoveChar(int pos);
 	protected:
+        void MoveText(int n);
+        char * GetDisplayText(char * t);
+        void OnPointerHeld(GuiElement *sender, int pointer, POINT p);
+        void OnPositionMoved(GuiElement *sender, int pointer, POINT p);
         static bool bInitUSBKeyboard;
 		int BackDelay;
 		int DeleteDelay;
@@ -1004,7 +1013,11 @@ class GuiKeyboard : public GuiWindow
 		u32 kbtextmaxlen;
 		int shift;
 		int caps;
-		GuiText * kbText;
+		int CurrentFirstLetter;
+		GuiButton * GoLeft;
+		GuiButton * GoRight;
+		GuiLongText * kbText;
+		TextPointer * TextPointerBtn;
 		GuiImage * keyTextboxImg;
 		GuiText * keyCapsText;
 		GuiImage * keyCapsImg;
@@ -1039,6 +1052,9 @@ class GuiKeyboard : public GuiWindow
 		GuiSound * keySoundOver;
 		GuiSound * keySoundClick;
 		GuiTrigger * trigA;
+		GuiTrigger * trigHeldA;
+		GuiTrigger * trigLeft;
+		GuiTrigger * trigRight;
 		GuiTrigger * trigH;
 		GuiTrigger * trig2;
 		Key keys[4][11]; // two chars = less space than one pointer

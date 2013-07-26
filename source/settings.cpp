@@ -286,7 +286,7 @@ bool SSettings::SetSetting(char *name, char *value)
 	}
     else if (strcmp(name, "Autoupdate") == 0) {
 		if (sscanf(value, "%d", &i) == 1) {
-			// Autoupdate = i;
+            Autoupdate = i;
 		}
 		return true;
 	}

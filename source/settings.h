@@ -132,8 +132,8 @@ class SSettings
         char ConfigPath[256];
         char BootDevice[6];
 
-        char Homepage[256];
-        char StartPage[256];
+        char Homepage[512];
+        char StartPage[512];
         char Revision[7];
         char Uuid[20];
 

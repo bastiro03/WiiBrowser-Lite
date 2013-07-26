@@ -98,7 +98,7 @@ void SSettings::SetDefault()
     }
 
     memset(Proxy, 0, 256);
-    memset(StartPage, 0, 256);
+    memset(StartPage, 0, 512);
 
     Favorites = NULL;
     num_fav = 0;
@@ -286,7 +286,7 @@ bool SSettings::SetSetting(char *name, char *value)
 	}
     else if (strcmp(name, "Autoupdate") == 0) {
 		if (sscanf(value, "%d", &i) == 1) {
-			Autoupdate = i;
+			// Autoupdate = i;
 		}
 		return true;
 	}
@@ -494,12 +494,29 @@ void SSettings::ChangeFolder()
 void SSettings::SetStartPage(char *page)
 {
     int i = 0;
+    char line[1024];
+
+    FILE *file = NULL;
+
     if(!strcasecmp(page, "homepage"))
-        strcpy(StartPage, Homepage);
-    else if(!sscanf(page, "bookmark_%d", &i))
+        strncpy(StartPage, Homepage, sizeof(StartPage));
+
+    else if(!strncmp(page, "http", 4))
         strncpy(StartPage, page, sizeof(StartPage));
-    else if(GetUrl(i))
-        strcpy(StartPage, GetUrl(i));
+
+    else if(sscanf(page, "bookmark_%d", &i))
+    {
+        if(GetUrl(i))
+            strcpy(StartPage, GetUrl(i));
+    }
+
+    else if((file = fopen(page, "r")))
+    {
+        fgets(line, sizeof(line), file);
+        TrimLine(StartPage, line, sizeof(StartPage));
+    }
+
+    fclose(file);
 }
 
 int SSettings::GetStartPage(char *dest)

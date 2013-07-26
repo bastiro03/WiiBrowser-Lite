@@ -516,6 +516,7 @@ void GuiElement::UpdateEffects()
 				if(xoffsetDyn >= 0)
 				{
 					xoffsetDyn = 0;
+					EffectFinished(this);
 					effects = 0;
 				}
 			}
@@ -526,6 +527,7 @@ void GuiElement::UpdateEffects()
 				if(xoffsetDyn <= 0)
 				{
 					xoffsetDyn = 0;
+					EffectFinished(this);
 					effects = 0;
 				}
 			}
@@ -536,6 +538,7 @@ void GuiElement::UpdateEffects()
 				if(yoffsetDyn >= 0)
 				{
 					yoffsetDyn = 0;
+					EffectFinished(this);
 					effects = 0;
 				}
 			}
@@ -546,6 +549,7 @@ void GuiElement::UpdateEffects()
 				if(yoffsetDyn <= 0)
 				{
 					yoffsetDyn = 0;
+					EffectFinished(this);
 					effects = 0;
 				}
 			}
@@ -557,28 +561,40 @@ void GuiElement::UpdateEffects()
 				xoffsetDyn -= effectAmount;
 
 				if(xoffsetDyn <= -screenwidth)
+				{
+				    EffectFinished(this);
 				    effects = 0; // shut off effect
+				}
 			}
 			else if(effects & EFFECT_SLIDE_RIGHT)
 			{
 				xoffsetDyn += effectAmount;
 
 				if(xoffsetDyn >= screenwidth)
+                {
+				    EffectFinished(this);
 				    effects = 0; // shut off effect
+				}
 			}
 			else if(effects & EFFECT_SLIDE_TOP)
 			{
 				yoffsetDyn -= effectAmount;
 
 				if(yoffsetDyn <= -screenheight)
+                {
+				    EffectFinished(this);
 				    effects = 0; // shut off effect
+				}
 			}
 			else if(effects & EFFECT_SLIDE_BOTTOM)
 			{
 				yoffsetDyn += effectAmount;
 
 				if(yoffsetDyn >= screenheight)
+				{
+				    EffectFinished(this);
 				    effects = 0; // shut off effect
+				}
 			}
 		}
 	}
@@ -589,11 +605,13 @@ void GuiElement::UpdateEffects()
 		if(effectAmount < 0 && alphaDyn <= 0)
 		{
 			alphaDyn = 0;
+			EffectFinished(this);
 			effects &= (~EFFECT_FADE); // shut off effect
 		}
 		else if(effectAmount > 0 && alphaDyn >= alpha)
 		{
 			alphaDyn = alpha;
+			EffectFinished(this);
 			effects &= (~EFFECT_FADE); // shut off effect
 		}
 	}
@@ -606,6 +624,7 @@ void GuiElement::UpdateEffects()
 			|| (effectAmount > 0 && scaleDyn >= effTar100))
 		{
 			scaleDyn = effTar100;
+			EffectFinished(this);
 			effects &= (~EFFECT_SCALE); // shut off effect
 		}
 	}

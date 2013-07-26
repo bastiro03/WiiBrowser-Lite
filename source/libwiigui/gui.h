@@ -487,6 +487,7 @@ class GuiElement : public sigslot::has_slots<>
 		sigslot::signal2<GuiElement *, int> Released;
 		sigslot::signal2<GuiElement *, bool> VisibleChanged;
 		sigslot::signal3<GuiElement *, int, int> StateChanged;
+		sigslot::signal1<GuiElement *> EffectFinished;
 	protected:
 		GuiTrigger * trigger[3]; //!< GuiTriggers (input actions) that this element responds to
 		UpdateCallback updateCB; //!< Callback function to call when this element is updated
@@ -867,19 +868,25 @@ class GuiTooltip : public GuiElement
 		//!Sets the text of the GuiTooltip element
 		//!\param t Text
 		void SetText(const char * t);
+		//!Sets the timeout of the GuiTooltip element
+		void SetTimeout(const char *replace, int sec);
 		//!Constantly called to draw the GuiTooltip
 		void DrawTooltip();
 		//!Resets the text for all contained elements
 		void ResetText();
 		time_t time1, time2; //!< Tooltip times
+		time_t time3, time4; //!< Tooltip timeouts
 
 	protected:
 		GuiImage leftImage; //!< Tooltip left image
 		GuiImage tileImage; //!< Tooltip tile image
 		GuiImage rightImage; //!< Tooltip right image
 		GuiText *text; //!< Tooltip text
+		char *origtext; //!< Tooltip text
+		void OnEffectFinished(GuiElement *e);
 		int offsetHr;
 		int offsetVr;
+		int timeout;
 };
 
 //!Display, manage, and manipulate buttons in the GUI. Buttons can have images, icons, text, and sound set (all of which are optional)

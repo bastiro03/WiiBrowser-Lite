@@ -158,7 +158,8 @@ GuiKeyboard::GuiKeyboard(char * t, u32 max)
 	this->Append(keyTextboxImg);
 
 	kbText = new GuiLongText(GetDisplayText(kbtextstr), 20, (GXColor){0, 0, 0, 0xff});
-	kbText->SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
+	kbText->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+	kbText->SetPosition(0, 15);
 	kbText->SetLinesToDraw(1);
 	this->Append(kbText);
 
@@ -183,7 +184,7 @@ GuiKeyboard::GuiKeyboard(char * t, u32 max)
 
     TextPointerBtn = new TextPointer(kbText, 0);
 	TextPointerBtn->SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
-	TextPointerBtn->SetPosition(7, 13);
+	TextPointerBtn->SetPosition(7, 10);
     TextPointerBtn->SetHoldable(true);
     TextPointerBtn->SetTrigger(trigHeldA);
     TextPointerBtn->Held.connect(this, &GuiKeyboard::OnPointerHeld);

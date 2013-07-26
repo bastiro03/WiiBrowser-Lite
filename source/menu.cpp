@@ -651,6 +651,8 @@ static void *UpdateThread (void *arg)
 
     if(installUpdate)
     {
+        App->SaveTooltip->SetTimeout("Updating", 2);
+
         if(downloadUpdate(upd.appversion))
             ExitRequested = true;
     }
@@ -1439,7 +1441,7 @@ static int MenuSettings()
 
         case 4:
             Settings.Autoupdate++;
-             if (Settings.Autoupdate >= CHANNELS)
+             if (Settings.Autoupdate >= NIGHTLY)
                 Settings.Autoupdate = 0;
             break;
 
@@ -1486,7 +1488,7 @@ static int MenuSettings()
 
             if (Settings.Autoupdate == 0) sprintf (options.value[4], "Disabled");
             else if (Settings.Autoupdate == 1) sprintf (options.value[4], "Stable");
-            else if (Settings.Autoupdate == 2) sprintf (options.value[4], "Nightly");
+            // else if (Settings.Autoupdate == 2) sprintf (options.value[4], "Nightly");
 
             if (Settings.Language == LANG_JAPANESE) sprintf (options.value[5], "Japanese");
             else if (Settings.Language == LANG_ENGLISH) sprintf (options.value[5], "English");
@@ -1991,7 +1993,10 @@ jump:
     if(HTML.size == -1)
     {
         if(performDownload(&hfile, url, &HTML))
+        {
             AddDownload(curl_multi, url, hfile);
+            App->SaveTooltip->SetTimeout("Download added", 2);
+        }
 
         free(url);
         return MENU_HOME;
@@ -2687,12 +2692,13 @@ void Cleanup()
 void MainMenu(int menu)
 {
     int currentMenu = menu;
-    bool exitwindow = false;
+    // bool exitwindow = false;
 
     Init();
     if(!Settings.CleanExit)
         WindowPrompt("Oops.. this is embarrassing", "The app didn't close correctly, the previous session has been automatically restored", "OK", NULL);
 
+/*
     TextEditor * Editor = TextEditor::LoadFileEd("sd://apps/wiibrowser/wiibrowser.cfg");
     mainWindow->Append(Editor);
 
@@ -2713,6 +2719,7 @@ void MainMenu(int menu)
     ResumeGui();
 
     delete(Editor);
+*/
 
     while(currentMenu != MENU_EXIT)
     {

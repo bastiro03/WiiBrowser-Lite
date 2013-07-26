@@ -37,17 +37,22 @@ GuiTooltip::GuiTooltip(const char *t)
 	offsetVr = -50;
 
 	text = NULL;
+	origtext = NULL;
+	timeout = 0;
+
 	if(t)
 		SetText(t);
+
     this->SetAlignment(ALIGN_CENTRE,ALIGN_TOP);
+    this->EffectFinished.connect(this, &GuiTooltip::OnEffectFinished);
 
 	leftImage.SetParent(this);
 	tileImage.SetParent(this);
 	rightImage.SetParent(this);
 	text->SetParent(this);
 
-	time1 = 0;
-	time2 = 0;
+	time1 = time2 = 0;
+	time3 = time4 = 0;
 }
 
 /*
@@ -57,6 +62,8 @@ GuiTooltip::~GuiTooltip()
 {
 	if(text)
 		delete text;
+    if(origtext)
+		delete origtext;
 }
 
 float GuiTooltip::GetScale()
@@ -127,6 +134,32 @@ void GuiTooltip::ResetText()
 	width = leftImage.GetWidth() + tile * tileImage.GetWidth() + rightImage.GetWidth();
 }
 
+void GuiTooltip::OnEffectFinished(GuiElement *e)
+{
+    if(!origtext)
+        return;
+
+    if(this->GetAlpha() == 0)
+        text->SetText(origtext);
+}
+
+void GuiTooltip::SetTimeout(const char *replace, int sec)
+{
+    if(!replace)
+        replace = text->GetText();
+
+    if(origtext)
+		delete origtext;
+
+    origtext = new char [strlen(text->GetText())+1];
+    strcpy(origtext, text->GetText());
+    text->SetText(replace);
+
+    time(&time3);
+    timeout = sec;
+    SetEffect(EFFECT_FADE, 20);
+}
+
 /*
  * Draws the tooltip
  */
@@ -134,6 +167,18 @@ void GuiTooltip::DrawTooltip()
 {
 	if(!text || !this->IsVisible() || !parentElement)
 		return;
+
+    if(timeout)
+    {
+        time(&time4);
+
+        if(difftime(time4, time3) >= (float)timeout)
+        {
+            SetEffect(EFFECT_FADE, -20);
+            timeout = 0;
+        }
+        else goto draw;
+    }
 
 	if(parentElement->GetState() == STATE_SELECTED)
 	{
@@ -147,7 +192,7 @@ void GuiTooltip::DrawTooltip()
 
 		if(time1 == 0 || difftime(time1, time2) >= 1.0)
 		{
-			if(time1 != 0)
+			if(time1 != 0 && !timeout)
 				SetEffect(EFFECT_FADE, 20);
 			time1 = 0;
 			goto draw;
@@ -155,7 +200,7 @@ void GuiTooltip::DrawTooltip()
 	}
 	else
 	{
-		if(time2 != 0 && time1 == 0)
+		if(time2 != 0 && time1 == 0 && !timeout)
 			SetEffect(EFFECT_FADE, -20);
 		time2 = 0;
 	}

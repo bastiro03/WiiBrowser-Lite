@@ -69,16 +69,17 @@ void SSettings::SetDefault()
     Language = LANG_ENGLISH;
     UserAgent = LIBCURL;
     Autoupdate = STABLE;
+    ZipFile = ASK;
 
     ShowTooltip = true;
     Restore = true;
     ShowThumbs = true;
-    ExecLua = true;
+    DocWrite = true;
     CleanExit = true;
 
     MuteSound = false;
     IFrame = false;
-    DocWrite = false;
+    ExecLua = false;
 
     sprintf(Homepage, DEFAULT_HOMEPAGE);
     sprintf(DefaultFolder, DEFAULT_APP_PATH);
@@ -125,6 +126,7 @@ bool SSettings::Save(bool clean)
 	fprintf(file, "Language = %d\r\n", Language);
 	fprintf(file, "Revision = %d\r\n", RevInt);
 	fprintf(file, "Autoupdate = %d\r\n", Autoupdate);
+	fprintf(file, "UnzipFile = %d\r\n", ZipFile);
 	fprintf(file, "MuteSound = %d\r\n", MuteSound);
 	fprintf(file, "ShowTooltip = %d\r\n", ShowTooltip);
 	fprintf(file, "ShowThumbnails = %d\r\n", ShowThumbs);
@@ -287,6 +289,12 @@ bool SSettings::SetSetting(char *name, char *value)
     else if (strcmp(name, "Autoupdate") == 0) {
 		if (sscanf(value, "%d", &i) == 1) {
             Autoupdate = i;
+		}
+		return true;
+	}
+	else if (strcmp(name, "UnzipFile") == 0) {
+		if (sscanf(value, "%d", &i) == 1) {
+            ZipFile = i;
 		}
 		return true;
 	}

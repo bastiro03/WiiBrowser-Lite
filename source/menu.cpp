@@ -58,7 +58,7 @@ static int currPage;
 
 static GuiSwitch * Right = NULL;
 static GuiSwitch * Left = NULL;
-static GuiToolbar * App = NULL;
+GuiToolbar * App = NULL;
 static GuiTrigger * trigA = NULL;
 
 static GuiImageData * pointerData[4];
@@ -147,7 +147,7 @@ string parseUrl(string link, const char* url)
 /****************************************************************************
  * Perform downloads
  ***************************************************************************/
-bool performDownload(FILE **hfile, char *url, struct block *html)
+bool performDownload(file *hfile, char *url, struct block *html)
 {
     int choice;
     bool select = false;
@@ -160,9 +160,9 @@ bool performDownload(FILE **hfile, char *url, struct block *html)
     if (select)
     {
         downloadPath(html, url, path);
-        *hfile = fopen(path, "wb");
+        hfile->file = fopen(path, "wb");
+        strcpy(hfile->name, path);
     }
-    else *hfile = NULL;
 
     free(html->data);
     return select;
@@ -237,7 +237,6 @@ extern "C" void DoMPlayerGuiDraw()
     mainWindow->Update(&userInput[0]);
 }
 
-#ifdef MPLAYER
 void UpdatePointer()
 {
     if(userInput[0].wpad->ir.valid)
@@ -250,6 +249,7 @@ void UpdatePointer()
  *
  * Creates youtube video url
  ***************************************************************************/
+#ifdef MPLAYER
 bool LoadYouTubeFile(char *newurl, char *data)
 {
     if(!data)
@@ -720,6 +720,9 @@ static void *UpdateGUI (void *arg)
             Menu_Render();
 
             if(ExitRequested)
+                LWP_ResumeThread(networkthread);
+
+            if(ExitAccepted)
             {
                 for(i = guiRun = 0; i <= 255; i += 15)
                 {
@@ -732,7 +735,7 @@ static void *UpdateGUI (void *arg)
                 }
             }
 
-            if (ExitRequested)
+            if(ExitAccepted)
                 ExitApp();
         }
     }
@@ -1164,6 +1167,7 @@ static int MenuAdvanced()
     sprintf(options.name[i++], "Render IFrames");
     sprintf(options.name[i++], "Execute Lua scripts");
     sprintf(options.name[i++], "Document.write");
+    sprintf(options.name[i++], "Proxy (url:port)");
     options.length = i;
 
     sprintf(version, "WiiBrowser %s", Settings.Revision);
@@ -1278,11 +1282,15 @@ static int MenuAdvanced()
         case 2:
             Settings.DocWrite = !Settings.DocWrite;
             break;
+        case 3:
+            OnScreenKeyboard(mainWindow, Settings.Proxy, 256);
+            break;
         }
 
         if(ret >= 0 || firstRun)
         {
             firstRun = false;
+            snprintf (options.value[3], 256, "%s", Settings.Proxy);
 
             if (Settings.IFrame == 0) sprintf (options.value[0], "Off");
             else if (Settings.IFrame == 1) sprintf (options.value[0], "On");
@@ -1349,9 +1357,9 @@ static int MenuSettings()
     sprintf(options.name[i++], "Autoupdate");
     sprintf(options.name[i++], "Language");
     sprintf(options.name[i++], "Restore Session");
-    sprintf(options.name[i++], "UserAgent");
+    sprintf(options.name[i++], "Unzip files");
     sprintf(options.name[i++], "Click sound");
-    sprintf(options.name[i++], "Proxy (url:port)");
+    sprintf(options.name[i++], "UserAgent");
     options.length = i;
 
     GuiText titleTxt("Settings", 28, (GXColor)
@@ -1456,9 +1464,9 @@ static int MenuSettings()
             break;
 
         case 7:
-            Settings.UserAgent++;
-            if (Settings.UserAgent >= MAXAGENTS)
-                Settings.UserAgent = 0;
+            Settings.ZipFile++;
+             if (Settings.ZipFile > UNZIP)
+                Settings.ZipFile = 0;
             break;
 
         case 8:
@@ -1466,7 +1474,9 @@ static int MenuSettings()
             break;
 
         case 9:
-            OnScreenKeyboard(mainWindow, Settings.Proxy, 256);
+            Settings.UserAgent++;
+            if (Settings.UserAgent >= MAXAGENTS)
+                Settings.UserAgent = 0;
             break;
         }
 
@@ -1478,8 +1488,7 @@ static int MenuSettings()
 
             snprintf (options.value[0], 256, "%s", Settings.Homepage);
             snprintf (options.value[1], 256, "%s", Settings.DefaultFolder);
-            snprintf (options.value[7], 256, "%s", AgentName[Settings.UserAgent]);
-            snprintf (options.value[9], 256, "%s", Settings.Proxy);
+            snprintf (options.value[9], 256, "%s", AgentName[Settings.UserAgent]);
 
             if (Settings.ShowTooltip == 0) sprintf (options.value[2], "Hide");
             else if (Settings.ShowTooltip == 1) sprintf (options.value[2], "Show");
@@ -1488,7 +1497,7 @@ static int MenuSettings()
 
             if (Settings.Autoupdate == 0) sprintf (options.value[4], "Disabled");
             else if (Settings.Autoupdate == 1) sprintf (options.value[4], "Stable");
-            // else if (Settings.Autoupdate == 2) sprintf (options.value[4], "Nightly");
+            else if (Settings.Autoupdate == 2) sprintf (options.value[4], "Nightly");
 
             if (Settings.Language == LANG_JAPANESE) sprintf (options.value[5], "Japanese");
             else if (Settings.Language == LANG_ENGLISH) sprintf (options.value[5], "English");
@@ -1498,6 +1507,10 @@ static int MenuSettings()
             else if (Settings.Restore == 1) sprintf (options.value[6], "Restore");
             if (Settings.MuteSound == 0) sprintf (options.value[8], "On");
             else if (Settings.MuteSound == 1) sprintf (options.value[8], "Off");
+
+            if (Settings.ZipFile == 0) sprintf (options.value[7], "Never");
+            else if (Settings.ZipFile == 1) sprintf (options.value[7], "Ask each time");
+            else if (Settings.ZipFile == 2) sprintf (options.value[7], "Always");
 
             optionBrowser.TriggerUpdate();
         }
@@ -1852,7 +1865,9 @@ static int MenuBrowse()
 {
     char *nurl = NULL;
     char *url = NULL;
-    FILE *hfile = NULL;
+
+    file hfile;
+    hfile.file = NULL;
 
     url = (char*) malloc (sizeof(new_page)+10);
     bzero(url, sizeof(new_page)+10);
@@ -1927,14 +1942,7 @@ jump:
     decode_html_entities_utf8(url, NULL);
     save_mem(url);
     promptWindow.SetEffect(EFFECT_SLIDE_TOP | EFFECT_SLIDE_IN, 50);
-
-    if(hfile)
-    {
-        promptWindow.Remove(&staticTxt);
-        promptWindow.Append(actionButton);
-        promptWindow.Append(msgTxt);
-    }
-    else promptWindow.Append(&staticTxt);
+    promptWindow.Append(&staticTxt);
 
     HaltGui();
     mainWindow->SetState(STATE_DISABLED);
@@ -1948,7 +1956,7 @@ jump:
 #endif
 
     struct block HTML;
-    HTML = downloadfile(curl_handle, url, hfile);
+    HTML = downloadfile(curl_handle, url, NULL);
 
 #ifdef DEBUG
     FILE *pFile = fopen ("sd:/page.htm", "rb");
@@ -1994,7 +2002,7 @@ jump:
     {
         if(performDownload(&hfile, url, &HTML))
         {
-            AddDownload(curl_multi, url, hfile);
+            AddDownload(curl_multi, url, &hfile);
             App->SaveTooltip->SetTimeout("Download added", 2);
         }
 
@@ -2037,8 +2045,7 @@ jump:
     ResumeGui();
 
     string link;
-    if (!hfile)
-        link = DisplayHTML(&HTML, mainWindow, &childWindow, url);
+    link = DisplayHTML(&HTML, mainWindow, &childWindow, url);
 
     bzero(new_page, sizeof(new_page));
     free(HTML.data);

@@ -221,7 +221,8 @@ void GuiButton::Draw()
 		else if(label[2])
 			label[2]->Draw();
 	}
-	else if(state == STATE_SELECTED || state == STATE_HELD)
+	else if(state == STATE_SELECTED || state == STATE_HELD ||
+         state == STATE_HIGHLIGHTED)
 	{
 		if(imageOver[0] || (imageOver[1]))
 		{

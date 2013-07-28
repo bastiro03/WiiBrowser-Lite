@@ -170,6 +170,7 @@ extern "C" {
 
 SSettings Settings;
 int ExitRequested = 0;
+int ExitAccepted = 0;
 
 void ExitApp()
 {

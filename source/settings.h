@@ -69,6 +69,13 @@ enum
     CHANNELS
 };
 
+enum
+{
+    NEVER,
+    ASK,
+    UNZIP
+};
+
 typedef struct favorite
 {
     char url[512];
@@ -120,6 +127,7 @@ class SSettings
         //!Variables
         int Language;
         int UserAgent;
+        int ZipFile;
         int Autoupdate;
         int RevInt;
 
@@ -143,8 +151,8 @@ class SSettings
 
         bool DocWrite;
         bool IFrame;
-        bool CleanExit;
         bool ExecLua;
+        bool CleanExit;
 
         char *TopSites[N];
         u8 *Thumbnails[N];

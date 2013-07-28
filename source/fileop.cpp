@@ -3,6 +3,8 @@
 
 #include "fileop.h"
 #include "filebrowser.h"
+#include "utils/unzip/unzip.h"
+#include "utils/unzip/miniunz.h"
 
 bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, const char *label)
 {
@@ -228,6 +230,18 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, cons
     return false;
 }
 
+bool UnzipArchive(char *zipfilepath)
+{
+	unzFile uf = unzOpen(zipfilepath);
+	if (uf == NULL)
+		return false;
+
+	extractZip(uf,0,1,0);
+
+	unzCloseCurrentFile(uf);
+	return true;
+}
+
 FILE *SelectFile(GuiWindow *mainWindow, char *type)
 {
     const char *c;
@@ -266,7 +280,7 @@ bool isValidPath(char *name)
     return ret;
 }
 
-static int mymkdir(const char* dirname)
+int mymkdir(const char* dirname)
 {
     int ret=0;
     ret = mkdir (dirname,0775);

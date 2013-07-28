@@ -171,8 +171,8 @@ void GuiDownloadManager::SetProgress(void *p, float t)
     char prg[10];
     Private *data = (Private *)p;
 
-    char *url = strrchr(data->url, '/')+1;
-    snprintf(msg, 50, "%s", url);
+    char *name = data->save.name;
+    snprintf(msg, 50, "%s", name);
     snprintf(prg, 10, "<%2.2f%%>", t);
 
     int tile = 0;

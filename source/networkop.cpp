@@ -1,8 +1,10 @@
 #include <list>
 #include "main.h"
 #include "networkop.h"
+#include "fileop.h"
 
 using namespace std;
+extern GuiToolbar * App;
 
 u8 networkstack[GUITH_STACK] ATTRIBUTE_ALIGN (32);
 lwp_t networkthread = LWP_THREAD_NULL;
@@ -43,17 +45,19 @@ static size_t writedata(void *ptr, size_t size, size_t nmemb, void *stream)
     return written;
 }
 
-Private *PushQueue(CURLM *cm, char *url, FILE *file, bool keep)
+Private *PushQueue(CURLM *cm, char *url, file *file, bool keep)
 {
     if(!file || !cm)
         return NULL;
 
     Private *data = new Private;
     data->bar = NULL;
-    data->file = file;
     data->url = strdup(url);
     data->keep = keep;
     data->code = -1;
+
+    data->save.file = file->file;
+    strcpy(data->save.name, file->name);
 
     queue.push_back(data);
     LWP_ResumeThread(networkthread);
@@ -79,10 +83,18 @@ void CompleteDownload(CURLMsg *msg)
 {
     Private *data;
     curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &data);
+    char *name = strrchr(data->save.name, '.');
 
     manager->RemoveBar(data->bar);
     data->code = msg->data.result;
-    fclose(data->file);
+    fclose(data->save.file);
+
+    if(name && !stricmp(name, ".zip"))
+    {
+        if(Settings.ZipFile == UNZIP ||
+                WindowPrompt("Download complete", "You downloaded a zip archive. Unzip it?", "Yes", "No"))
+            UnzipArchive(data->save.name);
+    }
 
     if(!data->keep)
     {
@@ -102,7 +114,7 @@ bool AddHandle(Private *data)
         return false;
 
     curl_easy_setopt(eh, CURLOPT_WRITEFUNCTION, writedata);
-    curl_easy_setopt(eh, CURLOPT_WRITEDATA, (void *)data->file);
+    curl_easy_setopt(eh, CURLOPT_WRITEDATA, (void *)data->save.file);
     curl_easy_setopt(eh, CURLOPT_URL, data->url);
 
     /* set proxy if specified */
@@ -149,10 +161,19 @@ void *NetworkThread (void *arg)
 
     while(1)
     {
-        if(!U)
+        if (!U)
             LWP_SuspendThread(networkthread);
         if (networkThreadHalt)
             break;
+
+        if (ExitRequested)
+        {
+            ExitRequested = false;
+
+            if (U && !WindowPrompt("Exiting app", "Some downloads are still in progress. Exit anyway?", "Yes", "No"))
+                App->SaveTooltip->SetTimeout("Click here", 2);
+            else ExitAccepted = true;
+        }
 
         UpdateQueue();
         curl_multi_perform(curl_multi, &U);
@@ -179,16 +200,20 @@ void StopNetwork()
     if(networkthread == LWP_THREAD_NULL)
         return;
 
-    LWP_ResumeThread(networkthread);
     networkThreadHalt = 1;
+    LWP_ResumeThread(networkthread);
 }
 
-Private *AddDownload(CURLM *cm, char *url, FILE *file)
+Private *AddDownload(CURLM *cm, char *url, file *file)
 {
     return PushQueue(cm, url, file, false);
 }
 
 Private *AddUpdate(CURLM *cm, char *url, FILE *file)
 {
-    return PushQueue(cm, url, file, true);
+    struct file temp;
+    temp.file = file;
+    strcpy(temp.name, "update.dol");
+
+    return PushQueue(cm, url, &temp, true);
 }

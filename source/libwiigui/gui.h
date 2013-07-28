@@ -83,6 +83,7 @@ enum
 	STATE_CLICKED,
 	STATE_HELD,
 	STATE_DISABLED,
+	STATE_HIGHLIGHTED,
 	STATE_CLOSED
 };
 
@@ -1294,6 +1295,7 @@ class GuiOptionBrowser : public GuiElement
 		GuiImage * optionBg[PAGESIZE];
 
 		int selectedItem;
+		int pageSize;
 		int listOffset;
 		OptionList * options;
 

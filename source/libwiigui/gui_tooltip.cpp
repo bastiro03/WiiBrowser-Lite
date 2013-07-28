@@ -140,7 +140,10 @@ void GuiTooltip::OnEffectFinished(GuiElement *e)
         return;
 
     if(this->GetAlpha() == 0)
+    {
         text->SetText(origtext);
+        this->GetParent()->ResetState();
+    }
 }
 
 void GuiTooltip::SetTimeout(const char *replace, int sec)
@@ -158,6 +161,8 @@ void GuiTooltip::SetTimeout(const char *replace, int sec)
     time(&time3);
     timeout = sec;
     SetEffect(EFFECT_FADE, 20);
+
+    this->GetParent()->SetState(STATE_HIGHLIGHTED);
 }
 
 /*

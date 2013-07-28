@@ -17,9 +17,11 @@ bool InitMPlayer();
 void LoadMPlayerFile(char *loadedFile);
 void ExitApp();
 
-extern SSettings Settings;
-extern int ExitRequested;
 extern FreeTypeGX *fontSystem[];
+extern SSettings Settings;
+
+extern int ExitRequested;
+extern int ExitAccepted;
 
 extern "C" {
     extern int controlledbygui;

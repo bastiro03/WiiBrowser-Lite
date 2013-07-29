@@ -46,6 +46,9 @@ bool postcomment(CURL *curl_handle, char *name, char *content);
 void save(struct block *b, FILE *hfile);
 bool validProxy();
 
+char *findChr (const char *str, char chr);
+char *findRchr (const char *str, char chr);
+
 void DebugInt(u32 msg);
 void Debug(const char *msg);
 

@@ -19,7 +19,7 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, cons
 	{
 		WindowPrompt(
 		"Error",
-		"Unable to display files on selected load device.",
+		"Unable to display files on selected load device",
 		"Ok",
 		NULL);
 
@@ -33,8 +33,14 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, cons
     GuiTrigger trigA;
 	trigA.SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
 
+    if(OpenDefaultFolder() <= 0)
+    {
+        BrowseDevice();
+        bzero(temp, sizeof(temp));
+    }
+    else sprintf(temp, "%s/", Settings.UserFolder);
+
 	sprintf(title, "Browse files");
-	bzero(temp, sizeof(temp));
 	bzero(path, sizeof(path));
 
     GuiSound btnSoundOver(button_over_pcm, button_over_pcm_size, SOUND_PCM);
@@ -46,7 +52,7 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, cons
     GuiImage DeviceImg(&Device);
     GuiButton InsertDEV(DeviceImg.GetWidth(), DeviceImg.GetHeight());
 
-    GuiText URL("", 20, (GXColor){0, 0, 0, 255});
+    GuiText URL(strchr(temp, '/'), 20, (GXColor){0, 0, 0, 255});
     GuiText DEV("SD", 20, (GXColor){0, 0, 0, 255});
 
     URL.SetMaxWidth(TextboxImg.GetWidth()-20);
@@ -131,15 +137,15 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, cons
 		usleep(100);
 		if(!strlen(URL.GetText()) || URL.GetText()[0] != '/')
         {
-            sprintf(temp, "%s/", rootdir);
-            URL.SetText(strchr(temp, '/')+1);
+            sprintf(temp, "%s", rootdir);
+            URL.SetText(strchr(temp, '/'));
         }
 
         if(InsertURL.GetState() == STATE_CLICKED)
         {
             URL.SetScroll(SCROLL_NONE);
-            OnScreenKeyboard(parentWindow, strchr(temp, '/')+1, 256);
-            URL.SetText(strchr(temp, '/')+1);
+            OnScreenKeyboard(parentWindow, strchr(temp, '/'), 256);
+            URL.SetText(strchr(temp, '/'));
             URL.SetScroll(SCROLL_HORIZONTAL);
 
             InsertURL.ResetState();
@@ -155,7 +161,9 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, cons
                 BrowseDevice();
                 dev = 0;
             }
+
             DEV.SetText(mount[dev]);
+            URL.SetText("");
         }
 
 		// update file browser based on arrow buttons
@@ -174,9 +182,12 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, cons
 						fileBrowser.fileList[0]->SetState(STATE_SELECTED);
 						fileBrowser.TriggerUpdate();
 
-						sprintf(fullpath, "%s%s/", rootdir, browser.dir+1); // print current path
+                        if(strlen(browser.dir) > 1)
+                            sprintf(fullpath, "%s%s/", rootdir, browser.dir+1); // print current path
+                        else sprintf(fullpath, "%s", rootdir); // print current path
+
                         sprintf(temp, fullpath);
-                        URL.SetText(strchr(temp, '/')+1);
+                        URL.SetText(strchr(temp, '/'));
 					}
 					else
 					{
@@ -188,9 +199,12 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, cons
 				{
 					ShutoffRumble();
 					// load file
-					sprintf(fullpath, "%s%s/%s", rootdir, browser.dir+1, browserList[browser.selIndex].filename); // print current path
+					if(strlen(browser.dir) > 1)
+                        sprintf(fullpath, "%s%s/%s", rootdir, browser.dir+1, browserList[browser.selIndex].filename); // print current path
+                    else sprintf(fullpath, "%s%s", rootdir, browserList[browser.selIndex].filename); // print current path
+
                     sprintf(temp, fullpath);
-                    URL.SetText(strchr(temp, '/')+1);
+                    URL.SetText(strchr(temp, '/'));
 				}
 			}
 		}
@@ -236,34 +250,18 @@ bool UnzipArchive(char *zipfilepath)
 	if (uf == NULL)
 		return false;
 
+    char *unzipfolder = strrchr(zipfilepath, '/');
+    if(unzipfolder)
+        unzipfolder[1] = 0;
+
+    if(chdir(zipfilepath)) // can't access dir
+        return false;
+
 	extractZip(uf,0,1,0);
+	chdir(Settings.AppPath); // reset working directory
 
 	unzCloseCurrentFile(uf);
 	return true;
-}
-
-FILE *SelectFile(GuiWindow *mainWindow, char *type)
-{
-    const char *c;
-    char path[256];
-    snprintf(path, 256, Settings.UserFolder);
-    OnScreenKeyboard(mainWindow, path, 256);
-    if ((c = mime2ext(type)))
-        strcat(path, c);
-    FILE *file = NULL;
-    if (isValidPath(path))
-        file = fopen(path, "wb");
-    return file;
-}
-
-bool SelectPath(GuiWindow *mainWindow, char *path)
-{
-    snprintf(path, 250, Settings.UserFolder);
-    OnScreenKeyboard(mainWindow, path, 250);
-    strcat(path, ".png");
-    if (isValidPath(path))
-        return true;
-    return false;
 }
 
 bool isValidPath(char *name)

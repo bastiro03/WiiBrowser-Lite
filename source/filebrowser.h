@@ -38,8 +38,10 @@ extern char fullpath[MAXPATHLEN];
 
 int UpdateDirName(int method);
 int FileSortCallback(const void *f1, const void *f2);
-void ResetBrowser();
+int OpenDefaultFolder();
+
 int BrowserChangeFolder();
 int BrowseDevice(int dev = 0);
+void ResetBrowser();
 
 #endif

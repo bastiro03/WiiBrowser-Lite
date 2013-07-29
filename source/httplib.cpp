@@ -89,12 +89,9 @@ struct MemoryStruct {
     u32 size;
 };
 
-char *findChr (const char *str, char chr);
-char *findRchr (const char *str, char chr);
-bool mustdownload(char *content);
-
 int parseline(HeaderStruct *mem, size_t realsize);
 void fillstruct(CURL *handle, HeaderStruct *head, struct block *dest);
+bool mustdownload(char *content);
 
 int close_callback (void *clientp, curl_socket_t item) {
 	return net_close(item);

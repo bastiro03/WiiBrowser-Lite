@@ -10,9 +10,6 @@
 #include "liste.h"
 #include "stringop.h"
 
-FILE *SelectFile(GuiWindow *mainWindow, char *type);
-
-bool SelectPath(GuiWindow *mainWindow, char *path);
 bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, const char *label);
 bool UnzipArchive(char *zipfilepath);
 

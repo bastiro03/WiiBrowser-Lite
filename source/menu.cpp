@@ -1022,7 +1022,7 @@ static int MenuBrowseDevice()
 	{
 		int choice = WindowPrompt(
 		"Error",
-		"Unable to display files on selected load device.",
+		"Unable to display files on selected load device",
 		"Retry",
 		"Cancel");
 
@@ -1351,7 +1351,7 @@ static int MenuSettings()
 
     OptionList options;
     sprintf(options.name[i++], "Homepage");
-    sprintf(options.name[i++], "Save Folder");
+    sprintf(options.name[i++], "Download Folder");
     sprintf(options.name[i++], "Show Tooltips");
     sprintf(options.name[i++], "Show Thumbnails");
     sprintf(options.name[i++], "Autoupdate");
@@ -1487,7 +1487,7 @@ static int MenuSettings()
                 Settings.Language = LANG_JAPANESE;
 
             snprintf (options.value[0], 256, "%s", Settings.Homepage);
-            snprintf (options.value[1], 256, "%s", Settings.DefaultFolder);
+            snprintf (options.value[1], 256, "%s/", Settings.UserFolder);
             snprintf (options.value[9], 256, "%s", AgentName[Settings.UserAgent]);
 
             if (Settings.ShowTooltip == 0) sprintf (options.value[2], "Hide");

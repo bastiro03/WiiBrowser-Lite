@@ -89,7 +89,7 @@ void CompleteDownload(CURLMsg *msg)
     data->code = msg->data.result;
     fclose(data->save.file);
 
-    if(name && !stricmp(name, ".zip"))
+    if(name && !stricmp(name, ".zip") && data->code == CURLE_OK)
     {
         if(Settings.ZipFile == UNZIP ||
                 WindowPrompt("Download complete", "You downloaded a zip archive. Unzip it?", "Yes", "No"))

@@ -99,6 +99,7 @@ void SSettings::SetDefault()
     }
 
     memset(Proxy, 0, 256);
+    memset(DownloadFolder, 0, 256);
     memset(StartPage, 0, 512);
 
     Favorites = NULL;
@@ -270,6 +271,20 @@ bool SSettings::Reset()
 	return false;
 }
 
+bool SSettings::SetStartup(char *name, char *value)
+{
+    if (strcmp(name, "StartPage") == 0) {
+	    strncpy(StartPage, value, sizeof(StartPage));
+		return true;
+	}
+	else if (strcmp(name, "DownloadFolder") == 0) {
+	    snprintf(DownloadFolder, sizeof(DownloadFolder), value);
+		return true;
+	}
+
+	return false;
+}
+
 bool SSettings::SetSetting(char *name, char *value)
 {
     int i = 0;
@@ -322,25 +337,6 @@ bool SSettings::SetSetting(char *name, char *value)
 		}
 		return true;
 	}
-    else if (strcmp(name, "Homepage") == 0) {
-        strncpy(Homepage, value, sizeof(Homepage));
-		return true;
-	}
-    else if (strcmp(name, "Proxy") == 0) {
-        strncpy(Proxy, value, sizeof(Proxy));
-		return true;
-	}
-    else if (strncmp(name, "Favorite", 8) == 0) {
-        if (sscanf(name, "Favorite(%d)", &i) == 1) {
-            strncpy(TopSites[i], value, 512);
-        }
-		return true;
-	}
-    else if (strcmp(name, "DefaultFolder") == 0) {
-	    snprintf(DefaultFolder, sizeof(DefaultFolder), value);
-	    this->ChangeFolder();
-		return true;
-	}
     else if (strcmp(name, "IFrame") == 0) {
 		if (sscanf(value, "%d", &i) == 1) {
 			IFrame = i;
@@ -365,6 +361,25 @@ bool SSettings::SetSetting(char *name, char *value)
 		}
 		return true;
 	}
+    else if (strcmp(name, "Homepage") == 0) {
+        strncpy(Homepage, value, sizeof(Homepage));
+		return true;
+	}
+    else if (strcmp(name, "Proxy") == 0) {
+        strncpy(Proxy, value, sizeof(Proxy));
+		return true;
+	}
+    else if (strncmp(name, "Favorite", 8) == 0) {
+        if (sscanf(name, "Favorite(%d)", &i) == 1) {
+            strncpy(TopSites[i], value, 512);
+        }
+		return true;
+	}
+    else if (strcmp(name, "DefaultFolder") == 0) {
+	    snprintf(DefaultFolder, sizeof(DefaultFolder), value);
+	    this->ChangeFolder();
+		return true;
+	}
 
     return false;
 }
@@ -382,7 +397,8 @@ void SSettings::ParseLine(char *line)
     this->TrimLine(name, temp, sizeof(name));
     this->TrimLine(value, eq+1, sizeof(value));
 
-	this->SetSetting(name, value);
+	if(!this->SetSetting(name, value))
+        this->SetStartup(name, value);
 }
 
 void SSettings::TrimLine(char *dest, char *src, int size)
@@ -492,11 +508,20 @@ void SSettings::Remove(int f, bool update)
 
 void SSettings::ChangeFolder()
 {
-    int absolutePath = CheckFolder(DefaultFolder);
+    int AbsolutePath = CheckFolder(DefaultFolder);
+    char *Folder = strchr(DefaultFolder, '/');
 
-    if(absolutePath != ABSOLUTE)
-        snprintf(UserFolder, sizeof(UserFolder), "%s%s", BootDevice, DefaultFolder + absolutePath);
-    else strncpy(UserFolder, DefaultFolder, sizeof(UserFolder));
+    if(AbsolutePath == RELATIVE ||
+            (AbsolutePath == FILENAME && Folder))
+        snprintf(UserFolder, sizeof(UserFolder), "%s%s", BootDevice, DefaultFolder + AbsolutePath);
+
+    else if(AbsolutePath == ABSOLUTE)
+        strncpy(UserFolder, DefaultFolder, sizeof(UserFolder));
+
+    int len = strlen(UserFolder);
+
+    if(UserFolder[len-1] == '/')
+        UserFolder[len-1] = 0;
 }
 
 void SSettings::SetStartPage(char *page)
@@ -520,8 +545,8 @@ void SSettings::SetStartPage(char *page)
 
     else if((file = fopen(page, "r")))
     {
-        fgets(line, sizeof(line), file);
-        TrimLine(StartPage, line, sizeof(StartPage));
+        while (fgets(line, sizeof(line), file))
+            this->ParseLine(line);
     }
 
     fclose(file);

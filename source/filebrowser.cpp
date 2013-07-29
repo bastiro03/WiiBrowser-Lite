@@ -16,7 +16,7 @@
 #include <malloc.h>
 
 #include "filebrowser.h"
-#include "settings.h"
+#include "main.h"
 #include "menu.h"
 
 BROWSERINFO browser;
@@ -86,7 +86,10 @@ int UpdateDirName()
 		if ((strlen(browser.dir)+1+strlen(browserList[browser.selIndex].filename)) < MAXPATHLEN)
 		{
 			/* update current directory name */
-			sprintf(browser.dir, "%s/%s",browser.dir, browserList[browser.selIndex].filename);
+			if(strlen(browser.dir) > 1)
+                sprintf(browser.dir, "%s/%s",browser.dir, browserList[browser.selIndex].filename);
+            else sprintf(browser.dir, "/%s",browserList[browser.selIndex].filename);
+
 			return 1;
 		}
 		else
@@ -225,5 +228,17 @@ int BrowseDevice(int dev)
 	sprintf(browser.dir, "/");
 	sprintf(rootdir, "%s:/", DeviceName[dev]);
 	ParseDirectory(); // Parse root directory
+	return browser.numEntries;
+}
+
+/****************************************************************************
+ * OpenDefault
+ * Open default download folder
+ ***************************************************************************/
+int OpenDefaultFolder()
+{
+    char *path = strchr(Settings.UserFolder, '/');
+	sprintf(browser.dir, path);
+	ParseDirectory(); // Parse default directory
 	return browser.numEntries;
 }

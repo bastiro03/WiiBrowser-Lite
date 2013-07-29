@@ -119,6 +119,10 @@ class SSettings
 		//!\param name Settingname
 		//!\param value Settingvalue
         bool SetSetting(char *name, char *value);
+        //!Set a Startup Setting
+		//!\param name Settingname
+		//!\param value Settingvalue
+        bool SetStartup(char *name, char *value);
         //!Set Start Page
 		void SetStartPage(char *page);
         //!Get Start Page
@@ -147,6 +151,7 @@ class SSettings
 
         char DefaultFolder[256];
         char UserFolder[256];
+        char DownloadFolder[256];
         char Proxy[256];
 
         bool DocWrite;

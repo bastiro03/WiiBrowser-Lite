@@ -1,25 +1,35 @@
 #include <list>
 #include "main.h"
+#include "transfer.h"
 #include "networkop.h"
 #include "fileop.h"
 
 using namespace std;
 extern GuiToolbar * App;
+off_t GetFileSize(const char *filename);
 
-u8 networkstack[GUITH_STACK] ATTRIBUTE_ALIGN (32);
-lwp_t networkthread = LWP_THREAD_NULL;
+u8 downloadstack[GUITH_STACK] ATTRIBUTE_ALIGN (32);
+lwp_t downloadthread = LWP_THREAD_NULL;
 GuiDownloadManager *manager = NULL;
 
-static int networkThreadHalt = 0;
+static int downloadThreadHalt = 0;
 static list<Private *> queue;
 
 bool AddHandle(Private *data);
 void PopQueue();
 
+enum
+{
+    FAILED,
+    PARTIAL,
+    COMPLETE,
+    CANCELLED
+} download_status;
+
 /****************************************************************************
- * NetworkThread
+ * DownloadThread
  *
- * Thread to handle network connections.
+ * Thread to handle file downloads.
  ***************************************************************************/
 int showmultiprogress(void *bar,
                     double total, /* dltotal */
@@ -60,7 +70,7 @@ Private *PushQueue(CURLM *cm, char *url, file *file, bool keep)
     strcpy(data->save.name, file->name);
 
     queue.push_back(data);
-    LWP_ResumeThread(networkthread);
+    LWP_ResumeThread(downloadthread);
     return data;
 }
 
@@ -81,25 +91,98 @@ void UpdateQueue()
 
 void CompleteDownload(CURLMsg *msg)
 {
+    char *name;
+    char message[256];
+    long http_response;
+
+    double dl_bytes_total;
+    int retval = -1;
+
     Private *data;
     curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &data);
-    char *name = strrchr(data->save.name, '.');
+    curl_easy_getinfo(msg->easy_handle, CURLINFO_CONTENT_LENGTH_DOWNLOAD, &dl_bytes_total);
+    curl_easy_getinfo(msg->easy_handle, CURLINFO_RESPONSE_CODE, &http_response);
+    curl_easy_cleanup(msg->easy_handle);
 
     manager->RemoveBar(data->bar);
     data->code = msg->data.result;
     fclose(data->save.file);
 
-    if(name && !stricmp(name, ".zip") && data->code == CURLE_OK)
+    switch(data->code)
     {
-        if(Settings.ZipFile == UNZIP ||
-                WindowPrompt("Download complete", "You downloaded a zip archive. Unzip it?", "Yes", "No"))
-            UnzipArchive(data->save.name);
+        case CURLE_OK:
+            name = strrchr(data->save.name, '.');
+            retval = COMPLETE;
+
+            if(name && !stricmp(name, ".zip"))
+            {
+                if(Settings.ZipFile == UNZIP ||
+                        WindowPrompt("Download complete", "You downloaded a zip archive. Unzip it?", "Yes", "No"))
+                    UnzipArchive(data->save.name);
+            }
+        break;
+
+        case CURLE_ABORTED_BY_CALLBACK:
+            retval = CANCELLED;
+            remove(data->save.name);
+        break;
+
+        case CURLE_PARTIAL_FILE:
+        case CURLE_OPERATION_TIMEDOUT:
+            switch(http_response)
+            {
+                case 0:     // eg connection down from kick-off: suggest retrying till some max limit
+                case 200:   // yay we at least got to our url
+                case 206:   // Partial Content
+                    data->save.file = NULL;
+                    queue.push_back(data);
+                    InitNetwork();
+                    LWP_ResumeThread(downloadthread);
+                    retval = PARTIAL;
+                break;
+
+                case 416:
+                    // cannot d/l range: either cos no server support
+                    // or cos we're asking for an invalid range (ie: we already d/ld the file)
+                    if(GetFileSize(data->save.name) < dl_bytes_total)
+                        retval = FAILED;
+                    else retval = COMPLETE;
+                break;
+
+                default: // suggest quitting on an unhandled error
+                    retval = FAILED;
+                break;
+            };
+        break;
+
+        default:
+            retval = FAILED;
+        break;
     }
 
-    if(!data->keep)
+    if(retval == FAILED)
     {
-        free(data->url);
-        delete(data);
+        name = strrchr(data->save.name, '/')+1;
+        sprintf(message, "The download of %s failed. Try again?", name);
+
+        if(WindowPrompt("Download failed", message, "Yes", "No"))
+        {
+            data->save.file = fopen(data->save.name, "wb");
+            queue.push_back(data);
+            InitNetwork();
+            LWP_ResumeThread(downloadthread);
+            retval = PARTIAL;
+        }
+        else remove(data->save.name);
+    }
+
+    if(retval != PARTIAL)
+    {
+        if(!data->keep)
+        {
+            free(data->url);
+            delete(data);
+        }
     }
 }
 
@@ -113,6 +196,13 @@ bool AddHandle(Private *data)
     if(!eh)
         return false;
 
+    /* get the new filesize & sanity check for file */
+    if(!data->save.file)
+    {
+        curl_easy_setopt(eh, CURLOPT_RESUME_FROM, GetFileSize(data->save.name));
+        data->save.file = fopen(data->save.name, "ab");
+    }
+
     curl_easy_setopt(eh, CURLOPT_WRITEFUNCTION, writedata);
     curl_easy_setopt(eh, CURLOPT_WRITEDATA, (void *)data->save.file);
     curl_easy_setopt(eh, CURLOPT_URL, data->url);
@@ -120,6 +210,10 @@ bool AddHandle(Private *data)
     /* set proxy if specified */
     if(validProxy())
         curl_easy_setopt(eh, CURLOPT_PROXY, Settings.Proxy);
+
+    /* the follwoing sets up min download speed threshold & time endured before aborting */
+    curl_easy_setopt(eh, CURLOPT_LOW_SPEED_LIMIT, 10); // bytes/sec
+    curl_easy_setopt(eh, CURLOPT_LOW_SPEED_TIME, 10); // seconds while below low speed limit before aborting
 
     /* follow redirects */
     curl_easy_setopt(eh, CURLOPT_AUTOREFERER, 1);
@@ -146,12 +240,12 @@ bool AddHandle(Private *data)
     return true;
 }
 
-void *NetworkThread (void *arg)
+void *DownloadThread (void *arg)
 {
     CURLMsg *msg;
     int Q, U = 0;
 
-    LWP_SuspendThread(networkthread);
+    LWP_SuspendThread(downloadthread);
     curl_multi = curl_multi_init();
     manager = new GuiDownloadManager();
 
@@ -161,10 +255,18 @@ void *NetworkThread (void *arg)
 
     while(1)
     {
-        if (!U)
-            LWP_SuspendThread(networkthread);
-        if (networkThreadHalt)
+        if (!U && networkinit)
+            LWP_SuspendThread(downloadthread);
+        if (downloadThreadHalt)
             break;
+
+        while(!networkinit)
+        {
+            // manager->status->SetText("network down");
+            if(LWP_ThreadIsSuspended(networkthread))
+                InitNetwork();
+            usleep(1000);
+        }
 
         if (ExitRequested)
         {
@@ -185,7 +287,6 @@ void *NetworkThread (void *arg)
             {
                 CURL *e = msg->easy_handle;
                 curl_multi_remove_handle(curl_multi, e);
-                curl_easy_cleanup(e);
                 CompleteDownload(msg);
             }
         }
@@ -195,13 +296,13 @@ void *NetworkThread (void *arg)
     return NULL;
 }
 
-void StopNetwork()
+void StopDownload()
 {
-    if(networkthread == LWP_THREAD_NULL)
+    if(downloadthread == LWP_THREAD_NULL)
         return;
 
-    networkThreadHalt = 1;
-    LWP_ResumeThread(networkthread);
+    downloadThreadHalt = 1;
+    LWP_ResumeThread(downloadthread);
 }
 
 Private *AddDownload(CURLM *cm, char *url, file *file)

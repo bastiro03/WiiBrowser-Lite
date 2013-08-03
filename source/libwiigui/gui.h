@@ -1216,6 +1216,7 @@ class GuiDownloadManager : public GuiWindow
 
         GuiText *downloads[MAX_DOWNLOADS];
         GuiText *progress[MAX_DOWNLOADS];
+        GuiText *status;
 
         GuiButton *cancelBtn[MAX_DOWNLOADS];
         GuiImage *cancelBtnImg[MAX_DOWNLOADS];

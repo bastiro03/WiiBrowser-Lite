@@ -19,6 +19,7 @@
 #include "liste.h"
 #include "main.h"
 #include "input.h"
+#include "transfer.h"
 #include "networkop.h"
 
 #include "filebrowser.h"
@@ -720,7 +721,7 @@ static void *UpdateGUI (void *arg)
             Menu_Render();
 
             if(ExitRequested)
-                LWP_ResumeThread(networkthread);
+                LWP_ResumeThread(downloadthread);
 
             if(ExitAccepted)
             {
@@ -753,17 +754,17 @@ InitGUIThreads()
     LWP_CreateThread (&guithread, UpdateGUI, NULL, guistack, GUITH_STACK, 70);
     LWP_CreateThread (&updatethread, UpdateThread, NULL, updatestack, GUITH_STACK, 70);
     LWP_CreateThread (&loadthread, LoadingThread, NULL, loadstack, GUITH_STACK, 70);
-    LWP_CreateThread (&networkthread, NetworkThread, NULL, networkstack, GUITH_STACK, 70);
+    LWP_CreateThread (&downloadthread, DownloadThread, NULL, downloadstack, GUITH_STACK, 70);
 }
 
 void
 StopGUIThreads()
 {
-    if(networkthread != LWP_THREAD_NULL)
+    if(downloadthread != LWP_THREAD_NULL)
     {
-        StopNetwork();
-        LWP_JoinThread(networkthread, NULL);
-        networkthread = LWP_THREAD_NULL;
+        StopDownload();
+        LWP_JoinThread(downloadthread, NULL);
+        downloadthread = LWP_THREAD_NULL;
     }
 
     if(loadthread != LWP_THREAD_NULL)
@@ -786,6 +787,8 @@ StopGUIThreads()
         LWP_JoinThread(guithread, NULL);
         guithread = LWP_THREAD_NULL;
     }
+
+    // StopNetwork();
 }
 
 void ToggleButtons(GuiToolbar *toolbar, bool checkState)
@@ -1001,7 +1004,7 @@ void SetupGui()
     videoWindow = new GuiWindow(screenwidth, screenheight);
     videoWindow->Append(App);
 
-    LWP_ResumeThread(networkthread);
+    LWP_ResumeThread(downloadthread);
     ResumeGui();
 }
 
@@ -1627,6 +1630,10 @@ void ShowDownloads()
             if ((userInput[0].wpad->btns_d & WPAD_BUTTON_A) && !manager->IsInside(x, y))
                 break;
         }
+
+        if (userInput[0].wpad->btns_d & WPAD_BUTTON_B)
+            break;
+
         usleep(100);
     }
 
@@ -1806,9 +1813,11 @@ static int MenuHome()
 
         else if(btnExit.GetState() == STATE_CLICKED)
         {
-            int close = WindowPrompt("Homepage", "Do you want to exit?", "Ok", "Cancel");
-            if (close)
+            if (WindowPrompt("Homepage", "Do you want to exit?", "Ok", "Cancel"))
+            {
+                fadeAnim = EFFECT_FADE;
                 choice = MENU_EXIT;
+            }
         }
     }
 
@@ -1929,15 +1938,6 @@ static int MenuBrowse()
     childWindow.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
     childWindow.SetPosition(0,0);
 
-    msgTxt = new GuiText("Loading...please wait", 20, (GXColor)
-    {
-        0, 0, 0, 255
-    });
-
-    msgTxt->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-    msgTxt->SetPosition(0,-20);
-    msgTxt->SetWrap(true, 400);
-
 jump:
     decode_html_entities_utf8(url, NULL);
     save_mem(url);
@@ -1954,6 +1954,18 @@ jump:
     u64 now, prev;
     prev = gettime();
 #endif
+
+    if(!CheckConnection())
+        InitNetwork();
+
+    while(!networkinit)
+    {
+        staticTxt.SetText("Resuming connection...");
+
+        if(LWP_ThreadIsSuspended(networkthread))
+            InitNetwork();
+        usleep(1000);
+    }
 
     struct block HTML;
     HTML = downloadfile(curl_handle, url, NULL);
@@ -1992,10 +2004,7 @@ jump:
     mainWindow->SetState(STATE_DEFAULT);
     ResumeGui();
 
-    delete(msgTxt);
     delete(actionButton);
-
-    msgTxt = NULL;
     actionButton = NULL;
 
     if(HTML.size == -1)
@@ -2739,6 +2748,6 @@ void MainMenu(int menu)
         }
     }
 
-    ExitRequested = 1;
+    ExitAccepted = 1;
     ResumeGui();
 }

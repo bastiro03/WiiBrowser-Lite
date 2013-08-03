@@ -46,9 +46,9 @@
 #define CONFIGPATH          "apps/wiibrowser/"
 #define CONFIGNAME          "wiibrowser.cfg"
 
-void *LoadFile(char *filepath, int size);
+void *LoadFile(char *filepath, off_t size);
 void WriteFile(char *filepath, int size, void *buffer);
-unsigned int GetFileSize(const char *filename);
+off_t GetFileSize(const char *filename);
 
 static mxml_node_t *xml = NULL;
 static mxml_node_t *node = NULL;
@@ -546,7 +546,12 @@ void SSettings::SetStartPage(char *page)
     else if((file = fopen(page, "r")))
     {
         while (fgets(line, sizeof(line), file))
+        {
+            if (line[0] == '#')
+                continue;
+
             this->ParseLine(line);
+        }
     }
 
     fclose(file);
@@ -706,7 +711,7 @@ bool SSettings::CreateXMLFile()
     return true;
 }
 
-unsigned int
+off_t
 GetFileSize(const char *filename)
 {
     struct stat sb;
@@ -717,7 +722,7 @@ GetFileSize(const char *filename)
     return sb.st_size;
 }
 
-void *LoadFile(char *filepath, int size)
+void *LoadFile(char *filepath, off_t size)
 {
     FILE *file = fopen(filepath, "rb");
     if(!file)

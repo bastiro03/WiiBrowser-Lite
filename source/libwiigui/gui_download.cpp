@@ -9,7 +9,7 @@
  ***************************************************************************/
 
 #include "main.h"
-#include "networkop.h"
+#include "transfer.h"
 #include "gui.h"
 
 #define MAXB    5
@@ -52,7 +52,11 @@ GuiDownloadManager::GuiDownloadManager()
 	titleTxt->SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	titleTxt->SetPosition(0,40);
 
+	status = new GuiText("", 20, (GXColor){0, 0, 0, 255});
+	status->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
+
 	this->Append(dialogBoxImg);
+	this->Append(status);
 	this->Append(titleTxt);
 
     for(int i = 0; i<MAX_DOWNLOADS; i++)
@@ -146,6 +150,7 @@ GuiDownloadManager::~GuiDownloadManager()
     delete(dialogBoxImg);
     delete(titleTxt);
     delete(trigA);
+    delete(status);
     delete(btnSoundOver);
 
     for(int i = 0; i<MAX_DOWNLOADS; i++)

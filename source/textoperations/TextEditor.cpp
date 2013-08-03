@@ -32,7 +32,7 @@
 #define FONTSIZE    18
 
 void *LoadFile(char *filepath, int size);
-unsigned int GetFileSize(const char *filename);
+off_t GetFileSize(const char *filename);
 
 /**
  * Constructor for the TextEditor class.

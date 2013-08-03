@@ -13,7 +13,7 @@
 
 #include "main.h"
 #include "common.h"
-#include "networkop.h"
+#include "transfer.h"
 
 int readFile(FILE *hfile, struct update *result)
 {

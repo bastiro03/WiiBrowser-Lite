@@ -1,5 +1,5 @@
-#ifndef __NETWORKOP_H__
-#define __NETWORKOP_H__
+#ifndef __TRANSFER_H__
+#define __TRANSFER_H__
 
 #include <unistd.h>
 #include <network.h>
@@ -25,8 +25,8 @@ typedef struct data
     bool keep;
 } Private;
 
-void *NetworkThread (void *arg);
-void StopNetwork();
+void *DownloadThread (void *arg);
+void StopDownload();
 
 Private *AddUpdate(CURLM *cm, char *url, FILE *file);
 Private *AddDownload(CURLM *cm, char *url, file *file);
@@ -35,7 +35,7 @@ extern GuiWindow *mainWindow;
 extern GuiDownloadManager *manager;
 extern GuiText *downloads[5];
 
-extern lwp_t networkthread;
-extern u8 networkstack[GUITH_STACK];
+extern lwp_t downloadthread;
+extern u8 downloadstack[GUITH_STACK];
 
 #endif

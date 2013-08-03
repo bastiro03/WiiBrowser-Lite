@@ -21,8 +21,9 @@ MPLAYER		:=	$(CURDIR)/source/mplayer
 TARGET		:=	boot
 BUILD		:=	build
 SOURCES		:=	source source/html source/css source/libwiigui source/images source/fonts source/sounds \
-				source/lang source/utils source/utils/unzip source/images/appbar source/textoperations
-INCLUDES	:=	source source/mplayer
+				source/lang source/utils source/utils/unzip source/images/appbar source/textoperations \
+				source/network
+INCLUDES	:=	source source/mplayer source/network
 
 #---------------------------------------------------------------------------------
 # options for code generation

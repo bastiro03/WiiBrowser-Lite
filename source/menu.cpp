@@ -518,7 +518,6 @@ WindowPrompt(const char *title, const char *msg, const char *btn1Label, const ch
         0, 0, 0, 255
     });
     msgLongTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-    msgLongTxt.SetPosition(20,130);
     msgLongTxt.SetLinesToDraw(8);
     msgLongTxt.SetMaxWidth(400);
 
@@ -529,6 +528,10 @@ WindowPrompt(const char *title, const char *msg, const char *btn1Label, const ch
     GuiImage btn1Img(&btnOutline);
     GuiImage btn1ImgOver(&btnOutlineOver);
     GuiButton btn1(btnOutline.GetWidth(), btnOutline.GetHeight());
+
+    if(msg)
+        msgLongTxt.SetPosition(20,130);
+    else msgLongTxt.SetPosition(20,90);
 
     if(btn2Label)
     {
@@ -602,7 +605,7 @@ WindowPrompt(const char *title, const char *msg, const char *btn1Label, const ch
     }
 
     promptWindow.SetEffect(EFFECT_SLIDE_TOP | EFFECT_SLIDE_OUT, 50);
-    while(promptWindow.GetEffect() > 0)
+    while(!ExitRequested && promptWindow.GetEffect() > 0)
         usleep(THREAD_SLEEP);
 
     if(!ExitRequested)
@@ -1360,9 +1363,9 @@ static int MenuSettings()
     sprintf(options.name[i++], "Autoupdate");
     sprintf(options.name[i++], "Language");
     sprintf(options.name[i++], "Restore Session");
-    sprintf(options.name[i++], "Unzip files");
-    sprintf(options.name[i++], "Click sound");
-    sprintf(options.name[i++], "UserAgent");
+    sprintf(options.name[i++], "Unzip Files");
+    sprintf(options.name[i++], "Click Sound");
+    sprintf(options.name[i++], "User Agent");
     options.length = i;
 
     GuiText titleTxt("Settings", 28, (GXColor)

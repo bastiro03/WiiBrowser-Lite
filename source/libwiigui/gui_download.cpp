@@ -177,10 +177,12 @@ void GuiDownloadManager::SetProgress(void *p, float t)
     Private *data = (Private *)p;
 
     char *file = data->save.name;
-    char *name = strrchr(file, '/')+1;
-
-    snprintf(msg, 50, "%s", name);
+    char *name = strrchr(file, '/');
     snprintf(prg, 10, "<%2.2f%%>", t);
+
+    if(name)
+        snprintf(msg, 50, "%s", name+1);
+    else snprintf(msg, 50, "%s", file);
 
     int tile = 0;
     int d = *(data->bar);

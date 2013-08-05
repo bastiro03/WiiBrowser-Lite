@@ -307,7 +307,7 @@ void StopDownload()
 
 Private *AddDownload(CURLM *cm, char *url, file *file)
 {
-    return PushQueue(cm, url, file, false);
+    return PushQueue(cm, url, file, 0);
 }
 
 Private *AddUpdate(CURLM *cm, char *url, FILE *file)
@@ -316,5 +316,5 @@ Private *AddUpdate(CURLM *cm, char *url, FILE *file)
     temp.file = file;
     strcpy(temp.name, "update.dol");
 
-    return PushQueue(cm, url, &temp, true);
+    return PushQueue(cm, url, &temp, 1);
 }

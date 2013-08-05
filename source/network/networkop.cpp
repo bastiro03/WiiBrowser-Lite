@@ -48,7 +48,7 @@ void *NetworkThread (void *arg)
 
 			while (res == -EBUSY && wait > 0 && !networkThreadHalt)
 			{
-				usleep(200000);
+				usleep(20*1000);
 				res = net_get_status();
 				wait--;
 			}

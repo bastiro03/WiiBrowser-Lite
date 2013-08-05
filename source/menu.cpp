@@ -1904,7 +1904,7 @@ static int MenuBrowse()
     title.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
     title.SetPosition(0,40);
 
-    GuiText staticTxt("Loading...please wait", 20, (GXColor)
+    GuiText staticTxt("", 20, (GXColor)
     {
         0, 0, 0, 255
     });
@@ -1970,6 +1970,7 @@ jump:
         usleep(1000);
     }
 
+    staticTxt.SetText("Loading...please wait");
     struct block HTML;
     HTML = downloadfile(curl_handle, url, NULL);
 

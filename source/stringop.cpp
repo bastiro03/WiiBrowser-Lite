@@ -85,3 +85,26 @@ void correctPath(char *path, char *arg, int which)
     else if(strchr(c, '.') == NULL)
         addformat(&html, NULL, path);
 }
+
+int strtokcmp(const char *string, const char *compare, const char *separator)
+{
+	if(!string || !compare)
+		return -1;
+
+	char TokCopy[512];
+	strncpy(TokCopy, compare, sizeof(TokCopy));
+	TokCopy[511] = '\0';
+
+	char * strTok = strtok(TokCopy, separator);
+
+	while (strTok != NULL)
+	{
+		if (strcasecmp(string, strTok) == 0)
+		{
+			return 0;
+		}
+		strTok = strtok(NULL,separator);
+	}
+
+	return -1;
+}

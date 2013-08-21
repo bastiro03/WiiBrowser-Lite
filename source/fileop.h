@@ -10,8 +10,11 @@
 #include "liste.h"
 #include "stringop.h"
 
+#define ArchiveFiles ".7z,.zip,.rar"
+
 bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, const char *label);
-bool UnzipArchive(char *zipfilepath);
+bool UnzipArchive(char *origfile);
+bool CreateSubfolder(const char *fullpath);
 
 bool isValidPath(char *path);
 int makedir (char *newdir);

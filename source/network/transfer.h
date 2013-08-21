@@ -22,6 +22,7 @@ typedef struct data
     int *bar;
     file save;
     int code;
+    double bytes;
     bool keep;
 } Private;
 

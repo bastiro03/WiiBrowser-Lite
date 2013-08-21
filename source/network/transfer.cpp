@@ -38,7 +38,7 @@ int showmultiprogress(void *bar,
                     double ulnow)
 {
     Private *data = (Private *)bar;
-    manager->SetProgress(data, done*100.0/total);
+    manager->SetProgress(data, (done+data->bytes)*100.0/(total+data->bytes));
 
     if(manager->CancelDownload(data->bar))
         return 1;
@@ -64,6 +64,8 @@ Private *PushQueue(CURLM *cm, char *url, file *file, bool keep)
     data->bar = NULL;
     data->url = strdup(url);
     data->keep = keep;
+
+    data->bytes = 0;
     data->code = -1;
 
     data->save.file = file->file;
@@ -100,6 +102,7 @@ void CompleteDownload(CURLMsg *msg)
 
     Private *data;
     curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &data);
+    curl_easy_getinfo(msg->easy_handle, CURLINFO_SIZE_DOWNLOAD , &(data->bytes));
     curl_easy_getinfo(msg->easy_handle, CURLINFO_CONTENT_LENGTH_DOWNLOAD, &dl_bytes_total);
     curl_easy_getinfo(msg->easy_handle, CURLINFO_RESPONSE_CODE, &http_response);
     curl_easy_cleanup(msg->easy_handle);
@@ -114,11 +117,18 @@ void CompleteDownload(CURLMsg *msg)
             name = strrchr(data->save.name, '.');
             retval = COMPLETE;
 
-            if(name && !stricmp(name, ".zip"))
+            if(name && !strtokcmp(name, ArchiveFiles, ","))
             {
                 if(Settings.ZipFile == UNZIP ||
                         WindowPrompt("Download complete", "You downloaded a zip archive. Unzip it?", "Yes", "No"))
-                    UnzipArchive(data->save.name);
+                {
+                    if(UnzipArchive(data->save.name))
+                    {
+                        App->SaveTooltip->SetTimeout("File unzipped", 2);
+                        remove(data->save.name);
+                    }
+                    else App->SaveTooltip->SetTimeout("Error unzipping file", 2);
+                }
             }
         break;
 
@@ -162,8 +172,10 @@ void CompleteDownload(CURLMsg *msg)
 
     if(retval == FAILED)
     {
-        name = strrchr(data->save.name, '/')+1;
-        sprintf(message, "The download of %s failed. Try again?", name);
+        name = strrchr(data->save.name, '/');
+        if(name)
+            sprintf(message, "The download of %s failed. Try again?", name+1);
+        else sprintf(message, "The download of %s failed. Try again?", data->save.name);
 
         if(WindowPrompt("Download failed", message, "Yes", "No"))
         {
@@ -278,8 +290,8 @@ void *DownloadThread (void *arg)
         }
 
         UpdateQueue();
-        curl_multi_perform(curl_multi, &U);
-		usleep(50*1000);
+        while(curl_multi_perform(curl_multi, &U) == CURLM_CALL_MULTI_PERFORM);
+		usleep(100);
 
         while ((msg = curl_multi_info_read(curl_multi, &Q)))
         {

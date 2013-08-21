@@ -202,7 +202,7 @@ void WiimotePowerPressed(s32 chan)
     HWButton = SYS_POWEROFF_STANDBY;
 }
 
-void Wait()
+void WaitExit()
 {
     while(true)
     {
@@ -252,5 +252,5 @@ int main(int argc, char *argv[])
 
     ResetVideo_Menu();
     MainMenu(MENU_SPLASH);
-    Wait();
+    WaitExit();
 }

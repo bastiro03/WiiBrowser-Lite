@@ -3,8 +3,7 @@
 
 #include "fileop.h"
 #include "filebrowser.h"
-#include "utils/unzip/unzip.h"
-#include "utils/unzip/miniunz.h"
+#include "archiveoperations/archive.h"
 
 bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, const char *label)
 {
@@ -244,24 +243,18 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, cons
     return false;
 }
 
-bool UnzipArchive(char *zipfilepath)
+bool UnzipArchive(char *origfile)
 {
-	unzFile uf = unzOpen(zipfilepath);
-	if (uf == NULL)
-		return false;
+    char zipfilepath[512];
+    strcpy(zipfilepath, origfile);
+
+    ArchiveHandle archive(zipfilepath);
 
     char *unzipfolder = strrchr(zipfilepath, '/');
     if(unzipfolder)
         unzipfolder[1] = 0;
 
-    if(chdir(zipfilepath)) // can't access dir
-        return false;
-
-	extractZip(uf,0,1,0);
-	chdir(Settings.AppPath); // reset working directory
-
-	unzCloseCurrentFile(uf);
-	return true;
+    return (archive.ExtractAll(zipfilepath) > 0);
 }
 
 bool isValidPath(char *name)
@@ -335,4 +328,79 @@ void show_mem()
             ((float)((char*)SYS_GetArena1Hi()-(char*)SYS_GetArena1Lo()))/0x100000,
             ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
     fclose(file);
+}
+
+/****************************************************************************
+ * CheckFile
+ *
+ * Check if file is existing
+ ***************************************************************************/
+bool CheckFile(const char * filepath)
+{
+    if(!filepath)
+        return false;
+
+    if(strchr(filepath, '/') == NULL)
+        return false;
+
+    struct stat filestat;
+    int length = strlen(filepath);
+
+    char * dirnoslash = (char *) malloc(length+2);
+    if(!dirnoslash) return false;
+
+    strcpy(dirnoslash, filepath);
+
+    while(dirnoslash[length-1] == '/')
+    {
+        dirnoslash[length-1] = '\0';
+        --length;
+    }
+
+	char * notRoot = strrchr(dirnoslash, '/');
+	if(!notRoot)
+	    strcat(dirnoslash, "/");
+
+    int ret = stat(dirnoslash, &filestat);
+
+    free(dirnoslash);
+
+    return (ret == 0);
+}
+
+/****************************************************************************
+ * CreateSubfolder
+ *
+ * Create recursive all subfolders to the given path
+ ***************************************************************************/
+bool CreateSubfolder(const char * fullpath)
+{
+    if(!fullpath)
+        return false;
+
+    if(CheckFile(fullpath))
+        return true;
+
+    string dirpath(fullpath);
+
+    int length = dirpath.size()-1;
+    while(dirpath[length] == '/')
+    {
+        dirpath.erase(length);
+        --length;
+    }
+
+    string subpath(dirpath);
+    size_t pos = subpath.rfind('/');
+    if(pos == string::npos)
+        return false;
+
+    if(subpath.size()-1 > pos)
+        subpath.erase(pos+1);
+
+    bool result = CreateSubfolder(subpath.c_str());
+    if(!result)
+        return false;
+
+    return (mkdir(dirpath.c_str(), 0777) != -1);
 }

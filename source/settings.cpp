@@ -412,20 +412,6 @@ void SSettings::TrimLine(char *dest, char *src, int size)
 	dest[len] = 0;
 }
 
-int SSettings::CheckFolder(const char *folder)
-{
-    if(folder[0] == '/')
-        return RELATIVE;
-
-    for(int i = SD; i <= USB; i++)
-    {
-        if(!strncmp(folder, DeviceName[i], strlen(DeviceName[i])))
-            return ABSOLUTE;
-    }
-
-    return FILENAME;
-}
-
 bool SSettings::CheckFile(const char *path)
 {
     bool found = false;
@@ -709,6 +695,20 @@ bool SSettings::CreateXMLFile()
     node = mxmlNewElement(xml, "dl");
 
     return true;
+}
+
+int CheckFolder(const char *folder)
+{
+    if(folder[0] == '/')
+        return RELATIVE;
+
+    for(int i = SD; i <= USB; i++)
+    {
+        if(!strncmp(folder, DeviceName[i], strlen(DeviceName[i])))
+            return ABSOLUTE;
+    }
+
+    return FILENAME;
 }
 
 off_t

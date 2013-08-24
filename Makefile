@@ -21,8 +21,8 @@ MPLAYER		:=	$(CURDIR)/source/mplayer
 TARGET		:=	boot
 BUILD		:=	build
 SOURCES		:=	source source/html source/css source/libwiigui source/images source/fonts source/sounds \
-				source/lang source/utils source/utils/unzip source/images/appbar source/textoperations \
-				source/network
+				source/lang source/utils source/images/appbar source/textoperations \
+				source/network source/archiveoperations
 INCLUDES	:=	source source/mplayer source/network
 
 #---------------------------------------------------------------------------------
@@ -40,7 +40,7 @@ LDFLAGS		=	-g -ggdb $(MACHDEP) -Wl
 #---------------------------------------------------------------------------------
 # LIBS	:=	-lmplayerwii -lavformat -lavcodec -lswscale -lavutil \
 
-LIBS	:=	-lfribidi -ljpeg -liconv -ldi -lpng -lz \
+LIBS	:=	-lfribidi -ljpeg -liconv -ldi -lpng -lunrar -lzip -lsevenzip -lz \
 				-lcurl -lcyassl -lnetport -lasnd -lvorbisidec \
 					 -lmxml -llua -lm -lfat -lwiiuse -lwiikeyboard -lbte -logc -lfreetype \
 

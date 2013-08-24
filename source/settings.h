@@ -168,8 +168,6 @@ class SSettings
         void ParseLine(char *line);
         //!Discard spaces
         void TrimLine(char *dest, char *src, int size);
-        //!Check folder
-        int CheckFolder(const char* folder);
         //!Check file
         bool CheckFile(const char* path);
         //!Check file integrity
@@ -233,5 +231,7 @@ const char AgentName[MAXAGENTS][11] =
 	"IExplorer",
 	"Android",
 };
+
+int CheckFolder(const char *folder);
 
 #endif

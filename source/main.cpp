@@ -174,13 +174,15 @@ int ExitAccepted = 0;
 
 void ExitApp()
 {
+#ifndef WIIFLOW
     Settings.Save(1);
+    DumpList(history);
+    FreeHistory(history);
+#endif
     ShutoffRumble();
     StopGX();
     ShutdownAudio();
     ClearFontData();
-    DumpList(history);
-    FreeHistory(history);
     StopGUIThreads();
     Cleanup();
     if (HWButton)

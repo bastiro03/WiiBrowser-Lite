@@ -142,6 +142,10 @@ $(OUTPUT).elf: $(OFILES)
 %.dol.o : %.dol
 	@echo $(notdir $<)
 	@bin2s -a 32 $< | $(AS) -o $(@)
+	
+%.bin.o : %.bin
+	@echo $(notdir $<)
+	@bin2s -a 32 $< | $(AS) -o $(@)
 
 %.elf.o : %.elf
 	@echo $(notdir $<)

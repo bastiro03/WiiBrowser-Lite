@@ -45,6 +45,7 @@ void __exception_setreload(int t);
 
 static FILE * open_file(const char * dev, char * filepath)
 {
+    // sprintf(filepath, "%s:/apps/wiiflow/boot.dol", dev);
     sprintf(filepath, "%s:/apps/wiibrowser/boot.dol", dev);
 
     FILE * exeFile = fopen(filepath ,"rb");
@@ -197,12 +198,15 @@ int main(int argc, char **argv)
     VIDEO_Init();
     rmode = VIDEO_GetPreferredMode(NULL);
     xfb = MEM_K0_TO_K1(SYS_AllocateFramebuffer(rmode));
+    console_init(xfb,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
     VIDEO_Configure(rmode);
     VIDEO_SetNextFramebuffer(xfb);
+    VIDEO_SetBlack(FALSE);
     VIDEO_Flush();
     VIDEO_WaitVSync();
     if(rmode->viTVMode&VI_NON_INTERLACE) VIDEO_WaitVSync();
 
+    printf("\x1b[2;0H");
     char filepath[200];
 
     // try SD Card First
@@ -259,7 +263,8 @@ int main(int argc, char **argv)
 
     arg_init();
     arg_add(filepath); // argv[0] = filepath
-    arg_add(url); // argv[1] = url
+    arg_add("sd:/apps/wiibrowser/shortcuts/Google.www"); // argv[1] = url
+    // arg_add(url); // argv[1] = url
 
     // load meta.xml
     // load_meta(filepath);

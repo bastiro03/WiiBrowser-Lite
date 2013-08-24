@@ -243,6 +243,20 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, cons
     return false;
 }
 
+bool AutoDownloader(char *path)
+{
+    int AbsolutePath = CheckFolder(Settings.DownloadFolder);
+
+    if(AbsolutePath == RELATIVE)
+        sprintf(path, "%s%s", Settings.BootDevice, Settings.DownloadFolder);
+    else if(AbsolutePath == ABSOLUTE)
+        sprintf(path, Settings.DownloadFolder);
+
+    if (isValidPath(path))
+        return true;
+    return false;
+}
+
 bool UnzipArchive(char *origfile)
 {
     char zipfilepath[512];

@@ -4,5 +4,6 @@
 #undef  MPLAYER
 #define DOCWRITE
 #define	IFRAME
+#define	WIIFLOW
 
 #endif

@@ -152,11 +152,19 @@ bool performDownload(file *hfile, char *url, struct block *html)
 {
     int choice;
     bool select = false;
+
     char path[260];
+    memset(path, 0, sizeof(path));
 
     choice = WindowPrompt("Download", "Do you want to download the file?", "Yes", "No");
     if (choice)
+    {
+#ifdef WIIFLOW
+        select = AutoDownloader(path);
+        if(!select)
+#endif
         select = GuiBrowser(NULL, mainWindow, path, "Download!");
+    }
 
     if (select)
     {
@@ -1655,8 +1663,10 @@ void ShowDownloads()
  ***************************************************************************/
 static int MenuHome()
 {
+#ifndef WIIFLOW
     if(Settings.Autoupdate)
         ResumeUpdateThread();
+#endif
 
     App->ChangeButtons(HOMEPAGE);
     strcpy(new_page,prev_page);
@@ -2699,7 +2709,9 @@ void Cleanup()
     sprintf(cookies, "%s/appdata/cookie.csv", Settings.AppPath);
 
     /* setup cookies engine */
+#ifndef WIIFLOW
     curl_easy_setopt(curl_handle, CURLOPT_COOKIEJAR, cookies);
+#endif
     curl_easy_cleanup(curl_handle);
 
     curl_share_cleanup(curl_share);
@@ -2715,8 +2727,10 @@ void MainMenu(int menu)
     // bool exitwindow = false;
 
     Init();
+#ifndef WIIFLOW
     if(!Settings.CleanExit)
         WindowPrompt("Oops.. this is embarrassing", "The app didn't close correctly, the previous session has been automatically restored", "OK", NULL);
+#endif
 
     while(currentMenu != MENU_EXIT)
     {

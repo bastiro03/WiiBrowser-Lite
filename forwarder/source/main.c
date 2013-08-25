@@ -45,8 +45,8 @@ void __exception_setreload(int t);
 
 static FILE * open_file(const char * dev, char * filepath)
 {
-    // sprintf(filepath, "%s:/apps/wiiflow/boot.dol", dev);
-    sprintf(filepath, "%s:/apps/wiibrowser/boot.dol", dev);
+    sprintf(filepath, "%s:/apps/wiiflow/boot.dol", dev);
+    // sprintf(filepath, "%s:/apps/wiibrowser/boot.dol", dev);
 
     FILE * exeFile = fopen(filepath ,"rb");
 
@@ -263,7 +263,7 @@ int main(int argc, char **argv)
 
     arg_init();
     arg_add(filepath); // argv[0] = filepath
-    arg_add("sd:/apps/wiibrowser/shortcuts/Google.www"); // argv[1] = url
+    arg_add("sd:/apps/wiibrowser/shortcuts/Mail.www"); // argv[1] = url
     // arg_add(url); // argv[1] = url
 
     // load meta.xml

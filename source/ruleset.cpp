@@ -113,6 +113,27 @@ void apply_ruleset(string *html, char *url)
     struct block frame;
     const char *urls;
 
+    /* mediafire downloads */
+    if(!strncmp(url, "http://www.mediafire.com/download/", 34))
+    {
+        substr_b = html->find("kNO = ", 0) + 6;
+        char delim = html->at(substr_b++);
+
+        if(delim == '"' || delim == '\'')
+        {
+            substr_e = html->find(delim, substr_b);
+            span = substr_e - substr_b;
+            ext = html->substr(substr_b, span);
+
+            tok.assign("<b><a href=\"");
+            tok.append(ext);
+            tok.append("\">DOWNLOAD FILE</a></b>");
+
+            substr_b = html->find("<div class=\"dl-btn-label\">", 0) + 26;
+            html->insert(substr_b, tok);
+        }
+    }
+
     /* javascript document.write */
 #ifdef DOCWRITE
     if(Settings.DocWrite)

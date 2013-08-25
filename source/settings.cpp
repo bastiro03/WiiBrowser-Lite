@@ -40,6 +40,7 @@
 
 #include "Settings.h"
 #include "menu.h"
+#include "config.h"
 
 #define DEFAULT_APP_PATH    "apps/wiibrowser/"
 #define DEFAULT_HOMEPAGE    "www.google.com/"
@@ -110,6 +111,10 @@ bool SSettings::Save(bool clean)
 {
     if(!FindConfig())
         return false;
+
+#ifdef WIIFLOW
+    clean = true;
+#endif
 
     char filedest[100];
     snprintf(filedest, sizeof(filedest), "%s", ConfigPath);

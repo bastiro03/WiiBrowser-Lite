@@ -966,14 +966,14 @@ void SetupGui()
     guiWindow->Append(bgImg);
     mainWindow = guiWindow;
 
-    #ifdef MPLAYER
+#ifdef MPLAYER
 	videoImg = new GuiImage();
     videoImg->SetImage(videoScreenshot, vmode->fbWidth, vmode->viHeight);
     videoImg->SetScaleX(screenwidth/(float)vmode->fbWidth);
     videoImg->SetScaleY(screenheight/(float)vmode->efbHeight);
     videoImg->SetVisible(false);
     mainWindow->Append(videoImg);
-	#endif
+#endif
 
     throbber = new GuiImageData(loading_png);
     fadeAnim = EFFECT_FADE;
@@ -2674,13 +2674,13 @@ void Init()
     }
     else LoadSession();
 
-    #ifdef MPLAYER
+#ifdef MPLAYER
     if(!InitMPlayer())
     {
         ExitRequested = true;
         return;
     }
-    #endif
+#endif
 
     SetupGui();
     remove("debug.txt");

@@ -512,7 +512,7 @@ void save(struct block *b, FILE *hfile)
 bool mustdownload(char content[])
 {
     if (strstr(content, "text/html") || strstr(content, "application/xhtml")
-            || strstr(content, "text") || strstr(content, "image")
+           /* || strstr(content, "text") */ || strstr(content, "image")
 #ifdef MPLAYER
                 || strstr(content, "video")
 #endif

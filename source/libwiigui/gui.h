@@ -117,7 +117,7 @@ enum
 
 enum textSets
 {
-    NORMAL=0,
+    NORMAL = 0,
     ANCHOR
 };
 
@@ -169,6 +169,10 @@ typedef struct point
 #define EFFECT_RUMBLE 				2048
 #define EFFECT_ROTATE				4096
 #define EFFECT_COLOR_TRANSITION		8192
+
+#define AUTOCOMPLETE_LOCAL          1 // Bookmarks + History
+#define AUTOCOMPLETE_GOOGLE         2 // Google Autocomplete
+#define AUTOCOMPLETE_ALL            4 // All
 
 #include "document.h"
 
@@ -420,7 +424,7 @@ class GuiElement : public sigslot::has_slots<>
 		//!\param e Effect to enable
 		//!\param a Amount of the effect (usage varies on effect)
 		//!\param t Target amount of the effect (usage varies on effect)
-		void SetEffect(int e, int a, int t=0);
+		void SetEffect(int e, int a, int t = 0);
 		//!Stop an effect for the element
 		//!\param e Effect to disable
 		void StopEffect(int e);
@@ -428,7 +432,7 @@ class GuiElement : public sigslot::has_slots<>
 		//!\param e Effect to enable
 		//!\param a Amount of the effect (usage varies on effect)
 		//!\param t Target amount of the effect (usage varies on effect)
-		void SetEffectOnOver(int e, int a, int t=0);
+		void SetEffectOnOver(int e, int a, int t = 0);
 		//!Shortcut to SetEffectOnOver(EFFECT_SCALE, 4, 110)
 		void SetEffectGrow();
 		//!Gets the current element effects
@@ -1001,11 +1005,12 @@ typedef struct _keytype {
 class GuiKeyboard : public GuiWindow
 {
 	public:
-		GuiKeyboard(char * t, u32 m);
+		GuiKeyboard(char * t, u32 m, int autofill = 0);
 		~GuiKeyboard();
 		sigslot::signal1<wchar_t> keyPressed;
 		void Update(GuiTrigger * t);
 		char kbtextstr[512];
+		char autocmpltstr[512];
 		void AddChar(int pos, char Char);
         void RemoveChar(int pos);
 	protected:
@@ -1021,10 +1026,12 @@ class GuiKeyboard : public GuiWindow
 		u32 kbtextmaxlen;
 		int shift;
 		int caps;
+		int autocomplete;
 		int CurrentFirstLetter;
 		GuiButton * GoLeft;
 		GuiButton * GoRight;
 		GuiLongText * kbText;
+		GuiText * autoCompleteText;
 		TextPointer * TextPointerBtn;
 		GuiImage * keyTextboxImg;
 		GuiText * keyCapsText;

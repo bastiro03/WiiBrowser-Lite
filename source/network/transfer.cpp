@@ -1,8 +1,10 @@
 #include <list>
 #include "main.h"
+#include "fileop.h"
+#include "config.h"
+
 #include "transfer.h"
 #include "networkop.h"
-#include "fileop.h"
 
 using namespace std;
 extern GuiToolbar * App;
@@ -117,17 +119,22 @@ void CompleteDownload(CURLMsg *msg)
             name = strrchr(data->save.name, '.');
             retval = COMPLETE;
 
-            if(name && !strtokcmp(name, ArchiveFiles, ","))
+            if(Settings.ZipFile && !strtokcmp(name, ArchiveFiles, ","))
             {
                 if(Settings.ZipFile == UNZIP ||
                         WindowPrompt("Download complete", "You downloaded a zip archive. Unzip it?", "Yes", "No"))
                 {
+#ifdef WIIFLOW
+                    ShowAction("Extracting files...");
+#endif
                     if(UnzipArchive(data->save.name))
                     {
                         App->SaveTooltip->SetTimeout("File unzipped", 2);
                         remove(data->save.name);
                     }
                     else App->SaveTooltip->SetTimeout("Error unzipping file", 2);
+
+                    CancelAction();
                 }
             }
         break;
@@ -187,6 +194,14 @@ void CompleteDownload(CURLMsg *msg)
         }
         else remove(data->save.name);
     }
+
+#ifdef WIIFLOW
+    else if (retval == COMPLETE)
+    {
+        WindowPrompt("Download complete", "The app will now exit...", "Ok", NULL);
+        ExitRequested = true;
+    }
+#endif
 
     if(retval != PARTIAL)
     {

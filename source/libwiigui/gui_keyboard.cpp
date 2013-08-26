@@ -64,7 +64,7 @@ char * GuiKeyboard::GetDisplayText(char * t)
  * Constructor for the GuiKeyboard class.
  */
 
-GuiKeyboard::GuiKeyboard(char * t, u32 max)
+GuiKeyboard::GuiKeyboard(char * t, u32 max, int autofill)
 {
     if(bInitUSBKeyboard) {
 		bInitUSBKeyboard = false;
@@ -90,9 +90,12 @@ GuiKeyboard::GuiKeyboard(char * t, u32 max)
 	focus = 0; // allow focus
 	alignmentHor = ALIGN_CENTRE;
 	alignmentVert = ALIGN_MIDDLE;
+
 	strncpy(kbtextstr, t, max);
 	kbtextstr[max] = 0;
 	kbtextmaxlen = max;
+	autocomplete = autofill;
+	memset(autocmpltstr, 0, sizeof(autocmpltstr));
 
 	Key thekeys[4][11] = {
 	{
@@ -161,7 +164,7 @@ GuiKeyboard::GuiKeyboard(char * t, u32 max)
 	kbText->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	kbText->SetPosition(0, 15);
 	kbText->SetLinesToDraw(1);
-	this->Append(kbText);
+	// this->Append(kbText);
 
     trigHeldA = new GuiTrigger;
 	trigHeldA->SetHeldTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
@@ -192,6 +195,11 @@ GuiKeyboard::GuiKeyboard(char * t, u32 max)
 
     TextPointerBtn->PositionChanged(0, 0, 0);
     TextPointerBtn->SetLetterPosition(MAX_KEYBOARD_DISPLAY-1);
+
+    autoCompleteText = new GuiText("autocmpltstr", 20, (GXColor){0, 0, 0, 150});
+	autoCompleteText->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+	autoCompleteText->SetPosition(24+autoCompleteText->GetTextWidth()/2, 10);
+	this->Append(autoCompleteText);
 
 	key = new GuiImageData(keyboard_key_png);
 	keyOver = new GuiImageData(keyboard_key_over_png);
@@ -387,6 +395,9 @@ void GuiKeyboard::AddChar(int pos, char Char)
     temp.insert(pos, 1, Char);
     strcpy(kbtextstr, temp.c_str());
 
+    int Width = fontSystem[20]->getCharWidth(Char, 0);
+    autoCompleteText->SetPosition(autoCompleteText->GetXPosition() + Width, 10);
+
     MoveText(1);
 }
 
@@ -396,6 +407,10 @@ void GuiKeyboard::RemoveChar(int pos)
 		return;
 
     std::string temp(kbtextstr);
+
+    int Width = fontSystem[20]->getCharWidth(temp.at(pos), 0);
+    autoCompleteText->SetPosition(autoCompleteText->GetXPosition() - Width, 10);
+
     temp.erase(pos, 1);
     strcpy(kbtextstr, temp.c_str());
 

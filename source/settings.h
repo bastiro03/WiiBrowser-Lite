@@ -71,9 +71,9 @@ enum
 
 enum
 {
-    NEVER,
-    ASK,
-    UNZIP
+    NEVER = 0,
+    UNZIP,
+    ASK
 };
 
 typedef struct favorite
@@ -145,14 +145,16 @@ class SSettings
         char BootDevice[6];
 
         char Homepage[512];
-        char StartPage[512];
         char Revision[7];
         char Uuid[20];
 
         char DefaultFolder[256];
         char UserFolder[256];
-        char DownloadFolder[256];
         char Proxy[256];
+
+        //!Plugin settings
+        char StartPage[512];
+        char DownloadFolder[256];
 
         bool DocWrite;
         bool IFrame;

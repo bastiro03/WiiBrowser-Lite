@@ -77,9 +77,19 @@ int checkchr (string value)
 
 int isContainer(string name)
 {
-    string array[] = {"h1","h2","h3","h4","h5","h6","p","div","br","center","hr","li","title","form","img"};
+    string array[] = {"h1","h2","h3","h4","h5","h6","p","div","br","center","hr","li","title","form"/*,"img"*/};
     vector<string> container (array, array + sizeof(array) / sizeof(string));
     return checkTag(container, name);
+}
+
+bool prevTagIs(tree<HTML::Node>::iterator it, string tag)
+{
+    bool ret = false;
+
+    if((--it)->tagName() == tag)
+        ret = true;
+
+    return ret;
 }
 
 char *strToUrl(string attr)
@@ -415,9 +425,16 @@ Lista getTag(char * buffer, char * url)
                 }
                 else if (it->tagName() == "img")
                 {
+                    if(!prevTagIs(it, "img"))
+                    {
+                        l1.push_back( {"return"});
+                        open[text].open=false;
+                    }
+
                     l1.push_back( {"img"});
-                    l1.rbegin()->value.push_back ( {it->attribute("src").second});
-                    l1.rbegin()->attribute.append (it->attribute("height").second);
+                    l1.rbegin()->value.push_back ( {it->attribute("width").second});
+                    l1.rbegin()->value.push_back ( {it->attribute("height").second});
+                    l1.rbegin()->attribute.append (it->attribute("src").second);
                 }
                 else if (it->tagName() == "form")
                 {

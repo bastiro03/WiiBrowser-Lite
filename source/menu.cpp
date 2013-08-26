@@ -85,6 +85,8 @@ static lwp_t updatethread = LWP_THREAD_NULL;
 static lwp_t loadthread = LWP_THREAD_NULL;
 
 static bool guiHalt = true;
+static bool toggleManager = false;
+
 static int updateThreadHalt = 0;
 static int loadThreadHalt = 1;
 
@@ -394,7 +396,7 @@ ProgressWindow(char *msg)
         0, 0, 0, 255
     });
     msgTxt->SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
-    msgTxt->SetPosition(0, 80);
+    msgTxt->SetPosition(0, 73);
 
     promptWindow.Append(msgTxt);
     promptWindow.Append(&throbberImg);
@@ -1479,7 +1481,7 @@ static int MenuSettings()
 
         case 7:
             Settings.ZipFile++;
-             if (Settings.ZipFile > UNZIP)
+             if (Settings.ZipFile > ASK)
                 Settings.ZipFile = 0;
             break;
 
@@ -1523,8 +1525,8 @@ static int MenuSettings()
             else if (Settings.MuteSound == 1) sprintf (options.value[8], "Off");
 
             if (Settings.ZipFile == 0) sprintf (options.value[7], "Never");
-            else if (Settings.ZipFile == 1) sprintf (options.value[7], "Ask each time");
-            else if (Settings.ZipFile == 2) sprintf (options.value[7], "Always");
+            else if (Settings.ZipFile == 1) sprintf (options.value[7], "Always");
+            else if (Settings.ZipFile == 2) sprintf (options.value[7], "Ask each time");
 
             optionBrowser.TriggerUpdate();
         }
@@ -1622,6 +1624,7 @@ static int MenuSplash()
 void ShowDownloads()
 {
     manager->SetEffect(EFFECT_SLIDE_TOP | EFFECT_SLIDE_IN, 50);
+    toggleManager = false;
 
     HaltGui();
     mainWindow->SetState(STATE_DISABLED);
@@ -1685,7 +1688,7 @@ static int MenuHome()
 
     InsertURL.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
     InsertURL.SetPosition(0,-50);
-    InsertURL.SetLabel(&URL);
+    InsertURL.SetLabel(&URL, 2);
     InsertURL.SetImage(&TextboxImg);
     InsertURL.SetSoundOver(&btnSoundOver);
     InsertURL.SetTrigger(trigA);
@@ -1773,7 +1776,8 @@ static int MenuHome()
             App->btnSett->ResetState();
         }
 
-        else if(App->btnSave->GetState() == STATE_CLICKED)
+        else if(App->btnSave->GetState() == STATE_CLICKED ||
+                toggleManager == true)
         {
             ShowDownloads();
             App->btnSave->ResetState();
@@ -2026,7 +2030,11 @@ jump:
         if(performDownload(&hfile, url, &HTML))
         {
             AddDownload(curl_multi, url, &hfile);
+#ifdef WIIFLOW
+            toggleManager = true;
+#else
             App->SaveTooltip->SetTimeout("Download added", 2);
+#endif
         }
 
         free(url);
@@ -2729,7 +2737,7 @@ void MainMenu(int menu)
     Init();
 #ifndef WIIFLOW
     if(!Settings.CleanExit)
-        WindowPrompt("Oops.. this is embarrassing", "The app didn't close correctly, the previous session has been automatically restored", "OK", NULL);
+        WindowPrompt("Oops... this is embarrassing", "The app didn't close correctly, the previous session has been automatically restored", "OK", NULL);
 #endif
 
     while(currentMenu != MENU_EXIT)

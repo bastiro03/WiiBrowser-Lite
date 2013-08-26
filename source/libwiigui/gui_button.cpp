@@ -175,8 +175,8 @@ void GuiButton::Draw()
 			label[0]->Draw();
 		if(label[1])
 			label[1]->Draw();
-		if(label[2])
-			label[2]->Draw();
+		// if(label[2])
+			// label[2]->Draw();
 	}
 	else if(state == STATE_CLICKED)
 	{

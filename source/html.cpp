@@ -33,6 +33,8 @@ static void *DownloadImage (void *arg)
     isRunning=true;
     CURL *curl_img=curl_easy_init();
 
+    int width, height;
+
     while(threadState!=THREAD_EXIT)
     {
         if (threadState==THREAD_SUSPEND)
@@ -47,13 +49,15 @@ static void *DownloadImage (void *arg)
                 if (threadState==THREAD_EXIT || threadState==THREAD_SUSPEND) break;
                 if (!lista->fetched && !lista->img->GetImage() && lista->tag)
                 {
-                    string tmp=adjustUrl(lista->tag->value[0].text, *(char**)arg);
+                    string tmp=adjustUrl(lista->tag->attribute, *(char**)arg);
                     struct block THREAD = downloadfile(curl_img, tmp.c_str(), NULL);
                     if(THREAD.size>0 && strstr(THREAD.type, "image"))
                     {
                         lista->imgdata=new GuiImageData ((u8*)THREAD.data, THREAD.size);
                         lista->img->SetImage(lista->imgdata);
-                        lista->img->SetScale(screenwidth-80, atoi(lista->tag->attribute.c_str()));
+                        width = (lista->tag->value[0].text.length()>0 ? atoi(lista->tag->value[0].text.c_str()) : screenwidth-80);
+                        height = atoi(lista->tag->value[1].text.c_str());
+                        lista->img->SetScale(width, height);
                         lista->img->SetEffect(EFFECT_FADE, 50);
                     }
                     lista->fetched = true;
@@ -81,6 +85,16 @@ int knownType(char type[])
     return UNKNOWN;
 }
 
+bool nextItemIs(Lista::iterator list, Lista::iterator end, string item)
+{
+    bool ret = false;
+
+    if((++list) != end && list->name == item)
+        ret = true;
+
+    return ret;
+}
+
 string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainWindow, char *url)
 {
     static lwp_t thread = LWP_THREAD_NULL;
@@ -88,7 +102,8 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
 
     int type = knownType(HTML->type);
     int coordX = 0, coordY, offset = 0, choice = 0;
-    bool done = false;
+    int maxSize = 0;
+    bool done = false, inserted = false;
 
     GuiWindow *scrollWindow = new GuiWindow(50, screenheight-80);
     scrollWindow->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
@@ -232,23 +247,20 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                     }
                 }
 
-                else if (lista->name=="img" && !lista->value.empty() && lista->value[0].text.length()>0)
+                else if (lista->name=="img" && lista->attribute.length()>0)
                 {
                     HaltThread(thread);
-                    string tmp=adjustUrl(lista->value[0].text, url);
-                    if (lista->attribute.length()!=0)
+                    string tmp=adjustUrl(lista->attribute, url);
+                    if (lista->value[1].text.length()!=0)    // height
                     {
                         img=InsImg(img);
                         img->img=new GuiImage();
-                        img->img->SetPosition(coordX+40, coordY);
                         img->tag=&(*lista);
-                        HaltGui();
-                        mainWindow->BInsert(img->img);
-                        ResumeGui();
                         Index=InsIndex(Index);
                         Index->elem=img->img;
-                        Index->screenSize=atoi(lista->attribute.c_str())+5;
+                        Index->screenSize=atoi(lista->value[1].text.c_str())+5;
                         Index->content=null;
+                        inserted = true;
                     }
                     else
                     {
@@ -258,17 +270,41 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                             img=InsImg(img);
                             img->imgdata=new GuiImageData((u8*)IMAGE.data, IMAGE.size);
                             img->img=new GuiImage(img->imgdata);
-                            img->img->SetPosition(coordX+40, coordY);
                             img->img->SetEffect(EFFECT_FADE, 50);
-                            HaltGui();
-                            mainWindow->BInsert(img->img);
-                            ResumeGui();
                             Index=InsIndex(Index);
                             Index->elem=img->img;
                             Index->screenSize=img->img->GetHeight()+5;
                             Index->content=null;
+                            inserted = true;
                         }
                         free(IMAGE.data);
+                    }
+
+                    if(inserted)
+                    {
+                        inserted = false;
+                        if(Index->screenSize > maxSize)
+                            maxSize = Index->screenSize;
+
+                        int width = (img->tag ? atoi(lista->value[0].text.c_str()) : img->img->GetWidth())+5;
+
+                        if (offset+width >= (screenwidth-80))
+                        {
+                            coordY+=maxSize;
+                            offset=maxSize=0;
+                        }
+
+                        img->img->SetPosition(coordX+40+offset, coordY);
+                        offset+=width;
+
+                        HaltGui();
+                        mainWindow->BInsert(img->img);
+                        ResumeGui();
+                    }
+
+                    if(nextItemIs(lista, l1.end(), "img"))
+                    {
+                        Index->screenSize=0;
                     }
                     ResumeThread(thread);
                 }
@@ -310,24 +346,22 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
 
                 else if (lista->name=="return")
                 {
-                    if ((++lista)!=l1.end() && lista->name!="p" && lista->name!="return")
+                    if (!nextItemIs(lista, l1.end(), "p") && !nextItemIs(lista, l1.end(), "return"))
                     {
                         if (Index)
                             Index->screenSize+=25;
                         offset=0;
                     }
-                    lista--;
                 }
 
                 else if (lista->name=="p")
                 {
-                    if ((++lista)!=l1.end() && lista->name!="p" && lista->name!="return")
+                    if (!nextItemIs(lista, l1.end(), "p") && !nextItemIs(lista, l1.end(), "return"))
                     {
                         if (Index)
                             Index->screenSize+=50;
                         offset=0;
                     }
-                    lista--;
                 }
 
                 else

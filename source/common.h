@@ -80,6 +80,13 @@ typedef struct Index
     struct Index *prox;
 } Index;
 
+typedef struct Page
+{
+    int XPos;
+    int YPos;
+    int Height;
+} Page;
+
 typedef struct Url
 {
     TipoElemento url;

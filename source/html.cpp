@@ -1,7 +1,8 @@
 #include <stdio.h>
+#include <sstream>
+
 #include "audio.h"
 #include "html.h"
-
 #include "config.h"
 #define LEN 15
 
@@ -55,7 +56,7 @@ static void *DownloadImage (void *arg)
                     {
                         lista->imgdata=new GuiImageData ((u8*)THREAD.data, THREAD.size);
                         lista->img->SetImage(lista->imgdata);
-                        width = (lista->tag->value[0].text.length()>0 ? atoi(lista->tag->value[0].text.c_str()) : screenwidth-80);
+                        width = (lista->tag->value[0].text.length()>0 ? MIN(atoi(lista->tag->value[0].text.c_str()), screenwidth-80) : screenwidth-80);
                         height = atoi(lista->tag->value[1].text.c_str());
                         lista->img->SetScale(width, height);
                         lista->img->SetEffect(EFFECT_FADE, 50);
@@ -70,6 +71,38 @@ static void *DownloadImage (void *arg)
     curl_easy_cleanup(curl_img);
     isRunning=false;
     return NULL;
+}
+
+bool AddImage(Lista::iterator lista, char *url)
+{
+    bool ret = false;
+    string tmp = adjustUrl(lista->attribute, url);
+
+    if (lista->value[1].text.length() != 0)   // height known
+    {
+        img = InsImg(img);
+        img->img = new GuiImage();
+        img->tag = &(*lista);
+
+        return true;
+    }
+
+    struct block IMAGE = downloadfile(curl_handle, tmp.c_str(), NULL);
+    if(IMAGE.size>0 && strstr(IMAGE.type, "image"))
+    {
+        img = InsImg(img);
+        img->imgdata = new GuiImageData((u8*)IMAGE.data, IMAGE.size);
+        img->img = new GuiImage(img->imgdata);
+        img->img->SetEffect(EFFECT_FADE, 50);
+
+        std::ostringstream convert;
+        convert << img->img->GetHeight();
+        lista->value[1].text = convert.str();
+        ret = true;
+    }
+
+    free(IMAGE.data);
+    return ret;
 }
 
 int knownType(char type[])
@@ -95,15 +128,28 @@ bool nextItemIs(Lista::iterator list, Lista::iterator end, string item)
     return ret;
 }
 
+bool prevItemIs(Lista::iterator list, string item)
+{
+    bool ret = false;
+
+    if((--list)->name == item)
+        ret = true;
+
+    return ret;
+}
+
 string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainWindow, char *url)
 {
     static lwp_t thread = LWP_THREAD_NULL;
     char *title = NULL;
 
+    Page Doc;
+    Doc.XPos = Doc.YPos = 0;
+    Doc.Height = 0;
+
     int type = knownType(HTML->type);
-    int coordX = 0, coordY, offset = 0, choice = 0;
-    int maxSize = 0;
-    bool done = false, inserted = false;
+    int offset = 0, choice = 0;
+    bool done = false;
 
     GuiWindow *scrollWindow = new GuiWindow(50, screenheight-80);
     scrollWindow->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
@@ -157,8 +203,10 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
         while (!choice)
         {
             Clear(mainWindow, Index, &first, &last, ext);
-            coordY=Index ? Index->elem->GetYPosition()+Index->screenSize : 40;
-            if (!ext && Index) ext=Index;
+            if (!ext && Index)
+                ext=Index;
+
+            Doc.YPos = ext ? ext->elem->GetYPosition() : 40;
 
             if (first && first->prox)
             {
@@ -180,7 +228,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                 }
             }
 
-            else if (lista!=l1.end() && coordY<screenheight+25)
+            else if (lista!=l1.end() && Doc.YPos+Doc.Height<screenheight+25)
             {
                 if (lista->name=="title" && !lista->value.empty())
                 {
@@ -190,9 +238,9 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                     {
                         0, 0, 0, 255
                     });
-                    text->txt->SetOffset(&coordX);
+                    text->txt->SetOffset(&offset);
                     text->txt->SetAlignment(ALIGN_MIDDLE, ALIGN_TOP);
-                    text->txt->SetPosition(coordX+screenwidth/2, coordY);
+                    text->txt->SetPosition(offset+screenwidth/2, Doc.YPos+Doc.Height);
                     text->txt->SetWrap(true, 400);
                     text->txt->SetEffect(EFFECT_FADE, 50);
                     HaltGui();
@@ -201,6 +249,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                     Index=InsIndex(Index);
                     Index->elem=text->txt;
                     Index->screenSize=10+30*text->txt->GetLinesCount();
+                    Doc.Height += Index->screenSize;
                 }
 
                 else if (lista->name=="a")
@@ -215,20 +264,19 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                         btn->label->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
                         btn->label->SetSpace(false);
                         btn->label->SetModel(ANCHOR);
-                        btn->label->SetOffset(&coordX);
-                        if (offset >= (screenwidth-80))
-                        {
-                            coordY=Index ? Index->elem->GetYPosition()+Index->screenSize : 40;
-                            offset=offset % (screenwidth-80);
-                        }
-                        btn->label->SetWrap(true, screenwidth-80-offset);
+                        btn->label->SetOffset(&offset);
+
+                        if (Doc.XPos >= (screenwidth-80))
+                            Doc.XPos=Doc.XPos % (screenwidth-80);
+
+                        btn->label->SetWrap(true, screenwidth-80-Doc.XPos);
                         SetFont(btn->label, lista->value[i].mode);
                         btn->label->SetPosition(0,0);
 
                         btn->tooltip=new GuiTooltip(lista->attribute.c_str());
                         btn->btn=new GuiButton(btn->label->GetTextWidth(), 20);
                         btn->btn->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-                        btn->btn->SetPosition(coordX+40+offset, coordY);
+                        btn->btn->SetPosition(offset+40+Doc.XPos, Doc.YPos+Doc.Height);
                         btn->btn->SetLabel(btn->label);
 
                         btn->btn->SetSoundOver(btnSoundOver);
@@ -242,69 +290,55 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                         ResumeGui();
                         Index=InsIndex(Index);
                         Index->elem=btn->btn;
-                        offset+=btn->label->GetTextWidth();
-                        Index->screenSize=(offset/(screenwidth-80))*25;
+                        Doc.XPos+=btn->label->GetTextWidth();
+                        Index->screenSize=(Doc.XPos/(screenwidth-80))*25;
+                        Doc.Height += Index->screenSize;
                     }
                 }
 
                 else if (lista->name=="img" && lista->attribute.length()>0)
                 {
                     HaltThread(thread);
-                    string tmp=adjustUrl(lista->attribute, url);
-                    if (lista->value[1].text.length()!=0)    // height
+                    if(AddImage(lista, url))
                     {
-                        img=InsImg(img);
-                        img->img=new GuiImage();
-                        img->tag=&(*lista);
-                        Index=InsIndex(Index);
-                        Index->elem=img->img;
-                        Index->screenSize=atoi(lista->value[1].text.c_str())+5;
-                        Index->content=null;
-                        inserted = true;
-                    }
-                    else
-                    {
-                        struct block IMAGE = downloadfile(curl_handle, tmp.c_str(), NULL);
-                        if(IMAGE.size>0 && strstr(IMAGE.type, "image"))
+                        if((lista->value[0].text.length() && img->tag) || !img->tag) // size known
                         {
-                            img=InsImg(img);
-                            img->imgdata=new GuiImageData((u8*)IMAGE.data, IMAGE.size);
-                            img->img=new GuiImage(img->imgdata);
-                            img->img->SetEffect(EFFECT_FADE, 50);
-                            Index=InsIndex(Index);
-                            Index->elem=img->img;
-                            Index->screenSize=img->img->GetHeight()+5;
-                            Index->content=null;
-                            inserted = true;
+                            int width = MIN((img->tag ? atoi(lista->value[0].text.c_str()) : img->img->GetWidth()), screenwidth-80)+5;
+
+                            if(Doc.XPos+width > (screenwidth-80))
+                            {
+                                Doc.Height+=Index->screenSize;
+                                Doc.XPos=0;
+                            }
+
+                            img->img->SetPosition(offset+40+Doc.XPos, Doc.YPos+Doc.Height);
+                            img->img->SetScale(width, atoi(lista->value[1].text.c_str()));
+                            Doc.XPos+=width;
                         }
-                        free(IMAGE.data);
-                    }
-
-                    if(inserted)
-                    {
-                        inserted = false;
-                        if(Index->screenSize > maxSize)
-                            maxSize = Index->screenSize;
-
-                        int width = (img->tag ? atoi(lista->value[0].text.c_str()) : img->img->GetWidth())+5;
-
-                        if (offset+width >= (screenwidth-80))
+                        else
                         {
-                            coordY+=maxSize;
-                            offset=maxSize=0;
-                        }
+                            if(prevItemIs(lista, "img"))
+                                Doc.Height+=Index->screenSize;
 
-                        img->img->SetPosition(coordX+40+offset, coordY);
-                        offset+=width;
+                            img->img->SetPosition(offset+40, Doc.YPos+Doc.Height);
+                            img->img->SetScale(screenwidth-80, atoi(lista->value[1].text.c_str()));
+                            Doc.XPos=screenwidth-80;
+                        }
 
                         HaltGui();
                         mainWindow->BInsert(img->img);
                         ResumeGui();
-                    }
 
-                    if(nextItemIs(lista, l1.end(), "img"))
-                    {
-                        Index->screenSize=0;
+                        Index=InsIndex(Index);
+                        Index->elem=img->img;
+                        Index->screenSize=atoi(lista->value[1].text.c_str())+5;
+                        Index->content=null;
+
+                        if(!nextItemIs(lista, l1.end(), "img"))
+                        {
+                            Doc.Height+=Index->screenSize;
+                            Doc.XPos=0;
+                        }
                     }
                     ResumeThread(thread);
                 }
@@ -316,7 +350,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                     GuiImage *TextboxImg=new GuiImage(&Textbox);
                     btn->btn=new GuiButton(TextboxImg->GetWidth(), TextboxImg->GetHeight());
                     btn->btn->SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
-                    btn->btn->SetPosition(coordX, coordY);
+                    btn->btn->SetPosition(offset, Doc.YPos+Doc.Height);
                     btn->btn->SetImage(TextboxImg);
 
                     btn->btn->SetSoundOver(btnSoundOver);
@@ -330,6 +364,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                     Index=InsIndex(Index);
                     Index->elem=btn->btn;
                     Index->screenSize=60;
+                    Doc.Height+=Index->screenSize;
                 }
 
                 else if (lista->name=="meta")
@@ -348,9 +383,8 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                 {
                     if (!nextItemIs(lista, l1.end(), "p") && !nextItemIs(lista, l1.end(), "return"))
                     {
-                        if (Index)
-                            Index->screenSize+=25;
-                        offset=0;
+                        Doc.Height+=25;
+                        Doc.XPos=0;
                     }
                 }
 
@@ -358,9 +392,8 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                 {
                     if (!nextItemIs(lista, l1.end(), "p") && !nextItemIs(lista, l1.end(), "return"))
                     {
-                        if (Index)
-                            Index->screenSize+=50;
-                        offset=0;
+                        Doc.Height+=50;
+                        Doc.XPos=0;
                     }
                 }
 
@@ -375,23 +408,23 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                         });
                         text->txt->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
                         text->txt->SetSpace(false);
-                        text->txt->SetOffset(&coordX);
-                        if (offset >= (screenwidth-80))
-                        {
-                            coordY=Index ? Index->elem->GetYPosition()+Index->screenSize : 40;
-                            offset=offset % (screenwidth-80);
-                        }
-                        text->txt->SetPosition(coordX+40+offset, coordY);
-                        text->txt->SetWrap(true, screenwidth-80-offset);
+                        text->txt->SetOffset(&offset);
+
+                        if (Doc.XPos >= (screenwidth-80))
+                            Doc.XPos=Doc.XPos % (screenwidth-80);
+
+                        text->txt->SetPosition(offset+40+Doc.XPos, Doc.YPos+Doc.Height);
+                        text->txt->SetWrap(true, screenwidth-80-Doc.XPos);
                         text->txt->SetEffect(EFFECT_FADE, 50);
                         SetFont(text->txt, lista->value[i].mode);
                         HaltGui();
                         mainWindow->BInsert(text->txt);
                         ResumeGui();
-                        offset+=text->txt->GetTextWidth();
+                        Doc.XPos+=text->txt->GetTextWidth();
                         Index=InsIndex(Index);
                         Index->elem=text->txt;
-                        Index->screenSize=(offset/(screenwidth-80))*25;
+                        Index->screenSize=(Doc.XPos/(screenwidth-80))*25;
+                        Doc.Height+=Index->screenSize;
                     }
                 }
                 lista++;
@@ -423,7 +456,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                 ResumeGui();
             }
 
-            HandleHtmlPad(&coordX, btnup, btndown, ext, Index, mainWindow, parentWindow);
+            HandleHtmlPad(&offset, btnup, btndown, ext, Index, mainWindow, parentWindow);
             HandleMenuBar(&link, url, new_page, title, &choice, 0, mainWindow, parentWindow);
 
             if (choice == 2)

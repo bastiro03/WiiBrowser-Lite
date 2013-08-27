@@ -179,7 +179,9 @@ void CompleteDownload(CURLMsg *msg)
 
     if(retval == FAILED)
     {
+        save_mem(curl_easy_strerror((CURLcode)data->code));
         name = strrchr(data->save.name, '/');
+
         if(name)
             sprintf(message, "The download of %s failed. Try again?", name+1);
         else sprintf(message, "The download of %s failed. Try again?", data->save.name);

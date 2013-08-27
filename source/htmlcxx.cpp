@@ -27,7 +27,7 @@ void save_mem(string str)
 {
     ofstream file;
     file.open ("debug.txt", ios::out | ios::app);
-    file << str << endl << endl;
+    file << str << "\r\n\r\n";
     file.close();
 }
 
@@ -35,8 +35,18 @@ void save_mem_int(float str)
 {
     ofstream file;
     file.open ("debug.txt", ios::out | ios::app);
-    file << str << endl << endl;
+    file << str << "\r\n\r\n";
     file.close();
+}
+
+bool equal(string s1, string s2)
+{
+    return (strcasecmp(s1.c_str(), s2.c_str()) == 0);
+}
+
+void merge(Tag *tag, vector<Value> out)
+{
+    tag->value.insert(tag->value.end(), out.begin(), out.end());
 }
 
 int checkparent(vector<string> tag, int start)
@@ -46,7 +56,7 @@ int checkparent(vector<string> tag, int start)
     {
         for (k=start; k<END; k++)
         {
-            if (!stricmp(tag[i].c_str(), tags[k]))
+            if (equal(tag[i], tags[k]))
             {
                 return 1;
             }
@@ -60,7 +70,7 @@ int checkTag(vector<string> tag, string name)
     unsigned int i;
     for (i=0; i<tag.size(); i++)
     {
-        if (!stricmp(tag[i].c_str(), name.c_str()))
+        if (equal(tag[i], name))
             return 1;
     }
     return 0;
@@ -86,39 +96,54 @@ bool prevTagIs(tree<HTML::Node>::iterator it, string tag)
 {
     bool ret = false;
 
-    if((--it)->tagName() == tag)
+    if(equal((--it)->tagName(), tag))
         ret = true;
 
     return ret;
 }
 
-char *strToUrl(string attr)
+string strToUrl(string attr)
 {
     char *link = (char *)attr.c_str();
-    char *dest = (char *)malloc(strlen(link) + 1);
-    memset(dest, 0, strlen(link) + 1);
-
-    if(strncasecmp("javascript", link, 10))
-    {
-        strcpy(dest, link);
-        return dest;
-    }
+    string dest;
 
     int i = strcspn(link, "'\"");
     if(i >= (int)strlen(link))
         return dest;
 
-    char ch = link[i];
-    char *p1 = &link[i+1];
-    char *p2;
+    char ch = attr.at(i++);
+    int span;
 
-    if ((ch == '"' || ch == '\'') &&
-            (p2 = strchr(p1, ch)))
+    if ((ch == '"' || ch == '\''))
     {
-        strncpy(dest, p1, (p2-p1));
+        span = attr.find(ch, i)-i;
+        dest.assign(attr.substr(i, span));
     }
 
     return dest;
+}
+
+string createLink(tree<HTML::Node>::iterator it)
+{
+    string href(it->attribute("href").second);
+    string onclick(it->attribute("onclick").second);
+    string ret;
+
+    if(href.length() && href[0] != '#')
+    {
+        if(strncasecmp("javascript", href.c_str(), 10))
+            return href;
+
+        if((ret = strToUrl(href)).length())
+            return ret;
+    }
+
+    if(strcasestr(onclick.c_str(), "location"))
+    {
+        ret = strToUrl(onclick);
+    }
+
+    return ret;
 }
 
 string stripEntities(string input)
@@ -188,7 +213,7 @@ string search(string id, tree<HTML::Node>::iterator it)
     ++ends;
     for (; begin != ends; ++begin)
     {
-        if (begin->tagName()=="label")
+        if (equal(begin->tagName(), "label"))
         {
             begin->parseAttributes();
             if(begin->attribute("for").second==id)
@@ -204,15 +229,10 @@ tree<HTML::Node>::iterator thtml(tree<HTML::Node>::iterator it, tree<HTML::Node>
     {
         if (!it->isTag())
             continue;
-        if (!strcasecmp(it->tagName().c_str(), dest.c_str()))
+        if (equal(it->tagName(), dest))
             break;
     }
     return it;
-}
-
-void merge(Tag *tag, vector<Value> out)
-{
-    tag->value.insert(tag->value.end(), out.begin(), out.end());
 }
 
 typedef struct
@@ -274,7 +294,7 @@ Lista getTag(char * buffer, char * url)
 
         for (; it!=end; ++it)
         {
-            if (it->tagName()=="script")
+            if (equal(it->tagName(), "script"))
             {
                 it.skip_children();
                 continue;
@@ -370,7 +390,7 @@ Lista getTag(char * buffer, char * url)
                             skip=true;
                     }
 
-                    if (strcasecmp(it->tagName().c_str(), "STYLE") == 0)
+                    if (equal(it->tagName(), "STYLE"))
                     {
                         tree<HTML::Node>::iterator begin, end;
                         begin = it;
@@ -401,29 +421,27 @@ Lista getTag(char * buffer, char * url)
                 }
                 if (isContainer(it->tagName()))
                 {
-                    if (it->tagName()=="p")
+                    if (equal(it->tagName(), "p"))
                         l1.push_back( {"p"});
                     else l1.push_back( {"return"});
                     open[text].open=false;
                 }
-                if (it->tagName() == "title")
+                if (equal(it->tagName(), "title"))
                 {
                     l1.push_back( {"title"});
                     open[title].open=true;
                     open[title].p=&(*l1.rbegin());
                 }
-                else if (it->tagName() == "a")
+                else if (equal(it->tagName(), "a"))
                 {
                     l1.push_back( {"a"});
-                    char *href = strToUrl(it->attribute("href").second);
-                    l1.rbegin()->attribute.append (href);
-                    free(href);
+                    l1.rbegin()->attribute.append (createLink(it));
 
                     open[a].open=true;
                     open[a].p=&(*l1.rbegin());
                     open[text].open=false;
                 }
-                else if (it->tagName() == "img")
+                else if (equal(it->tagName(), "img"))
                 {
                     if(!prevTagIs(it, "img"))
                     {
@@ -436,7 +454,7 @@ Lista getTag(char * buffer, char * url)
                     l1.rbegin()->value.push_back ( {it->attribute("height").second});
                     l1.rbegin()->attribute.append (it->attribute("src").second);
                 }
-                else if (it->tagName() == "form")
+                else if (equal(it->tagName(), "form"))
                 {
                     l1.push_back( {"form"});
                     l1.rbegin()->form.action.append (it->attribute("action").second);
@@ -445,36 +463,43 @@ Lista getTag(char * buffer, char * url)
                     open[form].open=true;
                     open[form].p=&(*l1.rbegin());
                 }
-                else if (it->tagName() == "input")
+                else if (equal(it->tagName(), "input"))
                 {
                     if (open[form].open)
                     {
                         tree<HTML::Node>::iterator k = it;
-                        while (k->tagName() != "form" && k != dom.begin())
+                        while (!equal(it->tagName(), "form") && k != dom.begin())
                             k = dom.parent(k);
                         string label=search(it->attribute("id").second, k);
                         open[form].p->form.input=InsInFondo(open[form].p->form.input, it->attribute("name").second, it->attribute("type").second, stripEntities(it->attribute("value").second), label);
                         SetOption(open[form].p->form.input, it->attribute("checked").second);
+
+                        if(it->attribute("type").second == "button")
+                        {
+                            l1.push_back( {"a"});
+                            l1.rbegin()->attribute.append (createLink(it));
+                            l1.rbegin()->value.push_back ( {it->attribute("value").second});
+                        }
                     }
                 }
-                else if (it->tagName() == "textarea")
+                else if (equal(it->tagName(), "textarea"))
                 {
                     if (open[form].open)
                     {
                         tree<HTML::Node>::iterator k = it;
-                        while (k->tagName() != "form" && k != dom.begin())
+                        while (!equal(it->tagName(), "form") && k != dom.begin())
                             k = dom.parent(k);
                         string label=search(it->attribute("id").second, k);
                         open[form].p->form.input=InsInFondo(open[form].p->form.input, it->attribute("name").second, it->tagName(), "", label);
                     }
                 }
-                else if (it->tagName() == "meta")
+                else if (equal(it->tagName(), "meta"))
                 {
                     l1.push_back( {"meta"});
                     l1.rbegin()->value.push_back ( {it->attribute("http-equiv").second});
                     l1.rbegin()->attribute.append (it->attribute("content").second);
                 }
-                else if (it->tagName() == "base")
+                else if (equal(it->tagName(), "base"))
                 {
                     l1.push_back( {"base"});
                     l1.rbegin()->attribute.append (it->attribute("href").second);
@@ -486,25 +511,25 @@ Lista getTag(char * buffer, char * url)
                 if (!parent.empty())
                 {
                     parent.pop_back();
-                    if (it->tagName()=="a")
+                    if (equal(it->tagName(), "a"))
                     {
                         if (open[a].p->value.size()==0)
                             open[a].p->value.push_back ( {"LINK"});
                         open[a].open=false;
                     }
-                    else if (it->tagName()=="title")
+                    else if (equal(it->tagName(), "title"))
                         open[title].open=false;
-                    else if (it->tagName()=="form")
+                    else if (equal(it->tagName(), "form"))
                         open[form].open=false;
                 }
                 if (isContainer(it->tagName()))
                 {
-                    if (it->tagName()=="p")
+                    if (equal(it->tagName(), "p"))
                         l1.push_back( {"p"});
                     else l1.push_back( {"return"});
                     open[text].open=false;
                 }
-                else if (it->tagName()=="a")
+                else if (equal(it->tagName(), "a"))
                     open[text].open=false;
             }
         }
@@ -542,7 +567,7 @@ string ParseList(char *buffer)
 
     for (; it!=end; ++it)
     {
-        if (!stricmp(it->tagName().c_str(), "a"))
+        if (equal(it->tagName(), "a"))
         {
             it->parseAttributes();
             string attr = it->attribute("href").second;

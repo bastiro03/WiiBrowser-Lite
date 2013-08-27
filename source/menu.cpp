@@ -1989,7 +1989,7 @@ jump:
     HTML = downloadfile(curl_handle, url, NULL);
 
 #ifdef DEBUG
-    FILE *pFile = fopen ("sd:/page.htm", "rb");
+    FILE *pFile = fopen ("sd:/page.html", "rb");
     fseek (pFile, 0, SEEK_END);
     int size = ftell(pFile);
     rewind (pFile);

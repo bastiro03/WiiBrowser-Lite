@@ -547,7 +547,12 @@ bool validProxy()
 
 void trimline(char *init, struct block *dest)
 {
-    dest->data = (char *)malloc(256);
+    int len = strlen(init);
+    while (len > 0 && strchr(" \r\n", init[len-1]))
+        len--;
+
+	dest->data = (char *)malloc(256);
+	init[len] = 0;
 
     if(init[0] == '"')
     {

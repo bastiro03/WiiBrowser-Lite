@@ -115,10 +115,11 @@ enum
 	SCROLL_DOTTED
 };
 
-enum textSets
+enum buttonSets
 {
-    NORMAL = 0,
-    ANCHOR
+    NORMAL=0,
+    ANCHOR,
+	BACKGROUND
 };
 
 enum BUTTONS
@@ -163,8 +164,8 @@ typedef struct point
 #define EFFECT_SLIDE_OUT			32
 #define EFFECT_SLIDE_TO			    64
 #define EFFECT_FADE					128
-#define EFFECT_SCALE				256
-#define EFFECT_SCALE_TO				512
+#define EFFECT_FADE_TO				256
+#define EFFECT_SCALE				512
 #define EFFECT_MOVE 				1024
 #define EFFECT_RUMBLE 				2048
 #define EFFECT_ROTATE				4096
@@ -435,6 +436,8 @@ class GuiElement : public sigslot::has_slots<>
 		void SetEffectOnOver(int e, int a, int t = 0);
 		//!Shortcut to SetEffectOnOver(EFFECT_SCALE, 4, 110)
 		void SetEffectGrow();
+		//!Shortcut to SetEffectOnOver(EFFECT_FADE_TO, 4, 110)
+		void SetEffectFade();
 		//!Gets the current element effects
 		//!\return element effects
 		int GetEffect();
@@ -517,8 +520,6 @@ class GuiElement : public sigslot::has_slots<>
 		int effects; //!< Currently enabled effect(s). 0 when no effects are enabled
 		int effectAmount; //!< Effect amount. Used by different effects for different purposes
 		int effectTarget; //!< Effect target amount. Used by different effects for different purposes
-		int effectAmountTo; //!< Effect amount. Used by different effects for different purposes
-		int effectTargetTo; //!< Effect target amount. Used by different effects for different purposes
 		int effectsOver; //!< Effects to enable when wiimote cursor is over this element. Copied to effects variable on over event
 		int effectAmountOver; //!< EffectAmount to set when wiimote cursor is over this element
 		int effectTargetOver; //!< EffectTarget to set when wiimote cursor is over this element
@@ -962,6 +963,8 @@ class GuiButton : public GuiElement
 		//!Sets the sound to play on click
 		//!\param s Pointer to GuiSound object
 		void SetSoundClick(GuiSound * s);
+		//!Sets the button type
+		void SetModel(int model);
 		//!Sets the tooltip for the button
 		//!\param t Tooltip
 		void SetTooltip(GuiTooltip * t);
@@ -993,6 +996,7 @@ class GuiButton : public GuiElement
 		GuiSound * soundHold; //!< Sound to play for STATE_HELD
 		GuiSound * soundClick; //!< Sound to play for STATE_CLICKED
 		GuiTooltip * tooltip; //!< Tooltip to display on over
+		int buttonModel;
 };
 
 typedef struct _keytype {

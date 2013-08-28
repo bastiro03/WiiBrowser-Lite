@@ -87,7 +87,7 @@ int checkchr (string value)
 
 int isContainer(string name)
 {
-    string array[] = {"h1","h2","h3","h4","h5","h6","p","div","br","center","hr","li","title","form"/*,"img"*/};
+    string array[] = {"h1","h2","h3","h4","h5","h6","p","div","br","center","hr","li","title","form","td"/*,"img"*/};
     vector<string> container (array, array + sizeof(array) / sizeof(string));
     return checkTag(container, name);
 }
@@ -443,16 +443,19 @@ Lista getTag(char * buffer, char * url)
                 }
                 else if (equal(it->tagName(), "img"))
                 {
-                    if(!prevTagIs(it, "img"))
+                    // if(!prevTagIs(it, "img") && !open[a].open)
+                    if(!prevTagIs(it, "img") && !prevTagIs(it, "a"))
                     {
                         l1.push_back( {"return"});
                         open[text].open=false;
                     }
 
                     l1.push_back( {"img"});
+                    l1.rbegin()->attribute.append (it->attribute("src").second);
+
                     l1.rbegin()->value.push_back ( {it->attribute("width").second});
                     l1.rbegin()->value.push_back ( {it->attribute("height").second});
-                    l1.rbegin()->attribute.append (it->attribute("src").second);
+                    l1.rbegin()->value.push_back ( {open[a].open ? open[a].p->attribute : "parent", parent});
                 }
                 else if (equal(it->tagName(), "form"))
                 {
@@ -512,11 +515,7 @@ Lista getTag(char * buffer, char * url)
                 {
                     parent.pop_back();
                     if (equal(it->tagName(), "a"))
-                    {
-                        if (open[a].p->value.size()==0)
-                            open[a].p->value.push_back ( {"LINK"});
                         open[a].open=false;
-                    }
                     else if (equal(it->tagName(), "title"))
                         open[title].open=false;
                     else if (equal(it->tagName(), "form"))

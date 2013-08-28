@@ -32,6 +32,7 @@ GuiButton::GuiButton(int w, int h)
 	iconOver = NULL;
 	iconHold = NULL;
 	iconClick = NULL;
+    buttonModel = NORMAL;
 
 	for(int i=0; i < 3; i++)
 	{
@@ -142,6 +143,17 @@ void GuiButton::SetSoundHold(GuiSound * snd)
 void GuiButton::SetSoundClick(GuiSound * snd)
 {
 	soundClick = snd;
+}
+
+void GuiButton::SetModel(int model)
+{
+	buttonModel = model;
+
+	for(int i=0; i < 3; i++)
+	{
+	    if(label[i])
+            label[i]->SetModel(model);
+	}
 }
 void GuiButton::SetTooltip(GuiTooltip* t)
 {
@@ -347,8 +359,17 @@ void GuiButton::Update(GuiTrigger * t)
 			{
 				// initiate effects (in reverse)
 				effects = effectsOver;
-				effectAmount = -effectAmountOver;
-				effectTarget = 100;
+
+				if(effectsOver & EFFECT_FADE_TO)
+				{
+				    effectAmount = -2*effectAmountOver;
+				    effectTarget = 255;
+				}
+				else
+				{
+				    effectAmount = -effectAmountOver;
+				    effectTarget = 100;
+				}
 			}
 		}
 	}

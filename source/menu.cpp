@@ -1988,19 +1988,21 @@ jump:
     struct block HTML;
     HTML = downloadfile(curl_handle, url, NULL);
 
-#ifdef DEBUG
+#ifndef DEBUG
     FILE *pFile = fopen ("sd:/page.html", "rb");
-    fseek (pFile, 0, SEEK_END);
-    int size = ftell(pFile);
-    rewind (pFile);
+    if(pFile)
+    {
+        fseek (pFile, 0, SEEK_END);
+        int size = ftell(pFile);
+        rewind (pFile);
 
-    HTML.data = (char*) malloc (sizeof(char)*size);
-    if (HTML.data == NULL) exit (2);
-    fread (HTML.data, 1, size, pFile);
+        HTML.data = (char*) malloc (sizeof(char)*size);
+        fread (HTML.data, 1, size, pFile);
 
-    HTML.size = size;
-    strcpy(HTML.type, "text/html");
-    fclose(pFile);
+        HTML.size = size;
+        strcpy(HTML.type, "text/html");
+        fclose(pFile);
+    }
 #endif
 
 #ifdef TIME

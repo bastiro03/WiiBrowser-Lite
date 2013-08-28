@@ -461,16 +461,8 @@ void GuiElement::SetEffect(int eff, int amount, int target)
 			alphaDyn = alpha;
 	}
 
-	if(eff & EFFECT_SCALE_TO)
-    {
-        effectAmountTo = amount;
-        effectTargetTo = target;
-    }
-    else
-    {
-        effectAmount = amount;
-        effectTarget = target;
-    }
+    effectAmount = amount;
+    effectTarget = target;
 	effects |= eff;
 }
 
@@ -489,6 +481,12 @@ void GuiElement::SetEffectOnOver(int eff, int amount, int target)
 void GuiElement::SetEffectGrow()
 {
 	SetEffectOnOver(EFFECT_SCALE, 4, 110);
+}
+
+void GuiElement::SetEffectFade()
+{
+    alphaDyn = alpha;
+	SetEffectOnOver(EFFECT_FADE_TO, -4, 110);
 }
 
 void GuiElement::UpdateEffects()
@@ -628,15 +626,16 @@ void GuiElement::UpdateEffects()
 			effects &= (~EFFECT_SCALE); // shut off effect
 		}
 	}
-    if(effects & EFFECT_SCALE_TO)
+    if(effects & EFFECT_FADE_TO)
     {
-        if(fabs(this->GetScale() - effectTargetTo*0.01) > effectAmountTo*0.01)
-        {
-            if(this->GetScale() > effectTargetTo*0.01)
-                this->SetScale(this->GetScale() - effectAmountTo*0.01);
-            else this->SetScale(this->GetScale() + effectAmountTo*0.01);
-        }
-        else effects &= (~EFFECT_SCALE_TO);
+        alphaDyn += effectAmount;
+
+		if((effectAmount < 0 && alphaDyn <= effectTarget)
+			|| (effectAmount > 0 && alphaDyn >= effectTarget))
+		{
+			alphaDyn = effectTarget;
+			effects &= (~EFFECT_FADE_TO); // shut off effect
+		}
     }
     if(effects & EFFECT_MOVE)
     {

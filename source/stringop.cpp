@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <limits.h>
 #include "stringop.h"
 
 void addname(struct block *html, char *url, char *path, const char *phold)
@@ -107,4 +108,55 @@ int strtokcmp(const char *string, const char *compare, const char *separator)
 	}
 
 	return -1;
+}
+
+struct Size imageSize(Tag *lista, GuiImage *img)
+{
+    int attrWidth = INT_MAX, attrHeight = INT_MAX;
+    int listWidth, listHeight;
+
+    if(img && img->GetImage())
+    {
+        attrWidth = img->GetWidth();
+        attrHeight = img->GetHeight();
+
+        if(lista->value[0].text.length())
+        {
+            listWidth = atoi(lista->value[0].text.c_str());
+
+            if(!strchr(lista->value[0].text.c_str(), '%'))
+                attrWidth = listWidth;
+            else attrWidth = listWidth*attrWidth/100;
+        }
+
+        if(lista->value[1].text.length())
+        {
+            listHeight = atoi(lista->value[1].text.c_str());
+
+            if(!strchr(lista->value[1].text.c_str(), '%'))
+                attrHeight = listHeight;
+            else attrHeight = listHeight*attrHeight/100;
+        }
+    }
+
+    else
+    {
+        if(lista->value[0].text.length())
+        {
+            listWidth = atoi(lista->value[0].text.c_str());
+
+            if(!strchr(lista->value[0].text.c_str(), '%'))
+                attrWidth = listWidth;
+        }
+
+        if(lista->value[1].text.length())
+        {
+            listHeight = atoi(lista->value[1].text.c_str());
+
+            if(!strchr(lista->value[1].text.c_str(), '%'))
+                attrHeight = listHeight;
+        }
+    }
+
+    return {attrWidth, attrHeight};
 }

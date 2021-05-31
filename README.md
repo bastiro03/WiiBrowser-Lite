@@ -1,4 +1,4 @@
-# BrowseMii
+# WiiBrowser Lite
 This is a revival project for "WiiBrowser" by gave92, a homebrew application that allowed you to more easily browse the web on your Wii and vWii.
 ## Features
 Features:

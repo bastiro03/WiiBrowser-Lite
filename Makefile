@@ -17,39 +17,36 @@ include $(DEVKITPPC)/wii_rules
 # SOURCES is a list of directories containing source code
 # INCLUDES is a list of directories containing extra header files
 #---------------------------------------------------------------------------------
-MPLAYER		:=	$(CURDIR)/source/mplayer
 TARGET		:=	boot
 BUILD		:=	build
-SOURCES		:=	source source/html source/css source/libwiigui source/images source/fonts source/sounds \
-				source/lang source/utils source/images/appbar source/textoperations \
-				source/network source/archiveoperations
-INCLUDES	:=	source source/mplayer source/network
+SOURCES		:=	source
+DATA		:=	data
+INCLUDES	:=
 
 #---------------------------------------------------------------------------------
 # options for code generation
 #---------------------------------------------------------------------------------
 
-CFLAGS		=	-g -O3 -Wall $(MACHDEP) $(INCLUDE)
-CXXFLAGS	=	-std=gnu++0x $(CFLAGS)
-LDFLAGS		=	-g -ggdb $(MACHDEP) -Wl
+CFLAGS	= -g -O3 -Wall $(MACHDEP) $(INCLUDE)
+CXXFLAGS	=	$(CFLAGS)
 
-# ,-Map,$(notdir $@).map,--section-start,.init=0x80620000,-wrap,malloc,-wrap,free,-wrap,memalign,-wrap,calloc,-wrap,realloc,-wrap,malloc_usable_size
+#---------------------------------------------------------------------------------
+# move loader to another location - THANKS CREDIAR - 0x81330000 for HBC
+#---------------------------------------------------------------------------------
+#LDFLAGS = -g $(MACHDEP) -Wl,-Map,$(notdir $@).map -Wl,--section-start,.init=0x81000000
+LDFLAGS	= -g $(MACHDEP) -Wl,-Map,$(notdir $@).map
+#LDFLAGS = -g $(MACHDEP) -Wl,-Map,$(notdir $@).map -Wl,--section-start,.init=0x80003f00
 
 #---------------------------------------------------------------------------------
 # any extra libraries we wish to link with the project
 #---------------------------------------------------------------------------------
-# LIBS	:=	-lmplayerwii -lavformat -lavcodec -lswscale -lavutil \
-
-LIBS	:=	-lfribidi -ljpeg -liconv -ldi -lpng -lunrar -lzip -lsevenzip -lz \
-				-lcurl -lcyassl -lnetport -lasnd -lvorbisidec \
-					 -lmxml -llua -lm -lfat -lwiiuse -lwiikeyboard -lbte -logc -lfreetype \
+LIBS	:=	-lfat -lntfs -lext2fs -lz -lbte -logc -lm
 
 #---------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level containing
 # include and lib
 #---------------------------------------------------------------------------------
 LIBDIRS	:= $(PORTLIBS)
-
 
 #---------------------------------------------------------------------------------
 # no real need to edit anything past this point unless you need to add additional
@@ -58,8 +55,11 @@ LIBDIRS	:= $(PORTLIBS)
 ifneq ($(BUILD),$(notdir $(CURDIR)))
 #---------------------------------------------------------------------------------
 
-export OUTPUT	:=	$(CURDIR)/$(TARGETDIR)/$(TARGET)
-export VPATH	:=	$(foreach dir,$(SOURCES),$(CURDIR)/$(dir))
+export OUTPUT	:=	$(CURDIR)/$(TARGET)
+
+export VPATH	:=	$(foreach dir,$(SOURCES),$(CURDIR)/$(dir)) \
+					$(foreach dir,$(DATA),$(CURDIR)/$(dir))
+
 export DEPSDIR	:=	$(CURDIR)/$(BUILD)
 
 #---------------------------------------------------------------------------------
@@ -69,13 +69,9 @@ CFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
 CPPFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
 sFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
 SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.S)))
-TTFFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.ttf)))
-LANGFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.lang)))
-PNGFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.png)))
-JPGFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.jpg)))
-GIFFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.gif)))
-OGGFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.ogg)))
-PCMFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.pcm)))
+BINFILES	:=	$(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.*)))
+DOLFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.dol)))
+ELFFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.elf)))
 
 #---------------------------------------------------------------------------------
 # use CXX for linking C++ projects, CC for standard C
@@ -86,62 +82,48 @@ else
 	export LD	:=	$(CXX)
 endif
 
-export OFILES	:=	$(CPPFILES:.cpp=.o) $(CFILES:.c=.o) \
+export OFILES	:=	$(addsuffix .o,$(BINFILES)) \
+					$(CPPFILES:.cpp=.o) $(CFILES:.c=.o) \
 					$(sFILES:.s=.o) $(SFILES:.S=.o) \
-					$(TTFFILES:.ttf=.ttf.o) $(LANGFILES:.lang=.lang.o) \
-					$(PNGFILES:.png=.png.o) \
-					$(OGGFILES:.ogg=.ogg.o) $(PCMFILES:.pcm=.pcm.o) \
-					$(JPGFILES:.jpg=.jpg.o) \
-					$(GIFFILES:.gif=.gif.o)
-					
+					$(addsuffix .o,$(DOLFILES)) \
+					$(addsuffix .o,$(ELFFILES))
+
 #---------------------------------------------------------------------------------
 # build a list of include paths
 #---------------------------------------------------------------------------------
-export INCLUDE	:=	$(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir)) \
+export INCLUDE	:=	$(foreach dir,$(INCLUDES), -iquote $(CURDIR)/$(dir)) \
 					$(foreach dir,$(LIBDIRS),-I$(dir)/include) \
 					-I$(CURDIR)/$(BUILD) \
-					-I$(LIBOGC_INC) -I$(PORTLIBS)/include/freetype2
+					-I$(LIBOGC_INC)
 
 #---------------------------------------------------------------------------------
 # build a list of library paths
 #---------------------------------------------------------------------------------
- 
 export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib) \
-					-L$(LIBOGC_LIB) \
-				-L$(MPLAYER)/ \
-				-L$(MPLAYER)/ffmpeg/libavcodec \
-				-L$(MPLAYER)/ffmpeg/libavformat \
-				-L$(MPLAYER)/ffmpeg/libavutil \
-				-L$(MPLAYER)/ffmpeg/libswscale 
+					-L$(LIBOGC_LIB)
 
 export OUTPUT	:=	$(CURDIR)/$(TARGET)
 .PHONY: $(BUILD) clean
 
 #---------------------------------------------------------------------------------
 $(BUILD):
-#	cd source/mplayer; $(MAKE) -f Makefile; cd ../..
 	@[ -d $@ ] || mkdir -p $@
 	@make --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
 
 #---------------------------------------------------------------------------------
-test:
-	@make --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
-
-
 clean:
 	@echo clean ...
-	rm -f $(BUILD)/*.d $(BUILD)/*.h $(BUILD)/*.ii $(BUILD)/*.lst $(BUILD)/*.map \
-	$(BUILD)/*.o $(BUILD)/*.s
-	@rm -fr $(OUTPUT).elf $(OUTPUT).dol
-#	cd source/mplayer; $(MAKE) -f Makefile clean
+	@rm -fr $(BUILD) $(OUTPUT).elf $(OUTPUT).dol
 
 #---------------------------------------------------------------------------------
 run:
-	wiiload $(OUTPUT).dol
+	wiiload $(TARGET).dol
+
 
 #---------------------------------------------------------------------------------
-reload:
-	wiiload -r $(OUTPUT).dol
+pack:
+	zip -9 loadMii.zip $(TARGET).dol ../icon.png ../meta.xml ../README
+
 
 #---------------------------------------------------------------------------------
 else
@@ -155,35 +137,19 @@ $(OUTPUT).dol: $(OUTPUT).elf
 $(OUTPUT).elf: $(OFILES)
 
 #---------------------------------------------------------------------------------
-# This rule links in binary data with .ttf, .png, and .mp3 extensions
+# This rule links in binary data with the .jpg extension
 #---------------------------------------------------------------------------------
-%.ttf.o : %.ttf
+%.dol.o : %.dol
 	@echo $(notdir $<)
-	$(bin2o)
-
-%.lang.o : %.lang
-	@echo $(notdir $<)
-	$(bin2o)
-
-%.png.o : %.png
-	@echo $(notdir $<)
-	$(bin2o)
-
-%.jpg.o : %.jpg
-	@echo $(notdir $<)
-	$(bin2o)
+	@bin2s -a 32 $< | $(AS) -o $(@)
 	
-%.gif.o : %.gif
+%.bin.o : %.bin
 	@echo $(notdir $<)
-	$(bin2o)
-	
-%.ogg.o : %.ogg
-	@echo $(notdir $<)
-	$(bin2o)
+	@bin2s -a 32 $< | $(AS) -o $(@)
 
-%.pcm.o : %.pcm
+%.elf.o : %.elf
 	@echo $(notdir $<)
-	$(bin2o)
+	@bin2s -a 32 $< | $(AS) -o $(@)
 
 -include $(DEPENDS)
 

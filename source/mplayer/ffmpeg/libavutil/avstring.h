@@ -38,7 +38,7 @@
  * @param ptr updated if the prefix is matched inside str
  * @return non-zero if the prefix matches, zero otherwise
  */
-int av_strstart(const char *str, const char *pfx, const char **ptr);
+int av_strstart(const char* str, const char* pfx, const char** ptr);
 
 /**
  * Return non-zero if pfx is a prefix of str independent of case. If
@@ -50,7 +50,7 @@ int av_strstart(const char *str, const char *pfx, const char **ptr);
  * @param ptr updated if the prefix is matched inside str
  * @return non-zero if the prefix matches, zero otherwise
  */
-int av_stristart(const char *str, const char *pfx, const char **ptr);
+int av_stristart(const char* str, const char* pfx, const char** ptr);
 
 /**
  * Locate the first case-independent occurrence in the string haystack
@@ -64,7 +64,7 @@ int av_stristart(const char *str, const char *pfx, const char **ptr);
  * @return         pointer to the located match within haystack
  *                 or a null pointer if no match
  */
-char *av_stristr(const char *haystack, const char *needle);
+char* av_stristr(const char* haystack, const char* needle);
 
 /**
  * Copy the string src to dst, but no more than size - 1 bytes, and
@@ -81,7 +81,7 @@ char *av_stristr(const char *haystack, const char *needle);
  * _must_ be a properly 0-terminated string, otherwise this will read beyond
  * the end of the buffer and possibly crash.
  */
-size_t av_strlcpy(char *dst, const char *src, size_t size);
+size_t av_strlcpy(char* dst, const char* src, size_t size);
 
 /**
  * Append the string src to the string dst, but to a total length of
@@ -99,7 +99,7 @@ size_t av_strlcpy(char *dst, const char *src, size_t size);
  * absolutely _must_ be a properly 0-terminated strings, otherwise this
  * will read beyond the end of the buffer and possibly crash.
  */
-size_t av_strlcat(char *dst, const char *src, size_t size);
+size_t av_strlcat(char* dst, const char* src, size_t size);
 
 /**
  * Append output to a string, according to a format. Never write out of
@@ -113,7 +113,7 @@ size_t av_strlcat(char *dst, const char *src, size_t size);
  * @return the length of the string that would have been generated
  *  if enough space had been available
  */
-size_t av_strlcatf(char *dst, size_t size, const char *fmt, ...) av_printf_format(3, 4);
+size_t av_strlcatf(char* dst, size_t size, const char* fmt, ...) av_printf_format(3, 4);
 
 /**
  * Print arguments following specified format into a large enough auto
@@ -123,12 +123,12 @@ size_t av_strlcatf(char *dst, size_t size, const char *fmt, ...) av_printf_forma
  * @return the allocated string
  * @note You have to free the string yourself with av_free().
  */
-char *av_asprintf(const char *fmt, ...) av_printf_format(1, 2);
+char* av_asprintf(const char* fmt, ...) av_printf_format(1, 2);
 
 /**
  * Convert a number to a av_malloced string.
  */
-char *av_d2str(double d);
+char* av_d2str(double d);
 
 /**
  * Unescape the given string until a non escaped terminating char,
@@ -144,7 +144,7 @@ char *av_d2str(double d);
  * @return the malloced unescaped string, which must be av_freed by
  * the user, NULL in case of allocation failure
  */
-char *av_get_token(const char **buf, const char *term);
+char* av_get_token(const char** buf, const char* term);
 
 /**
  * Split the string into several tokens which can be accessed by
@@ -168,16 +168,16 @@ char *av_get_token(const char **buf, const char *term);
  * first delimiter found, or to NULL if the string was terminated
  * @return the found token, or NULL when no token is found
  */
-char *av_strtok(char *s, const char *delim, char **saveptr);
+char* av_strtok(char* s, const char* delim, char** saveptr);
 
 /**
  * Locale-independent conversion of ASCII characters to uppercase.
  */
 static inline int av_toupper(int c)
 {
-    if (c >= 'a' && c <= 'z')
-        c ^= 0x20;
-    return c;
+	if (c >= 'a' && c <= 'z')
+		c ^= 0x20;
+	return c;
 }
 
 /**
@@ -185,22 +185,22 @@ static inline int av_toupper(int c)
  */
 static inline int av_tolower(int c)
 {
-    if (c >= 'A' && c <= 'Z')
-        c ^= 0x20;
-    return c;
+	if (c >= 'A' && c <= 'Z')
+		c ^= 0x20;
+	return c;
 }
 
 /**
  * Locale-independent case-insensitive compare.
  * @note This means only ASCII-range characters are case-insensitive
  */
-int av_strcasecmp(const char *a, const char *b);
+int av_strcasecmp(const char* a, const char* b);
 
 /**
  * Locale-independent case-insensitive compare.
  * @note This means only ASCII-range characters are case-insensitive
  */
-int av_strncasecmp(const char *a, const char *b, size_t n);
+int av_strncasecmp(const char* a, const char* b, size_t n);
 
 /**
  * @}

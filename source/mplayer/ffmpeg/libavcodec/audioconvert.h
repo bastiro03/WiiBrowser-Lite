@@ -28,7 +28,6 @@
  * Audio format conversion routines
  */
 
-
 #include "libavutil/cpu.h"
 #include "avcodec.h"
 #include "libavutil/audioconvert.h"
@@ -46,14 +45,14 @@ typedef struct AVAudioConvert AVAudioConvert;
  * @param flags See AV_CPU_FLAG_xx
  * @return NULL on error
  */
-AVAudioConvert *av_audio_convert_alloc(enum AVSampleFormat out_fmt, int out_channels,
+AVAudioConvert* av_audio_convert_alloc(enum AVSampleFormat out_fmt, int out_channels,
                                        enum AVSampleFormat in_fmt, int in_channels,
-                                       const float *matrix, int flags);
+                                       const float* matrix, int flags);
 
 /**
  * Free audio sample format converter context
  */
-void av_audio_convert_free(AVAudioConvert *ctx);
+void av_audio_convert_free(AVAudioConvert* ctx);
 
 /**
  * Convert between audio sample formats
@@ -63,8 +62,8 @@ void av_audio_convert_free(AVAudioConvert *ctx);
  * @param[in] in_stride distance between consecutive input samples (measured in bytes)
  * @param len length of audio frame size (measured in samples)
  */
-int av_audio_convert(AVAudioConvert *ctx,
-                           void * const out[6], const int out_stride[6],
-                     const void * const  in[6], const int  in_stride[6], int len);
+int av_audio_convert(AVAudioConvert* ctx,
+                     void* const out[6], const int out_stride[6],
+                     const void* const in[6], const int in_stride[6], int len);
 
 #endif /* AVCODEC_AUDIOCONVERT_H */

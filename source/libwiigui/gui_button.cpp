@@ -20,32 +20,32 @@ GuiButton::GuiButton(int w, int h)
 {
 	width = w;
 	height = h;
-	frame = NULL;
-	image = NULL;
-	imageFlat = NULL;
-	imageOver[0] = NULL;
-	imageOver[1] = NULL;
-	imageHold = NULL;
-	imageClick[0] = NULL;
-	imageClick[1] = NULL;
-	icon = NULL;
-	iconOver = NULL;
-	iconHold = NULL;
-	iconClick = NULL;
-    buttonModel = NORMAL;
+	frame = nullptr;
+	image = nullptr;
+	imageFlat = nullptr;
+	imageOver[0] = nullptr;
+	imageOver[1] = nullptr;
+	imageHold = nullptr;
+	imageClick[0] = nullptr;
+	imageClick[1] = nullptr;
+	icon = nullptr;
+	iconOver = nullptr;
+	iconHold = nullptr;
+	iconClick = nullptr;
+	buttonModel = NORMAL;
 
-	for(int i=0; i < 3; i++)
+	for (int i = 0; i < 3; i++)
 	{
-		label[i] = NULL;
-		labelOver[i] = NULL;
-		labelHold[i] = NULL;
-		labelClick[i] = NULL;
+		label[i] = nullptr;
+		labelOver[i] = nullptr;
+		labelHold[i] = nullptr;
+		labelClick[i] = nullptr;
 	}
 
-	soundOver = NULL;
-	soundHold = NULL;
-	soundClick = NULL;
-	tooltip = NULL;
+	soundOver = nullptr;
+	soundHold = nullptr;
+	soundClick = nullptr;
+	tooltip = nullptr;
 	selectable = true;
 	holdable = false;
 	clickable = true;
@@ -61,86 +61,103 @@ GuiButton::~GuiButton()
 void GuiButton::SetFrame(GuiFrameImage* frm)
 {
 	frame = frm;
-	if(frm) frm->SetParent(this);
+	if (frm) frm->SetParent(this);
 }
+
 void GuiButton::SetImage(GuiImage* img)
 {
 	image = img;
-	if(img) img->SetParent(this);
+	if (img) img->SetParent(this);
 }
+
 void GuiButton::SetImageDisabled(GuiImage* img)
 {
 	imageFlat = img;
-	if(img) img->SetParent(this);
+	if (img) img->SetParent(this);
 }
+
 void GuiButton::SetImageOver(GuiImage* img, int p)
 {
 	imageOver[p] = img;
-	if(img) img->SetParent(this);
+	if (img) img->SetParent(this);
 }
+
 void GuiButton::SetImageHold(GuiImage* img)
 {
 	imageHold = img;
-	if(img) img->SetParent(this);
+	if (img) img->SetParent(this);
 }
+
 void GuiButton::SetImageClick(GuiImage* img, int p)
 {
 	imageClick[p] = img;
-	if(img) img->SetParent(this);
+	if (img) img->SetParent(this);
 }
+
 void GuiButton::SetIcon(GuiImage* img)
 {
 	icon = img;
-	if(img) img->SetParent(this);
+	if (img) img->SetParent(this);
 }
-GuiImage * GuiButton::GetIcon()
+
+GuiImage* GuiButton::GetIcon()
 {
-    return icon;
+	return icon;
 }
+
 void GuiButton::SetIconOver(GuiImage* img)
 {
 	iconOver = img;
-	if(img) img->SetParent(this);
+	if (img) img->SetParent(this);
 }
+
 void GuiButton::SetIconHold(GuiImage* img)
 {
 	iconHold = img;
-	if(img) img->SetParent(this);
+	if (img) img->SetParent(this);
 }
+
 void GuiButton::SetIconClick(GuiImage* img)
 {
 	iconClick = img;
-	if(img) img->SetParent(this);
+	if (img) img->SetParent(this);
 }
+
 void GuiButton::SetLabel(GuiText* txt, int n)
 {
 	label[n] = txt;
-	if(txt) txt->SetParent(this);
+	if (txt) txt->SetParent(this);
 }
+
 void GuiButton::SetLabelOver(GuiText* txt, int n)
 {
 	labelOver[n] = txt;
-	if(txt) txt->SetParent(this);
+	if (txt) txt->SetParent(this);
 }
+
 void GuiButton::SetLabelHold(GuiText* txt, int n)
 {
 	labelHold[n] = txt;
-	if(txt) txt->SetParent(this);
+	if (txt) txt->SetParent(this);
 }
+
 void GuiButton::SetLabelClick(GuiText* txt, int n)
 {
 	labelClick[n] = txt;
-	if(txt) txt->SetParent(this);
+	if (txt) txt->SetParent(this);
 }
-void GuiButton::SetSoundOver(GuiSound * snd)
+
+void GuiButton::SetSoundOver(GuiSound* snd)
 {
 	soundOver = snd;
 }
-void GuiButton::SetSoundHold(GuiSound * snd)
+
+void GuiButton::SetSoundHold(GuiSound* snd)
 {
 	soundHold = snd;
 }
-void GuiButton::SetSoundClick(GuiSound * snd)
+
+void GuiButton::SetSoundClick(GuiSound* snd)
 {
 	soundClick = snd;
 }
@@ -149,16 +166,17 @@ void GuiButton::SetModel(int model)
 {
 	buttonModel = model;
 
-	for(int i=0; i < 3; i++)
+	for (int i = 0; i < 3; i++)
 	{
-	    if(label[i])
-            label[i]->SetModel(model);
+		if (label[i])
+			label[i]->SetModel(model);
 	}
 }
+
 void GuiButton::SetTooltip(GuiTooltip* t)
 {
 	tooltip = t;
-	if(t)
+	if (t)
 		tooltip->SetParent(this);
 }
 
@@ -167,123 +185,123 @@ void GuiButton::SetTooltip(GuiTooltip* t)
  */
 void GuiButton::Draw()
 {
-	if(!this->IsVisible())
+	if (!this->IsVisible())
 		return;
 
-	if(state == STATE_DISABLED)
+	if (state == STATE_DISABLED)
 	{
-        if(imageFlat)
-            imageFlat->Draw();
-		else if(image) // draw image
+		if (imageFlat)
+			imageFlat->Draw();
+		else if (image) // draw image
 			image->Draw();
 
-		if(icon) // draw icon
+		if (icon) // draw icon
 			icon->Draw();
-        if(frame) // draw frame
+		if (frame) // draw frame
 			frame->Draw();
 
-        // draw text
-		if(label[0])
+		// draw text
+		if (label[0])
 			label[0]->Draw();
-		if(label[1])
+		if (label[1])
 			label[1]->Draw();
 		// if(label[2])
-			// label[2]->Draw();
+		// label[2]->Draw();
 	}
-	else if(state == STATE_CLICKED)
+	else if (state == STATE_CLICKED)
 	{
-        if(imageOver[0] || (imageOver[1]))
+		if (imageOver[0] || (imageOver[1]))
 		{
-            if(imageOver[0])
-                imageOver[0]->Draw();
-            if(imageOver[1])
-                imageOver[1]->Draw();
+			if (imageOver[0])
+				imageOver[0]->Draw();
+			if (imageOver[1])
+				imageOver[1]->Draw();
 		}
-		else if(image) // draw image
+		else if (image) // draw image
 			image->Draw();
 
-        if(imageClick[0] || (imageClick[1]))
+		if (imageClick[0] || (imageClick[1]))
 		{
-            if(imageClick[0])
-                imageClick[0]->Draw();
-            if(imageClick[1])
-                imageClick[1]->Draw();
+			if (imageClick[0])
+				imageClick[0]->Draw();
+			if (imageClick[1])
+				imageClick[1]->Draw();
 		}
 
-		if(iconOver)
+		if (iconOver)
 			iconOver->Draw();
 		// else if(icon) // draw icon
-			// icon->Draw();
-        if(frame) // draw frame
+		// icon->Draw();
+		if (frame) // draw frame
 			frame->Draw();
 
 		// draw text
-		if(labelOver[0])
+		if (labelOver[0])
 			labelOver[0]->Draw();
-		else if(label[0])
+		else if (label[0])
 			label[0]->Draw();
 
-		if(labelOver[1])
+		if (labelOver[1])
 			labelOver[1]->Draw();
-		else if(label[1])
+		else if (label[1])
 			label[1]->Draw();
 
-		if(labelOver[2])
+		if (labelOver[2])
 			labelOver[2]->Draw();
-		else if(label[2])
+		else if (label[2])
 			label[2]->Draw();
 	}
-	else if(state == STATE_SELECTED || state == STATE_HELD ||
-         state == STATE_HIGHLIGHTED)
+	else if (state == STATE_SELECTED || state == STATE_HELD ||
+		state == STATE_HIGHLIGHTED)
 	{
-		if(imageOver[0] || (imageOver[1]))
+		if (imageOver[0] || (imageOver[1]))
 		{
-            if(imageOver[0])
-                imageOver[0]->Draw();
-            if(imageOver[1])
-                imageOver[1]->Draw();
+			if (imageOver[0])
+				imageOver[0]->Draw();
+			if (imageOver[1])
+				imageOver[1]->Draw();
 		}
-		else if(image) // draw image
+		else if (image) // draw image
 			image->Draw();
 
-		if(iconOver)
+		if (iconOver)
 			iconOver->Draw();
 		// else if(icon) // draw icon
-			// icon->Draw();
-        if(frame) // draw frame
+		// icon->Draw();
+		if (frame) // draw frame
 			frame->Draw();
 
 		// draw text
-		if(labelOver[0])
+		if (labelOver[0])
 			labelOver[0]->Draw();
-		else if(label[0])
+		else if (label[0])
 			label[0]->Draw();
 
-		if(labelOver[1])
+		if (labelOver[1])
 			labelOver[1]->Draw();
-		else if(label[1])
+		else if (label[1])
 			label[1]->Draw();
 
-		if(labelOver[2])
+		if (labelOver[2])
 			labelOver[2]->Draw();
-		else if(label[2])
+		else if (label[2])
 			label[2]->Draw();
 	}
 	else
 	{
-		if(image) // draw image
+		if (image) // draw image
 			image->Draw();
-		if(icon) // draw icon
+		if (icon) // draw icon
 			icon->Draw();
-        if(frame) // draw frame
+		if (frame) // draw frame
 			frame->Draw();
 
 		// draw text
-		if(label[0])
+		if (label[0])
 			label[0]->Draw();
-		if(label[1])
+		if (label[1])
 			label[1]->Draw();
-		if(label[2])
+		if (label[2])
 			label[2]->Draw();
 	}
 
@@ -293,55 +311,55 @@ void GuiButton::Draw()
 void GuiButton::DrawTooltip()
 {
 	if (!Settings.ShowTooltip)
-        return;
-	if(tooltip)
+		return;
+	if (tooltip)
 		tooltip->DrawTooltip();
 }
 
 void GuiButton::ResetText()
 {
-	for(int i=0; i<3; i++)
+	for (int i = 0; i < 3; i++)
 	{
-		if(label[i])
+		if (label[i])
 			label[i]->ResetText();
-		if(labelOver[i])
+		if (labelOver[i])
 			labelOver[i]->ResetText();
 	}
-	if(tooltip)
+	if (tooltip)
 		tooltip->ResetText();
 }
 
-void GuiButton::Update(GuiTrigger * t)
+void GuiButton::Update(GuiTrigger* t)
 {
-	if(state == STATE_CLICKED /*|| state == STATE_DISABLED*/ || !t)
+	if (state == STATE_CLICKED /*|| state == STATE_DISABLED*/ || !t)
 		return;
-	else if(parentElement && parentElement->GetState() == STATE_DISABLED)
+	if (parentElement && parentElement->GetState() == STATE_DISABLED)
 		return;
 
-    for(int i=0; i<3; i++)
-    {
-        if(label[i])
-            label[i]->Select(t);
-    }
-
-	#ifdef HW_RVL
-	// cursor
-	if(t->wpad->ir.valid && t->chan >= 0)
+	for (int i = 0; i < 3; i++)
 	{
-		if((imageOver[1] && state == STATE_SELECTED) ?
-            imageOver[1]->IsInside(t->wpad->ir.x, t->wpad->ir.y) : this->IsInside(t->wpad->ir.x, t->wpad->ir.y))
+		if (label[i])
+			label[i]->Select(t);
+	}
+
+#ifdef HW_RVL
+	// cursor
+	if (t->wpad->ir.valid && t->chan >= 0)
+	{
+		if ((imageOver[1] && state == STATE_SELECTED) ?
+			imageOver[1]->IsInside(t->wpad->ir.x, t->wpad->ir.y) : this->IsInside(t->wpad->ir.x, t->wpad->ir.y))
 		{
-			if(state == STATE_DEFAULT) // we weren't on the button before!
+			if (state == STATE_DEFAULT) // we weren't on the button before!
 			{
 				this->SetState(STATE_SELECTED, t->chan);
 
-				if(this->Rumble())
+				if (this->Rumble())
 					rumbleRequest[t->chan] = 1;
 
-				if(soundOver)
+				if (soundOver)
 					soundOver->Play();
 
-				if(effectsOver && !effects)
+				if (effectsOver && !effects)
 				{
 					// initiate effects
 					effects = effectsOver;
@@ -352,36 +370,36 @@ void GuiButton::Update(GuiTrigger * t)
 		}
 		else
 		{
-			if(state == STATE_SELECTED && (stateChan == t->chan || stateChan == -1))
+			if (state == STATE_SELECTED && (stateChan == t->chan || stateChan == -1))
 				this->ResetState();
 
-			if(effectTarget == effectTargetOver && effectAmount == effectAmountOver)
+			if (effectTarget == effectTargetOver && effectAmount == effectAmountOver)
 			{
 				// initiate effects (in reverse)
 				effects = effectsOver;
 
-				if(effectsOver & EFFECT_FADE_TO)
+				if (effectsOver & EFFECT_FADE_TO)
 				{
-				    effectAmount = -2*effectAmountOver;
-				    effectTarget = 255;
+					effectAmount = -2 * effectAmountOver;
+					effectTarget = 255;
 				}
 				else
 				{
-				    effectAmount = -effectAmountOver;
-				    effectTarget = 100;
+					effectAmount = -effectAmountOver;
+					effectTarget = 100;
 				}
 			}
 		}
 	}
-	#endif
+#endif
 
 	// button triggers
-	if(this->IsClickable())
+	if (this->IsClickable())
 	{
 		s32 wm_btns, wm_btns_trig, cc_btns, cc_btns_trig;
-		for(int i=0; i<3; i++)
+		for (int i = 0; i < 3; i++)
 		{
-			if(trigger[i] && (trigger[i]->chan == -1 || trigger[i]->chan == t->chan))
+			if (trigger[i] && (trigger[i]->chan == -1 || trigger[i]->chan == t->chan))
 			{
 				// higher 16 bits only (wiimote)
 				wm_btns = t->wpad->btns_d << 16;
@@ -391,31 +409,32 @@ void GuiButton::Update(GuiTrigger * t)
 				cc_btns = t->wpad->btns_d >> 16;
 				cc_btns_trig = trigger[i]->wpad->btns_d >> 16;
 
-				if(
+				if (
 					(t->wpad->btns_d > 0 &&
-					(wm_btns == wm_btns_trig ||
-					(cc_btns == cc_btns_trig && t->wpad->exp.type == EXP_CLASSIC))) ||
+						(wm_btns == wm_btns_trig ||
+							(cc_btns == cc_btns_trig && t->wpad->exp.type == EXP_CLASSIC))) ||
 					(t->pad.btns_d == trigger[i]->pad.btns_d && t->pad.btns_d > 0))
 				{
-					if(t->chan == stateChan || stateChan == -1)
+					if (t->chan == stateChan || stateChan == -1)
 					{
-						if(state == STATE_SELECTED)
+						if (state == STATE_SELECTED)
 						{
-						    if(!t->wpad->ir.valid || (imageOver[1] ? imageOver[1]->IsInside(t->wpad->ir.x, t->wpad->ir.y)
-                                    : this->IsInside(t->wpad->ir.x, t->wpad->ir.y)))
+							if (!t->wpad->ir.valid || (imageOver[1]
+								                           ? imageOver[1]->IsInside(t->wpad->ir.x, t->wpad->ir.y)
+								                           : this->IsInside(t->wpad->ir.x, t->wpad->ir.y)))
 							{
 								this->SetState(STATE_CLICKED, t->chan);
 
-								if(soundClick)
+								if (soundClick)
 									soundClick->Play();
 							}
 						}
-						else if(trigger[i]->type == TRIGGER_BUTTON_ONLY)
+						else if (trigger[i]->type == TRIGGER_BUTTON_ONLY)
 						{
 							this->SetState(STATE_CLICKED, t->chan);
 						}
-						else if(trigger[i]->type == TRIGGER_BUTTON_ONLY_IN_FOCUS &&
-								parentElement->IsFocused())
+						else if (trigger[i]->type == TRIGGER_BUTTON_ONLY_IN_FOCUS &&
+							parentElement->IsFocused())
 						{
 							this->SetState(STATE_CLICKED, t->chan);
 						}
@@ -425,14 +444,14 @@ void GuiButton::Update(GuiTrigger * t)
 		}
 	}
 
-	if(this->IsHoldable())
+	if (this->IsHoldable())
 	{
 		bool held = false;
 		s32 wm_btns, wm_btns_h, wm_btns_trig, cc_btns, cc_btns_h, cc_btns_trig;
 
-		for(int i=0; i<3; i++)
+		for (int i = 0; i < 3; i++)
 		{
-			if(trigger[i] && (trigger[i]->chan == -1 || trigger[i]->chan == t->chan))
+			if (trigger[i] && (trigger[i]->chan == -1 || trigger[i]->chan == t->chan))
 			{
 				// higher 16 bits only (wiimote)
 				wm_btns = t->wpad->btns_d << 16;
@@ -444,42 +463,42 @@ void GuiButton::Update(GuiTrigger * t)
 				cc_btns_h = t->wpad->btns_h >> 16;
 				cc_btns_trig = trigger[i]->wpad->btns_h >> 16;
 
-				if(
+				if (
 					(t->wpad->btns_d > 0 &&
-					(wm_btns == wm_btns_trig ||
-					(cc_btns == cc_btns_trig && t->wpad->exp.type == EXP_CLASSIC))) ||
+						(wm_btns == wm_btns_trig ||
+							(cc_btns == cc_btns_trig && t->wpad->exp.type == EXP_CLASSIC))) ||
 					(t->pad.btns_d == trigger[i]->pad.btns_h && t->pad.btns_d > 0))
 				{
-					if(trigger[i]->type == TRIGGER_HELD && state == STATE_SELECTED &&
+					if (trigger[i]->type == TRIGGER_HELD && state == STATE_SELECTED &&
 						(t->chan == stateChan || stateChan == -1))
 						this->SetState(STATE_CLICKED, t->chan);
 				}
 
-				if(
+				if (
 					(t->wpad->btns_h > 0 &&
-					(wm_btns_h == wm_btns_trig ||
-					(cc_btns_h == cc_btns_trig && t->wpad->exp.type == EXP_CLASSIC))) ||
+						(wm_btns_h == wm_btns_trig ||
+							(cc_btns_h == cc_btns_trig && t->wpad->exp.type == EXP_CLASSIC))) ||
 					(t->pad.btns_h == trigger[i]->pad.btns_h && t->pad.btns_h > 0))
 				{
-					if(trigger[i]->type == TRIGGER_HELD)
+					if (trigger[i]->type == TRIGGER_HELD)
 						held = true;
 				}
 
-				if(!held && state == STATE_HELD && stateChan == t->chan)
+				if (!held && state == STATE_HELD && stateChan == t->chan)
 				{
 					this->ResetState();
 				}
-				else if(held && state == STATE_CLICKED && stateChan == t->chan)
+				else if (held && state == STATE_CLICKED && stateChan == t->chan)
 				{
 					this->SetState(STATE_HELD, t->chan);
 
-                    if(soundHold)
-                        soundHold->Play();
+					if (soundHold)
+						soundHold->Play();
 				}
 			}
 		}
 	}
 
-	if(updateCB)
+	if (updateCB)
 		updateCB(this);
 }

@@ -4,4 +4,3 @@
 #define AV_HAVE_BIGENDIAN 1
 #define AV_HAVE_FAST_UNALIGNED 1
 #endif /* AVUTIL_AVCONFIG_H */
-

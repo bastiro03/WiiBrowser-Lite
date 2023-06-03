@@ -33,14 +33,12 @@
  */
 #define DVDNAV_BLOCK_OK			 0
 
-
 /*
  * DVDNAV_NOP
  *
  * Just ignore this.
  */
 #define DVDNAV_NOP			 1
-
 
 /*
  * DVDNAV_STILL_FRAME
@@ -55,12 +53,12 @@
  */
 #define DVDNAV_STILL_FRAME		 2
 
-typedef struct {
-  /* The length (in seconds) the still frame should be displayed for,
-   * or 0xff if infinite. */
-  int length;
-} dvdnav_still_event_t;
-
+using dvdnav_still_event_t = struct
+{
+	/* The length (in seconds) the still frame should be displayed for,
+	 * or 0xff if infinite. */
+	int length;
+};
 
 /*
  * DVDNAV_SPU_STREAM_CHANGE
@@ -69,26 +67,26 @@ typedef struct {
  */
 #define DVDNAV_SPU_STREAM_CHANGE	 3
 
-typedef struct {
-  /* The physical (MPEG) stream number for widescreen SPU display.
-   * Use this, if you blend the SPU on an anamorphic image before
-   * unsqueezing it. */
-  int physical_wide;
+using dvdnav_spu_stream_change_event_t = struct
+{
+	/* The physical (MPEG) stream number for widescreen SPU display.
+	 * Use this, if you blend the SPU on an anamorphic image before
+	 * unsqueezing it. */
+	int physical_wide;
 
-  /* The physical (MPEG) stream number for letterboxed display.
-   * Use this, if you blend the SPU on an anamorphic image after
-   * unsqueezing it. */
-  int physical_letterbox;
+	/* The physical (MPEG) stream number for letterboxed display.
+	 * Use this, if you blend the SPU on an anamorphic image after
+	 * unsqueezing it. */
+	int physical_letterbox;
 
-  /* The physical (MPEG) stream number for pan&scan display.
-   * Use this, if you blend the SPU on an anamorphic image after
-   * unsqueezing it the pan&scan way. */
-  int physical_pan_scan;
+	/* The physical (MPEG) stream number for pan&scan display.
+	 * Use this, if you blend the SPU on an anamorphic image after
+	 * unsqueezing it the pan&scan way. */
+	int physical_pan_scan;
 
-  /* The logical (DVD) stream number. */
-  int logical;
-} dvdnav_spu_stream_change_event_t;
-
+	/* The logical (DVD) stream number. */
+	int logical;
+};
 
 /*
  * DVDNAV_AUDIO_STREAM_CHANGE
@@ -97,14 +95,14 @@ typedef struct {
  */
 #define DVDNAV_AUDIO_STREAM_CHANGE	 4
 
-typedef struct {
-  /* The physical (MPEG) stream number. */
-  int physical;
+using dvdnav_audio_stream_change_event_t = struct
+{
+	/* The physical (MPEG) stream number. */
+	int physical;
 
-  /* The logical (DVD) stream number. */
-  int logical;
-} dvdnav_audio_stream_change_event_t;
-
+	/* The logical (DVD) stream number. */
+	int logical;
+};
 
 /*
  * DVDNAV_VTS_CHANGE
@@ -116,13 +114,13 @@ typedef struct {
  */
 #define DVDNAV_VTS_CHANGE		 5
 
-typedef struct {
-  int old_vtsN;                 /* the old VTS number */
-  dvd_read_domain_t old_domain; /* the old domain */
-  int new_vtsN;                 /* the new VTS number */
-  dvd_read_domain_t new_domain; /* the new domain */
-} dvdnav_vts_change_event_t;
-
+using dvdnav_vts_change_event_t = struct
+{
+	int old_vtsN; /* the old VTS number */
+	dvd_read_domain_t old_domain; /* the old domain */
+	int new_vtsN; /* the new VTS number */
+	dvd_read_domain_t new_domain; /* the new domain */
+};
 
 /*
  * DVDNAV_CELL_CHANGE
@@ -136,16 +134,16 @@ typedef struct {
  */
 #define DVDNAV_CELL_CHANGE		 6
 
-typedef struct {
-  int     cellN;       /* the new cell number */
-  int     pgN;         /* the current program number */
-  int64_t cell_length; /* the length of the current cell in PTS ticks */
-  int64_t pg_length;   /* the length of the current program in PTS ticks */
-  int64_t pgc_length;  /* the length of the current program chain in PTS ticks */
-  int64_t cell_start;  /* the start time of the current cell relatively to the PGC in PTS ticks */
-  int64_t pg_start;    /* the start time of the current PG relatively to the PGC in PTS ticks */
-} dvdnav_cell_change_event_t;
-
+using dvdnav_cell_change_event_t = struct
+{
+	int cellN; /* the new cell number */
+	int pgN; /* the current program number */
+	int64_t cell_length; /* the length of the current cell in PTS ticks */
+	int64_t pg_length; /* the length of the current program in PTS ticks */
+	int64_t pgc_length; /* the length of the current program chain in PTS ticks */
+	int64_t cell_start; /* the start time of the current cell relatively to the PGC in PTS ticks */
+	int64_t pg_start; /* the start time of the current PG relatively to the PGC in PTS ticks */
+};
 
 /*
  * DVDNAV_NAV_PACKET
@@ -163,7 +161,6 @@ typedef struct {
  */
 #define DVDNAV_NAV_PACKET		 7
 
-
 /*
  * DVDNAV_STOP
  *
@@ -171,7 +168,6 @@ typedef struct {
  * call will restart the VM from the beginning of the DVD.
  */
 #define DVDNAV_STOP			 8
-
 
 /*
  * DVDNAV_HIGHLIGHT
@@ -186,20 +182,20 @@ typedef struct {
  */
 #define DVDNAV_HIGHLIGHT		 9
 
-typedef struct {
-  /* highlight mode: 0 - hide, 1 - show, 2 - activate, currently always 1 */
-  int display;
+using dvdnav_highlight_event_t = struct
+{
+	/* highlight mode: 0 - hide, 1 - show, 2 - activate, currently always 1 */
+	int display;
 
-  /* FIXME: these fields are currently not set */
-  uint32_t palette;     /* The CLUT entries for the highlight palette
-			   (4-bits per entry -> 4 entries) */
-  uint16_t sx,sy,ex,ey; /* The start/end x,y positions */
-  uint32_t pts;         /* Highlight PTS to match with SPU */
+	/* FIXME: these fields are currently not set */
+	uint32_t palette; /* The CLUT entries for the highlight palette
+				 (4-bits per entry -> 4 entries) */
+	uint16_t sx, sy, ex, ey; /* The start/end x,y positions */
+	uint32_t pts; /* Highlight PTS to match with SPU */
 
-  /* button number for the SPU decoder/overlaying engine */
-  uint32_t buttonN;
-} dvdnav_highlight_event_t;
-
+	/* button number for the SPU decoder/overlaying engine */
+	uint32_t buttonN;
+};
 
 /*
  * DVDNAV_SPU_CLUT_CHANGE
@@ -209,7 +205,6 @@ typedef struct {
  */
 #define DVDNAV_SPU_CLUT_CHANGE		10
 
-
 /*
  * DVDNAV_HOP_CHANNEL
  *
@@ -217,7 +212,6 @@ typedef struct {
  * their internal fifo's content, which will speed up the response.
  */
 #define DVDNAV_HOP_CHANNEL		12
-
 
 /*
  * DVDNAV_WAIT
@@ -231,6 +225,5 @@ typedef struct {
  * Once this is achieved, call dvdnav_skip_wait().
  */
 #define DVDNAV_WAIT			13
-
 
 #endif /* LIBDVDNAV_DVDNAV_EVENTS_H */

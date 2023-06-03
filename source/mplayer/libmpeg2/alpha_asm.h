@@ -60,16 +60,17 @@
 
 inline static uint64_t BYTE_VEC(uint64_t x)
 {
-    x |= x <<  8;
-    x |= x << 16;
-    x |= x << 32;
-    return x;
+	x |= x << 8;
+	x |= x << 16;
+	x |= x << 32;
+	return x;
 }
+
 inline static uint64_t WORD_VEC(uint64_t x)
 {
-    x |= x << 16;
-    x |= x << 32;
-    return x;
+	x |= x << 16;
+	x |= x << 32;
+	return x;
 }
 
 #define ldq(p) (*(const uint64_t *) (p))

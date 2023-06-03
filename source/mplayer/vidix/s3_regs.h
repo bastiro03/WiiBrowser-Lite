@@ -34,17 +34,18 @@
  * Chip tags.  These are used to group the adapters into
  * related families.
  */
-enum S3CHIPTAGS {
-    S3_UNKNOWN = 0,
-    S3_TRIO64V,
-    S3_VIRGE,
-    S3_SAVAGE3D,
-    S3_SAVAGE_MX,
-    S3_SAVAGE4,
-    S3_PROSAVAGE,
-    S3_SUPERSAVAGE,
-    S3_SAVAGE2000,
-    S3_LAST
+enum S3CHIPTAGS
+{
+	S3_UNKNOWN = 0,
+	S3_TRIO64V,
+	S3_VIRGE,
+	S3_SAVAGE3D,
+	S3_SAVAGE_MX,
+	S3_SAVAGE4,
+	S3_PROSAVAGE,
+	S3_SUPERSAVAGE,
+	S3_SAVAGE2000,
+	S3_LAST
 };
 
 #define BIOS_BSIZE			1024

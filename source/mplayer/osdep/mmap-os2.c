@@ -35,177 +35,177 @@
 
 typedef struct os2_mmap_s
 {
-    void    *addr;
-    size_t  len;
-    int     flags;
-    struct os2_mmap_s *prev;
-    struct os2_mmap_s *next;
+	void* addr;
+	size_t len;
+	int flags;
+	struct os2_mmap_s* prev;
+	struct os2_mmap_s* next;
 } os2_mmap;
-static os2_mmap *m_mmap = NULL;
 
-void *mmap( void *addr, size_t len, int prot, int flags, int fildes, off_t off )
+static os2_mmap* m_mmap = NULL;
+
+void* mmap(void* addr, size_t len, int prot, int flags, int fildes, off_t off)
 {
-    os2_mmap *new_mmap;
+	os2_mmap* new_mmap;
 
-    ULONG fl;
-    ULONG rc;
+	ULONG fl;
+	ULONG rc;
 
-    void  *ret;
+	void* ret;
 
-    if( prot & PROT_WRITE )
-    {
-        if( flags & MAP_SHARED )
-            return MAP_FAILED;
+	if (prot & PROT_WRITE)
+	{
+		if (flags & MAP_SHARED)
+			return MAP_FAILED;
 
-        if( !( flags & MAP_PRIVATE ))
-            return MAP_FAILED;
-    }
+		if (!(flags & MAP_PRIVATE))
+			return MAP_FAILED;
+	}
 
-    if( flags & MAP_FIXED )
-    {
-        ULONG cb;
+	if (flags & MAP_FIXED)
+	{
+		ULONG cb;
 
-        cb = len;
-        rc = DosQueryMem( addr, &cb, &fl );
-        if( rc || ( cb < len ))
-            return MAP_FAILED;
+		cb = len;
+		rc = DosQueryMem(addr, &cb, &fl);
+		if (rc || (cb < len))
+			return MAP_FAILED;
 
-        rc = DosSetMem( addr, len, fPERM );
-        if( rc )
-            return MAP_FAILED;
+		rc = DosSetMem(addr, len, fPERM);
+		if (rc)
+			return MAP_FAILED;
 
-        ret = addr;
-    }
-    else
-    {
-        // Allocate tiled memory compatible with 16-bit selectors
-        // 'fs_seg' in 'ldt_keeper.c' need this attribute
-        rc = DosAllocMem( &ret, len, fALLOC );
-        if( rc )
-            return MAP_FAILED;
-    }
+		ret = addr;
+	}
+	else
+	{
+		// Allocate tiled memory compatible with 16-bit selectors
+		// 'fs_seg' in 'ldt_keeper.c' need this attribute
+		rc = DosAllocMem(&ret, len, fALLOC);
+		if (rc)
+			return MAP_FAILED;
+	}
 
-    new_mmap = malloc( sizeof( os2_mmap ));
-    new_mmap->addr  = ret;
-    new_mmap->len   = len;
-    new_mmap->flags = flags;
-    new_mmap->prev  = m_mmap;
-    new_mmap->next  = NULL;
+	new_mmap = malloc(sizeof(os2_mmap));
+	new_mmap->addr = ret;
+	new_mmap->len = len;
+	new_mmap->flags = flags;
+	new_mmap->prev = m_mmap;
+	new_mmap->next = NULL;
 
-    if( m_mmap )
-        m_mmap->next = new_mmap;
-    m_mmap = new_mmap;
+	if (m_mmap)
+		m_mmap->next = new_mmap;
+	m_mmap = new_mmap;
 
-    if( !( flags & MAP_ANON ))
-    {
-        int pos;
+	if (!(flags & MAP_ANON))
+	{
+		int pos;
 
-        /* Now read in the file */
-        if(( pos = lseek( fildes, off, SEEK_SET )) == -1)
-        {
-            munmap( ret, len );
+		/* Now read in the file */
+		if ((pos = lseek(fildes, off, SEEK_SET)) == -1)
+		{
+			munmap(ret, len);
 
-            return MAP_FAILED;
-        }
+			return MAP_FAILED;
+		}
 
-        read( fildes, ret, len );
-        lseek( fildes, pos, SEEK_SET );  /* Restore the file pointer */
-    }
+		read(fildes, ret, len);
+		lseek(fildes, pos, SEEK_SET); /* Restore the file pointer */
+	}
 
-    fl = 0;
+	fl = 0;
 
-    if( prot & PROT_READ )
-        fl |= PAG_READ;
+	if (prot & PROT_READ)
+		fl |= PAG_READ;
 
-    if( prot & PROT_WRITE )
-        fl |= PAG_WRITE;
+	if (prot & PROT_WRITE)
+		fl |= PAG_WRITE;
 
-    if( prot & PROT_EXEC )
-        fl |= PAG_EXECUTE;
+	if (prot & PROT_EXEC)
+		fl |= PAG_EXECUTE;
 
-    if( prot & PROT_NONE )
-        fl |= PAG_GUARD;
+	if (prot & PROT_NONE)
+		fl |= PAG_GUARD;
 
-    rc = DosSetMem( ret, len, fl );
-    if( rc )
-    {
-        munmap( ret, len );
+	rc = DosSetMem(ret, len, fl);
+	if (rc)
+	{
+		munmap(ret, len);
 
-        return MAP_FAILED;
-    }
+		return MAP_FAILED;
+	}
 
-    return ret;
+	return ret;
 }
 
-int munmap( void *addr, size_t len )
+int munmap(void* addr, size_t len)
 {
-    os2_mmap *mm;
+	os2_mmap* mm;
 
-    for( mm = m_mmap; mm; mm = mm->prev )
-    {
-        if( mm->addr == addr )
-            break;
-    }
+	for (mm = m_mmap; mm; mm = mm->prev)
+	{
+		if (mm->addr == addr)
+			break;
+	}
 
-    if( mm )
-    {
+	if (mm)
+	{
+		if (!(mm->flags & MAP_FIXED))
+			DosFreeMem(addr);
 
-        if( !( mm->flags & MAP_FIXED ))
-            DosFreeMem( addr );
+		if (mm->next)
+			mm->next->prev = mm->prev;
 
-        if( mm->next )
-            mm->next->prev = mm->prev;
+		if (mm->prev)
+			mm->prev->next = mm->next;
 
-        if( mm->prev )
-            mm->prev->next = mm->next;
+		if (m_mmap == mm)
+			m_mmap = mm->prev;
 
-        if( m_mmap == mm )
-            m_mmap = mm->prev;
+		free(mm);
 
-        free( mm );
+		return 0;
+	}
 
-        return 0;
-    }
-
-    return -1;
+	return -1;
 }
 
-int mprotect( void *addr, size_t len, int prot )
+int mprotect(void* addr, size_t len, int prot)
 {
-    os2_mmap *mm;
+	os2_mmap* mm;
 
-    for( mm = m_mmap; mm; mm = mm->prev )
-    {
-        if( mm->addr == addr )
-            break;
-    }
+	for (mm = m_mmap; mm; mm = mm->prev)
+	{
+		if (mm->addr == addr)
+			break;
+	}
 
-    if( mm )
-    {
-        ULONG fl;
+	if (mm)
+	{
+		ULONG fl;
 
-        fl = 0;
+		fl = 0;
 
-        if( prot & PROT_READ )
-            fl |= PAG_READ;
+		if (prot & PROT_READ)
+			fl |= PAG_READ;
 
-        if( prot & PROT_WRITE )
-            fl |= PAG_WRITE;
+		if (prot & PROT_WRITE)
+			fl |= PAG_WRITE;
 
-        if( prot & PROT_EXEC )
-            fl |= PAG_EXECUTE;
+		if (prot & PROT_EXEC)
+			fl |= PAG_EXECUTE;
 
-        if( prot & PROT_NONE )
-            fl |= PAG_GUARD;
+		if (prot & PROT_NONE)
+			fl |= PAG_GUARD;
 
-        if( DosSetMem( addr, len, fl ) == 0 )
-            return 0;
-    }
+		if (DosSetMem(addr, len, fl) == 0)
+			return 0;
+	}
 
-    return -1;
+	return -1;
 }
 
-void *mmap_anon( void *addr, size_t len, int prot, int flags, off_t off )
+void* mmap_anon(void* addr, size_t len, int prot, int flags, off_t off)
 {
-    return mmap( addr, len, prot, flags | MAP_ANON, -1, off );
+	return mmap(addr, len, prot, flags | MAP_ANON, -1, off);
 }

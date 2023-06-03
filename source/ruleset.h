@@ -5,6 +5,6 @@
 
 using namespace std;
 
-void apply_ruleset(string *html, char *url);
+void apply_ruleset(string* html, char* url);
 
 #endif

@@ -28,41 +28,43 @@
 #include "loader/ldt_keeper.h"
 #include "loader/wine/winbase.h"
 
-int main(void) {
-    void *handler;
-    ComponentDescription desc;
-    Component (*FindNextComponent)(Component prev,ComponentDescription* desc);
-    long (*CountComponents)(ComponentDescription* desc);
-    OSErr (*InitializeQTML)(long flags);
-    OSErr (*EnterMovies)(void);
-    OSErr ret;
+int main(void)
+{
+	void* handler;
+	ComponentDescription desc;
+	Component(*FindNextComponent)(Component prev, ComponentDescription * desc);
+	long(*CountComponents)(ComponentDescription * desc);
+	OSErr (*InitializeQTML)(long flags);
+	OSErr (*EnterMovies)(void);
+	OSErr ret;
 
-    Setup_LDT_Keeper();
-    handler = LoadLibraryA("/usr/local/lib/codecs/qtmlClient.dll");
-    printf("***************************\n");
-    InitializeQTML = 0x1000c870; //GetProcAddress(handler, "InitializeQTML");
-    EnterMovies = 0x10003ac0; //GetProcAddress(handler, "EnterMovies");
-    FindNextComponent = 0x1000d5f0; //GetProcAddress(handler, "FindNextComponent");
-    CountComponents = 0x1000d5d0; //GetProcAddress(handler, "CountComponents");
-//     = GetProcAddress(handler, "");
-    printf("handler: %p, funcs: %p %p %p, %p\n", handler, InitializeQTML, EnterMovies, FindNextComponent,CountComponents);
+	Setup_LDT_Keeper();
+	handler = LoadLibraryA("/usr/local/lib/codecs/qtmlClient.dll");
+	printf("***************************\n");
+	InitializeQTML = 0x1000c870; //GetProcAddress(handler, "InitializeQTML");
+	EnterMovies = 0x10003ac0; //GetProcAddress(handler, "EnterMovies");
+	FindNextComponent = 0x1000d5f0; //GetProcAddress(handler, "FindNextComponent");
+	CountComponents = 0x1000d5d0; //GetProcAddress(handler, "CountComponents");
+	//     = GetProcAddress(handler, "");
+	printf("handler: %p, funcs: %p %p %p, %p\n", handler, InitializeQTML, EnterMovies, FindNextComponent,
+	       CountComponents);
 
-    ret=InitializeQTML(0);
-    printf("InitializeQTML->%d\n",ret);
-    ret=EnterMovies();
-    printf("EnterMovies->%d\n",ret);
+	ret = InitializeQTML(0);
+	printf("InitializeQTML->%d\n", ret);
+	ret = EnterMovies();
+	printf("EnterMovies->%d\n", ret);
 
-    memset(&desc,0,sizeof(desc));
-    desc.componentType= (((unsigned char)'S')<<24)|
-			(((unsigned char)'V')<<16)|
-			(((unsigned char)'Q')<<8)|
-			(((unsigned char)'5'));
-    desc.componentSubType=0;
-    desc.componentManufacturer=0;
-    desc.componentFlags=0;
-    desc.componentFlagsMask=0;
+	memset(&desc, 0, sizeof(desc));
+	desc.componentType = (((unsigned char)'S') << 24) |
+		(((unsigned char)'V') << 16) |
+		(((unsigned char)'Q') << 8) |
+		(((unsigned char)'5'));
+	desc.componentSubType = 0;
+	desc.componentManufacturer = 0;
+	desc.componentFlags = 0;
+	desc.componentFlagsMask = 0;
 
-    printf("Count = %ld\n",CountComponents(&desc));
+	printf("Count = %ld\n", CountComponents(&desc));
 
-    exit(0);
+	exit(0);
 }

@@ -736,7 +736,7 @@
 #	define COLOUR_CNTL_BRIGHTNESS		0x0000007F
 #	define COLOUR_CNTL_SATURATION		0x001F1F00
 #else
-/* NB: radeons have no COLOUR_CNTL register */
+   /* NB: radeons have no COLOUR_CNTL register */
 #define	OV0_SLICE_CNTL				0x04E0
 #	define SLICE_CNTL_DISABLE		0x40000000
 #endif
@@ -1304,7 +1304,6 @@
 #define	RADEON_BIOS_6_SCRATCH			0x0028
 #define	RADEON_BIOS_7_SCRATCH			0x002c
 
-
 #define	CLK_PIN_CNTL				0x0001
 #define	PPLL_CNTL				0x0002
 #	define PPLL_RESET			(1 <<  0)
@@ -1697,7 +1696,7 @@
 #define	extNTSC_443				0x0900
 #define	extPAL_BGHI				0x0A00
 #define	extPAL_60				0x0B00
- /* these are used in MSP3430 */
+/* these are used in MSP3430 */
 #define	extPAL_DK1				0x0C00
 #define	extPAL_AUTO				0x0D00
 

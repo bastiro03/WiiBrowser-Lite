@@ -68,23 +68,23 @@ This means that this sources don't support ISA and VLB cards */
 #define ColourIOBase		0x03d0u
 
 /* Other MDA/[M]CGA/EGA/VGA I/O ports */
-/*	?(_IOBase)		((_IOBase) + 0x00u) */	/* CRTX synonym */
-/*	?(_IOBase)		((_IOBase) + 0x01u) */	/* CRTD synonym */
-/*	?(_IOBase)		((_IOBase) + 0x02u) */	/* CRTX synonym */
-/*	?(_IOBase)		((_IOBase) + 0x03u) */	/* CRTD synonym */
+/*	?(_IOBase)		((_IOBase) + 0x00u) */ /* CRTX synonym */
+/*	?(_IOBase)		((_IOBase) + 0x01u) */ /* CRTD synonym */
+/*	?(_IOBase)		((_IOBase) + 0x02u) */ /* CRTX synonym */
+/*	?(_IOBase)		((_IOBase) + 0x03u) */ /* CRTD synonym */
 #define CRTX(_IOBase)		((_IOBase) + 0x04u)
 #define CRTD(_IOBase)		((_IOBase) + 0x05u)
 /*	?(_IOBase)		((_IOBase) + 0x06u) */
 /*	?(_IOBase)		((_IOBase) + 0x07u) */
 #define GENMC(_IOBase)		((_IOBase) + 0x08u)
-/*	?(_IOBase)		((_IOBase) + 0x09u) */	/* R_GENLPS/GENB */
+/*	?(_IOBase)		((_IOBase) + 0x09u) */ /* R_GENLPS/GENB */
 #define GENS1(_IOBase)		((_IOBase) + 0x0au)	/* Read */
 #define GENFC(_IOBase)		((_IOBase) + 0x0au)	/* Write */
 #define GENLPC(_IOBase)		((_IOBase) + 0x0bu)
-/*	?(_IOBase)		((_IOBase) + 0x0cu) */	/* /GENLPS */
-/*	?(_IOBase)		((_IOBase) + 0x0du) */	/* /KCX */
-/*	?(_IOBase)		((_IOBase) + 0x0eu) */	/* /KCD */
-/*	?(_IOBase)		((_IOBase) + 0x0fu) */	/* GENHP/ */
+/*	?(_IOBase)		((_IOBase) + 0x0cu) */ /* /GENLPS */
+/*	?(_IOBase)		((_IOBase) + 0x0du) */ /* /KCX */
+/*	?(_IOBase)		((_IOBase) + 0x0eu) */ /* /KCD */
+/*	?(_IOBase)		((_IOBase) + 0x0fu) */ /* GENHP/ */
 
 /* 8514/A VESA approved register definitions */
 #define DISP_STAT		0x02e8u		/* Read */
@@ -393,7 +393,7 @@ This means that this sources don't support ISA and VLB cards */
 /*	?			0x4eeeu */
 #define ROM_ADDR_1		0x52eeu
 #define BIOS_BASE_SEGMENT		0x007fu			/* Mach32 */
-/*	?				0xff80u */		/* Mach32 */
+/*	?				0xff80u */ /* Mach32 */
 #define ROM_ADDR_2		0x56eeu		/* Sick ... */
 #define SHADOW_SET		0x5aeeu		/* Write */
 #define MEM_CFG			0x5eeeu				/* Mach32 */
@@ -412,11 +412,11 @@ This means that this sources don't support ISA and VLB cards */
 #define BOUNDS_RIGHT		0x7aeeu		/* Read */
 #define EXT_GE_CONFIG		0x7aeeu		/* Write */	/* Mach32 */
 #define MONITOR_ALIAS			0x0007u			/* Mach32 */
-/*	MONITOR_?				0x0000u */	/* Mach32 */
+/*	MONITOR_?				0x0000u */ /* Mach32 */
 #define MONITOR_8507				0x0001u		/* Mach32 */
 #define MONITOR_8514				0x0002u		/* Mach32 */
-/*	MONITOR_?				0x0003u */	/* Mach32 */
-/*	MONITOR_?				0x0004u */	/* Mach32 */
+/*	MONITOR_?				0x0003u */ /* Mach32 */
+/*	MONITOR_?				0x0004u */ /* Mach32 */
 #define MONITOR_8503				0x0005u		/* Mach32 */
 #define MONITOR_8512				0x0006u		/* Mach32 */
 #define MONITOR_8513				0x0006u		/* Mach32 */
@@ -813,7 +813,7 @@ This means that this sources don't support ISA and VLB cards */
 #define AUTOEXP_HORZ_FIX		0x80000000ul	/* Mobility */
 #define SCRATCH_REG0		IOPortTag(0x10u, 0x20u)
 #define SCRATCH_REG1		IOPortTag(0x11u, 0x21u)
-/*	BIOS_BASE_SEGMENT		0x0000007ful */	/* As above */
+/*	BIOS_BASE_SEGMENT		0x0000007ful */ /* As above */
 /*	?				0x00000f80ul */
 #define BIOS_INIT_DAC_SUBTYPE		0x0000f000ul
 /*	?				0xffff0000ul */
@@ -879,9 +879,9 @@ This means that this sources don't support ISA and VLB cards */
 /*		All layer spin (A21)		0x00000200ul */
 /*		Fast metal spin (A22) - Prod.	0x00000300ul */
 /*		All layer spin (A31)		0x00000700ul */
-/*	?				0x00000800ul */	/* LTPro */
+/*	?				0x00000800ul */ /* LTPro */
 #define BUS_CHIP_HIDDEN_REV		0x00000300ul	/* XC/XL */
-/*	?				0x00001c00ul */	/* XC/XL */
+/*	?				0x00001c00ul */ /* XC/XL */
 #define BUS_ROM_DIS			0x00001000ul
 #define BUS_IO_16_EN			0x00002000ul	/* GX */
 #define BUS_PCI_READ_RETRY_EN		0x00002000ul	/* VTB/GTB/LT */
@@ -1058,7 +1058,7 @@ This means that this sources don't support ISA and VLB cards */
 #define GEN_EE_DATA_OUT			0x00000001ul	/* GX/CX */
 #define GEN_GIO2_DATA_OUT		0x00000001ul	/* 264xT */
 #define GEN_EE_CLOCK			0x00000002ul	/* GX/CX */
-/*	?				0x00000002ul */	/* 264xT */
+/*	?				0x00000002ul */ /* 264xT */
 #define GEN_EE_CHIP_SEL			0x00000004ul	/* GX/CX */
 #define GEN_GIO3_DATA_OUT		0x00000004ul	/* 264xT */
 #define GEN_EE_DATA_IN			0x00000008ul	/* GX/CX */
@@ -1075,7 +1075,7 @@ This means that this sources don't support ISA and VLB cards */
 #define GEN_GUI_EN			0x00000100ul	/* GX/CX */
 #define GEN_GUI_RESETB			0x00000100ul	/* 264xT */
 #define GEN_BLOCK_WR_EN			0x00000200ul	/* GX */
-/*	?				0x00000200ul */	/* CX/264xT */
+/*	?				0x00000200ul */ /* CX/264xT */
 #define GEN_SOFT_RESET			0x00000200ul	/* VTB/GTB/LT */
 #define GEN_MEM_TRISTATE		0x00000400ul	/* GTPro */
 /*	?				0x00000800ul */
@@ -1085,12 +1085,12 @@ This means that this sources don't support ISA and VLB cards */
 #define GEN_TEST_GUI_REGS_EN		0x00020000ul	/* GX/CX */
 #define GEN_TEST_VECT_EN		0x00040000ul	/* GX/CX */
 #define GEN_TEST_CRC_STR		0x00080000ul	/* GX-C/-D */
-/*	?				0x00080000ul */	/* GX-E+/CX */
+/*	?				0x00080000ul */ /* GX-E+/CX */
 #define GEN_TEST_MODE_T			0x000f0000ul	/* 264xT */
 #define GEN_TEST_MODE			0x00700000ul	/* GX/CX */
 #define GEN_TEST_CNT_EN			0x00100000ul	/* 264xT */
 #define GEN_TEST_CRC_EN			0x00200000ul	/* 264xT */
-/*	?				0x00400000ul */	/* 264xT */
+/*	?				0x00400000ul */ /* 264xT */
 /*	?				0x00800000ul */
 #define GEN_TEST_MEM_WR			0x01000000ul	/* GX-C/-D */
 #define GEN_TEST_MEM_STROBE		0x02000000ul	/* GX-C/-D */
@@ -1101,7 +1101,7 @@ This means that this sources don't support ISA and VLB cards */
 #define GEN_TEST_CNT_VALUE		0x3f000000ul	/* 264xT */
 #define GEN_TEST_CC_EN			0x40000000ul	/* GX/CX */
 #define GEN_TEST_CC_STROBE		0x80000000ul	/* GX/CX */
-/*	?				0xc0000000ul */	/* 264xT */
+/*	?				0xc0000000ul */ /* 264xT */
 #define GEN_DEBUG_MODE			0xff000000ul	/* VTB/GTB/LT */
 #define LCD_GEN_CTRL		BlockIOTag(0x35u)	/* LT */
 #define CRT_ON				0x00000001ul
@@ -1194,8 +1194,8 @@ This means that this sources don't support ISA and VLB cards */
 #define CFG_INIT_CARD_ID		0x00007000ul	/* GX-C/-D */
 #define CFG_BLK_WR_SIZE			0x00001000ul	/* GX-E+ */
 #define CFG_INT_QSF_EN			0x00002000ul	/* GX-E+ */
-/*	?				0x00004000ul */	/* GX-E+ */
-/*	?				0x00007000ul */	/* CX */
+/*	?				0x00004000ul */ /* GX-E+ */
+/*	?				0x00007000ul */ /* CX */
 #define CFG_TRI_BUF_DIS			0x00008000ul	/* GX/CX */
 #define CFG_BOARD_ID			0x0000ff00ul	/* VT/GT */
 #define CFG_EXT_RAM_ADDR		0x003f0000ul	/* GX/CX */
@@ -1216,17 +1216,17 @@ This means that this sources don't support ISA and VLB cards */
 #define CFG_AP_4GBYTE_DIS		0x80000000ul	/* GX/CX */
 #define CONFIG_STATUS64_1	IOPortTag(0x1du, 0x3au)	/* Read */
 #define CFG_PCI_DAC_CFG			0x00000001ul	/* GX/CX */
-/*	?				0x0000001eul */	/* GX/CX */
+/*	?				0x0000001eul */ /* GX/CX */
 #define CFG_1C8_IO_SEL			0x00000020ul	/* GX/CX */
-/*	?				0xffffffc0ul */	/* GX/CX */
+/*	?				0xffffffc0ul */ /* GX/CX */
 #define CRC_SIG				0xfffffffful	/* 264xT */
 #define MPP_CONFIG		BlockIOTag(0x3bu)	/* VTB/GTB/LT */
 #define MPP_STROBE_CONFIG	BlockIOTag(0x3cu)	/* VTB/GTB/LT */
 #define MPP_ADDR		BlockIOTag(0x3du)	/* VTB/GTB/LT */
 #define MPP_DATA		BlockIOTag(0x3eu)	/* VTB/GTB/LT */
 #define TVO_CNTL		BlockIOTag(0x3fu)	/* VTB/GTB/LT */
-/*	GP_IO			IOPortTag(0x1eu, 0x1eu) */	/* See above */
-/*	CRTC_H_TOTAL_DISP	IOPortTag(0x1fu, 0x00u) */	/* Duplicate */
+/*	GP_IO			IOPortTag(0x1eu, 0x1eu) */ /* See above */
+/*	CRTC_H_TOTAL_DISP	IOPortTag(0x1fu, 0x00u) */ /* Duplicate */
 #define DST_OFF_PITCH		BlockIOTag(0x40u)
 #define DST_OFFSET			0x000ffffful
 /*	?				0x00300000ul */
@@ -1264,7 +1264,7 @@ This means that this sources don't support ISA and VLB cards */
 #define ALPHA_OVERLAP_ENB		0x00080000ul	/* GTPro */
 #define SUB_PIX_ON			0x00100000ul	/* GTPro */
 /*	?				0xffe00000ul */
-/*	DST_Y_X			BlockIOTag(0x4du) */	/* Duplicate */
+/*	DST_Y_X			BlockIOTag(0x4du) */ /* Duplicate */
 #define TRAIL_BRES_ERR		BlockIOTag(0x4eu)	/* GT */
 #define TRAIL_BRES_INC		BlockIOTag(0x4fu)	/* GT */
 #define TRAIL_BRES_DEC		BlockIOTag(0x50u)	/* GT */
@@ -1555,8 +1555,8 @@ This means that this sources don't support ISA and VLB cards */
 #define S_XY_INC2		BlockIOTag(0xd2u)	/* GTB */
 #define LOG_MAX_INC		BlockIOTag(0xd2u)	/* GTPro */
 #define S_XINC_START		BlockIOTag(0xd3u)	/* GTB */
-/*	S_Y_INC			BlockIOTag(0xd4u) */	/* Duplicate */
-/*	SCALE_Y_PITCH		BlockIOTag(0xd4u) */	/* Duplicate */
+/*	S_Y_INC			BlockIOTag(0xd4u) */ /* Duplicate */
+/*	SCALE_Y_PITCH		BlockIOTag(0xd4u) */ /* Duplicate */
 #define S_START			BlockIOTag(0xd5u)	/* GTB */
 #define T_X_INC2		BlockIOTag(0xd6u)	/* GTB */
 #define W_X_INC			BlockIOTag(0xd6u)	/* GTPro */
@@ -1591,13 +1591,13 @@ This means that this sources don't support ISA and VLB cards */
 #define SPECULAR_BLUE_X_INC	BlockIOTag(0xedu)	/* GTPro */
 #define SPECULAR_BLUE_Y_INC	BlockIOTag(0xeeu)	/* GTPro */
 #define SPECULAR_BLUE_START	BlockIOTag(0xefu)	/* GTPro */
-/*	SCALE_X_INC		BlockIOTag(0xf0u) */	/* Duplicate */
-/*	RED_X_INC		BlockIOTag(0xf0u) */	/* Duplicate */
+/*	SCALE_X_INC		BlockIOTag(0xf0u) */ /* Duplicate */
+/*	RED_X_INC		BlockIOTag(0xf0u) */ /* Duplicate */
 #define RED_Y_INC		BlockIOTag(0xf1u)	/* GTB */
 #define SCALE_HACC		BlockIOTag(0xf2u)	/* GTB */
 #define RED_START		BlockIOTag(0xf2u)	/* GTB */
-/*	GREEN_X_INC		BlockIOTag(0xf3u) */	/* Duplicate */
-/*	SCALE_Y_INC		BlockIOTag(0xf3u) */	/* Duplicate */
+/*	GREEN_X_INC		BlockIOTag(0xf3u) */ /* Duplicate */
+/*	SCALE_Y_INC		BlockIOTag(0xf3u) */ /* Duplicate */
 #define GREEN_Y_INC		BlockIOTag(0xf4u)	/* GTB */
 #define SECONDARY_SCALE_Y_INC	BlockIOTag(0xf4u)	/* GTPro */
 #define SECONDARY_SCALE_VACC	BlockIOTag(0xf5u)	/* GTPro */
@@ -1689,13 +1689,13 @@ This means that this sources don't support ISA and VLB cards */
 #define N_VIF2_COUNT		BlockIOTag(0x12eu)	/* LTPro */
 #define SNAPSHOT2_VIF_COUNT	BlockIOTag(0x12fu)	/* LTPro */
 #define VMC_STRM_DATA_0		BlockIOTag(0x130u)
-/*	MPP_CONFIG		BlockIOTag(0x130u) */	/* See 0x3bu */
+/*	MPP_CONFIG		BlockIOTag(0x130u) */ /* See 0x3bu */
 #define VMC_STRM_DATA_1		BlockIOTag(0x131u)
-/*	MPP_STROBE_SEQ		BlockIOTag(0x131u) */	/* See 0x3cu */
+/*	MPP_STROBE_SEQ		BlockIOTag(0x131u) */ /* See 0x3cu */
 #define VMC_STRM_DATA_2		BlockIOTag(0x132u)
-/*	MPP_ADDR		BlockIOTag(0x132u) */	/* See 0x3du */
+/*	MPP_ADDR		BlockIOTag(0x132u) */ /* See 0x3du */
 #define VMC_STRM_DATA_3		BlockIOTag(0x133u)
-/*	MPP_DATA		BlockIOTag(0x133u) */	/* See 0x3eu */
+/*	MPP_DATA		BlockIOTag(0x133u) */ /* See 0x3eu */
 #define VMC_STRM_DATA_4		BlockIOTag(0x134u)
 #define VMC_STRM_DATA_5		BlockIOTag(0x135u)
 #define VMC_STRM_DATA_6		BlockIOTag(0x136u)
@@ -1708,7 +1708,7 @@ This means that this sources don't support ISA and VLB cards */
 #define VMC_STRM_DATA_D		BlockIOTag(0x13du)
 #define VMC_STRM_DATA_E		BlockIOTag(0x13eu)
 #define VMC_STRM_DATA_F		BlockIOTag(0x13fu)
-/*	TVO_CNTL		BlockIOTag(0x140u) */	/* See 0x3fu */
+/*	TVO_CNTL		BlockIOTag(0x140u) */ /* See 0x3fu */
 /*	?			BlockIOTag(0x141u) */
 /*	?			BlockIOTag(0x142u) */
 /*	?			BlockIOTag(0x143u) */
@@ -1820,7 +1820,7 @@ This means that this sources don't support ISA and VLB cards */
 #define VERTEX_2_Z		BlockIOTag(0x19cu)	/* GTPro */
 #define VERTEX_2_ARGB		BlockIOTag(0x19du)	/* GTPro */
 #define VERTEX_2_X_Y		BlockIOTag(0x19eu)	/* GTPro */
-/*	ONE_OVER_AREA		BlockIOTag(0x19fu) */	/* Duplicate */
+/*	ONE_OVER_AREA		BlockIOTag(0x19fu) */ /* Duplicate */
 #define VERTEX_3_S		BlockIOTag(0x1a0u)	/* GTPro */
 #define VERTEX_3_T		BlockIOTag(0x1a1u)	/* GTPro */
 #define VERTEX_3_W		BlockIOTag(0x1a2u)	/* GTPro */
@@ -1828,31 +1828,31 @@ This means that this sources don't support ISA and VLB cards */
 #define VERTEX_3_Z		BlockIOTag(0x1a4u)	/* GTPro */
 #define VERTEX_3_ARGB		BlockIOTag(0x1a5u)	/* GTPro */
 #define VERTEX_3_X_Y		BlockIOTag(0x1a6u)	/* GTPro */
-/*	ONE_OVER_AREA		BlockIOTag(0x1a7u) */	/* Duplicate */
+/*	ONE_OVER_AREA		BlockIOTag(0x1a7u) */ /* Duplicate */
 #define VERTEX_3_SECONDARY_S	BlockIOTag(0x1a8u)	/* GTPro */
 #define VERTEX_3_SECONDARY_T	BlockIOTag(0x1a9u)	/* GTPro */
 #define VERTEX_3_SECONDARY_W	BlockIOTag(0x1aau)	/* GTPro */
-/*	VERTEX_1_S		BlockIOTag(0x1abu) */	/* Duplicate */
-/*	VERTEX_1_T		BlockIOTag(0x1acu) */	/* Duplicate */
-/*	VERTEX_1_W		BlockIOTag(0x1adu) */	/* Duplicate */
-/*	VERTEX_2_S		BlockIOTag(0x1aeu) */	/* Duplicate */
-/*	VERTEX_2_T		BlockIOTag(0x1afu) */	/* Duplicate */
-/*	VERTEX_2_W		BlockIOTag(0x1b0u) */	/* Duplicate */
-/*	VERTEX_3_S		BlockIOTag(0x1b1u) */	/* Duplicate */
-/*	VERTEX_3_T		BlockIOTag(0x1b2u) */	/* Duplicate */
-/*	VERTEX_3_W		BlockIOTag(0x1b3u) */	/* Duplicate */
-/*	VERTEX_1_SPEC_ARGB	BlockIOTag(0x1b4u) */	/* Duplicate */
-/*	VERTEX_2_SPEC_ARGB	BlockIOTag(0x1b5u) */	/* Duplicate */
-/*	VERTEX_3_SPEC_ARGB	BlockIOTag(0x1b6u) */	/* Duplicate */
-/*	VERTEX_1_Z		BlockIOTag(0x1b7u) */	/* Duplicate */
-/*	VERTEX_2_Z		BlockIOTag(0x1b8u) */	/* Duplicate */
-/*	VERTEX_3_Z		BlockIOTag(0x1b9u) */	/* Duplicate */
-/*	VERTEX_1_ARGB		BlockIOTag(0x1bau) */	/* Duplicate */
-/*	VERTEX_2_ARGB		BlockIOTag(0x1bbu) */	/* Duplicate */
-/*	VERTEX_3_ARGB		BlockIOTag(0x1bcu) */	/* Duplicate */
-/*	VERTEX_1_X_Y		BlockIOTag(0x1bdu) */	/* Duplicate */
-/*	VERTEX_2_X_Y		BlockIOTag(0x1beu) */	/* Duplicate */
-/*	VERTEX_3_X_Y		BlockIOTag(0x1bfu) */	/* Duplicate */
+/*	VERTEX_1_S		BlockIOTag(0x1abu) */ /* Duplicate */
+/*	VERTEX_1_T		BlockIOTag(0x1acu) */ /* Duplicate */
+/*	VERTEX_1_W		BlockIOTag(0x1adu) */ /* Duplicate */
+/*	VERTEX_2_S		BlockIOTag(0x1aeu) */ /* Duplicate */
+/*	VERTEX_2_T		BlockIOTag(0x1afu) */ /* Duplicate */
+/*	VERTEX_2_W		BlockIOTag(0x1b0u) */ /* Duplicate */
+/*	VERTEX_3_S		BlockIOTag(0x1b1u) */ /* Duplicate */
+/*	VERTEX_3_T		BlockIOTag(0x1b2u) */ /* Duplicate */
+/*	VERTEX_3_W		BlockIOTag(0x1b3u) */ /* Duplicate */
+/*	VERTEX_1_SPEC_ARGB	BlockIOTag(0x1b4u) */ /* Duplicate */
+/*	VERTEX_2_SPEC_ARGB	BlockIOTag(0x1b5u) */ /* Duplicate */
+/*	VERTEX_3_SPEC_ARGB	BlockIOTag(0x1b6u) */ /* Duplicate */
+/*	VERTEX_1_Z		BlockIOTag(0x1b7u) */ /* Duplicate */
+/*	VERTEX_2_Z		BlockIOTag(0x1b8u) */ /* Duplicate */
+/*	VERTEX_3_Z		BlockIOTag(0x1b9u) */ /* Duplicate */
+/*	VERTEX_1_ARGB		BlockIOTag(0x1bau) */ /* Duplicate */
+/*	VERTEX_2_ARGB		BlockIOTag(0x1bbu) */ /* Duplicate */
+/*	VERTEX_3_ARGB		BlockIOTag(0x1bcu) */ /* Duplicate */
+/*	VERTEX_1_X_Y		BlockIOTag(0x1bdu) */ /* Duplicate */
+/*	VERTEX_2_X_Y		BlockIOTag(0x1beu) */ /* Duplicate */
+/*	VERTEX_3_X_Y		BlockIOTag(0x1bfu) */ /* Duplicate */
 #define ONE_OVER_AREA_UC	BlockIOTag(0x1c0u)	/* GTPro */
 #define SETUP_CNTL		BlockIOTag(0x1c1u)	/* GTPro */
 /*	?			BlockIOTag(0x1c2u) */
@@ -2492,6 +2492,5 @@ This means that this sources don't support ISA and VLB cards */
 #define MIX_HALF__SRC_MINUS_DST_SAT	0x001eu
 #define MIX_AVERAGE_SAT			0x001fu
 #define MIX_FN_PAINT			MIX_SRC
-
 
 #endif /* MPLAYER_MACH64_H */

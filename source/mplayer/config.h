@@ -29,14 +29,12 @@
 #define MPEG12_POSTPROC 1
 #define ATTRIBUTE_ALIGNED_MAX 16
 
-
-
 #define CONFIGURATION ""
 
-char MPLAYER_DATADIR[512]; 
-char MPLAYER_CONFDIR[512]; 
-char MPLAYER_LIBDIR[512]; 
-char MPLAYER_CSSDIR[512]; 
+char MPLAYER_DATADIR[512];
+char MPLAYER_CONFDIR[512];
+char MPLAYER_LIBDIR[512];
+char MPLAYER_CSSDIR[512];
 
 /* definitions needed by included libraries */
 #define HAVE_INTTYPES_H 1
@@ -57,7 +55,6 @@ char MPLAYER_CSSDIR[512];
 #define HAVE_DLFCN_H 1
 #define HAVE_DVDCSS_DVDCSS_H 1
 
-
 /* system headers */
 #define HAVE_ALLOCA_H 1
 #undef HAVE_ALSA_ASOUNDLIB_H
@@ -74,7 +71,6 @@ char MPLAYER_CSSDIR[512];
 #undef HAVE_SYS_TERMIOS_H
 #define HAVE_WINSOCK2_H 0
 
-
 /* system functions */
 #undef HAVE_GETHOSTBYNAME2
 #define HAVE_GETTIMEOFDAY 1
@@ -90,31 +86,25 @@ char MPLAYER_CSSDIR[512];
 #undef HAVE_SHM
 #define HAVE_STRSEP 1
 
-
 #undef HAVE_TERMCAP
 #undef HAVE_TERMIOS
 #define HAVE_VSSCANF 1
-
 
 /* system-specific features */
 
 #define HAVE_BUILTIN_EXPECT 1
 #undef HAVE_LIBDL
 #define HAVE_DOS_PATHS 0
-#define EXTERN_ASM 
+#define EXTERN_ASM
 #define EXTERN_PREFIX ""
 #define CONFIG_ICONV 1
 #undef HAVE_LIBKSTAT
 
-
-
 #define CONFIG_MEMALIGN_HACK 0
 #undef CONFIG_PRIORITY
 
-
 #undef HAVE_RTC
 #undef CONFIG_UNRAR_EXEC
-
 
 /* configurable options */
 #define MSG_CHARSET "UTF-8"
@@ -128,7 +118,6 @@ char MPLAYER_CSSDIR[512];
 #define CONFIG_SORTSUB 1
 #define CONFIG_STREAM_CACHE 1
 #undef PTHREAD_CACHE
-
 
 /* CPU stuff */
 #define __CPU__ ppc
@@ -178,7 +167,6 @@ char MPLAYER_CSSDIR[512];
 #define HAVE_VIS 0
 #define HAVE_MVI 0
 
-
 /* Blu-ray/DVD/VCD/CD */
 #define DEFAULT_CDROM_DEVICE "/dev/di"
 #define DEFAULT_DVD_DEVICE   "/dev/di"
@@ -190,9 +178,6 @@ char MPLAYER_CSSDIR[512];
 #undef DVD_STRUCT_IN_LINUX_CDROM_H
 #undef DVD_STRUCT_IN_DVD_H
 
-
-
-
 #undef DVD_STRUCT_IN_SYS_DVDIO_H
 #define CONFIG_DVDNAV 1
 #define CONFIG_DVDREAD 1
@@ -200,7 +185,6 @@ char MPLAYER_CSSDIR[512];
 #undef CONFIG_LIBCDIO
 
 #undef CONFIG_VCD
-
 
 /* codec libraries */
 #undef CONFIG_FAAC
@@ -230,7 +214,6 @@ char MPLAYER_CSSDIR[512];
 
 #undef CONFIG_LIBNUT
 
-
 /* binary codecs */
 #undef CONFIG_QTX_CODECS
 #undef CONFIG_QTX_CODECS_WIN32
@@ -242,24 +225,17 @@ char MPLAYER_CSSDIR[512];
 #define BINARY_CODECS_PATH "codecs"
 #define XMMS_INPUT_PLUGIN_DIR ""
 
-
 /* GUI */
 #undef CONFIG_GTK2
 #undef CONFIG_GUI
 
-
-
 /* Audio output drivers */
 #undef CONFIG_ALSA
-
-
 
 #undef CONFIG_ESD
 #undef CONFIG_ESD_LATENCY
 
-
 #undef CONFIG_NAS
-
 
 #undef CONFIG_OSS_AUDIO
 #define PATH_DEV_DSP ""
@@ -268,15 +244,10 @@ char MPLAYER_CSSDIR[512];
 
 #undef CONFIG_SUN_AUDIO
 
-
 #undef CONFIG_LADSPA
 #undef CONFIG_LIBBS2B
 
-
 /* input */
-
-
-
 
 #undef CONFIG_JOYSTICK
 #undef CONFIG_LIRC
@@ -294,7 +265,6 @@ char MPLAYER_CSSDIR[512];
 
 #undef CONFIG_TV_V4L2
 
-
 /* font stuff */
 #define CONFIG_ASS 1
 #define CONFIG_ASS_INTERNAL 1
@@ -303,7 +273,6 @@ char MPLAYER_CSSDIR[512];
 #undef CONFIG_FONTCONFIG
 #define CONFIG_FREETYPE 1
 #define CONFIG_FRIBIDI 1
-
 
 /* networking */
 #define HAVE_CLOSESOCKET 0
@@ -324,7 +293,6 @@ char MPLAYER_CSSDIR[512];
 #define HAVE_GETADDRINFO 0
 #define HAVE_STRUCT_SOCKADDR_STORAGE 0
 
-
 /* libvo options */
 #undef CONFIG_3DFX
 #undef CONFIG_AA
@@ -338,7 +306,7 @@ char MPLAYER_CSSDIR[512];
 #undef CONFIG_DIRECTFB
 
 #undef CONFIG_DVB
-#undef CONFIG_DVBIN 
+#undef CONFIG_DVBIN
 #undef CONFIG_DXR2
 #undef CONFIG_DXR3
 #undef CONFIG_FBDEV
@@ -401,11 +369,9 @@ char MPLAYER_CSSDIR[512];
 #undef CONFIG_YUV4MPEG
 #undef CONFIG_ZR
 
-
 /* FFmpeg */
 #define CONFIG_FFMPEG 1
 #define CONFIG_FFMPEG_A 1
-
 
 #define CONFIG_DECODERS 1
 #define CONFIG_ENCODERS 0

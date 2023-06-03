@@ -23,40 +23,42 @@
 #include <string.h>
 #include <stddef.h>
 
-void * fast_memcpy(void * to, const void * from, size_t len);
-void * mem2agpcpy(void * to, const void * from, size_t len);
+void* fast_memcpy(void* to, const void* from, size_t len);
+void* mem2agpcpy(void* to, const void* from, size_t len);
 
 #if ! defined(CONFIG_FASTMEMCPY) || ! (HAVE_MMX || HAVE_MMX2 || HAVE_AMD3DNOW /* || HAVE_SSE || HAVE_SSE2 */)
 #define mem2agpcpy(a,b,c) memcpy(a,b,c)
 #define fast_memcpy(a,b,c) memcpy(a,b,c)
 #endif
 
-static inline void * mem2agpcpy_pic(void * dst, const void * src, int bytesPerLine, int height, int dstStride, int srcStride)
+static inline void* mem2agpcpy_pic(void* dst, const void* src, int bytesPerLine, int height, int dstStride,
+                                   int srcStride)
 {
-    int i;
-    void *retval=dst;
+	int i;
+	void* retval = dst;
 
-    if(dstStride == srcStride)
-    {
-        if (srcStride < 0) {
-                src = (const uint8_t*)src + (height-1)*srcStride;
-                dst = (uint8_t*)dst + (height-1)*dstStride;
-                srcStride = -srcStride;
-        }
+	if (dstStride == srcStride)
+	{
+		if (srcStride < 0)
+		{
+			src = (const uint8_t*)src + (height - 1) * srcStride;
+			dst = (uint8_t*)dst + (height - 1) * dstStride;
+			srcStride = -srcStride;
+		}
 
-        mem2agpcpy(dst, src, srcStride*height);
-    }
-    else
-    {
-        for(i=0; i<height; i++)
-        {
-            mem2agpcpy(dst, src, bytesPerLine);
-            src = (const uint8_t*)src + srcStride;
-            dst = (uint8_t*)dst + dstStride;
-        }
-    }
+		mem2agpcpy(dst, src, srcStride * height);
+	}
+	else
+	{
+		for (i = 0; i < height; i++)
+		{
+			mem2agpcpy(dst, src, bytesPerLine);
+			src = (const uint8_t*)src + srcStride;
+			dst = (uint8_t*)dst + dstStride;
+		}
+	}
 
-    return retval;
+	return retval;
 }
 
 #define memcpy_pic(d, s, b, h, ds, ss) memcpy_pic2(d, s, b, h, ds, ss, 0)
@@ -66,34 +68,35 @@ static inline void * mem2agpcpy_pic(void * dst, const void * src, int bytesPerLi
  * \param limit2width always skip data between end of line and start of next
  *                    instead of copying the full block when strides are the same
  */
-static inline void * memcpy_pic2(void * dst, const void * src,
-                                 int bytesPerLine, int height,
-                                 int dstStride, int srcStride, int limit2width)
+static inline void* memcpy_pic2(void* dst, const void* src,
+                                int bytesPerLine, int height,
+                                int dstStride, int srcStride, int limit2width)
 {
-    int i;
-    void *retval=dst;
+	int i;
+	void* retval = dst;
 
-    if(!limit2width && dstStride == srcStride)
-    {
-        if (srcStride < 0) {
-                src = (const uint8_t*)src + (height-1)*srcStride;
-                dst = (uint8_t*)dst + (height-1)*dstStride;
-                srcStride = -srcStride;
-        }
+	if (!limit2width && dstStride == srcStride)
+	{
+		if (srcStride < 0)
+		{
+			src = (const uint8_t*)src + (height - 1) * srcStride;
+			dst = (uint8_t*)dst + (height - 1) * dstStride;
+			srcStride = -srcStride;
+		}
 
-        fast_memcpy(dst, src, srcStride*height);
-    }
-    else
-    {
-        for(i=0; i<height; i++)
-        {
-            fast_memcpy(dst, src, bytesPerLine);
-            src = (const uint8_t*)src + srcStride;
-            dst = (uint8_t*)dst + dstStride;
-        }
-    }
+		fast_memcpy(dst, src, srcStride * height);
+	}
+	else
+	{
+		for (i = 0; i < height; i++)
+		{
+			fast_memcpy(dst, src, bytesPerLine);
+			src = (const uint8_t*)src + srcStride;
+			dst = (uint8_t*)dst + dstStride;
+		}
+	}
 
-    return retval;
+	return retval;
 }
 
 #endif /* MPLAYER_FASTMEMCPY_H */

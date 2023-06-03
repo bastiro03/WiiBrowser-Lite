@@ -21,16 +21,16 @@
 
 #include "avformat.h"
 
-static int null_write_packet(struct AVFormatContext *s, AVPacket *pkt)
+static int null_write_packet(struct AVFormatContext* s, AVPacket* pkt)
 {
-    return 0;
+	return 0;
 }
 
 AVOutputFormat ff_null_muxer = {
-    .name              = "null",
-    .long_name         = NULL_IF_CONFIG_SMALL("raw null video format"),
-    .audio_codec       = AV_NE(CODEC_ID_PCM_S16BE, CODEC_ID_PCM_S16LE),
-    .video_codec       = CODEC_ID_RAWVIDEO,
-    .write_packet      = null_write_packet,
-    .flags             = AVFMT_NOFILE | AVFMT_NOTIMESTAMPS | AVFMT_RAWPICTURE,
+	.name = "null",
+	.long_name = NULL_IF_CONFIG_SMALL("raw null video format"),
+	.audio_codec = AV_NE(CODEC_ID_PCM_S16BE, CODEC_ID_PCM_S16LE),
+	.video_codec = CODEC_ID_RAWVIDEO,
+	.write_packet = null_write_packet,
+	.flags = AVFMT_NOFILE | AVFMT_NOTIMESTAMPS | AVFMT_RAWPICTURE,
 };

@@ -62,43 +62,42 @@ extern const uint8_t ff_modified_quant_tab[2][32];
 extern const uint16_t ff_mba_max[6];
 extern const uint8_t ff_mba_length[7];
 
-extern uint8_t ff_h263_static_rl_table_store[2][2][2*MAX_RUN + MAX_LEVEL + 3];
+extern uint8_t ff_h263_static_rl_table_store[2][2][2 * MAX_RUN + MAX_LEVEL + 3];
 
-
-int ff_h263_decode_motion(MpegEncContext * s, int pred, int f_code);
-av_const int ff_h263_aspect_to_info(AVRational aspect);
-int ff_h263_decode_init(AVCodecContext *avctx);
-int ff_h263_decode_frame(AVCodecContext *avctx,
-                             void *data, int *data_size,
-                             AVPacket *avpkt);
-int ff_h263_decode_end(AVCodecContext *avctx);
-void ff_h263_encode_mb(MpegEncContext *s,
+int ff_h263_decode_motion(MpegEncContext* s, int pred, int f_code);
+av_const
+int ff_h263_aspect_to_info(AVRational aspect);
+int ff_h263_decode_init(AVCodecContext* avctx);
+int ff_h263_decode_frame(AVCodecContext* avctx,
+                         void* data, int* data_size,
+                         AVPacket* avpkt);
+int ff_h263_decode_end(AVCodecContext* avctx);
+void ff_h263_encode_mb(MpegEncContext* s,
                        DCTELEM block[6][64],
                        int motion_x, int motion_y);
-void ff_h263_encode_picture_header(MpegEncContext *s, int picture_number);
-void ff_h263_encode_gob_header(MpegEncContext * s, int mb_line);
-int16_t *ff_h263_pred_motion(MpegEncContext * s, int block, int dir,
-                             int *px, int *py);
-void ff_h263_encode_init(MpegEncContext *s);
-void ff_h263_decode_init_vlc(MpegEncContext *s);
-int ff_h263_decode_picture_header(MpegEncContext *s);
-int ff_h263_decode_gob_header(MpegEncContext *s);
-void ff_h263_update_motion_val(MpegEncContext * s);
-void ff_h263_loop_filter(MpegEncContext * s);
-int ff_h263_decode_mba(MpegEncContext *s);
-void ff_h263_encode_mba(MpegEncContext *s);
-void ff_init_qscale_tab(MpegEncContext *s);
-int ff_h263_pred_dc(MpegEncContext * s, int n, int16_t **dc_val_ptr);
-void ff_h263_pred_acdc(MpegEncContext * s, DCTELEM *block, int n);
-
+void ff_h263_encode_picture_header(MpegEncContext* s, int picture_number);
+void ff_h263_encode_gob_header(MpegEncContext* s, int mb_line);
+int16_t* ff_h263_pred_motion(MpegEncContext* s, int block, int dir,
+                             int* px, int* py);
+void ff_h263_encode_init(MpegEncContext* s);
+void ff_h263_decode_init_vlc(MpegEncContext* s);
+int ff_h263_decode_picture_header(MpegEncContext* s);
+int ff_h263_decode_gob_header(MpegEncContext* s);
+void ff_h263_update_motion_val(MpegEncContext* s);
+void ff_h263_loop_filter(MpegEncContext* s);
+int ff_h263_decode_mba(MpegEncContext* s);
+void ff_h263_encode_mba(MpegEncContext* s);
+void ff_init_qscale_tab(MpegEncContext* s);
+int ff_h263_pred_dc(MpegEncContext* s, int n, int16_t** dc_val_ptr);
+void ff_h263_pred_acdc(MpegEncContext* s, DCTELEM* block, int n);
 
 /**
  * Print picture info if FF_DEBUG_PICT_INFO is set.
  */
-void ff_h263_show_pict_info(MpegEncContext *s);
+void ff_h263_show_pict_info(MpegEncContext* s);
 
-int ff_intel_h263_decode_picture_header(MpegEncContext *s);
-int ff_h263_decode_mb(MpegEncContext *s,
+int ff_intel_h263_decode_picture_header(MpegEncContext* s);
+int ff_h263_decode_mb(MpegEncContext* s,
                       DCTELEM block[6][64]);
 
 /**
@@ -108,103 +107,119 @@ int ff_h263_decode_mb(MpegEncContext *s,
  */
 int av_const h263_get_picture_format(int width, int height);
 
-void ff_clean_h263_qscales(MpegEncContext *s);
-int ff_h263_resync(MpegEncContext *s);
-const uint8_t *ff_h263_find_resync_marker(const uint8_t *p, const uint8_t *end);
-int ff_h263_get_gob_height(MpegEncContext *s);
-void ff_h263_encode_motion(MpegEncContext * s, int val, int f_code);
+void ff_clean_h263_qscales(MpegEncContext* s);
+int ff_h263_resync(MpegEncContext* s);
+const uint8_t* ff_h263_find_resync_marker(const uint8_t* p, const uint8_t* end);
+int ff_h263_get_gob_height(MpegEncContext* s);
+void ff_h263_encode_motion(MpegEncContext* s, int val, int f_code);
 
-
-static inline int h263_get_motion_length(MpegEncContext * s, int val, int f_code){
-    int l, bit_size, code;
-
-    if (val == 0) {
-        return ff_mvtab[0][1];
-    } else {
-        bit_size = f_code - 1;
-        /* modulo encoding */
-        l= INT_BIT - 6 - bit_size;
-        val = (val<<l)>>l;
-        val--;
-        code = (val >> bit_size) + 1;
-
-        return ff_mvtab[code][1] + 1 + bit_size;
-    }
-}
-
-static inline void ff_h263_encode_motion_vector(MpegEncContext * s, int x, int y, int f_code){
-    if(s->flags2 & CODEC_FLAG2_NO_OUTPUT){
-        skip_put_bits(&s->pb,
-            h263_get_motion_length(s, x, f_code)
-           +h263_get_motion_length(s, y, f_code));
-    }else{
-        ff_h263_encode_motion(s, x, f_code);
-        ff_h263_encode_motion(s, y, f_code);
-    }
-}
-
-static inline int get_p_cbp(MpegEncContext * s,
-                      DCTELEM block[6][64],
-                      int motion_x, int motion_y){
-    int cbp, i;
-
-    if (s->mpv_flags & FF_MPV_FLAG_CBP_RD) {
-        int best_cbpy_score= INT_MAX;
-        int best_cbpc_score= INT_MAX;
-        int cbpc = (-1), cbpy= (-1);
-        const int offset= (s->mv_type==MV_TYPE_16X16 ? 0 : 16) + (s->dquant ? 8 : 0);
-        const int lambda= s->lambda2 >> (FF_LAMBDA_SHIFT - 6);
-
-        for(i=0; i<4; i++){
-            int score= ff_h263_inter_MCBPC_bits[i + offset] * lambda;
-            if(i&1) score += s->coded_score[5];
-            if(i&2) score += s->coded_score[4];
-
-            if(score < best_cbpc_score){
-                best_cbpc_score= score;
-                cbpc= i;
-            }
-        }
-
-        for(i=0; i<16; i++){
-            int score= ff_h263_cbpy_tab[i ^ 0xF][1] * lambda;
-            if(i&1) score += s->coded_score[3];
-            if(i&2) score += s->coded_score[2];
-            if(i&4) score += s->coded_score[1];
-            if(i&8) score += s->coded_score[0];
-
-            if(score < best_cbpy_score){
-                best_cbpy_score= score;
-                cbpy= i;
-            }
-        }
-        cbp= cbpc + 4*cbpy;
-        if ((motion_x | motion_y | s->dquant) == 0 && s->mv_type==MV_TYPE_16X16){
-            if(best_cbpy_score + best_cbpc_score + 2*lambda >= 0)
-                cbp= 0;
-        }
-
-        for (i = 0; i < 6; i++) {
-            if (s->block_last_index[i] >= 0 && ((cbp >> (5 - i))&1)==0 ){
-                s->block_last_index[i]= -1;
-                s->dsp.clear_block(s->block[i]);
-            }
-        }
-    }else{
-        cbp= 0;
-        for (i = 0; i < 6; i++) {
-            if (s->block_last_index[i] >= 0)
-                cbp |= 1 << (5 - i);
-        }
-    }
-    return cbp;
-}
-
-static inline void memsetw(short *tab, int val, int n)
+static inline int h263_get_motion_length(MpegEncContext* s, int val, int f_code)
 {
-    int i;
-    for(i=0;i<n;i++)
-        tab[i] = val;
+	int l, bit_size, code;
+
+	if (val == 0)
+	{
+		return ff_mvtab[0][1];
+	}
+	bit_size = f_code - 1;
+	/* modulo encoding */
+	l = INT_BIT - 6 - bit_size;
+	val = (val << l) >> l;
+	val--;
+	code = (val >> bit_size) + 1;
+
+	return ff_mvtab[code][1] + 1 + bit_size;
+}
+
+static inline void ff_h263_encode_motion_vector(MpegEncContext* s, int x, int y, int f_code)
+{
+	if (s->flags2 & CODEC_FLAG2_NO_OUTPUT)
+	{
+		skip_put_bits(&s->pb,
+		              h263_get_motion_length(s, x, f_code)
+		              + h263_get_motion_length(s, y, f_code));
+	}
+	else
+	{
+		ff_h263_encode_motion(s, x, f_code);
+		ff_h263_encode_motion(s, y, f_code);
+	}
+}
+
+static inline int get_p_cbp(MpegEncContext* s,
+                            DCTELEM block[6][64],
+                            int motion_x, int motion_y)
+{
+	int cbp, i;
+
+	if (s->mpv_flags & FF_MPV_FLAG_CBP_RD)
+	{
+		int best_cbpy_score = INT_MAX;
+		int best_cbpc_score = INT_MAX;
+		int cbpc = (-1), cbpy = (-1);
+		const int offset = (s->mv_type == MV_TYPE_16X16 ? 0 : 16) + (s->dquant ? 8 : 0);
+		const int lambda = s->lambda2 >> (FF_LAMBDA_SHIFT - 6);
+
+		for (i = 0; i < 4; i++)
+		{
+			int score = ff_h263_inter_MCBPC_bits[i + offset] * lambda;
+			if (i & 1) score += s->coded_score[5];
+			if (i & 2) score += s->coded_score[4];
+
+			if (score < best_cbpc_score)
+			{
+				best_cbpc_score = score;
+				cbpc = i;
+			}
+		}
+
+		for (i = 0; i < 16; i++)
+		{
+			int score = ff_h263_cbpy_tab[i ^ 0xF][1] * lambda;
+			if (i & 1) score += s->coded_score[3];
+			if (i & 2) score += s->coded_score[2];
+			if (i & 4) score += s->coded_score[1];
+			if (i & 8) score += s->coded_score[0];
+
+			if (score < best_cbpy_score)
+			{
+				best_cbpy_score = score;
+				cbpy = i;
+			}
+		}
+		cbp = cbpc + 4 * cbpy;
+		if ((motion_x | motion_y | s->dquant) == 0 && s->mv_type == MV_TYPE_16X16)
+		{
+			if (best_cbpy_score + best_cbpc_score + 2 * lambda >= 0)
+				cbp = 0;
+		}
+
+		for (i = 0; i < 6; i++)
+		{
+			if (s->block_last_index[i] >= 0 && ((cbp >> (5 - i)) & 1) == 0)
+			{
+				s->block_last_index[i] = -1;
+				s->dsp.clear_block(s->block[i]);
+			}
+		}
+	}
+	else
+	{
+		cbp = 0;
+		for (i = 0; i < 6; i++)
+		{
+			if (s->block_last_index[i] >= 0)
+				cbp |= 1 << (5 - i);
+		}
+	}
+	return cbp;
+}
+
+static inline void memsetw(short* tab, int val, int n)
+{
+	int i;
+	for (i = 0; i < n; i++)
+		tab[i] = val;
 }
 
 #endif /* AVCODEC_H263_H */

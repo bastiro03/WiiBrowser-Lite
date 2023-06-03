@@ -44,7 +44,6 @@ struct m_config;
 #define PLAY_TREE_ENTRY_FILE  3
 ///@}
 
-
 /// \defgroup PlaytreeEntryFlags Playtree flags
 /// \ingroup Playtree
 ///@{
@@ -64,7 +63,7 @@ struct m_config;
 #ifdef GEKKO
 /// start denper's changes
 /// \defgroup PlaytreeParams Playtree prams
-/// \ingroup PlaytreeParams 
+/// \ingroup PlaytreeParams
 ///@{
 #define PLAY_TREE_PARAM_PRETTYFORMAT_TITLE "pt_prettyformat_title"
 ///@}
@@ -73,73 +72,72 @@ struct m_config;
 
 /// \defgroup playtree Playtree
 ///@{
-
 typedef struct play_tree play_tree_t;
 /// \ingroup PlaytreeIter
 typedef struct play_tree_iter play_tree_iter_t;
 typedef struct play_tree_param play_tree_param_t;
 
-
 #if 0
 typedef struct play_tree_info play_tree_info_t;
 // TODO : a attrib,val pair system and not something hardcoded
 struct play_tree_info {
-  char* title;
-  char* author;
-  char* copyright;
-  char* abstract;
-  // Some more ??
+	char* title;
+	char* author;
+	char* copyright;
+	char* abstract;
+	// Some more ??
 }
 #endif
 
-struct play_tree_param {
-  char* name;
-  char* value;
+struct play_tree_param
+{
+	char* name;
+	char* value;
 };
-
 
 /// Playtree item
-struct play_tree {
-  play_tree_t* parent;
-  play_tree_t* child;
-  play_tree_t* next;
-  play_tree_t* prev;
+struct play_tree
+{
+	play_tree_t* parent;
+	play_tree_t* child;
+	play_tree_t* next;
+	play_tree_t* prev;
 
-  //play_tree_info_t info;
-  play_tree_param_t* params;
-  int loop;
-  char** files;
-  int entry_type;
-  int flags;
+	//play_tree_info_t info;
+	play_tree_param_t* params;
+	int loop;
+	char** files;
+	int entry_type;
+	int flags;
 };
-
 
 /// \defgroup PlaytreeIter Playtree iterator
 /// \ingroup Playtree
 ///@{
-
 /// Playtree iterator
-struct play_tree_iter {
-  /// Root of the iterated tree.
-  play_tree_t* root;
-  /// Current position in the tree.
-  play_tree_t* tree;
-  /// \ref Config used.
-  struct m_config* config;
-  /// Looping status
-  int loop;
-  /// Selected file in the current item.
-  int file;
-  /// Number of files in the current item.
-  int num_files;
-  int entry_pushed;
-  int mode;
+struct play_tree_iter
+{
+	/// Root of the iterated tree.
+	play_tree_t* root;
+	/// Current position in the tree.
+	play_tree_t* tree;
+	/// \ref Config used.
+	struct m_config* config;
+	/// Looping status
+	int loop;
+	/// Selected file in the current item.
+	int file;
+	/// Number of files in the current item.
+	int num_files;
+	int entry_pushed;
+	int mode;
 
-  ///  loop/valid stack to save/revert status when we go up/down.
-  int* status_stack;
-  /// status stack size
-  int stack_size;
+	///  loop/valid stack to save/revert status when we go up/down.
+	int* status_stack;
+	/// status stack size
+	int stack_size;
 };
+
 ///@}
 
 /// Create a new empty playtree item.
@@ -153,14 +151,12 @@ play_tree_new(void);
 void
 play_tree_free(play_tree_t* pt, int children);
 
-
 /// Free an item and its siblings.
 /** \param pt Item to free.
  *  \param children If non-zero the items' children are recursively freed.
  */
 void
 play_tree_free_list(play_tree_t* pt, int children);
-
 
 /// Set the children of a playtree item.
 void
@@ -169,7 +165,6 @@ play_tree_set_child(play_tree_t* pt, play_tree_t* child);
 /// Set the parent of a playtree item.
 void
 play_tree_set_parent(play_tree_t* pt, play_tree_t* parent);
-
 
 /// Append an item after its siblings.
 void
@@ -185,16 +180,15 @@ play_tree_insert_entry(play_tree_t* pt, play_tree_t* entry);
 
 /// Detach an item from the tree.
 void
-play_tree_remove(play_tree_t* pt, int free_it,int with_children);
+play_tree_remove(play_tree_t* pt, int free_it, int with_children);
 
 /// Add a file to an item.
 void
-play_tree_add_file(play_tree_t* pt,const char* file);
+play_tree_add_file(play_tree_t* pt, const char* file);
 
 /// Remove a file from an item.
 int
-play_tree_remove_file(play_tree_t* pt,const char* file);
-
+play_tree_remove_file(play_tree_t* pt, const char* file);
 
 /// Add a config paramter to an item.
 void
@@ -206,11 +200,10 @@ play_tree_unset_param(play_tree_t* pt, const char* name);
 
 /// Copy the config parameters from one item to another.
 void
-play_tree_set_params_from(play_tree_t* dest,play_tree_t* src);
+play_tree_set_params_from(play_tree_t* dest, play_tree_t* src);
 
 /// \addtogroup PlaytreeIter
 ///@{
-
 /// Create a new iterator.
 play_tree_iter_t*
 play_tree_iter_new(play_tree_t* pt, struct m_config* config);
@@ -230,7 +223,7 @@ play_tree_iter_free(play_tree_iter_t* iter);
  *  \return See \ref PlaytreeIterReturn.
  */
 int
-play_tree_iter_step(play_tree_iter_t* iter, int d,int with_nodes);
+play_tree_iter_step(play_tree_iter_t* iter, int d, int with_nodes);
 
 /// Step up, useful to break a loop, etc.
 /** \param iter The iterator.
@@ -239,11 +232,11 @@ play_tree_iter_step(play_tree_iter_t* iter, int d,int with_nodes);
  *  \return See \ref PlaytreeIterReturn.
  */
 int
-play_tree_iter_up_step(play_tree_iter_t* iter, int d,int with_nodes);
+play_tree_iter_up_step(play_tree_iter_t* iter, int d, int with_nodes);
 
 /// Enter a node child list, only useful when stopping on nodes.
 int
-play_tree_iter_down_step(play_tree_iter_t* iter, int d,int with_nodes);
+play_tree_iter_down_step(play_tree_iter_t* iter, int d, int with_nodes);
 
 /// Get a file from the current item.
 char*
@@ -256,7 +249,7 @@ play_tree_iter_get_file(play_tree_iter_t* iter, int d);
 /** \ingroup PlaytreeParser
  */
 play_tree_t*
-parse_playtree(struct stream *stream, int forced);
+parse_playtree(struct stream* stream, int forced);
 
 /// Clean a tree by destroying all empty elements.
 play_tree_t*
@@ -273,7 +266,6 @@ parse_playlist_file(char* file);
 /// Highlevel API with pt-suffix to different from low-level API
 /// by Fabian Franz (mplayer@fabian-franz.de).
 ///@{
-
 // Cleans up pt and creates a new iter.
 play_tree_iter_t* pt_iter_create(play_tree_t** pt, struct m_config* config);
 

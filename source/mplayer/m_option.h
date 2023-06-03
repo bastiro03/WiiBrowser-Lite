@@ -26,7 +26,6 @@
 /// It is the base of the \ref OptionsStruct, \ref Config and
 /// \ref Properties APIs.
 ///@{
-
 /// \file
 
 /// \ingroup OptionTypes
@@ -37,7 +36,6 @@ struct m_struct_st;
 /// \defgroup OptionTypes Options types
 /// \ingroup Options
 ///@{
-
 ///////////////////////////// Options types declarations ////////////////////////////
 
 // Simple types
@@ -66,16 +64,16 @@ extern const m_option_type_t m_option_type_func_param_immediate;
 extern const m_option_type_t m_option_type_func;
 
 /// Callback used to reset func options.
-typedef void (*m_opt_default_func_t)(const m_option_t *, const char*);
+typedef void (*m_opt_default_func_t)(const m_option_t*, const char*);
 
 /// Callback used by m_option_type_func_full options.
-typedef int (*m_opt_func_full_t)(const m_option_t *, const char *, const char *);
+typedef int (*m_opt_func_full_t)(const m_option_t*, const char*, const char*);
 
 /// Callback used by m_option_type_func_param options.
-typedef int (*m_opt_func_param_t)(const m_option_t *, const char *);
+typedef int (*m_opt_func_param_t)(const m_option_t*, const char*);
 
 /// Callback used by m_option_type_func options.
-typedef int (*m_opt_func_t)(const m_option_t *);
+typedef int (*m_opt_func_t)(const m_option_t*);
 
 // Backwards compatibility
 typedef m_opt_default_func_t cfg_default_func_t;
@@ -86,30 +84,34 @@ typedef m_opt_func_t cfg_func_t;
 #define END_AT_NONE   0
 #define END_AT_TIME   1
 #define END_AT_SIZE   2
-typedef struct {
-  double pos;
-  int type;
+
+typedef struct
+{
+	double pos;
+	int type;
 } m_time_size_t;
 
 /// Extra definition needed for \ref m_option_type_obj_settings_list options.
-typedef struct {
-  /// Pointer to an array of pointer to some object type description struct.
-  void** list;
-  /// Offset of the object type name (char*) in the description struct.
-  void* name_off;
-  /// Offset of the object type info string (char*) in the description struct.
-  void* info_off;
-  /// \brief Offset of the object type parameter description (\ref m_struct_st)
-  /// in the description struct.
-  void* desc_off;
+typedef struct
+{
+	/// Pointer to an array of pointer to some object type description struct.
+	void** list;
+	/// Offset of the object type name (char*) in the description struct.
+	void* name_off;
+	/// Offset of the object type info string (char*) in the description struct.
+	void* info_off;
+	/// \brief Offset of the object type parameter description (\ref m_struct_st)
+	/// in the description struct.
+	void* desc_off;
 } m_obj_list_t;
 
 /// The data type used by \ref m_option_type_obj_settings_list.
-typedef struct m_obj_settings {
-  /// Type of the object.
-  char* name;
-  /// NULL terminated array of parameter/value pairs.
-  char** attribs;
+typedef struct m_obj_settings
+{
+	/// Type of the object.
+	char* name;
+	/// NULL terminated array of parameter/value pairs.
+	char** attribs;
 } m_obj_settings_t;
 
 /// A parser to set up a list of objects.
@@ -120,15 +122,16 @@ typedef struct m_obj_settings {
 extern const m_option_type_t m_option_type_obj_settings_list;
 
 /// Extra definition needed for \ref m_option_type_obj_presets options.
-typedef struct {
-  /// Description of the struct holding the presets.
-  struct m_struct_st* in_desc;
-  /// Description of the struct that should be set by the presets.
-  struct m_struct_st* out_desc;
-  /// Pointer to an array of structs defining the various presets.
-  void* presets;
-  /// Offset of the preset's name inside the in_struct.
-  void* name_off;
+typedef struct
+{
+	/// Description of the struct holding the presets.
+	struct m_struct_st* in_desc;
+	/// Description of the struct that should be set by the presets.
+	struct m_struct_st* out_desc;
+	/// Pointer to an array of structs defining the various presets.
+	void* presets;
+	/// Offset of the preset's name inside the in_struct.
+	void* name_off;
 } m_obj_presets_t;
 
 /// Set several fields in a struct at once.
@@ -147,11 +150,12 @@ extern const m_option_type_t m_option_type_obj_presets;
 extern const m_option_type_t m_option_type_custom_url;
 
 /// Extra definition needed for \ref m_option_type_obj_params options.
-typedef struct {
-  /// Field descriptions.
-  const struct m_struct_st* desc;
-  /// Field separator to use.
-  char separator;
+typedef struct
+{
+	/// Field descriptions.
+	const struct m_struct_st* desc;
+	/// Field separator to use.
+	char separator;
 } m_obj_params_t;
 
 /// Parse a set of parameters.
@@ -161,13 +165,14 @@ typedef struct {
  */
 extern const m_option_type_t m_option_type_obj_params;
 
-typedef struct {
-  int start;
-  int end;
+typedef struct
+{
+	int start;
+	int end;
 } m_span_t;
+
 /// Ready made settings to parse a \ref m_span_t with a start-end syntax.
 extern const m_obj_params_t m_span_params_def;
-
 
 // FIXME: backward compatibility
 #define CONF_TYPE_FLAG		(&m_option_type_flag)
@@ -199,73 +204,73 @@ extern const m_obj_params_t m_span_params_def;
 /////////////////////////////////////////////////////////////////////////////////////////////
 
 /// Option type description
-struct m_option_type {
-  const char* name;
-  /// Syntax description, etc
-  const char* comments;
-  /// Size needed for the data.
-  unsigned int size;
-  /// See \ref OptionTypeFlags.
-  unsigned int flags;
+struct m_option_type
+{
+	const char* name;
+	/// Syntax description, etc
+	const char* comments;
+	/// Size needed for the data.
+	unsigned int size;
+	/// See \ref OptionTypeFlags.
+	unsigned int flags;
 
-  /// Parse the data from a string.
-  /** It is the only required function, all others can be NULL.
-   *
-   *  \param opt The option that is parsed.
-   *  \param name The full option name.
-   *  \param param The parameter to parse.
-   *  \param dst Pointer to the memory where the data should be written.
-   *             If NULL the parameter validity should still be checked.
-   *  \param src Source of the option, see \ref OptionParserModes.
-   *  \return On error a negative value is returned, on success the number of arguments
-   *          consumed. For details see \ref OptionParserReturn.
-   */
-  int (*parse)(const m_option_t* opt,const char *name, const char *param, void* dst, int src);
+	/// Parse the data from a string.
+	/** It is the only required function, all others can be NULL.
+	 *
+	 *  \param opt The option that is parsed.
+	 *  \param name The full option name.
+	 *  \param param The parameter to parse.
+	 *  \param dst Pointer to the memory where the data should be written.
+	 *             If NULL the parameter validity should still be checked.
+	 *  \param src Source of the option, see \ref OptionParserModes.
+	 *  \return On error a negative value is returned, on success the number of arguments
+	 *          consumed. For details see \ref OptionParserReturn.
+	 */
+	int (*parse)(const m_option_t* opt, const char* name, const char* param, void* dst, int src);
 
-  /// Print back a value in string form.
-  /** \param opt The option to print.
-   *  \param val Pointer to the memory holding the data to be printed.
-   *  \return An allocated string containing the text value or (void*)-1
-   *          on error.
-   */
-  char* (*print)(const m_option_t* opt, const void* val);
+	/// Print back a value in string form.
+	/** \param opt The option to print.
+	 *  \param val Pointer to the memory holding the data to be printed.
+	 *  \return An allocated string containing the text value or (void*)-1
+	 *          on error.
+	 */
+	char* (*print)(const m_option_t* opt, const void* val);
 
-  /** \name
-   *  These functions are called to save/set/restore the status of the
-   *  variables. The difference between the 3 only matters for types like
-   *  \ref m_option_type_func where 'setting' needs to do more than just
-   *  copying some data.
-   */
-  //@{
+	/** \name
+	 *  These functions are called to save/set/restore the status of the
+	 *  variables. The difference between the 3 only matters for types like
+	 *  \ref m_option_type_func where 'setting' needs to do more than just
+	 *  copying some data.
+	 */
+	//@{
+	/// Update a save slot (dst) from the current value in the program (src).
+	/** \param opt The option to copy.
+	 *  \param dst Pointer to the destination memory.
+	 *  \param src Pointer to the source memory.
+	 */
+	void (*save)(const m_option_t* opt, void* dst, const void* src);
 
-  /// Update a save slot (dst) from the current value in the program (src).
-  /** \param opt The option to copy.
-   *  \param dst Pointer to the destination memory.
-   *  \param src Pointer to the source memory.
-   */
-  void (*save)(const m_option_t* opt,void* dst, const void* src);
+	/// Set the value in the program (dst) from a save slot.
+	/** \param opt The option to copy.
+	 *  \param dst Pointer to the destination memory.
+	 *  \param src Pointer to the source memory.
+	 */
+	void (*set)(const m_option_t* opt, void* dst, const void* src);
 
-  /// Set the value in the program (dst) from a save slot.
-  /** \param opt The option to copy.
-   *  \param dst Pointer to the destination memory.
-   *  \param src Pointer to the source memory.
-   */
-  void (*set)(const m_option_t* opt,void* dst, const void* src);
+	/// Copy the data between two save slots. If NULL and size is > 0 a memcpy will be used.
+	/** \param opt The option to copy.
+	 *  \param dst Pointer to the destination memory.
+	 *  \param src Pointer to the source memory.
+	 */
+	void (*copy)(const m_option_t* opt, void* dst, const void* src);
+	//@}
 
-  /// Copy the data between two save slots. If NULL and size is > 0 a memcpy will be used.
-  /** \param opt The option to copy.
-   *  \param dst Pointer to the destination memory.
-   *  \param src Pointer to the source memory.
-   */
-  void (*copy)(const m_option_t* opt,void* dst, const void* src);
-  //@}
-
-  /// Free the data allocated for a save slot.
-  /** This is only needed for dynamic types like strings.
-   *  \param dst Pointer to the data, usually a pointer that should be freed and
-   *             set to NULL.
-   */
-  void (*free)(void* dst);
+	/// Free the data allocated for a save slot.
+	/** This is only needed for dynamic types like strings.
+	 *  \param dst Pointer to the data, usually a pointer that should be freed and
+	 *             set to NULL.
+	 */
+	void (*free)(void* dst);
 };
 
 ///@}
@@ -273,39 +278,39 @@ struct m_option_type {
 /// Option description
 /** \ingroup Options
  */
-struct m_option {
-  /// Option name.
-  const char *name;
+struct m_option
+{
+	/// Option name.
+	const char* name;
 
-  /// Reserved for higher level APIs, it shouldn't be used by parsers.
-  /** The suboption parser and func types do use it. They should instead
-   *  use the priv field but this was inherited from older versions of the
-   *  config code.
-   */
-  void *p;
+	/// Reserved for higher level APIs, it shouldn't be used by parsers.
+	/** The suboption parser and func types do use it. They should instead
+	 *  use the priv field but this was inherited from older versions of the
+	 *  config code.
+	 */
+	void* p;
 
-  /// Option type.
-  const m_option_type_t* type;
+	/// Option type.
+	const m_option_type_t* type;
 
-  /// See \ref OptionFlags.
-  unsigned int flags;
+	/// See \ref OptionFlags.
+	unsigned int flags;
 
-  /// \brief Mostly useful for numeric types, the \ref M_OPT_MIN flags must
-  /// also be set.
-  double min;
+	/// \brief Mostly useful for numeric types, the \ref M_OPT_MIN flags must
+	/// also be set.
+	double min;
 
-  /// \brief Mostly useful for numeric types, the \ref M_OPT_MAX flags must
-  /// also be set.
-  double max;
+	/// \brief Mostly useful for numeric types, the \ref M_OPT_MAX flags must
+	/// also be set.
+	double max;
 
-  /// Type dependent data (for all kinds of extended settings).
-  /** This used to be a function pointer to hold a 'reverse to defaults' func.
-   *  Now it can be used to pass any type of extra args needed by the parser.
-   *  Passing a 'default func' is still valid for all func based option types.
-   */
-  void* priv;
+	/// Type dependent data (for all kinds of extended settings).
+	/** This used to be a function pointer to hold a 'reverse to defaults' func.
+	 *  Now it can be used to pass any type of extra args needed by the parser.
+	 *  Passing a 'default func' is still valid for all func based option types.
+	 */
+	void* priv;
 };
-
 
 /// \defgroup PrivFlags Private data
 /// @{
@@ -315,7 +320,6 @@ struct m_option {
 
 /// \defgroup OptionFlags Option flags
 ///@{
-
 /// The option has a minimum set in \ref m_option::min.
 #define M_OPT_MIN		(1<<0)
 
@@ -375,7 +379,6 @@ struct m_option {
 /// These flags are used to describe special parser capabilities or behavior.
 ///
 ///@{
-
 /// Suboption parser flag.
 /** When this flag is set, m_option::p should point to another m_option
  *  array. Only the parse function will be called. If dst is set, it should
@@ -422,7 +425,6 @@ struct m_option {
 /// parameter of m_option_type::parse. For example the flag type doesn't take
 /// an argument when parsing from the command line.
 ///@{
-
 /// Set when parsing from a config file.
 #define M_CONFIG_FILE 0
 /// Set when parsing command line arguments.
@@ -443,7 +445,6 @@ struct m_option {
 ///
 /// On error one of the following (negative) error codes is returned:
 ///@{
-
 /// For use by higher level APIs when the option name is invalid.
 #define M_OPT_UNKNOWN		-1
 
@@ -487,51 +488,56 @@ struct m_option {
  *  \param name Name of the option.
  *  \return The matching option or NULL.
  */
-const m_option_t* m_option_list_find(const m_option_t* list,const char* name);
+const m_option_t* m_option_list_find(const m_option_t* list, const char* name);
 
 /// Helper to parse options, see \ref m_option_type::parse.
 static inline int
-m_option_parse(const m_option_t* opt,const char *name, const char *param, void* dst, int src) {
-  return opt->type->parse(opt,name,param,dst,src);
+m_option_parse(const m_option_t* opt, const char* name, const char* param, void* dst, int src)
+{
+	return opt->type->parse(opt, name, param, dst, src);
 }
 
 /// Helper to print options, see \ref m_option_type::print.
-static inline  char*
-m_option_print(const m_option_t* opt, const void* val_ptr) {
-  if(opt->type->print)
-    return opt->type->print(opt,val_ptr);
-  else
-    return (char*)-1;
+static inline char*
+m_option_print(const m_option_t* opt, const void* val_ptr)
+{
+	if (opt->type->print)
+		return opt->type->print(opt, val_ptr);
+	return (char*)-1;
 }
 
 /// Helper around \ref m_option_type::save.
-static inline  void
-m_option_save(const m_option_t* opt,void* dst, const void* src) {
-  if(opt->type->save)
-    opt->type->save(opt,dst,src);
+static inline void
+m_option_save(const m_option_t* opt, void* dst, const void* src)
+{
+	if (opt->type->save)
+		opt->type->save(opt, dst, src);
 }
 
 /// Helper around \ref m_option_type::set.
-static inline  void
-m_option_set(const m_option_t* opt,void* dst, const void* src) {
-  if(opt->type->set)
-    opt->type->set(opt,dst,src);
+static inline void
+m_option_set(const m_option_t* opt, void* dst, const void* src)
+{
+	if (opt->type->set)
+		opt->type->set(opt, dst, src);
 }
 
 /// Helper around \ref m_option_type::copy.
-inline  static void
-m_option_copy(const m_option_t* opt,void* dst, const void* src) {
-  if(opt->type->copy)
-    opt->type->copy(opt,dst,src);
-  else if(opt->type->size > 0)
-    memcpy(dst,src,opt->type->size);
+inline static void
+m_option_copy(const m_option_t* opt, void* dst, const void* src)
+{
+	if (opt->type->copy)
+		opt->type->copy(opt, dst, src);
+	else if (opt->type->size > 0)
+		memcpy(dst, src, opt->type->size);
 }
 
 /// Helper around \ref m_option_type::free.
 static inline void
-m_option_free(const m_option_t* opt,void* dst) {
-  if(opt->type->free)
-    opt->type->free(dst);
+m_option_free(const m_option_t* opt, void* dst)
+{
+	if (opt->type->free)
+		opt->type->free(dst);
 }
 
 /*@}*/
@@ -545,6 +551,6 @@ m_option_free(const m_option_t* opt,void* dst) {
  *                      timestamp is neither nul nor endchar.
  * @return              Number of chars in the timestamp.
  */
-int parse_timestring(const char *str, double *time, char endchar);
+int parse_timestring(const char* str, double* time, char endchar);
 
 #endif /* MPLAYER_M_OPTION_H */

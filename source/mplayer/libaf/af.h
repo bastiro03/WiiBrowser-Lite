@@ -37,14 +37,13 @@ struct af_instance_s;
 // Audio data chunk
 typedef struct af_data_s
 {
-  void* audio;  // data buffer
-  int len;      // buffer length
-  int rate;	// sample rate
-  int nch;	// number of channels
-  int format;	// format
-  int bps; 	// bytes per sample
+	void* audio; // data buffer
+	int len; // buffer length
+	int rate; // sample rate
+	int nch; // number of channels
+	int format; // format
+	int bps; // bytes per sample
 } af_data_t;
-
 
 // Flags used for defining the behavior of an audio filter
 #define AF_FLAGS_REENTRANT 	0x00000000
@@ -54,30 +53,30 @@ typedef struct af_data_s
    a specific filter */
 typedef struct af_info_s
 {
-  const char *info;
-  const char *name;
-  const char *author;
-  const char *comment;
-  const int flags;
-  int (*open)(struct af_instance_s* vf);
+	const char* info;
+	const char* name;
+	const char* author;
+	const char* comment;
+	const int flags;
+	int (*open)(struct af_instance_s* vf);
 } af_info_t;
 
 // Linked list of audio filters
 typedef struct af_instance_s
 {
-  const af_info_t* info;
-  int (*control)(struct af_instance_s* af, int cmd, void* arg);
-  void (*uninit)(struct af_instance_s* af);
-  af_data_t* (*play)(struct af_instance_s* af, af_data_t* data);
-  void* setup;	  // setup data for this specific instance and filter
-  af_data_t* data; // configuration for outgoing data stream
-  struct af_instance_s* next;
-  struct af_instance_s* prev;
-  double delay; /* Delay caused by the filter, in units of bytes read without
-		 * corresponding output */
-  double mul; /* length multiplier: how much does this instance change
-		 the length of the buffer. */
-}af_instance_t;
+	const af_info_t* info;
+	int (*control)(struct af_instance_s* af, int cmd, void* arg);
+	void (*uninit)(struct af_instance_s* af);
+	af_data_t* (*play)(struct af_instance_s* af, af_data_t* data);
+	void* setup; // setup data for this specific instance and filter
+	af_data_t* data; // configuration for outgoing data stream
+	struct af_instance_s* next;
+	struct af_instance_s* prev;
+	double delay; /* Delay caused by the filter, in units of bytes read without
+		   * corresponding output */
+	double mul; /* length multiplier: how much does this instance change
+		   the length of the buffer. */
+} af_instance_t;
 
 // Initialization flags
 extern int* af_cpu_speed;
@@ -98,24 +97,25 @@ extern int* af_cpu_speed;
 #endif
 
 // Configuration switches
-typedef struct af_cfg_s{
-  int force;	// Initialization type
-  char** list;	/* list of names of filters that are added to filter
-		   list during first initialization of stream */
-}af_cfg_t;
+typedef struct af_cfg_s
+{
+	int force; // Initialization type
+	char** list; /* list of names of filters that are added to filter
+			 list during first initialization of stream */
+} af_cfg_t;
 
 // Current audio stream
 typedef struct af_stream
 {
-  // The first and last filter in the list
-  af_instance_t* first;
-  af_instance_t* last;
-  // Storage for input and output data formats
-  af_data_t input;
-  af_data_t output;
-  // Configuration for this stream
-  af_cfg_t cfg;
-}af_stream_t;
+	// The first and last filter in the list
+	af_instance_t* first;
+	af_instance_t* last;
+	// Storage for input and output data formats
+	af_data_t input;
+	af_data_t output;
+	// Configuration for this stream
+	af_cfg_t cfg;
+} af_stream_t;
 
 /*********************************************
 // Return values
@@ -128,8 +128,6 @@ typedef struct af_stream
 #define AF_UNKNOWN -1
 #define AF_ERROR   -2
 #define AF_FATAL   -3
-
-
 
 /*********************************************
 // Export functions
@@ -209,7 +207,7 @@ af_data_t* af_play(af_stream_t* s, af_data_t* data);
  * \param arg argument for filter command
  * \return the accepting filter or NULL if none was found
  */
-af_instance_t *af_control_any_rev (af_stream_t* s, int cmd, void* arg);
+af_instance_t* af_control_any_rev(af_stream_t* s, int cmd, void* arg);
 
 /**
  * \brief calculate average ratio of filter output lenth to input length
@@ -315,7 +313,7 @@ void af_help(void);
  *
  * Currently only sets bps based on format
  */
-void af_fix_parameters(af_data_t *data);
+void af_fix_parameters(af_data_t* data);
 
 /** Memory reallocation macro: if a local buffer is used (i.e. if the
    filter doesn't operate on the incoming buffer this macro must be

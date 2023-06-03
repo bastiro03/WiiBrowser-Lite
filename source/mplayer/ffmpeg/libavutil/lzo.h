@@ -57,7 +57,7 @@
  * Make sure all buffers are appropriately padded, in must provide
  * AV_LZO_INPUT_PADDING, out must provide AV_LZO_OUTPUT_PADDING additional bytes.
  */
-int av_lzo1x_decode(void *out, int *outlen, const void *in, int *inlen);
+int av_lzo1x_decode(void* out, int* outlen, const void* in, int* inlen);
 
 /**
  * @brief deliberately overlapping memcpy implementation
@@ -68,7 +68,7 @@ int av_lzo1x_decode(void *out, int *outlen, const void *in, int *inlen);
  * cnt > back is valid, this will copy the bytes we just copied,
  * thus creating a repeating pattern with a period length of back.
  */
-void av_memcpy_backptr(uint8_t *dst, int back, int cnt);
+void av_memcpy_backptr(uint8_t* dst, int back, int cnt);
 
 /**
  * @}

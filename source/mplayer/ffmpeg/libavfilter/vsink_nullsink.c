@@ -18,28 +18,28 @@
 
 #include "avfilter.h"
 
-static void start_frame(AVFilterLink *link, AVFilterBufferRef *picref)
+static void start_frame(AVFilterLink* link, AVFilterBufferRef* picref)
 {
 }
 
-static void end_frame(AVFilterLink *link)
+static void end_frame(AVFilterLink* link)
 {
 }
 
 AVFilter avfilter_vsink_nullsink = {
-    .name        = "nullsink",
-    .description = NULL_IF_CONFIG_SMALL("Do absolutely nothing with the input video."),
+	.name = "nullsink",
+	.description = NULL_IF_CONFIG_SMALL("Do absolutely nothing with the input video."),
 
-    .priv_size = 0,
+	.priv_size = 0,
 
-    .inputs    = (const AVFilterPad[]) {
-        {
-            .name            = "default",
-            .type            = AVMEDIA_TYPE_VIDEO,
-            .start_frame     = start_frame,
-            .end_frame       = end_frame,
-        },
-        { .name = NULL},
-    },
-    .outputs   = (const AVFilterPad[]) {{ .name = NULL }},
+	.inputs = (const AVFilterPad[]){
+		{
+			.name = "default",
+			.type = AVMEDIA_TYPE_VIDEO,
+			.start_frame = start_frame,
+			.end_frame = end_frame,
+		},
+		{.name = NULL},
+	},
+	.outputs = (const AVFilterPad[]){{.name = NULL}},
 };

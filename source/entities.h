@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 
-extern size_t decode_html_entities_utf8(char *dest, const char *src);
+extern size_t decode_html_entities_utf8(char* dest, const char* src);
 /*	if `src` is `NULL`, input will be taken from `dest`, decoding
 	the entities in-place
 
@@ -13,6 +13,6 @@ extern size_t decode_html_entities_utf8(char *dest, const char *src);
 
 	the function returns the length of the decoded string
 */
-extern const char *mime2ext(const char *name);
+extern const char* mime2ext(const char* name);
 
 #endif

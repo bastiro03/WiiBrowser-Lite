@@ -29,130 +29,133 @@
 
 /* TODO: implement sort_playlist */
 
-int adddirtoplaylist(playlist_t *playlist, const char *path, int recursive)
+int adddirtoplaylist(playlist_t* playlist, const char* path, int recursive)
 {
-    HANDLE findHandle = INVALID_HANDLE_VALUE;
-    WIN32_FIND_DATA finddata;
-    char findpath[MAX_PATH], filename[MAX_PATH];
-    char *filepart;
+	HANDLE findHandle = INVALID_HANDLE_VALUE;
+	WIN32_FIND_DATA finddata;
+	char findpath[MAX_PATH], filename[MAX_PATH];
+	char* filepart;
 
-    sprintf(findpath, "%s/*.*", path);
+	sprintf(findpath, "%s/*.*", path);
 
-    findHandle = FindFirstFile(findpath, &finddata);
+	findHandle = FindFirstFile(findpath, &finddata);
 
-    if (findHandle == INVALID_HANDLE_VALUE) return 0;
-    do
-    {
-        if (finddata.cFileName[0] == '.' || strstr(finddata.cFileName, "Thumbs.db")) continue;
-        sprintf(findpath, "%s/%s", path, finddata.cFileName);
+	if (findHandle == INVALID_HANDLE_VALUE) return 0;
+	do
+	{
+		if (finddata.cFileName[0] == '.' || strstr(finddata.cFileName, "Thumbs.db")) continue;
+		sprintf(findpath, "%s/%s", path, finddata.cFileName);
 
-        if (GetFileAttributes(findpath) & FILE_ATTRIBUTE_DIRECTORY)
-        {
-            if(recursive)
-                adddirtoplaylist(playlist, findpath, recursive);
-        }
-        else
-        {
-            if (GetFullPathName(findpath, MAX_PATH, filename, &filepart))
-                playlist->add_track(playlist, filename, NULL, filepart, 0);
-        }
-    } while (FindNextFile(findHandle, &finddata));
-    FindClose(findHandle);
-    return 1;
+		if (GetFileAttributes(findpath) & FILE_ATTRIBUTE_DIRECTORY)
+		{
+			if (recursive)
+				adddirtoplaylist(playlist, findpath, recursive);
+		}
+		else
+		{
+			if (GetFullPathName(findpath, MAX_PATH, filename, &filepart))
+				playlist->add_track(playlist, filename, NULL, filepart, 0);
+		}
+	}
+	while (FindNextFile(findHandle, &finddata));
+	FindClose(findHandle);
+	return 1;
 }
 
-static void add_track(playlist_t *playlist, const char *filename, const char *artist, const char *title, int duration)
+static void add_track(playlist_t* playlist, const char* filename, const char* artist, const char* title, int duration)
 {
-    (playlist->trackcount)++;
-    playlist->tracks = realloc(playlist->tracks, playlist->trackcount * sizeof(pl_track_t *));
-    playlist->tracks[playlist->trackcount - 1] = calloc(1, sizeof(pl_track_t));
-    if(filename) playlist->tracks[playlist->trackcount - 1]->filename = strdup(filename);
-    if(artist) playlist->tracks[playlist->trackcount - 1]->artist = strdup(artist);
-    if(title) playlist->tracks[playlist->trackcount - 1]->title = strdup(title);
-    if(duration) playlist->tracks[playlist->trackcount - 1]->duration = duration;
+	(playlist->trackcount)++;
+	playlist->tracks = realloc(playlist->tracks, playlist->trackcount * sizeof(pl_track_t*));
+	playlist->tracks[playlist->trackcount - 1] = calloc(1, sizeof(pl_track_t));
+	if (filename) playlist->tracks[playlist->trackcount - 1]->filename = strdup(filename);
+	if (artist) playlist->tracks[playlist->trackcount - 1]->artist = strdup(artist);
+	if (title) playlist->tracks[playlist->trackcount - 1]->title = strdup(title);
+	if (duration) playlist->tracks[playlist->trackcount - 1]->duration = duration;
 }
 
-static void remove_track(playlist_t *playlist, int number)
+static void remove_track(playlist_t* playlist, int number)
 {
-    pl_track_t **tmp = calloc(1, playlist->trackcount * sizeof(pl_track_t *));
-    int i, p = 0;
-    memcpy(tmp, playlist->tracks, playlist->trackcount * sizeof(pl_track_t *));
-    (playlist->trackcount)--;
-    playlist->tracks = realloc(playlist->tracks, playlist->trackcount * sizeof(pl_track_t *));
-    for(i=0; i<playlist->trackcount + 1; i++)
-    {
-        if(i != (number - 1))
-        {
-            playlist->tracks[p] = tmp[i];
-            p++;
-        }
-        else
-        {
-            free(tmp[i]->filename);
-            free(tmp[i]->artist);
-            free(tmp[i]->title);
-            free(tmp[i]);
-        }
-    }
-    free(tmp);
+	pl_track_t** tmp = calloc(1, playlist->trackcount * sizeof(pl_track_t*));
+	int i, p = 0;
+	memcpy(tmp, playlist->tracks, playlist->trackcount * sizeof(pl_track_t*));
+	(playlist->trackcount)--;
+	playlist->tracks = realloc(playlist->tracks, playlist->trackcount * sizeof(pl_track_t*));
+	for (i = 0; i < playlist->trackcount + 1; i++)
+	{
+		if (i != (number - 1))
+		{
+			playlist->tracks[p] = tmp[i];
+			p++;
+		}
+		else
+		{
+			free(tmp[i]->filename);
+			free(tmp[i]->artist);
+			free(tmp[i]->title);
+			free(tmp[i]);
+		}
+	}
+	free(tmp);
 }
 
-static void moveup_track(playlist_t *playlist, int number)
+static void moveup_track(playlist_t* playlist, int number)
 {
-    pl_track_t *tmp;
-    if(number == 1) return; /* already first */
-    tmp = playlist->tracks[number - 2];
-    playlist->tracks[number - 2] = playlist->tracks[number - 1];
-    playlist->tracks[number - 1] = tmp;
+	pl_track_t* tmp;
+	if (number == 1) return; /* already first */
+	tmp = playlist->tracks[number - 2];
+	playlist->tracks[number - 2] = playlist->tracks[number - 1];
+	playlist->tracks[number - 1] = tmp;
 }
 
-static void movedown_track(playlist_t *playlist, int number)
+static void movedown_track(playlist_t* playlist, int number)
 {
-    pl_track_t *tmp;
-    if(number == playlist->trackcount) return; /* already latest */
-    tmp = playlist->tracks[number];
-    playlist->tracks[number] = playlist->tracks[number - 1];
-    playlist->tracks[number - 1] = tmp;
+	pl_track_t* tmp;
+	if (number == playlist->trackcount) return; /* already latest */
+	tmp = playlist->tracks[number];
+	playlist->tracks[number] = playlist->tracks[number - 1];
+	playlist->tracks[number - 1] = tmp;
 }
 
-static void sort_playlist(playlist_t *playlist, int opt) {}
-
-static void clear_playlist(playlist_t *playlist)
+static void sort_playlist(playlist_t* playlist, int opt)
 {
-    while(playlist->trackcount) playlist->remove_track(playlist, 1);
-    playlist->tracks = NULL;
-    playlist->current = 0;
 }
 
-static void free_playlist(playlist_t *playlist)
+static void clear_playlist(playlist_t* playlist)
 {
-    if(playlist->tracks) playlist->clear_playlist(playlist);
-    free(playlist);
+	while (playlist->trackcount) playlist->remove_track(playlist, 1);
+	playlist->tracks = NULL;
+	playlist->current = 0;
 }
 
-static void dump_playlist(playlist_t *playlist)
+static void free_playlist(playlist_t* playlist)
 {
-    int i;
-    for (i=0; i<playlist->trackcount; i++)
-    {
-        mp_msg(MSGT_GPLAYER, MSGL_V, "track %i %s ", i + 1, playlist->tracks[i]->filename);
-        if(playlist->tracks[i]->artist) mp_msg(MSGT_GPLAYER, MSGL_V, "%s ", playlist->tracks[i]->artist);
-        if(playlist->tracks[i]->title) mp_msg(MSGT_GPLAYER, MSGL_V, "- %s ", playlist->tracks[i]->title);
-        if(playlist->tracks[i]->duration) mp_msg(MSGT_GPLAYER, MSGL_V, "%i ", playlist->tracks[i]->duration);
-        mp_msg(MSGT_GPLAYER, MSGL_V, "\n");
-    }
+	if (playlist->tracks) playlist->clear_playlist(playlist);
+	free(playlist);
 }
 
-playlist_t *create_playlist(void)
+static void dump_playlist(playlist_t* playlist)
 {
-    playlist_t *playlist = calloc(1, sizeof(playlist_t));
-    playlist->add_track = add_track;
-    playlist->remove_track = remove_track;
-    playlist->moveup_track = moveup_track;
-    playlist->movedown_track = movedown_track;
-    playlist->dump_playlist = dump_playlist;
-    playlist->sort_playlist = sort_playlist;
-    playlist->clear_playlist = clear_playlist;
-    playlist->free_playlist = free_playlist;
-    return playlist;
+	int i;
+	for (i = 0; i < playlist->trackcount; i++)
+	{
+		mp_msg(MSGT_GPLAYER, MSGL_V, "track %i %s ", i + 1, playlist->tracks[i]->filename);
+		if (playlist->tracks[i]->artist) mp_msg(MSGT_GPLAYER, MSGL_V, "%s ", playlist->tracks[i]->artist);
+		if (playlist->tracks[i]->title) mp_msg(MSGT_GPLAYER, MSGL_V, "- %s ", playlist->tracks[i]->title);
+		if (playlist->tracks[i]->duration) mp_msg(MSGT_GPLAYER, MSGL_V, "%i ", playlist->tracks[i]->duration);
+		mp_msg(MSGT_GPLAYER, MSGL_V, "\n");
+	}
+}
+
+playlist_t* create_playlist(void)
+{
+	playlist_t* playlist = calloc(1, sizeof(playlist_t));
+	playlist->add_track = add_track;
+	playlist->remove_track = remove_track;
+	playlist->moveup_track = moveup_track;
+	playlist->movedown_track = movedown_track;
+	playlist->dump_playlist = dump_playlist;
+	playlist->sort_playlist = sort_playlist;
+	playlist->clear_playlist = clear_playlist;
+	playlist->free_playlist = free_playlist;
+	return playlist;
 }

@@ -8,37 +8,37 @@
 #define MPLAYER_LDT_H
 
 #include "windef.h"
+
 enum seg_type
 {
-    SEGMENT_DATA  = 0,
-    SEGMENT_STACK = 1,
-    SEGMENT_CODE  = 2
+	SEGMENT_DATA = 0,
+	SEGMENT_STACK = 1,
+	SEGMENT_CODE = 2
 };
 
-  /* This structure represents a real LDT entry.        */
-  /* It is used by get_ldt_entry() and set_ldt_entry(). */
-typedef struct
+/* This structure represents a real LDT entry.        */
+/* It is used by get_ldt_entry() and set_ldt_entry(). */
+using ldt_entry = struct
 {
-    unsigned long base;            /* base address */
-    unsigned long limit;           /* segment limit (in pages or bytes) */
-    int           seg_32bit;       /* is segment 32-bit? */
-    int           read_only;       /* is segment read-only? */
-    int           limit_in_pages;  /* is the limit in pages or bytes? */
-    enum seg_type type;            /* segment type */
-} ldt_entry;
-void LDT_BytesToEntry( const unsigned long *buffer, ldt_entry *content );
-void LDT_EntryToBytes( unsigned long *buffer, const ldt_entry *content );
-int LDT_GetEntry( int entry, ldt_entry *content );
-int LDT_SetEntry( int entry, const ldt_entry *content );
-void LDT_Print( int start, int length );
+	unsigned long base; /* base address */
+	unsigned long limit; /* segment limit (in pages or bytes) */
+	int seg_32bit; /* is segment 32-bit? */
+	int read_only; /* is segment read-only? */
+	int limit_in_pages; /* is the limit in pages or bytes? */
+	enum seg_type type; /* segment type */
+};
+void LDT_BytesToEntry(const unsigned long* buffer, ldt_entry* content);
+void LDT_EntryToBytes(unsigned long* buffer, const ldt_entry* content);
+int LDT_GetEntry(int entry, ldt_entry* content);
+int LDT_SetEntry(int entry, const ldt_entry* content);
+void LDT_Print(int start, int length);
 
-
-  /* This structure is used to build the local copy of the LDT. */
-typedef struct
+/* This structure is used to build the local copy of the LDT. */
+using ldt_copy_entry = struct
 {
-    unsigned long base;    /* base address or 0 if entry is free   */
-    unsigned long limit;   /* limit in bytes or 0 if entry is free */
-} ldt_copy_entry;
+	unsigned long base; /* base address or 0 if entry is free   */
+	unsigned long limit; /* limit in bytes or 0 if entry is free */
+};
 
 #define LDT_SIZE  8192
 

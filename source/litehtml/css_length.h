@@ -7,76 +7,80 @@ namespace litehtml
 	{
 		union
 		{
-			float	m_value;
-			int		m_predef;
+			float m_value;
+			int m_predef;
 		};
-		css_units	m_units;
-		bool		m_is_predefined;
+
+		css_units m_units;
+		bool m_is_predefined;
+
 	public:
 		css_length()
 		{
-			m_value			= 0;
-			m_predef		= 0;
-			m_units			= css_units_none;
-			m_is_predefined	= false;
+			m_value = 0;
+			m_predef = 0;
+			m_units = css_units_none;
+			m_is_predefined = false;
 		}
 
 		css_length(const css_length& val)
 		{
-			if(val.is_predefined())
+			if (val.is_predefined())
 			{
-				m_predef	= val.m_predef;
-			} else
-			{
-				m_value		= val.m_value;
+				m_predef = val.m_predef;
 			}
-			m_units			= val.m_units;
-			m_is_predefined	= val.m_is_predefined;
+			else
+			{
+				m_value = val.m_value;
+			}
+			m_units = val.m_units;
+			m_is_predefined = val.m_is_predefined;
 		}
 
-		void	operator=(const css_length& val)
+		void operator=(const css_length& val)
 		{
-			if(val.is_predefined())
+			if (val.is_predefined())
 			{
-				m_predef	= val.m_predef;
-			} else
-			{
-				m_value		= val.m_value;
+				m_predef = val.m_predef;
 			}
-			m_units			= val.m_units;
-			m_is_predefined	= val.m_is_predefined;
-		}
-
-		bool	is_predefined()	const	
-		{ 
-			return m_is_predefined;					
-		}
-		
-		void	predef(int val)		
-		{ 
-			m_predef		= val; 
-			m_is_predefined = true;	
-		}
-
-		int	predef() const
-		{ 
-			if(m_is_predefined)
+			else
 			{
-				return m_predef; 
+				m_value = val.m_value;
+			}
+			m_units = val.m_units;
+			m_is_predefined = val.m_is_predefined;
+		}
+
+		bool is_predefined() const
+		{
+			return m_is_predefined;
+		}
+
+		void predef(int val)
+		{
+			m_predef = val;
+			m_is_predefined = true;
+		}
+
+		int predef() const
+		{
+			if (m_is_predefined)
+			{
+				return m_predef;
 			}
 			return 0;
 		}
 
-		void	set_value(float val, css_units units)		
-		{ 
-			m_value			= val; 
-			m_is_predefined = false;	
-			m_units			= units;
+		void set_value(float val, css_units units)
+		{
+			m_value = val;
+			m_is_predefined = false;
+			m_units = units;
 		}
 
-		float	val() const
+		float val() const
 		{
-			if(!m_is_predefined)
+			if (!m_is_predefined)
 			{
 				return m_value;
 			}
@@ -90,19 +94,17 @@ namespace litehtml
 
 		int calc_percent(int width)
 		{
-			if(!is_predefined())
+			if (!is_predefined())
 			{
-				if(units() == css_units_percentage)
+				if (units() == css_units_percentage)
 				{
-					return (int) ((double) width * (double) m_value / 100.0);
-				} else
-				{
-					return (int) val();
+					return static_cast<int>((double)width * (double)m_value / 100.0);
 				}
+				return static_cast<int>(val());
 			}
 			return 0;
 		}
 
-		void	fromString(const std::wstring& str, const std::wstring& predefs = L"");
+		void fromString(const std::wstring& str, const std::wstring& predefs = L"");
 	};
 }

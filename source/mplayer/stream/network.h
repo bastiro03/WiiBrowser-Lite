@@ -72,38 +72,39 @@ typedef int socklen_t;
 
 #define BUFFER_SIZE		2048
 
-typedef struct {
-	const char *mime_type;
+typedef struct
+{
+	const char* mime_type;
 	int demuxer_type;
 } mime_struct_t;
 
 extern const mime_struct_t mime_type_table[];
 
-extern char *cookies_file;
-extern char *network_password;
-extern char *network_referrer;
-extern char *network_useragent;
-extern char *network_username;
-extern char **network_http_header_fields;
+extern char* cookies_file;
+extern char* network_password;
+extern char* network_referrer;
+extern char* network_useragent;
+extern char* network_username;
+extern char** network_http_header_fields;
 
-extern int   network_bandwidth;
-extern int   network_cookies_enabled;
-extern int   network_ipv4_only_proxy;
+extern int network_bandwidth;
+extern int network_cookies_enabled;
+extern int network_ipv4_only_proxy;
 
-streaming_ctrl_t *streaming_ctrl_new(void);
-int streaming_bufferize( streaming_ctrl_t *streaming_ctrl, char *buffer, int size);
+streaming_ctrl_t* streaming_ctrl_new(void);
+int streaming_bufferize(streaming_ctrl_t* streaming_ctrl, char* buffer, int size);
 
-int nop_streaming_read( int fd, char *buffer, int size, streaming_ctrl_t *stream_ctrl );
-int nop_streaming_seek( int fd, off_t pos, streaming_ctrl_t *stream_ctrl );
-void streaming_ctrl_free( streaming_ctrl_t *streaming_ctrl );
+int nop_streaming_read(int fd, char* buffer, int size, streaming_ctrl_t* stream_ctrl);
+int nop_streaming_seek(int fd, off_t pos, streaming_ctrl_t* stream_ctrl);
+void streaming_ctrl_free(streaming_ctrl_t* streaming_ctrl);
 
-int http_send_request(URL_t *url, off_t pos);
-HTTP_header_t *http_read_response(int fd);
+int http_send_request(URL_t* url, off_t pos);
+HTTP_header_t* http_read_response(int fd);
 
-int http_authenticate(HTTP_header_t *http_hdr, URL_t *url, int *auth_retry);
-URL_t* check4proxies(URL_t *url);
+int http_authenticate(HTTP_header_t* http_hdr, URL_t* url, int* auth_retry);
+URL_t* check4proxies(URL_t* url);
 
-void fixup_network_stream_cache(stream_t *stream);
-int http_seek(stream_t *stream, off_t pos);
+void fixup_network_stream_cache(stream_t* stream);
+int http_seek(stream_t* stream, off_t pos);
 
 #endif /* MPLAYER_NETWORK_H */

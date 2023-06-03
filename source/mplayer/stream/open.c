@@ -36,56 +36,58 @@
 #include "stream.h"
 #include "libmpdemux/demuxer.h"
 
-
 /// We keep these 2 for the gui atm, but they will be removed.
-char* cdrom_device=NULL;
-int dvd_chapter=1;
-int dvd_last_chapter=0;
-char* dvd_device=NULL;
-int dvd_title=0;
-char *bluray_device=NULL;
+char* cdrom_device = NULL;
+int dvd_chapter = 1;
+int dvd_last_chapter = 0;
+char* dvd_device = NULL;
+int dvd_title = 0;
+char* bluray_device = NULL;
 
 // Open a new stream  (stdin/file/vcd/url)
 
 #ifdef GEKKO
-static void CleanFileName(const char *file)  //clean (//) exacmple smb1://film.avi -> smb1:/film.avi
+static void CleanFileName(const char* file)  //clean (//) exacmple smb1://film.avi -> smb1:/film.avi
 {
 	char buf[1024];
-	if(strncmp(file, "smb", 3)==0 || strncmp(file, "sd", 2)==0 || strncmp(file, "usb", 3)==0)
+	if (strncmp(file, "smb", 3) == 0 || strncmp(file, "sd", 2) == 0 || strncmp(file, "usb", 3) == 0)
 	{
-		int i=0,j=0;
-		while(file[i]!='\0')
+		int i = 0, j = 0;
+		while (file[i] != '\0')
 		{
-			buf[j]=file[i];
+			buf[j] = file[i];
 			j++;
-			if(file[i]=='/')
-				while(file[i]=='/' && file[i]!='\0')i++;
+			if (file[i] == '/')
+				while (file[i] == '/' && file[i] != '\0')i++;
 			else
 				i++;
 		}
-		buf[j]='\0';
-		strcpy((char*)file,buf);
+		buf[j] = '\0';
+		strcpy((char*)file, buf);
 	}
 }
 #endif
 
-stream_t* open_stream(const char* filename,char** options, int* file_format){
-  int dummy = DEMUXER_TYPE_UNKNOWN;
-  if (!file_format) file_format = &dummy;
-  // Check if playlist or unknown
-  if (*file_format != DEMUXER_TYPE_PLAYLIST){
-    *file_format=DEMUXER_TYPE_UNKNOWN;
-  }
+stream_t* open_stream(const char* filename, char** options, int* file_format)
+{
+	int dummy = DEMUXER_TYPE_UNKNOWN;
+	if (!file_format) file_format = &dummy;
+	// Check if playlist or unknown
+	if (*file_format != DEMUXER_TYPE_PLAYLIST)
+	{
+		*file_format = DEMUXER_TYPE_UNKNOWN;
+	}
 
-if(!filename) {
-   mp_msg(MSGT_OPEN,MSGL_ERR,"NULL filename, report this bug\n");
-   return NULL;
-}
+	if (!filename)
+	{
+		mp_msg(MSGT_OPEN, MSGL_ERR, "NULL filename, report this bug\n");
+		return NULL;
+	}
 
-//============ Open STDIN or plain FILE ============
+	//============ Open STDIN or plain FILE ============
 #ifdef GEKKO
-  CleanFileName(filename);
+	CleanFileName(filename);
 #endif
 
-  return open_stream_full(filename,STREAM_READ,options,file_format);
+	return open_stream_full(filename, STREAM_READ, options, file_format);
 }

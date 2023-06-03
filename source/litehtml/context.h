@@ -5,10 +5,12 @@ namespace litehtml
 {
 	class context
 	{
-		litehtml::css	m_master_css;
+		css m_master_css;
+
 	public:
-		void			load_master_stylesheet(const wchar_t* str);
-		litehtml::css&	master_css()
+		void load_master_stylesheet(const wchar_t* str);
+
+		css& master_css()
 		{
 			return m_master_css;
 		}

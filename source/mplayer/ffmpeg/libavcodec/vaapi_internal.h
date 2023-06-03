@@ -36,22 +36,22 @@
  */
 
 /** Extract VASurfaceID from a Picture */
-static inline VASurfaceID ff_vaapi_get_surface_id(Picture *pic)
+static inline VASurfaceID ff_vaapi_get_surface_id(Picture* pic)
 {
-    return (uintptr_t)pic->f.data[3];
+	return pic->f.data[3];
 }
 
 /** Common AVHWAccel.end_frame() implementation */
-int ff_vaapi_common_end_frame(MpegEncContext *s);
+int ff_vaapi_common_end_frame(MpegEncContext* s);
 
 /** Allocate a new picture parameter buffer */
-void *ff_vaapi_alloc_pic_param(struct vaapi_context *vactx, unsigned int size);
+void* ff_vaapi_alloc_pic_param(struct vaapi_context* vactx, unsigned int size);
 
 /** Allocate a new IQ matrix buffer */
-void *ff_vaapi_alloc_iq_matrix(struct vaapi_context *vactx, unsigned int size);
+void* ff_vaapi_alloc_iq_matrix(struct vaapi_context* vactx, unsigned int size);
 
 /** Allocate a new bit-plane buffer */
-uint8_t *ff_vaapi_alloc_bitplane(struct vaapi_context *vactx, uint32_t size);
+uint8_t* ff_vaapi_alloc_bitplane(struct vaapi_context* vactx, uint32_t size);
 
 /**
  * Allocate a new slice descriptor for the input slice.
@@ -61,7 +61,7 @@ uint8_t *ff_vaapi_alloc_bitplane(struct vaapi_context *vactx, uint32_t size);
  * @param size the size of the slice in bytes
  * @return the newly allocated slice parameter
  */
-VASliceParameterBufferBase *ff_vaapi_alloc_slice(struct vaapi_context *vactx, const uint8_t *buffer, uint32_t size);
+VASliceParameterBufferBase* ff_vaapi_alloc_slice(struct vaapi_context* vactx, const uint8_t* buffer, uint32_t size);
 
 /* @} */
 

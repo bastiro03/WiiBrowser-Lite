@@ -24,28 +24,28 @@
 
 #include "mp_strings.h"
 
-char *mp_asprintf(const char *fmt, ...)
+char* mp_asprintf(const char* fmt, ...)
 {
-    char *p = NULL;
-    va_list va;
-    int len;
+	char* p = NULL;
+	va_list va;
+	int len;
 
-    va_start(va, fmt);
-    len = vsnprintf(NULL, 0, fmt, va);
-    va_end(va);
-    if (len < 0)
-        goto end;
+	va_start(va, fmt);
+	len = vsnprintf(NULL, 0, fmt, va);
+	va_end(va);
+	if (len < 0)
+		goto end;
 
-    p = malloc(len + 1);
-    if (!p)
-        goto end;
+	p = malloc(len + 1);
+	if (!p)
+		goto end;
 
-    va_start(va, fmt);
-    len = vsnprintf(p, len + 1, fmt, va);
-    va_end(va);
-    if (len < 0)
-        free(p), p = NULL;
+	va_start(va, fmt);
+	len = vsnprintf(p, len + 1, fmt, va);
+	va_end(va);
+	if (len < 0)
+		free(p), p = NULL;
 
 end:
-    return p;
+	return p;
 }

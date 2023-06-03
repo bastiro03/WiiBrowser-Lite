@@ -30,58 +30,58 @@
  * @brief Initialize item counters.
  */
 guiItems guiApp = {
-    .IndexOfMainItems    = -1,
-    .IndexOfPlaybarItems = -1,
-    .IndexOfMenuItems    = -1
+	.IndexOfMainItems = -1,
+	.IndexOfPlaybarItems = -1,
+	.IndexOfMenuItems = -1
 };
 
 /**
  * @brief Event messages belonging to event names.
  */
 static const evName evNames[] = {
-    { evNone,              "evNone"              },
-    { evPlay,              "evPlay"              },
-    { evStop,              "evStop"              },
-    { evPause,             "evPause"             },
-    { evPrev,              "evPrev"              },
-    { evNext,              "evNext"              },
-    { evLoad,              "evLoad"              },
-    { evLoadPlay,          "evLoadPlay"          },
-    { evLoadAudioFile,     "evLoadAudioFile"     },
-    { evLoadSubtitle,      "evLoadSubtitle"      },
-    { evDropSubtitle,      "evDropSubtitle"      },
-    { evPlaylist,          "evPlaylist"          },
-    { evPlayCD,            "evPlayCD"            },
-    { evPlayVCD,           "evPlayVCD"           },
-    { evPlayDVD,           "evPlayDVD"           },
-    { evLoadURL,           "evSetURL"            }, // legacy
-    { evLoadURL,           "evLoadURL"           },
-    { evPlaySwitchToPause, "evPlaySwitchToPause" },
-    { evPauseSwitchToPlay, "evPauseSwitchToPlay" },
-    { evBackward10sec,     "evBackward10sec"     },
-    { evForward10sec,      "evForward10sec"      },
-    { evBackward1min,      "evBackward1min"      },
-    { evForward1min,       "evForward1min"       },
-    { evBackward10min,     "evBackward10min"     },
-    { evForward10min,      "evForward10min"      },
-    { evSetMoviePosition,  "evSetMoviePosition"  },
-    { evHalfSize,          "evHalfSize"          },
-    { evDoubleSize,        "evDoubleSize"        },
-    { evFullScreen,        "evFullScreen"        },
-    { evNormalSize,        "evNormalSize"        },
-    { evSetAspect,         "evSetAspect"         },
-    { evIncVolume,         "evIncVolume"         },
-    { evDecVolume,         "evDecVolume"         },
-    { evSetVolume,         "evSetVolume"         },
-    { evMute,              "evMute"              },
-    { evSetBalance,        "evSetBalance"        },
-    { evEqualizer,         "evEqualizer"         },
-    { evAbout,             "evAbout"             },
-    { evPreferences,       "evPreferences"       },
-    { evSkinBrowser,       "evSkinBrowser"       },
-    { evMenu,              "evMenu"              },
-    { evIconify,           "evIconify"           },
-    { evExit,              "evExit"              }
+	{evNone, "evNone"},
+	{evPlay, "evPlay"},
+	{evStop, "evStop"},
+	{evPause, "evPause"},
+	{evPrev, "evPrev"},
+	{evNext, "evNext"},
+	{evLoad, "evLoad"},
+	{evLoadPlay, "evLoadPlay"},
+	{evLoadAudioFile, "evLoadAudioFile"},
+	{evLoadSubtitle, "evLoadSubtitle"},
+	{evDropSubtitle, "evDropSubtitle"},
+	{evPlaylist, "evPlaylist"},
+	{evPlayCD, "evPlayCD"},
+	{evPlayVCD, "evPlayVCD"},
+	{evPlayDVD, "evPlayDVD"},
+	{evLoadURL, "evSetURL"}, // legacy
+	{evLoadURL, "evLoadURL"},
+	{evPlaySwitchToPause, "evPlaySwitchToPause"},
+	{evPauseSwitchToPlay, "evPauseSwitchToPlay"},
+	{evBackward10sec, "evBackward10sec"},
+	{evForward10sec, "evForward10sec"},
+	{evBackward1min, "evBackward1min"},
+	{evForward1min, "evForward1min"},
+	{evBackward10min, "evBackward10min"},
+	{evForward10min, "evForward10min"},
+	{evSetMoviePosition, "evSetMoviePosition"},
+	{evHalfSize, "evHalfSize"},
+	{evDoubleSize, "evDoubleSize"},
+	{evFullScreen, "evFullScreen"},
+	{evNormalSize, "evNormalSize"},
+	{evSetAspect, "evSetAspect"},
+	{evIncVolume, "evIncVolume"},
+	{evDecVolume, "evDecVolume"},
+	{evSetVolume, "evSetVolume"},
+	{evMute, "evMute"},
+	{evSetBalance, "evSetBalance"},
+	{evEqualizer, "evEqualizer"},
+	{evAbout, "evAbout"},
+	{evPreferences, "evPreferences"},
+	{evSkinBrowser, "evSkinBrowser"},
+	{evMenu, "evMenu"},
+	{evIconify, "evIconify"},
+	{evExit, "evExit"}
 };
 
 /**
@@ -89,13 +89,13 @@ static const evName evNames[] = {
  *
  * @param item item to be freed
  */
-static void appClearItem(wItem *item)
+static void appClearItem(wItem* item)
 {
-    bpFree(&item->Bitmap);
-    bpFree(&item->Mask);
-    free(item->label);
-    free(item->text);
-    memset(item, 0, sizeof(*item));
+	bpFree(&item->Bitmap);
+	bpFree(&item->Mask);
+	free(item->label);
+	free(item->text);
+	memset(item, 0, sizeof(*item));
 }
 
 /**
@@ -103,32 +103,32 @@ static void appClearItem(wItem *item)
  */
 void appFreeStruct(void)
 {
-    int i;
+	int i;
 
-    appClearItem(&guiApp.main);
-    guiApp.mainDecoration = 0;
+	appClearItem(&guiApp.main);
+	guiApp.mainDecoration = 0;
 
-    appClearItem(&guiApp.video);
+	appClearItem(&guiApp.video);
 
-    appClearItem(&guiApp.playbar);
-    guiApp.playbarIsPresent = 0;
+	appClearItem(&guiApp.playbar);
+	guiApp.playbarIsPresent = 0;
 
-    appClearItem(&guiApp.menu);
-    appClearItem(&guiApp.menuSelected);
-    guiApp.menuIsPresent = 0;
+	appClearItem(&guiApp.menu);
+	appClearItem(&guiApp.menuSelected);
+	guiApp.menuIsPresent = 0;
 
-    for (i = 0; i <= guiApp.IndexOfMainItems; i++)
-        appClearItem(&guiApp.mainItems[i]);
-    for (i = 0; i <= guiApp.IndexOfPlaybarItems; i++)
-        appClearItem(&guiApp.playbarItems[i]);
-    for (i = 0; i <= guiApp.IndexOfMenuItems; i++)
-        appClearItem(&guiApp.menuItems[i]);
+	for (i = 0; i <= guiApp.IndexOfMainItems; i++)
+		appClearItem(&guiApp.mainItems[i]);
+	for (i = 0; i <= guiApp.IndexOfPlaybarItems; i++)
+		appClearItem(&guiApp.playbarItems[i]);
+	for (i = 0; i <= guiApp.IndexOfMenuItems; i++)
+		appClearItem(&guiApp.menuItems[i]);
 
-    guiApp.IndexOfMainItems    = -1;
-    guiApp.IndexOfPlaybarItems = -1;
-    guiApp.IndexOfMenuItems    = -1;
+	guiApp.IndexOfMainItems = -1;
+	guiApp.IndexOfPlaybarItems = -1;
+	guiApp.IndexOfMenuItems = -1;
 
-    fntFreeFont();
+	fntFreeFont();
 }
 
 /**
@@ -138,15 +138,15 @@ void appFreeStruct(void)
  *
  * @return event >= 0 (ok) or -1 (not found)
  */
-int appFindMessage(const char *name)
+int appFindMessage(const char* name)
 {
-    unsigned int i;
+	unsigned int i;
 
-    for (i = 0; i < FF_ARRAY_ELEMS(evNames); i++)
-        if (!strcmp(evNames[i].name, name))
-            return evNames[i].message;
+	for (i = 0; i < FF_ARRAY_ELEMS(evNames); i++)
+		if (!strcmp(evNames[i].name, name))
+			return evNames[i].message;
 
-    return -1;
+	return -1;
 }
 
 /**
@@ -156,24 +156,27 @@ int appFindMessage(const char *name)
  *
  * @return pointer to the item (ok) or NULL (not found)
  */
-wItem *appFindItem(int event)
+wItem* appFindItem(int event)
 {
-    wItem *item;
-    int i, n;
+	wItem* item;
+	int i, n;
 
-    if (guiApp.videoWindow.isFullScreen && guiApp.playbarIsPresent) {
-        item = guiApp.playbarItems;
-        n    = guiApp.IndexOfPlaybarItems;
-    } else {
-        item = guiApp.mainItems;
-        n    = guiApp.IndexOfMainItems;
-    }
+	if (guiApp.videoWindow.isFullScreen && guiApp.playbarIsPresent)
+	{
+		item = guiApp.playbarItems;
+		n = guiApp.IndexOfPlaybarItems;
+	}
+	else
+	{
+		item = guiApp.mainItems;
+		n = guiApp.IndexOfMainItems;
+	}
 
-    for (i = 0; i <= n; i++)
-        if (item[i].message == event)
-            return &item[i];
+	for (i = 0; i <= n; i++)
+		if (item[i].message == event)
+			return &item[i];
 
-    return NULL;
+	return NULL;
 }
 
 /**
@@ -184,47 +187,53 @@ wItem *appFindItem(int event)
  */
 void btnModify(int event, float state)
 {
-    int i;
+	int i;
 
-    for (i = 0; i <= guiApp.IndexOfMainItems; i++) {
-        if (guiApp.mainItems[i].message == event) {
-            switch (guiApp.mainItems[i].type) {
-            case itButton:
-                guiApp.mainItems[i].pressed = (int)state;
-                break;
+	for (i = 0; i <= guiApp.IndexOfMainItems; i++)
+	{
+		if (guiApp.mainItems[i].message == event)
+		{
+			switch (guiApp.mainItems[i].type)
+			{
+			case itButton:
+				guiApp.mainItems[i].pressed = (int)state;
+				break;
 
-            case itPotmeter:
-            case itVPotmeter:
-            case itHPotmeter:
-                if (state < 0.0f)
-                    state = 0.0f;
-                if (state > 100.0f)
-                    state = 100.0f;
-                guiApp.mainItems[i].value = state;
-                break;
-            }
-        }
-    }
+			case itPotmeter:
+			case itVPotmeter:
+			case itHPotmeter:
+				if (state < 0.0f)
+					state = 0.0f;
+				if (state > 100.0f)
+					state = 100.0f;
+				guiApp.mainItems[i].value = state;
+				break;
+			}
+		}
+	}
 
-    for (i = 0; i <= guiApp.IndexOfPlaybarItems; i++) {
-        if (guiApp.playbarItems[i].message == event) {
-            switch (guiApp.playbarItems[i].type) {
-            case itButton:
-                guiApp.playbarItems[i].pressed = (int)state;
-                break;
+	for (i = 0; i <= guiApp.IndexOfPlaybarItems; i++)
+	{
+		if (guiApp.playbarItems[i].message == event)
+		{
+			switch (guiApp.playbarItems[i].type)
+			{
+			case itButton:
+				guiApp.playbarItems[i].pressed = (int)state;
+				break;
 
-            case itPotmeter:
-            case itVPotmeter:
-            case itHPotmeter:
-                if (state < 0.0f)
-                    state = 0.0f;
-                if (state > 100.0f)
-                    state = 100.0f;
-                guiApp.playbarItems[i].value = state;
-                break;
-            }
-        }
-    }
+			case itPotmeter:
+			case itVPotmeter:
+			case itHPotmeter:
+				if (state < 0.0f)
+					state = 0.0f;
+				if (state > 100.0f)
+					state = 100.0f;
+				guiApp.playbarItems[i].value = state;
+				break;
+			}
+		}
+	}
 }
 
 /**
@@ -235,13 +244,13 @@ void btnModify(int event, float state)
  */
 void btnSet(int event, int set)
 {
-    int i;
+	int i;
 
-    for (i = 0; i <= guiApp.IndexOfMainItems; i++)
-        if (guiApp.mainItems[i].message == event)
-            guiApp.mainItems[i].pressed = set;
+	for (i = 0; i <= guiApp.IndexOfMainItems; i++)
+		if (guiApp.mainItems[i].message == event)
+			guiApp.mainItems[i].pressed = set;
 
-    for (i = 0; i <= guiApp.IndexOfPlaybarItems; i++)
-        if (guiApp.playbarItems[i].message == event)
-            guiApp.playbarItems[i].pressed = set;
+	for (i = 0; i <= guiApp.IndexOfPlaybarItems; i++)
+		if (guiApp.playbarItems[i].message == event)
+			guiApp.playbarItems[i].pressed = set;
 }

@@ -36,93 +36,121 @@
 #include "avcodec.h"
 #include "put_bits.h"
 
-
 /* JPEG marker codes */
-typedef enum {
-    /* start of frame */
-    SOF0  = 0xc0,       /* baseline */
-    SOF1  = 0xc1,       /* extended sequential, huffman */
-    SOF2  = 0xc2,       /* progressive, huffman */
-    SOF3  = 0xc3,       /* lossless, huffman */
+typedef enum
+{
+	/* start of frame */
+	SOF0 = 0xc0,
+	/* baseline */
+	SOF1 = 0xc1,
+	/* extended sequential, huffman */
+	SOF2 = 0xc2,
+	/* progressive, huffman */
+	SOF3 = 0xc3,
+	/* lossless, huffman */
 
-    SOF5  = 0xc5,       /* differential sequential, huffman */
-    SOF6  = 0xc6,       /* differential progressive, huffman */
-    SOF7  = 0xc7,       /* differential lossless, huffman */
-    JPG   = 0xc8,       /* reserved for JPEG extension */
-    SOF9  = 0xc9,       /* extended sequential, arithmetic */
-    SOF10 = 0xca,       /* progressive, arithmetic */
-    SOF11 = 0xcb,       /* lossless, arithmetic */
+	SOF5 = 0xc5,
+	/* differential sequential, huffman */
+	SOF6 = 0xc6,
+	/* differential progressive, huffman */
+	SOF7 = 0xc7,
+	/* differential lossless, huffman */
+	JPG = 0xc8,
+	/* reserved for JPEG extension */
+	SOF9 = 0xc9,
+	/* extended sequential, arithmetic */
+	SOF10 = 0xca,
+	/* progressive, arithmetic */
+	SOF11 = 0xcb,
+	/* lossless, arithmetic */
 
-    SOF13 = 0xcd,       /* differential sequential, arithmetic */
-    SOF14 = 0xce,       /* differential progressive, arithmetic */
-    SOF15 = 0xcf,       /* differential lossless, arithmetic */
+	SOF13 = 0xcd,
+	/* differential sequential, arithmetic */
+	SOF14 = 0xce,
+	/* differential progressive, arithmetic */
+	SOF15 = 0xcf,
+	/* differential lossless, arithmetic */
 
-    DHT   = 0xc4,       /* define huffman tables */
+	DHT = 0xc4,
+	/* define huffman tables */
 
-    DAC   = 0xcc,       /* define arithmetic-coding conditioning */
+	DAC = 0xcc,
+	/* define arithmetic-coding conditioning */
 
-    /* restart with modulo 8 count "m" */
-    RST0  = 0xd0,
-    RST1  = 0xd1,
-    RST2  = 0xd2,
-    RST3  = 0xd3,
-    RST4  = 0xd4,
-    RST5  = 0xd5,
-    RST6  = 0xd6,
-    RST7  = 0xd7,
+	/* restart with modulo 8 count "m" */
+	RST0 = 0xd0,
+	RST1 = 0xd1,
+	RST2 = 0xd2,
+	RST3 = 0xd3,
+	RST4 = 0xd4,
+	RST5 = 0xd5,
+	RST6 = 0xd6,
+	RST7 = 0xd7,
 
-    SOI   = 0xd8,       /* start of image */
-    EOI   = 0xd9,       /* end of image */
-    SOS   = 0xda,       /* start of scan */
-    DQT   = 0xdb,       /* define quantization tables */
-    DNL   = 0xdc,       /* define number of lines */
-    DRI   = 0xdd,       /* define restart interval */
-    DHP   = 0xde,       /* define hierarchical progression */
-    EXP   = 0xdf,       /* expand reference components */
+	SOI = 0xd8,
+	/* start of image */
+	EOI = 0xd9,
+	/* end of image */
+	SOS = 0xda,
+	/* start of scan */
+	DQT = 0xdb,
+	/* define quantization tables */
+	DNL = 0xdc,
+	/* define number of lines */
+	DRI = 0xdd,
+	/* define restart interval */
+	DHP = 0xde,
+	/* define hierarchical progression */
+	EXP = 0xdf,
+	/* expand reference components */
 
-    APP0  = 0xe0,
-    APP1  = 0xe1,
-    APP2  = 0xe2,
-    APP3  = 0xe3,
-    APP4  = 0xe4,
-    APP5  = 0xe5,
-    APP6  = 0xe6,
-    APP7  = 0xe7,
-    APP8  = 0xe8,
-    APP9  = 0xe9,
-    APP10 = 0xea,
-    APP11 = 0xeb,
-    APP12 = 0xec,
-    APP13 = 0xed,
-    APP14 = 0xee,
-    APP15 = 0xef,
+	APP0 = 0xe0,
+	APP1 = 0xe1,
+	APP2 = 0xe2,
+	APP3 = 0xe3,
+	APP4 = 0xe4,
+	APP5 = 0xe5,
+	APP6 = 0xe6,
+	APP7 = 0xe7,
+	APP8 = 0xe8,
+	APP9 = 0xe9,
+	APP10 = 0xea,
+	APP11 = 0xeb,
+	APP12 = 0xec,
+	APP13 = 0xed,
+	APP14 = 0xee,
+	APP15 = 0xef,
 
-    JPG0  = 0xf0,
-    JPG1  = 0xf1,
-    JPG2  = 0xf2,
-    JPG3  = 0xf3,
-    JPG4  = 0xf4,
-    JPG5  = 0xf5,
-    JPG6  = 0xf6,
-    SOF48 = 0xf7,       ///< JPEG-LS
-    LSE   = 0xf8,       ///< JPEG-LS extension parameters
-    JPG9  = 0xf9,
-    JPG10 = 0xfa,
-    JPG11 = 0xfb,
-    JPG12 = 0xfc,
-    JPG13 = 0xfd,
+	JPG0 = 0xf0,
+	JPG1 = 0xf1,
+	JPG2 = 0xf2,
+	JPG3 = 0xf3,
+	JPG4 = 0xf4,
+	JPG5 = 0xf5,
+	JPG6 = 0xf6,
+	SOF48 = 0xf7,
+	///< JPEG-LS
+	LSE = 0xf8,
+	///< JPEG-LS extension parameters
+	JPG9 = 0xf9,
+	JPG10 = 0xfa,
+	JPG11 = 0xfb,
+	JPG12 = 0xfc,
+	JPG13 = 0xfd,
 
-    COM   = 0xfe,       /* comment */
+	COM = 0xfe,
+	/* comment */
 
-    TEM   = 0x01,       /* temporary private use for arithmetic coding */
+	TEM = 0x01,
+	/* temporary private use for arithmetic coding */
 
-    /* 0x02 -> 0xbf reserved */
+	/* 0x02 -> 0xbf reserved */
 } JPEG_MARKER;
 
-static inline void put_marker(PutBitContext *p, int code)
+static inline void put_marker(PutBitContext* p, int code)
 {
-    put_bits(p, 8, 0xff);
-    put_bits(p, 8, code);
+	put_bits(p, 8, 0xff);
+	put_bits(p, 8, code);
 }
 
 #define PREDICT(ret, topleft, top, left, predictor)\
@@ -149,8 +177,8 @@ extern const uint8_t ff_mjpeg_val_ac_luminance[];
 extern const uint8_t ff_mjpeg_bits_ac_chrominance[];
 extern const uint8_t ff_mjpeg_val_ac_chrominance[];
 
-void ff_mjpeg_build_huffman_codes(uint8_t *huff_size, uint16_t *huff_code,
-                                  const uint8_t *bits_table,
-                                  const uint8_t *val_table);
+void ff_mjpeg_build_huffman_codes(uint8_t* huff_size, uint16_t* huff_code,
+                                  const uint8_t* bits_table,
+                                  const uint8_t* val_table);
 
 #endif /* AVCODEC_MJPEG_H */

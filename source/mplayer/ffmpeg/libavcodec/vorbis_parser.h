@@ -30,16 +30,17 @@
 
 #include "avcodec.h"
 
-typedef struct VorbisParseContext {
-    AVCodecContext *avctx;      ///< codec context
-    int extradata_parsed;       ///< we have attempted to parse extradata
-    int valid_extradata;        ///< extradata is valid, so we can calculate duration
-    int blocksize[2];           ///< short and long window sizes
-    int previous_blocksize;     ///< previous window size
-    int mode_blocksize[64];     ///< window size mapping for each mode
-    int mode_count;             ///< number of modes
-    int mode_mask;              ///< bitmask used to get the mode in each packet
-    int prev_mask;              ///< bitmask used to get the previous mode flag in each packet
+typedef struct VorbisParseContext
+{
+	AVCodecContext* avctx; ///< codec context
+	int extradata_parsed; ///< we have attempted to parse extradata
+	int valid_extradata; ///< extradata is valid, so we can calculate duration
+	int blocksize[2]; ///< short and long window sizes
+	int previous_blocksize; ///< previous window size
+	int mode_blocksize[64]; ///< window size mapping for each mode
+	int mode_count; ///< number of modes
+	int mode_mask; ///< bitmask used to get the mode in each packet
+	int prev_mask; ///< bitmask used to get the previous mode flag in each packet
 } VorbisParseContext;
 
 /**
@@ -48,7 +49,7 @@ typedef struct VorbisParseContext {
  * @param avctx codec context
  * @param s     Vorbis parser context
  */
-int avpriv_vorbis_parse_extradata(AVCodecContext *avctx, VorbisParseContext *s);
+int avpriv_vorbis_parse_extradata(AVCodecContext* avctx, VorbisParseContext* s);
 
 /**
  * Get the duration for a Vorbis packet.
@@ -60,9 +61,9 @@ int avpriv_vorbis_parse_extradata(AVCodecContext *avctx, VorbisParseContext *s);
  * @param buf      buffer containing a Vorbis frame
  * @param buf_size size of the buffer
  */
-int avpriv_vorbis_parse_frame(VorbisParseContext *s, const uint8_t *buf,
+int avpriv_vorbis_parse_frame(VorbisParseContext* s, const uint8_t* buf,
                               int buf_size);
 
-void avpriv_vorbis_parse_reset(VorbisParseContext *s);
+void avpriv_vorbis_parse_reset(VorbisParseContext* s);
 
 #endif /* AVCODEC_VORBIS_PARSER_H */

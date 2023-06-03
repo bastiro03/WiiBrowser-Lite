@@ -21,7 +21,7 @@
 
 #include "stream.h"
 
-int bd_aid_from_lang(stream_t *s, const char *lang);
-int bd_sid_from_lang(stream_t *s, const char *lang);
+int bd_aid_from_lang(stream_t* s, const char* lang);
+int bd_sid_from_lang(stream_t* s, const char* lang);
 
 #endif /* MPLAYER_STREAM_BD_H */

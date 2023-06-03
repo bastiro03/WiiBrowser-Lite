@@ -26,96 +26,95 @@
 
 #if HAVE_YASM
 
-/*
- * MC functions
- */
-extern void ff_put_vp8_epel4_h4_mmx2  (uint8_t *dst, ptrdiff_t dststride,
-                                       uint8_t *src, ptrdiff_t srcstride,
-                                       int height, int mx, int my);
-extern void ff_put_vp8_epel4_h6_mmx2  (uint8_t *dst, ptrdiff_t dststride,
-                                       uint8_t *src, ptrdiff_t srcstride,
-                                       int height, int mx, int my);
-extern void ff_put_vp8_epel4_v4_mmx2  (uint8_t *dst, ptrdiff_t dststride,
-                                       uint8_t *src, ptrdiff_t srcstride,
-                                       int height, int mx, int my);
-extern void ff_put_vp8_epel4_v6_mmx2  (uint8_t *dst, ptrdiff_t dststride,
-                                       uint8_t *src, ptrdiff_t srcstride,
-                                       int height, int mx, int my);
+ /*
+  * MC functions
+  */
+extern void ff_put_vp8_epel4_h4_mmx2(uint8_t* dst, ptrdiff_t dststride,
+	uint8_t* src, ptrdiff_t srcstride,
+	int height, int mx, int my);
+extern void ff_put_vp8_epel4_h6_mmx2(uint8_t* dst, ptrdiff_t dststride,
+	uint8_t* src, ptrdiff_t srcstride,
+	int height, int mx, int my);
+extern void ff_put_vp8_epel4_v4_mmx2(uint8_t* dst, ptrdiff_t dststride,
+	uint8_t* src, ptrdiff_t srcstride,
+	int height, int mx, int my);
+extern void ff_put_vp8_epel4_v6_mmx2(uint8_t* dst, ptrdiff_t dststride,
+	uint8_t* src, ptrdiff_t srcstride,
+	int height, int mx, int my);
 
-extern void ff_put_vp8_epel8_h4_sse2  (uint8_t *dst, ptrdiff_t dststride,
-                                       uint8_t *src, ptrdiff_t srcstride,
-                                       int height, int mx, int my);
-extern void ff_put_vp8_epel8_h6_sse2  (uint8_t *dst, ptrdiff_t dststride,
-                                       uint8_t *src, ptrdiff_t srcstride,
-                                       int height, int mx, int my);
-extern void ff_put_vp8_epel8_v4_sse2  (uint8_t *dst, ptrdiff_t dststride,
-                                       uint8_t *src, ptrdiff_t srcstride,
-                                       int height, int mx, int my);
-extern void ff_put_vp8_epel8_v6_sse2  (uint8_t *dst, ptrdiff_t dststride,
-                                       uint8_t *src, ptrdiff_t srcstride,
-                                       int height, int mx, int my);
+extern void ff_put_vp8_epel8_h4_sse2(uint8_t* dst, ptrdiff_t dststride,
+	uint8_t* src, ptrdiff_t srcstride,
+	int height, int mx, int my);
+extern void ff_put_vp8_epel8_h6_sse2(uint8_t* dst, ptrdiff_t dststride,
+	uint8_t* src, ptrdiff_t srcstride,
+	int height, int mx, int my);
+extern void ff_put_vp8_epel8_v4_sse2(uint8_t* dst, ptrdiff_t dststride,
+	uint8_t* src, ptrdiff_t srcstride,
+	int height, int mx, int my);
+extern void ff_put_vp8_epel8_v6_sse2(uint8_t* dst, ptrdiff_t dststride,
+	uint8_t* src, ptrdiff_t srcstride,
+	int height, int mx, int my);
 
-extern void ff_put_vp8_epel4_h4_ssse3 (uint8_t *dst, ptrdiff_t dststride,
-                                       uint8_t *src, ptrdiff_t srcstride,
-                                       int height, int mx, int my);
-extern void ff_put_vp8_epel4_h6_ssse3 (uint8_t *dst, ptrdiff_t dststride,
-                                       uint8_t *src, ptrdiff_t srcstride,
-                                       int height, int mx, int my);
-extern void ff_put_vp8_epel4_v4_ssse3 (uint8_t *dst, ptrdiff_t dststride,
-                                       uint8_t *src, ptrdiff_t srcstride,
-                                       int height, int mx, int my);
-extern void ff_put_vp8_epel4_v6_ssse3 (uint8_t *dst, ptrdiff_t dststride,
-                                       uint8_t *src, ptrdiff_t srcstride,
-                                       int height, int mx, int my);
-extern void ff_put_vp8_epel8_h4_ssse3 (uint8_t *dst, ptrdiff_t dststride,
-                                       uint8_t *src, ptrdiff_t srcstride,
-                                       int height, int mx, int my);
-extern void ff_put_vp8_epel8_h6_ssse3 (uint8_t *dst, ptrdiff_t dststride,
-                                       uint8_t *src, ptrdiff_t srcstride,
-                                       int height, int mx, int my);
-extern void ff_put_vp8_epel8_v4_ssse3 (uint8_t *dst, ptrdiff_t dststride,
-                                       uint8_t *src, ptrdiff_t srcstride,
-                                       int height, int mx, int my);
-extern void ff_put_vp8_epel8_v6_ssse3 (uint8_t *dst, ptrdiff_t dststride,
-                                       uint8_t *src, ptrdiff_t srcstride,
-                                       int height, int mx, int my);
+extern void ff_put_vp8_epel4_h4_ssse3(uint8_t* dst, ptrdiff_t dststride,
+	uint8_t* src, ptrdiff_t srcstride,
+	int height, int mx, int my);
+extern void ff_put_vp8_epel4_h6_ssse3(uint8_t* dst, ptrdiff_t dststride,
+	uint8_t* src, ptrdiff_t srcstride,
+	int height, int mx, int my);
+extern void ff_put_vp8_epel4_v4_ssse3(uint8_t* dst, ptrdiff_t dststride,
+	uint8_t* src, ptrdiff_t srcstride,
+	int height, int mx, int my);
+extern void ff_put_vp8_epel4_v6_ssse3(uint8_t* dst, ptrdiff_t dststride,
+	uint8_t* src, ptrdiff_t srcstride,
+	int height, int mx, int my);
+extern void ff_put_vp8_epel8_h4_ssse3(uint8_t* dst, ptrdiff_t dststride,
+	uint8_t* src, ptrdiff_t srcstride,
+	int height, int mx, int my);
+extern void ff_put_vp8_epel8_h6_ssse3(uint8_t* dst, ptrdiff_t dststride,
+	uint8_t* src, ptrdiff_t srcstride,
+	int height, int mx, int my);
+extern void ff_put_vp8_epel8_v4_ssse3(uint8_t* dst, ptrdiff_t dststride,
+	uint8_t* src, ptrdiff_t srcstride,
+	int height, int mx, int my);
+extern void ff_put_vp8_epel8_v6_ssse3(uint8_t* dst, ptrdiff_t dststride,
+	uint8_t* src, ptrdiff_t srcstride,
+	int height, int mx, int my);
 
-extern void ff_put_vp8_bilinear4_h_mmx2  (uint8_t *dst, ptrdiff_t dststride,
-                                          uint8_t *src, ptrdiff_t srcstride,
-                                          int height, int mx, int my);
-extern void ff_put_vp8_bilinear8_h_sse2  (uint8_t *dst, ptrdiff_t dststride,
-                                          uint8_t *src, ptrdiff_t srcstride,
-                                          int height, int mx, int my);
-extern void ff_put_vp8_bilinear4_h_ssse3 (uint8_t *dst, ptrdiff_t dststride,
-                                          uint8_t *src, ptrdiff_t srcstride,
-                                          int height, int mx, int my);
-extern void ff_put_vp8_bilinear8_h_ssse3 (uint8_t *dst, ptrdiff_t dststride,
-                                          uint8_t *src, ptrdiff_t srcstride,
-                                          int height, int mx, int my);
+extern void ff_put_vp8_bilinear4_h_mmx2(uint8_t* dst, ptrdiff_t dststride,
+	uint8_t* src, ptrdiff_t srcstride,
+	int height, int mx, int my);
+extern void ff_put_vp8_bilinear8_h_sse2(uint8_t* dst, ptrdiff_t dststride,
+	uint8_t* src, ptrdiff_t srcstride,
+	int height, int mx, int my);
+extern void ff_put_vp8_bilinear4_h_ssse3(uint8_t* dst, ptrdiff_t dststride,
+	uint8_t* src, ptrdiff_t srcstride,
+	int height, int mx, int my);
+extern void ff_put_vp8_bilinear8_h_ssse3(uint8_t* dst, ptrdiff_t dststride,
+	uint8_t* src, ptrdiff_t srcstride,
+	int height, int mx, int my);
 
-extern void ff_put_vp8_bilinear4_v_mmx2  (uint8_t *dst, ptrdiff_t dststride,
-                                          uint8_t *src, ptrdiff_t srcstride,
-                                          int height, int mx, int my);
-extern void ff_put_vp8_bilinear8_v_sse2  (uint8_t *dst, ptrdiff_t dststride,
-                                          uint8_t *src, ptrdiff_t srcstride,
-                                          int height, int mx, int my);
-extern void ff_put_vp8_bilinear4_v_ssse3 (uint8_t *dst, ptrdiff_t dststride,
-                                          uint8_t *src, ptrdiff_t srcstride,
-                                          int height, int mx, int my);
-extern void ff_put_vp8_bilinear8_v_ssse3 (uint8_t *dst, ptrdiff_t dststride,
-                                          uint8_t *src, ptrdiff_t srcstride,
-                                          int height, int mx, int my);
+extern void ff_put_vp8_bilinear4_v_mmx2(uint8_t* dst, ptrdiff_t dststride,
+	uint8_t* src, ptrdiff_t srcstride,
+	int height, int mx, int my);
+extern void ff_put_vp8_bilinear8_v_sse2(uint8_t* dst, ptrdiff_t dststride,
+	uint8_t* src, ptrdiff_t srcstride,
+	int height, int mx, int my);
+extern void ff_put_vp8_bilinear4_v_ssse3(uint8_t* dst, ptrdiff_t dststride,
+	uint8_t* src, ptrdiff_t srcstride,
+	int height, int mx, int my);
+extern void ff_put_vp8_bilinear8_v_ssse3(uint8_t* dst, ptrdiff_t dststride,
+	uint8_t* src, ptrdiff_t srcstride,
+	int height, int mx, int my);
 
-
-extern void ff_put_vp8_pixels8_mmx (uint8_t *dst, ptrdiff_t dststride,
-                                    uint8_t *src, ptrdiff_t srcstride,
-                                    int height, int mx, int my);
-extern void ff_put_vp8_pixels16_mmx(uint8_t *dst, ptrdiff_t dststride,
-                                    uint8_t *src, ptrdiff_t srcstride,
-                                    int height, int mx, int my);
-extern void ff_put_vp8_pixels16_sse(uint8_t *dst, ptrdiff_t dststride,
-                                    uint8_t *src, ptrdiff_t srcstride,
-                                    int height, int mx, int my);
+extern void ff_put_vp8_pixels8_mmx(uint8_t* dst, ptrdiff_t dststride,
+	uint8_t* src, ptrdiff_t srcstride,
+	int height, int mx, int my);
+extern void ff_put_vp8_pixels16_mmx(uint8_t* dst, ptrdiff_t dststride,
+	uint8_t* src, ptrdiff_t srcstride,
+	int height, int mx, int my);
+extern void ff_put_vp8_pixels16_sse(uint8_t* dst, ptrdiff_t dststride,
+	uint8_t* src, ptrdiff_t srcstride,
+	int height, int mx, int my);
 
 #define TAP_W16(OPT, FILTERTYPE, TAPTYPE) \
 static void ff_put_vp8_ ## FILTERTYPE ## 16_ ## TAPTYPE ## _ ## OPT( \
@@ -139,22 +138,22 @@ static void ff_put_vp8_ ## FILTERTYPE ## 8_ ## TAPTYPE ## _ ## OPT( \
 }
 
 #if ARCH_X86_32
-TAP_W8 (mmx2,  epel, h4)
-TAP_W8 (mmx2,  epel, h6)
-TAP_W16(mmx2,  epel, h6)
-TAP_W8 (mmx2,  epel, v4)
-TAP_W8 (mmx2,  epel, v6)
-TAP_W16(mmx2,  epel, v6)
-TAP_W8 (mmx2,  bilinear, h)
-TAP_W16(mmx2,  bilinear, h)
-TAP_W8 (mmx2,  bilinear, v)
-TAP_W16(mmx2,  bilinear, v)
+TAP_W8(mmx2, epel, h4)
+TAP_W8(mmx2, epel, h6)
+TAP_W16(mmx2, epel, h6)
+TAP_W8(mmx2, epel, v4)
+TAP_W8(mmx2, epel, v6)
+TAP_W16(mmx2, epel, v6)
+TAP_W8(mmx2, bilinear, h)
+TAP_W16(mmx2, bilinear, h)
+TAP_W8(mmx2, bilinear, v)
+TAP_W16(mmx2, bilinear, v)
 #endif
 
-TAP_W16(sse2,  epel, h6)
-TAP_W16(sse2,  epel, v6)
-TAP_W16(sse2,  bilinear, h)
-TAP_W16(sse2,  bilinear, v)
+TAP_W16(sse2, epel, h6)
+TAP_W16(sse2, epel, v6)
+TAP_W16(sse2, bilinear, h)
+TAP_W16(sse2, bilinear, v)
 
 TAP_W16(ssse3, epel, h6)
 TAP_W16(ssse3, epel, v6)
@@ -218,33 +217,33 @@ static void ff_put_vp8_bilinear ## SIZE ## _hv_ ## OPT( \
         dst, dststride, tmp, SIZE,      height,     mx, my); \
 }
 
-HVBILIN(mmx2,  8,  4,  8)
+HVBILIN(mmx2, 8, 4, 8)
 #if ARCH_X86_32
-HVBILIN(mmx2,  8,  8, 16)
-HVBILIN(mmx2,  8, 16, 16)
+HVBILIN(mmx2, 8, 8, 16)
+HVBILIN(mmx2, 8, 16, 16)
 #endif
-HVBILIN(sse2,  8,  8, 16)
-HVBILIN(sse2,  8, 16, 16)
-HVBILIN(ssse3, 8,  4,  8)
-HVBILIN(ssse3, 8,  8, 16)
+HVBILIN(sse2, 8, 8, 16)
+HVBILIN(sse2, 8, 16, 16)
+HVBILIN(ssse3, 8, 4, 8)
+HVBILIN(ssse3, 8, 8, 16)
 HVBILIN(ssse3, 8, 16, 16)
 
-extern void ff_vp8_idct_dc_add_mmx(uint8_t *dst, DCTELEM block[16],
-                                   ptrdiff_t stride);
-extern void ff_vp8_idct_dc_add_sse4(uint8_t *dst, DCTELEM block[16],
-                                    ptrdiff_t stride);
-extern void ff_vp8_idct_dc_add4y_mmx(uint8_t *dst, DCTELEM block[4][16],
-                                      ptrdiff_t stride);
-extern void ff_vp8_idct_dc_add4y_sse2(uint8_t *dst, DCTELEM block[4][16],
-                                      ptrdiff_t stride);
-extern void ff_vp8_idct_dc_add4uv_mmx(uint8_t *dst, DCTELEM block[2][16],
-                                      ptrdiff_t stride);
+extern void ff_vp8_idct_dc_add_mmx(uint8_t* dst, DCTELEM block[16],
+	ptrdiff_t stride);
+extern void ff_vp8_idct_dc_add_sse4(uint8_t* dst, DCTELEM block[16],
+	ptrdiff_t stride);
+extern void ff_vp8_idct_dc_add4y_mmx(uint8_t* dst, DCTELEM block[4][16],
+	ptrdiff_t stride);
+extern void ff_vp8_idct_dc_add4y_sse2(uint8_t* dst, DCTELEM block[4][16],
+	ptrdiff_t stride);
+extern void ff_vp8_idct_dc_add4uv_mmx(uint8_t* dst, DCTELEM block[2][16],
+	ptrdiff_t stride);
 extern void ff_vp8_luma_dc_wht_mmx(DCTELEM block[4][4][16], DCTELEM dc[16]);
 extern void ff_vp8_luma_dc_wht_sse(DCTELEM block[4][4][16], DCTELEM dc[16]);
-extern void ff_vp8_idct_add_mmx(uint8_t *dst, DCTELEM block[16],
-                                ptrdiff_t stride);
-extern void ff_vp8_idct_add_sse(uint8_t *dst, DCTELEM block[16],
-                                ptrdiff_t stride);
+extern void ff_vp8_idct_add_mmx(uint8_t* dst, DCTELEM block[16],
+	ptrdiff_t stride);
+extern void ff_vp8_idct_add_sse(uint8_t* dst, DCTELEM block[16],
+	ptrdiff_t stride);
 
 #define DECLARE_LOOP_FILTER(NAME)\
 extern void ff_vp8_v_loop_filter_simple_ ## NAME(uint8_t *dst, \
@@ -313,129 +312,130 @@ DECLARE_LOOP_FILTER(sse4)
     c->put_vp8_bilinear_pixels_tab[IDX][2][1] = ff_put_vp8_bilinear ## SIZE ## _hv_ ## OPT; \
     c->put_vp8_bilinear_pixels_tab[IDX][2][2] = ff_put_vp8_bilinear ## SIZE ## _hv_ ## OPT
 
+av_cold
 
-av_cold void ff_vp8dsp_init_x86(VP8DSPContext* c)
+void ff_vp8dsp_init_x86(VP8DSPContext* c)
 {
 #if HAVE_YASM
-    int mm_flags = av_get_cpu_flags();
+	int mm_flags = av_get_cpu_flags();
 
-    if (mm_flags & AV_CPU_FLAG_MMX) {
-        c->vp8_idct_dc_add    = ff_vp8_idct_dc_add_mmx;
-        c->vp8_idct_dc_add4uv = ff_vp8_idct_dc_add4uv_mmx;
+	if (mm_flags & AV_CPU_FLAG_MMX) {
+		c->vp8_idct_dc_add = ff_vp8_idct_dc_add_mmx;
+		c->vp8_idct_dc_add4uv = ff_vp8_idct_dc_add4uv_mmx;
 #if ARCH_X86_32
-        c->vp8_idct_dc_add4y  = ff_vp8_idct_dc_add4y_mmx;
-        c->vp8_idct_add       = ff_vp8_idct_add_mmx;
-        c->vp8_luma_dc_wht    = ff_vp8_luma_dc_wht_mmx;
-        c->put_vp8_epel_pixels_tab[0][0][0]     =
-        c->put_vp8_bilinear_pixels_tab[0][0][0] = ff_put_vp8_pixels16_mmx;
+		c->vp8_idct_dc_add4y = ff_vp8_idct_dc_add4y_mmx;
+		c->vp8_idct_add = ff_vp8_idct_add_mmx;
+		c->vp8_luma_dc_wht = ff_vp8_luma_dc_wht_mmx;
+		c->put_vp8_epel_pixels_tab[0][0][0] =
+			c->put_vp8_bilinear_pixels_tab[0][0][0] = ff_put_vp8_pixels16_mmx;
 #endif
-        c->put_vp8_epel_pixels_tab[1][0][0]     =
-        c->put_vp8_bilinear_pixels_tab[1][0][0] = ff_put_vp8_pixels8_mmx;
+		c->put_vp8_epel_pixels_tab[1][0][0] =
+			c->put_vp8_bilinear_pixels_tab[1][0][0] = ff_put_vp8_pixels8_mmx;
 
 #if ARCH_X86_32
-        c->vp8_v_loop_filter_simple = ff_vp8_v_loop_filter_simple_mmx;
-        c->vp8_h_loop_filter_simple = ff_vp8_h_loop_filter_simple_mmx;
+		c->vp8_v_loop_filter_simple = ff_vp8_v_loop_filter_simple_mmx;
+		c->vp8_h_loop_filter_simple = ff_vp8_h_loop_filter_simple_mmx;
 
-        c->vp8_v_loop_filter16y_inner = ff_vp8_v_loop_filter16y_inner_mmx;
-        c->vp8_h_loop_filter16y_inner = ff_vp8_h_loop_filter16y_inner_mmx;
-        c->vp8_v_loop_filter8uv_inner = ff_vp8_v_loop_filter8uv_inner_mmx;
-        c->vp8_h_loop_filter8uv_inner = ff_vp8_h_loop_filter8uv_inner_mmx;
+		c->vp8_v_loop_filter16y_inner = ff_vp8_v_loop_filter16y_inner_mmx;
+		c->vp8_h_loop_filter16y_inner = ff_vp8_h_loop_filter16y_inner_mmx;
+		c->vp8_v_loop_filter8uv_inner = ff_vp8_v_loop_filter8uv_inner_mmx;
+		c->vp8_h_loop_filter8uv_inner = ff_vp8_h_loop_filter8uv_inner_mmx;
 
-        c->vp8_v_loop_filter16y       = ff_vp8_v_loop_filter16y_mbedge_mmx;
-        c->vp8_h_loop_filter16y       = ff_vp8_h_loop_filter16y_mbedge_mmx;
-        c->vp8_v_loop_filter8uv       = ff_vp8_v_loop_filter8uv_mbedge_mmx;
-        c->vp8_h_loop_filter8uv       = ff_vp8_h_loop_filter8uv_mbedge_mmx;
+		c->vp8_v_loop_filter16y = ff_vp8_v_loop_filter16y_mbedge_mmx;
+		c->vp8_h_loop_filter16y = ff_vp8_h_loop_filter16y_mbedge_mmx;
+		c->vp8_v_loop_filter8uv = ff_vp8_v_loop_filter8uv_mbedge_mmx;
+		c->vp8_h_loop_filter8uv = ff_vp8_h_loop_filter8uv_mbedge_mmx;
 #endif
-    }
+	}
 
-    /* note that 4-tap width=16 functions are missing because w=16
-     * is only used for luma, and luma is always a copy or sixtap. */
-    if (mm_flags & AV_CPU_FLAG_MMX2) {
-        VP8_MC_FUNC(2, 4, mmx2);
-        VP8_BILINEAR_MC_FUNC(2, 4, mmx2);
+	/* note that 4-tap width=16 functions are missing because w=16
+	 * is only used for luma, and luma is always a copy or sixtap. */
+	if (mm_flags & AV_CPU_FLAG_MMX2) {
+		VP8_MC_FUNC(2, 4, mmx2);
+		VP8_BILINEAR_MC_FUNC(2, 4, mmx2);
 #if ARCH_X86_32
-        VP8_LUMA_MC_FUNC(0, 16, mmx2);
-        VP8_MC_FUNC(1, 8, mmx2);
-        VP8_BILINEAR_MC_FUNC(0, 16, mmx2);
-        VP8_BILINEAR_MC_FUNC(1, 8, mmx2);
+		VP8_LUMA_MC_FUNC(0, 16, mmx2);
+		VP8_MC_FUNC(1, 8, mmx2);
+		VP8_BILINEAR_MC_FUNC(0, 16, mmx2);
+		VP8_BILINEAR_MC_FUNC(1, 8, mmx2);
 
-        c->vp8_v_loop_filter_simple = ff_vp8_v_loop_filter_simple_mmx2;
-        c->vp8_h_loop_filter_simple = ff_vp8_h_loop_filter_simple_mmx2;
+		c->vp8_v_loop_filter_simple = ff_vp8_v_loop_filter_simple_mmx2;
+		c->vp8_h_loop_filter_simple = ff_vp8_h_loop_filter_simple_mmx2;
 
-        c->vp8_v_loop_filter16y_inner = ff_vp8_v_loop_filter16y_inner_mmx2;
-        c->vp8_h_loop_filter16y_inner = ff_vp8_h_loop_filter16y_inner_mmx2;
-        c->vp8_v_loop_filter8uv_inner = ff_vp8_v_loop_filter8uv_inner_mmx2;
-        c->vp8_h_loop_filter8uv_inner = ff_vp8_h_loop_filter8uv_inner_mmx2;
+		c->vp8_v_loop_filter16y_inner = ff_vp8_v_loop_filter16y_inner_mmx2;
+		c->vp8_h_loop_filter16y_inner = ff_vp8_h_loop_filter16y_inner_mmx2;
+		c->vp8_v_loop_filter8uv_inner = ff_vp8_v_loop_filter8uv_inner_mmx2;
+		c->vp8_h_loop_filter8uv_inner = ff_vp8_h_loop_filter8uv_inner_mmx2;
 
-        c->vp8_v_loop_filter16y       = ff_vp8_v_loop_filter16y_mbedge_mmx2;
-        c->vp8_h_loop_filter16y       = ff_vp8_h_loop_filter16y_mbedge_mmx2;
-        c->vp8_v_loop_filter8uv       = ff_vp8_v_loop_filter8uv_mbedge_mmx2;
-        c->vp8_h_loop_filter8uv       = ff_vp8_h_loop_filter8uv_mbedge_mmx2;
+		c->vp8_v_loop_filter16y = ff_vp8_v_loop_filter16y_mbedge_mmx2;
+		c->vp8_h_loop_filter16y = ff_vp8_h_loop_filter16y_mbedge_mmx2;
+		c->vp8_v_loop_filter8uv = ff_vp8_v_loop_filter8uv_mbedge_mmx2;
+		c->vp8_h_loop_filter8uv = ff_vp8_h_loop_filter8uv_mbedge_mmx2;
 #endif
-    }
+	}
 
-    if (mm_flags & AV_CPU_FLAG_SSE) {
-        c->vp8_idct_add                         = ff_vp8_idct_add_sse;
-        c->vp8_luma_dc_wht                      = ff_vp8_luma_dc_wht_sse;
-        c->put_vp8_epel_pixels_tab[0][0][0]     =
-        c->put_vp8_bilinear_pixels_tab[0][0][0] = ff_put_vp8_pixels16_sse;
-    }
+	if (mm_flags & AV_CPU_FLAG_SSE) {
+		c->vp8_idct_add = ff_vp8_idct_add_sse;
+		c->vp8_luma_dc_wht = ff_vp8_luma_dc_wht_sse;
+		c->put_vp8_epel_pixels_tab[0][0][0] =
+			c->put_vp8_bilinear_pixels_tab[0][0][0] = ff_put_vp8_pixels16_sse;
+	}
 
-    if (mm_flags & (AV_CPU_FLAG_SSE2|AV_CPU_FLAG_SSE2SLOW)) {
-        VP8_LUMA_MC_FUNC(0, 16, sse2);
-        VP8_MC_FUNC(1, 8, sse2);
-        VP8_BILINEAR_MC_FUNC(0, 16, sse2);
-        VP8_BILINEAR_MC_FUNC(1, 8, sse2);
+	if (mm_flags & (AV_CPU_FLAG_SSE2 | AV_CPU_FLAG_SSE2SLOW)) {
+		VP8_LUMA_MC_FUNC(0, 16, sse2);
+		VP8_MC_FUNC(1, 8, sse2);
+		VP8_BILINEAR_MC_FUNC(0, 16, sse2);
+		VP8_BILINEAR_MC_FUNC(1, 8, sse2);
 
-        c->vp8_v_loop_filter_simple = ff_vp8_v_loop_filter_simple_sse2;
+		c->vp8_v_loop_filter_simple = ff_vp8_v_loop_filter_simple_sse2;
 
-        c->vp8_v_loop_filter16y_inner = ff_vp8_v_loop_filter16y_inner_sse2;
-        c->vp8_v_loop_filter8uv_inner = ff_vp8_v_loop_filter8uv_inner_sse2;
+		c->vp8_v_loop_filter16y_inner = ff_vp8_v_loop_filter16y_inner_sse2;
+		c->vp8_v_loop_filter8uv_inner = ff_vp8_v_loop_filter8uv_inner_sse2;
 
-        c->vp8_v_loop_filter16y       = ff_vp8_v_loop_filter16y_mbedge_sse2;
-        c->vp8_v_loop_filter8uv       = ff_vp8_v_loop_filter8uv_mbedge_sse2;
-    }
+		c->vp8_v_loop_filter16y = ff_vp8_v_loop_filter16y_mbedge_sse2;
+		c->vp8_v_loop_filter8uv = ff_vp8_v_loop_filter8uv_mbedge_sse2;
+	}
 
-    if (mm_flags & AV_CPU_FLAG_SSE2) {
-        c->vp8_idct_dc_add4y          = ff_vp8_idct_dc_add4y_sse2;
+	if (mm_flags & AV_CPU_FLAG_SSE2) {
+		c->vp8_idct_dc_add4y = ff_vp8_idct_dc_add4y_sse2;
 
-        c->vp8_h_loop_filter_simple = ff_vp8_h_loop_filter_simple_sse2;
+		c->vp8_h_loop_filter_simple = ff_vp8_h_loop_filter_simple_sse2;
 
-        c->vp8_h_loop_filter16y_inner = ff_vp8_h_loop_filter16y_inner_sse2;
-        c->vp8_h_loop_filter8uv_inner = ff_vp8_h_loop_filter8uv_inner_sse2;
+		c->vp8_h_loop_filter16y_inner = ff_vp8_h_loop_filter16y_inner_sse2;
+		c->vp8_h_loop_filter8uv_inner = ff_vp8_h_loop_filter8uv_inner_sse2;
 
-        c->vp8_h_loop_filter16y       = ff_vp8_h_loop_filter16y_mbedge_sse2;
-        c->vp8_h_loop_filter8uv       = ff_vp8_h_loop_filter8uv_mbedge_sse2;
-    }
+		c->vp8_h_loop_filter16y = ff_vp8_h_loop_filter16y_mbedge_sse2;
+		c->vp8_h_loop_filter8uv = ff_vp8_h_loop_filter8uv_mbedge_sse2;
+	}
 
-    if (mm_flags & AV_CPU_FLAG_SSSE3) {
-        VP8_LUMA_MC_FUNC(0, 16, ssse3);
-        VP8_MC_FUNC(1, 8, ssse3);
-        VP8_MC_FUNC(2, 4, ssse3);
-        VP8_BILINEAR_MC_FUNC(0, 16, ssse3);
-        VP8_BILINEAR_MC_FUNC(1, 8, ssse3);
-        VP8_BILINEAR_MC_FUNC(2, 4, ssse3);
+	if (mm_flags & AV_CPU_FLAG_SSSE3) {
+		VP8_LUMA_MC_FUNC(0, 16, ssse3);
+		VP8_MC_FUNC(1, 8, ssse3);
+		VP8_MC_FUNC(2, 4, ssse3);
+		VP8_BILINEAR_MC_FUNC(0, 16, ssse3);
+		VP8_BILINEAR_MC_FUNC(1, 8, ssse3);
+		VP8_BILINEAR_MC_FUNC(2, 4, ssse3);
 
-        c->vp8_v_loop_filter_simple = ff_vp8_v_loop_filter_simple_ssse3;
-        c->vp8_h_loop_filter_simple = ff_vp8_h_loop_filter_simple_ssse3;
+		c->vp8_v_loop_filter_simple = ff_vp8_v_loop_filter_simple_ssse3;
+		c->vp8_h_loop_filter_simple = ff_vp8_h_loop_filter_simple_ssse3;
 
-        c->vp8_v_loop_filter16y_inner = ff_vp8_v_loop_filter16y_inner_ssse3;
-        c->vp8_h_loop_filter16y_inner = ff_vp8_h_loop_filter16y_inner_ssse3;
-        c->vp8_v_loop_filter8uv_inner = ff_vp8_v_loop_filter8uv_inner_ssse3;
-        c->vp8_h_loop_filter8uv_inner = ff_vp8_h_loop_filter8uv_inner_ssse3;
+		c->vp8_v_loop_filter16y_inner = ff_vp8_v_loop_filter16y_inner_ssse3;
+		c->vp8_h_loop_filter16y_inner = ff_vp8_h_loop_filter16y_inner_ssse3;
+		c->vp8_v_loop_filter8uv_inner = ff_vp8_v_loop_filter8uv_inner_ssse3;
+		c->vp8_h_loop_filter8uv_inner = ff_vp8_h_loop_filter8uv_inner_ssse3;
 
-        c->vp8_v_loop_filter16y       = ff_vp8_v_loop_filter16y_mbedge_ssse3;
-        c->vp8_h_loop_filter16y       = ff_vp8_h_loop_filter16y_mbedge_ssse3;
-        c->vp8_v_loop_filter8uv       = ff_vp8_v_loop_filter8uv_mbedge_ssse3;
-        c->vp8_h_loop_filter8uv       = ff_vp8_h_loop_filter8uv_mbedge_ssse3;
-    }
+		c->vp8_v_loop_filter16y = ff_vp8_v_loop_filter16y_mbedge_ssse3;
+		c->vp8_h_loop_filter16y = ff_vp8_h_loop_filter16y_mbedge_ssse3;
+		c->vp8_v_loop_filter8uv = ff_vp8_v_loop_filter8uv_mbedge_ssse3;
+		c->vp8_h_loop_filter8uv = ff_vp8_h_loop_filter8uv_mbedge_ssse3;
+	}
 
-    if (mm_flags & AV_CPU_FLAG_SSE4) {
-        c->vp8_idct_dc_add                  = ff_vp8_idct_dc_add_sse4;
+	if (mm_flags & AV_CPU_FLAG_SSE4) {
+		c->vp8_idct_dc_add = ff_vp8_idct_dc_add_sse4;
 
-        c->vp8_h_loop_filter_simple   = ff_vp8_h_loop_filter_simple_sse4;
-        c->vp8_h_loop_filter16y       = ff_vp8_h_loop_filter16y_mbedge_sse4;
-        c->vp8_h_loop_filter8uv       = ff_vp8_h_loop_filter8uv_mbedge_sse4;
-    }
+		c->vp8_h_loop_filter_simple = ff_vp8_h_loop_filter_simple_sse4;
+		c->vp8_h_loop_filter16y = ff_vp8_h_loop_filter16y_mbedge_sse4;
+		c->vp8_h_loop_filter8uv = ff_vp8_h_loop_filter8uv_mbedge_sse4;
+	}
 #endif
 }

@@ -33,87 +33,87 @@
 #include "rtp.h"
 
 static int
-rtp_streaming_read (int fd, char *buffer,
-                    int size, streaming_ctrl_t *streaming_ctrl)
+rtp_streaming_read(int fd, char* buffer,
+                   int size, streaming_ctrl_t* streaming_ctrl)
 {
-  return read_rtp_from_server (fd, buffer, size);
+	return read_rtp_from_server(fd, buffer, size);
 }
 
 static int
-rtp_streaming_start (stream_t *stream)
+rtp_streaming_start(stream_t* stream)
 {
-  streaming_ctrl_t *streaming_ctrl;
-  int fd;
+	streaming_ctrl_t* streaming_ctrl;
+	int fd;
 
-  if (!stream)
-    return -1;
+	if (!stream)
+		return -1;
 
-  streaming_ctrl = stream->streaming_ctrl;
-  fd = stream->fd;
+	streaming_ctrl = stream->streaming_ctrl;
+	fd = stream->fd;
 
-  if (fd < 0)
-  {
-    fd = udp_open_socket (streaming_ctrl->url);
-    if (fd < 0)
-      return -1;
-    stream->fd = fd;
-  }
+	if (fd < 0)
+	{
+		fd = udp_open_socket(streaming_ctrl->url);
+		if (fd < 0)
+			return -1;
+		stream->fd = fd;
+	}
 
-  streaming_ctrl->streaming_read = rtp_streaming_read;
-  streaming_ctrl->streaming_seek = nop_streaming_seek;
-  streaming_ctrl->prebuffer_size = 64 * 1024; /* 64 KBytes */
-  streaming_ctrl->buffering = 0;
-  streaming_ctrl->status = streaming_playing_e;
+	streaming_ctrl->streaming_read = rtp_streaming_read;
+	streaming_ctrl->streaming_seek = nop_streaming_seek;
+	streaming_ctrl->prebuffer_size = 64 * 1024; /* 64 KBytes */
+	streaming_ctrl->buffering = 0;
+	streaming_ctrl->status = streaming_playing_e;
 
-  return 0;
+	return 0;
 }
 
 static int
-rtp_stream_open (stream_t *stream, int mode, void *opts, int *file_format)
+rtp_stream_open(stream_t* stream, int mode, void* opts, int* file_format)
 {
-  URL_t *url;
+	URL_t* url;
 
-  mp_msg (MSGT_OPEN, MSGL_INFO, "STREAM_RTP, URL: %s\n", stream->url);
-  stream->streaming_ctrl = streaming_ctrl_new ();
-  if (!stream->streaming_ctrl)
-    return STREAM_ERROR;
+	mp_msg(MSGT_OPEN, MSGL_INFO, "STREAM_RTP, URL: %s\n", stream->url);
+	stream->streaming_ctrl = streaming_ctrl_new();
+	if (!stream->streaming_ctrl)
+		return STREAM_ERROR;
 
-  stream->streaming_ctrl->bandwidth = network_bandwidth;
-  url = url_new (stream->url);
-  stream->streaming_ctrl->url = check4proxies (url);
+	stream->streaming_ctrl->bandwidth = network_bandwidth;
+	url = url_new(stream->url);
+	stream->streaming_ctrl->url = check4proxies(url);
 
-  if (url->port == 0)
-  {
-    mp_msg (MSGT_NETWORK, MSGL_ERR,
-            "You must enter a port number for RTP streams!\n");
-    streaming_ctrl_free (stream->streaming_ctrl);
-    stream->streaming_ctrl = NULL;
+	if (url->port == 0)
+	{
+		mp_msg(MSGT_NETWORK, MSGL_ERR,
+		       "You must enter a port number for RTP streams!\n");
+		streaming_ctrl_free(stream->streaming_ctrl);
+		stream->streaming_ctrl = NULL;
 
-    return STREAM_UNSUPPORTED;
-  }
+		return STREAM_UNSUPPORTED;
+	}
 
-  if (rtp_streaming_start (stream) < 0)
-  {
-    mp_msg (MSGT_NETWORK, MSGL_ERR, "rtp_streaming_start failed\n");
-    streaming_ctrl_free (stream->streaming_ctrl);
-    stream->streaming_ctrl = NULL;
+	if (rtp_streaming_start(stream) < 0)
+	{
+		mp_msg(MSGT_NETWORK, MSGL_ERR, "rtp_streaming_start failed\n");
+		streaming_ctrl_free(stream->streaming_ctrl);
+		stream->streaming_ctrl = NULL;
 
-    return STREAM_UNSUPPORTED;
-  }
+		return STREAM_UNSUPPORTED;
+	}
 
-  stream->type = STREAMTYPE_STREAM;
-  fixup_network_stream_cache (stream);
+	stream->type = STREAMTYPE_STREAM;
+	fixup_network_stream_cache(stream);
 
-  return STREAM_OK;
+	return STREAM_OK;
 }
 
 const stream_info_t stream_info_rtp = {
-  "MPEG over RTP streaming",
-  "rtp",
-  "Dave Chapman, Benjamin Zores",
-  "native rtp support",
-  rtp_stream_open,
-  { "rtp", NULL},
-  NULL,
-  0 // Urls are an option string
+	"MPEG over RTP streaming",
+	"rtp",
+	"Dave Chapman, Benjamin Zores",
+	"native rtp support",
+	rtp_stream_open,
+	{"rtp", NULL},
+	NULL,
+	0 // Urls are an option string
 };

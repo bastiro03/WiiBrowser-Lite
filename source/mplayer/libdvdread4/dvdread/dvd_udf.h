@@ -46,15 +46,15 @@ extern "C" {
  * '/VIDEO_TS/VTS_01_1.IFO'.  On success, filesize will be set to the size of
  * the file in bytes.
  */
-uint32_t UDFFindFile( dvd_reader_t *device, char *filename, uint32_t *size );
+uint32_t UDFFindFile(dvd_reader_t* device, char* filename, uint32_t* size);
 
-void FreeUDFCache(void *cache);
-int UDFGetVolumeIdentifier(dvd_reader_t *device,
-                           char *volid, unsigned int volid_size);
-int UDFGetVolumeSetIdentifier(dvd_reader_t *device,
-                              uint8_t *volsetid, unsigned int volsetid_size);
-void *GetUDFCacheHandle(dvd_reader_t *device);
-void SetUDFCacheHandle(dvd_reader_t *device, void *cache);
+void FreeUDFCache(void* cache);
+int UDFGetVolumeIdentifier(dvd_reader_t* device,
+                           char* volid, unsigned int volid_size);
+int UDFGetVolumeSetIdentifier(dvd_reader_t* device,
+                              uint8_t* volsetid, unsigned int volsetid_size);
+void* GetUDFCacheHandle(dvd_reader_t* device);
+void SetUDFCacheHandle(dvd_reader_t* device, void* cache);
 
 #ifdef __cplusplus
 };

@@ -25,12 +25,13 @@
 #include "libavutil/attributes.h"
 
 #define FASTDIV FASTDIV
-static inline av_const int FASTDIV(int a, int b)
+
+static inline av_const int FASTDIV (int a, int b)
 {
-    int r;
-    __asm__ ("mulhwu  %0, %1, %2"
-             : "=r"(r) : "r"(a), "r"(ff_inverse[b]));
-    return r;
+	int r;
+	__asm__("mulhwu  %0, %1, %2"
+		: "=r"(r): "r"(a), "r"(ff_inverse[b]));
+	return r;
 }
 
 #endif /* AVUTIL_PPC_INTMATH_H */

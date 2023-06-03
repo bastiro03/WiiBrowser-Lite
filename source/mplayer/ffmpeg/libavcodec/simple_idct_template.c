@@ -85,89 +85,95 @@
 
 #endif
 
-static inline void FUNC(idctRowCondDC)(DCTELEM *row, int extra_shift)
+static inline void FUNC(idctRowCondDC)(DCTELEM* row, int extra_shift)
 {
-    int a0, a1, a2, a3, b0, b1, b2, b3;
+	int a0, a1, a2, a3, b0, b1, b2, b3;
 
 #if HAVE_FAST_64BIT
 #define ROW0_MASK (0xffffLL << 48 * HAVE_BIGENDIAN)
-    if (((((uint64_t *)row)[0] & ~ROW0_MASK) | ((uint64_t *)row)[1]) == 0) {
-        uint64_t temp;
-        if (DC_SHIFT - extra_shift > 0) {
-            temp = (row[0] << (DC_SHIFT - extra_shift)) & 0xffff;
-        } else {
-            temp = (row[0] >> (extra_shift - DC_SHIFT)) & 0xffff;
-        }
-        temp += temp << 16;
-        temp += temp << 32;
-        ((uint64_t *)row)[0] = temp;
-        ((uint64_t *)row)[1] = temp;
-        return;
-    }
+	if (((((uint64_t*)row)[0] & ~ROW0_MASK) | ((uint64_t*)row)[1]) == 0) {
+		uint64_t temp;
+		if (DC_SHIFT - extra_shift > 0) {
+			temp = (row[0] << (DC_SHIFT - extra_shift)) & 0xffff;
+		}
+		else {
+			temp = (row[0] >> (extra_shift - DC_SHIFT)) & 0xffff;
+		}
+		temp += temp << 16;
+		temp += temp << 32;
+		((uint64_t*)row)[0] = temp;
+		((uint64_t*)row)[1] = temp;
+		return;
+	}
 #else
-    if (!(((uint32_t*)row)[1] |
-          ((uint32_t*)row)[2] |
-          ((uint32_t*)row)[3] |
-          row[1])) {
-        uint32_t temp;
-        if (DC_SHIFT - extra_shift > 0) {
-            temp = (row[0] << (DC_SHIFT - extra_shift)) & 0xffff;
-        } else {
-            temp = (row[0] >> (extra_shift - DC_SHIFT)) & 0xffff;
-        }
-        temp += temp << 16;
-        ((uint32_t*)row)[0]=((uint32_t*)row)[1] =
-            ((uint32_t*)row)[2]=((uint32_t*)row)[3] = temp;
-        return;
-    }
+	if (!(((uint32_t*)row)[1] |
+		((uint32_t*)row)[2] |
+		((uint32_t*)row)[3] |
+		row[1]))
+	{
+		uint32_t temp;
+		if (DC_SHIFT - extra_shift > 0)
+		{
+			temp = (row[0] << (DC_SHIFT - extra_shift)) & 0xffff;
+		}
+		else
+		{
+			temp = (row[0] >> (extra_shift - DC_SHIFT)) & 0xffff;
+		}
+		temp += temp << 16;
+		((uint32_t*)row)[0] = ((uint32_t*)row)[1] =
+			((uint32_t*)row)[2] = ((uint32_t*)row)[3] = temp;
+		return;
+	}
 #endif
 
-    a0 = (W4 * row[0]) + (1 << (ROW_SHIFT - 1));
-    a1 = a0;
-    a2 = a0;
-    a3 = a0;
+	a0 = (W4 * row[0]) + (1 << (ROW_SHIFT - 1));
+	a1 = a0;
+	a2 = a0;
+	a3 = a0;
 
-    a0 += W2 * row[2];
-    a1 += W6 * row[2];
-    a2 -= W6 * row[2];
-    a3 -= W2 * row[2];
+	a0 += W2 * row[2];
+	a1 += W6 * row[2];
+	a2 -= W6 * row[2];
+	a3 -= W2 * row[2];
 
-    b0 = MUL(W1, row[1]);
-    MAC(b0, W3, row[3]);
-    b1 = MUL(W3, row[1]);
-    MAC(b1, -W7, row[3]);
-    b2 = MUL(W5, row[1]);
-    MAC(b2, -W1, row[3]);
-    b3 = MUL(W7, row[1]);
-    MAC(b3, -W5, row[3]);
+	b0 = MUL(W1, row[1]);
+	MAC(b0, W3, row[3]);
+	b1 = MUL(W3, row[1]);
+	MAC(b1, -W7, row[3]);
+	b2 = MUL(W5, row[1]);
+	MAC(b2, -W1, row[3]);
+	b3 = MUL(W7, row[1]);
+	MAC(b3, -W5, row[3]);
 
-    if (AV_RN64A(row + 4)) {
-        a0 +=   W4*row[4] + W6*row[6];
-        a1 += - W4*row[4] - W2*row[6];
-        a2 += - W4*row[4] + W2*row[6];
-        a3 +=   W4*row[4] - W6*row[6];
+	if (AV_RN64A(row + 4))
+	{
+		a0 += W4 * row[4] + W6 * row[6];
+		a1 += -W4 * row[4] - W2 * row[6];
+		a2 += -W4 * row[4] + W2 * row[6];
+		a3 += W4 * row[4] - W6 * row[6];
 
-        MAC(b0,  W5, row[5]);
-        MAC(b0,  W7, row[7]);
+		MAC(b0, W5, row[5]);
+		MAC(b0, W7, row[7]);
 
-        MAC(b1, -W1, row[5]);
-        MAC(b1, -W5, row[7]);
+		MAC(b1, -W1, row[5]);
+		MAC(b1, -W5, row[7]);
 
-        MAC(b2,  W7, row[5]);
-        MAC(b2,  W3, row[7]);
+		MAC(b2, W7, row[5]);
+		MAC(b2, W3, row[7]);
 
-        MAC(b3,  W3, row[5]);
-        MAC(b3, -W1, row[7]);
-    }
+		MAC(b3, W3, row[5]);
+		MAC(b3, -W1, row[7]);
+	}
 
-    row[0] = (a0 + b0) >> (ROW_SHIFT + extra_shift);
-    row[7] = (a0 - b0) >> (ROW_SHIFT + extra_shift);
-    row[1] = (a1 + b1) >> (ROW_SHIFT + extra_shift);
-    row[6] = (a1 - b1) >> (ROW_SHIFT + extra_shift);
-    row[2] = (a2 + b2) >> (ROW_SHIFT + extra_shift);
-    row[5] = (a2 - b2) >> (ROW_SHIFT + extra_shift);
-    row[3] = (a3 + b3) >> (ROW_SHIFT + extra_shift);
-    row[4] = (a3 - b3) >> (ROW_SHIFT + extra_shift);
+	row[0] = (a0 + b0) >> (ROW_SHIFT + extra_shift);
+	row[7] = (a0 - b0) >> (ROW_SHIFT + extra_shift);
+	row[1] = (a1 + b1) >> (ROW_SHIFT + extra_shift);
+	row[6] = (a1 - b1) >> (ROW_SHIFT + extra_shift);
+	row[2] = (a2 + b2) >> (ROW_SHIFT + extra_shift);
+	row[5] = (a2 - b2) >> (ROW_SHIFT + extra_shift);
+	row[3] = (a3 + b3) >> (ROW_SHIFT + extra_shift);
+	row[4] = (a3 - b3) >> (ROW_SHIFT + extra_shift);
 }
 
 #define IDCT_COLS do {                                  \
@@ -220,105 +226,105 @@ static inline void FUNC(idctRowCondDC)(DCTELEM *row, int extra_shift)
         }                                               \
     } while (0)
 
-static inline void FUNC(idctSparseColPut)(pixel *dest, int line_size,
-                                          DCTELEM *col)
+static inline void FUNC(idctSparseColPut)(pixel* dest, int line_size,
+                                          DCTELEM* col)
 {
-    int a0, a1, a2, a3, b0, b1, b2, b3;
+	int a0, a1, a2, a3, b0, b1, b2, b3;
 
-    IDCT_COLS;
+	IDCT_COLS;
 
-    dest[0] = av_clip_pixel((a0 + b0) >> COL_SHIFT);
-    dest += line_size;
-    dest[0] = av_clip_pixel((a1 + b1) >> COL_SHIFT);
-    dest += line_size;
-    dest[0] = av_clip_pixel((a2 + b2) >> COL_SHIFT);
-    dest += line_size;
-    dest[0] = av_clip_pixel((a3 + b3) >> COL_SHIFT);
-    dest += line_size;
-    dest[0] = av_clip_pixel((a3 - b3) >> COL_SHIFT);
-    dest += line_size;
-    dest[0] = av_clip_pixel((a2 - b2) >> COL_SHIFT);
-    dest += line_size;
-    dest[0] = av_clip_pixel((a1 - b1) >> COL_SHIFT);
-    dest += line_size;
-    dest[0] = av_clip_pixel((a0 - b0) >> COL_SHIFT);
+	dest[0] = av_clip_pixel((a0 + b0) >> COL_SHIFT);
+	dest += line_size;
+	dest[0] = av_clip_pixel((a1 + b1) >> COL_SHIFT);
+	dest += line_size;
+	dest[0] = av_clip_pixel((a2 + b2) >> COL_SHIFT);
+	dest += line_size;
+	dest[0] = av_clip_pixel((a3 + b3) >> COL_SHIFT);
+	dest += line_size;
+	dest[0] = av_clip_pixel((a3 - b3) >> COL_SHIFT);
+	dest += line_size;
+	dest[0] = av_clip_pixel((a2 - b2) >> COL_SHIFT);
+	dest += line_size;
+	dest[0] = av_clip_pixel((a1 - b1) >> COL_SHIFT);
+	dest += line_size;
+	dest[0] = av_clip_pixel((a0 - b0) >> COL_SHIFT);
 }
 
-static inline void FUNC(idctSparseColAdd)(pixel *dest, int line_size,
-                                          DCTELEM *col)
+static inline void FUNC(idctSparseColAdd)(pixel* dest, int line_size,
+                                          DCTELEM* col)
 {
-    int a0, a1, a2, a3, b0, b1, b2, b3;
+	int a0, a1, a2, a3, b0, b1, b2, b3;
 
-    IDCT_COLS;
+	IDCT_COLS;
 
-    dest[0] = av_clip_pixel(dest[0] + ((a0 + b0) >> COL_SHIFT));
-    dest += line_size;
-    dest[0] = av_clip_pixel(dest[0] + ((a1 + b1) >> COL_SHIFT));
-    dest += line_size;
-    dest[0] = av_clip_pixel(dest[0] + ((a2 + b2) >> COL_SHIFT));
-    dest += line_size;
-    dest[0] = av_clip_pixel(dest[0] + ((a3 + b3) >> COL_SHIFT));
-    dest += line_size;
-    dest[0] = av_clip_pixel(dest[0] + ((a3 - b3) >> COL_SHIFT));
-    dest += line_size;
-    dest[0] = av_clip_pixel(dest[0] + ((a2 - b2) >> COL_SHIFT));
-    dest += line_size;
-    dest[0] = av_clip_pixel(dest[0] + ((a1 - b1) >> COL_SHIFT));
-    dest += line_size;
-    dest[0] = av_clip_pixel(dest[0] + ((a0 - b0) >> COL_SHIFT));
+	dest[0] = av_clip_pixel(dest[0] + ((a0 + b0) >> COL_SHIFT));
+	dest += line_size;
+	dest[0] = av_clip_pixel(dest[0] + ((a1 + b1) >> COL_SHIFT));
+	dest += line_size;
+	dest[0] = av_clip_pixel(dest[0] + ((a2 + b2) >> COL_SHIFT));
+	dest += line_size;
+	dest[0] = av_clip_pixel(dest[0] + ((a3 + b3) >> COL_SHIFT));
+	dest += line_size;
+	dest[0] = av_clip_pixel(dest[0] + ((a3 - b3) >> COL_SHIFT));
+	dest += line_size;
+	dest[0] = av_clip_pixel(dest[0] + ((a2 - b2) >> COL_SHIFT));
+	dest += line_size;
+	dest[0] = av_clip_pixel(dest[0] + ((a1 - b1) >> COL_SHIFT));
+	dest += line_size;
+	dest[0] = av_clip_pixel(dest[0] + ((a0 - b0) >> COL_SHIFT));
 }
 
-static inline void FUNC(idctSparseCol)(DCTELEM *col)
+static inline void FUNC(idctSparseCol)(DCTELEM* col)
 {
-    int a0, a1, a2, a3, b0, b1, b2, b3;
+	int a0, a1, a2, a3, b0, b1, b2, b3;
 
-    IDCT_COLS;
+	IDCT_COLS;
 
-    col[0 ] = ((a0 + b0) >> COL_SHIFT);
-    col[8 ] = ((a1 + b1) >> COL_SHIFT);
-    col[16] = ((a2 + b2) >> COL_SHIFT);
-    col[24] = ((a3 + b3) >> COL_SHIFT);
-    col[32] = ((a3 - b3) >> COL_SHIFT);
-    col[40] = ((a2 - b2) >> COL_SHIFT);
-    col[48] = ((a1 - b1) >> COL_SHIFT);
-    col[56] = ((a0 - b0) >> COL_SHIFT);
+	col[0] = ((a0 + b0) >> COL_SHIFT);
+	col[8] = ((a1 + b1) >> COL_SHIFT);
+	col[16] = ((a2 + b2) >> COL_SHIFT);
+	col[24] = ((a3 + b3) >> COL_SHIFT);
+	col[32] = ((a3 - b3) >> COL_SHIFT);
+	col[40] = ((a2 - b2) >> COL_SHIFT);
+	col[48] = ((a1 - b1) >> COL_SHIFT);
+	col[56] = ((a0 - b0) >> COL_SHIFT);
 }
 
-void FUNC(ff_simple_idct_put)(uint8_t *dest_, int line_size, DCTELEM *block)
+void FUNC(ff_simple_idct_put)(uint8_t* dest_, int line_size, DCTELEM* block)
 {
-    pixel *dest = (pixel *)dest_;
-    int i;
+	pixel* dest = dest_;
+	int i;
 
-    line_size /= sizeof(pixel);
+	line_size /= sizeof(pixel);
 
-    for (i = 0; i < 8; i++)
-        FUNC(idctRowCondDC)(block + i*8, 0);
+	for (i = 0; i < 8; i++)
+		FUNC(idctRowCondDC)(block + i * 8, 0);
 
-    for (i = 0; i < 8; i++)
-        FUNC(idctSparseColPut)(dest + i, line_size, block + i);
+	for (i = 0; i < 8; i++)
+		FUNC(idctSparseColPut)(dest + i, line_size, block + i);
 }
 
-void FUNC(ff_simple_idct_add)(uint8_t *dest_, int line_size, DCTELEM *block)
+void FUNC(ff_simple_idct_add)(uint8_t* dest_, int line_size, DCTELEM* block)
 {
-    pixel *dest = (pixel *)dest_;
-    int i;
+	pixel* dest = dest_;
+	int i;
 
-    line_size /= sizeof(pixel);
+	line_size /= sizeof(pixel);
 
-    for (i = 0; i < 8; i++)
-        FUNC(idctRowCondDC)(block + i*8, 0);
+	for (i = 0; i < 8; i++)
+		FUNC(idctRowCondDC)(block + i * 8, 0);
 
-    for (i = 0; i < 8; i++)
-        FUNC(idctSparseColAdd)(dest + i, line_size, block + i);
+	for (i = 0; i < 8; i++)
+		FUNC(idctSparseColAdd)(dest + i, line_size, block + i);
 }
 
-void FUNC(ff_simple_idct)(DCTELEM *block)
+void FUNC(ff_simple_idct)(DCTELEM* block)
 {
-    int i;
+	int i;
 
-    for (i = 0; i < 8; i++)
-        FUNC(idctRowCondDC)(block + i*8, 0);
+	for (i = 0; i < 8; i++)
+		FUNC(idctRowCondDC)(block + i * 8, 0);
 
-    for (i = 0; i < 8; i++)
-        FUNC(idctSparseCol)(block + i);
+	for (i = 0; i < 8; i++)
+		FUNC(idctSparseCol)(block + i);
 }

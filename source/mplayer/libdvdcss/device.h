@@ -43,24 +43,24 @@
 #if ( defined( WIN32 ) && !defined( SYS_CYGWIN ) ) || defined ( GEKKO )
 struct iovec
 {
-    void *iov_base;     /* Pointer to data. */
-    size_t iov_len;     /* Length of data.  */
+	void* iov_base;     /* Pointer to data. */
+	size_t iov_len;     /* Length of data.  */
 };
 #endif
 
 /*****************************************************************************
  * Device reading prototypes
  *****************************************************************************/
-int  _dvdcss_use_ioctls ( dvdcss_t );
-void _dvdcss_check      ( dvdcss_t );
-int  _dvdcss_open       ( dvdcss_t );
-int  _dvdcss_close      ( dvdcss_t );
+int _dvdcss_use_ioctls(dvdcss_t);
+void _dvdcss_check(dvdcss_t);
+int _dvdcss_open(dvdcss_t);
+int _dvdcss_close(dvdcss_t);
 
 /*****************************************************************************
  * Device reading prototypes, raw-device specific
  *****************************************************************************/
 #if !defined(WIN32) && !defined(SYS_OS2)
-int _dvdcss_raw_open     ( dvdcss_t, char const * );
+int _dvdcss_raw_open(dvdcss_t, const char*);
 #endif
 
 #endif /* DVDCSS_DEVICE_H */

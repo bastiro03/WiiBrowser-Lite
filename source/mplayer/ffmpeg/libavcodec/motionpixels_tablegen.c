@@ -29,13 +29,13 @@
 
 int main(void)
 {
-    motionpixels_tableinit();
+	motionpixels_tableinit();
 
-    write_fileheader();
+	write_fileheader();
 
-    printf("static const YuvPixel mp_rgb_yuv_table[1 << 15] = {\n");
-    write_int8_t_2d_array(mp_rgb_yuv_table, 1 << 15, 3);
-    printf("};\n");
+	printf("static const YuvPixel mp_rgb_yuv_table[1 << 15] = {\n");
+	write_int8_t_2d_array(mp_rgb_yuv_table, 1 << 15, 3);
+	printf("};\n");
 
-    return 0;
+	return 0;
 }

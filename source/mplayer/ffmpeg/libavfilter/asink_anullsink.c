@@ -20,21 +20,23 @@
 
 #include "avfilter.h"
 
-static void null_filter_samples(AVFilterLink *link, AVFilterBufferRef *samplesref) { }
+static void null_filter_samples(AVFilterLink* link, AVFilterBufferRef* samplesref)
+{
+}
 
 AVFilter avfilter_asink_anullsink = {
-    .name        = "anullsink",
-    .description = NULL_IF_CONFIG_SMALL("Do absolutely nothing with the input audio."),
+	.name = "anullsink",
+	.description = NULL_IF_CONFIG_SMALL("Do absolutely nothing with the input audio."),
 
-    .priv_size = 0,
+	.priv_size = 0,
 
-    .inputs    = (const AVFilterPad[]) {
-        {
-            .name            = "default",
-            .type            = AVMEDIA_TYPE_AUDIO,
-            .filter_samples  = null_filter_samples,
-        },
-        { .name = NULL},
-    },
-    .outputs   = (const AVFilterPad[]) {{ .name = NULL }},
+	.inputs = (const AVFilterPad[]){
+		{
+			.name = "default",
+			.type = AVMEDIA_TYPE_AUDIO,
+			.filter_samples = null_filter_samples,
+		},
+		{.name = NULL},
+	},
+	.outputs = (const AVFilterPad[]){{.name = NULL}},
 };

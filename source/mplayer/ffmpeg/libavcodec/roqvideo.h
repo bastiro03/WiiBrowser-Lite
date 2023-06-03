@@ -27,51 +27,54 @@
 #include "bytestream.h"
 #include "dsputil.h"
 
-typedef struct {
-    unsigned char y[4];
-    unsigned char u, v;
+typedef struct
+{
+	unsigned char y[4];
+	unsigned char u, v;
 } roq_cell;
 
-typedef struct {
-    int idx[4];
+typedef struct
+{
+	int idx[4];
 } roq_qcell;
 
-typedef struct {
-    int d[2];
+typedef struct
+{
+	int d[2];
 } motion_vect;
 
 struct RoqTempData;
 
-typedef struct RoqContext {
+typedef struct RoqContext
+{
+	AVCodecContext* avctx;
+	DSPContext dsp;
+	AVFrame frames[2];
+	AVFrame* last_frame;
+	AVFrame* current_frame;
+	int first_frame;
 
-    AVCodecContext *avctx;
-    DSPContext dsp;
-    AVFrame frames[2];
-    AVFrame *last_frame;
-    AVFrame *current_frame;
-    int first_frame;
+	roq_cell cb2x2[256];
+	roq_qcell cb4x4[256];
 
-    roq_cell cb2x2[256];
-    roq_qcell cb4x4[256];
+	GetByteContext gb;
+	int width, height;
 
-    GetByteContext gb;
-    int width, height;
+	/* Encoder only data */
+	AVLFG randctx;
+	uint64_t lambda;
 
-    /* Encoder only data */
-    AVLFG randctx;
-    uint64_t lambda;
+	motion_vect* this_motion4;
+	motion_vect* last_motion4;
 
-    motion_vect *this_motion4;
-    motion_vect *last_motion4;
+	motion_vect* this_motion8;
+	motion_vect* last_motion8;
 
-    motion_vect *this_motion8;
-    motion_vect *last_motion8;
+	unsigned int framesSinceKeyframe;
 
-    unsigned int framesSinceKeyframe;
-
-    const AVFrame *frame_to_enc;
-    uint8_t *out_buf;
-    struct RoqTempData *tmpData;
+	const AVFrame* frame_to_enc;
+	uint8_t* out_buf;
+	struct RoqTempData* tmpData;
 } RoqContext;
 
 #define RoQ_INFO              0x1001
@@ -85,11 +88,11 @@ typedef struct RoqContext {
 #define RoQ_ID_SLD              0x02
 #define RoQ_ID_CCC              0x03
 
-void ff_apply_vector_2x2(RoqContext *ri, int x, int y, roq_cell *cell);
-void ff_apply_vector_4x4(RoqContext *ri, int x, int y, roq_cell *cell);
+void ff_apply_vector_2x2(RoqContext* ri, int x, int y, roq_cell* cell);
+void ff_apply_vector_4x4(RoqContext* ri, int x, int y, roq_cell* cell);
 
-void ff_apply_motion_4x4(RoqContext *ri, int x, int y, int deltax, int deltay);
+void ff_apply_motion_4x4(RoqContext* ri, int x, int y, int deltax, int deltay);
 
-void ff_apply_motion_8x8(RoqContext *ri, int x, int y, int deltax, int deltay);
+void ff_apply_motion_8x8(RoqContext* ri, int x, int y, int deltax, int deltay);
 
 #endif /* AVCODEC_ROQVIDEO_H */

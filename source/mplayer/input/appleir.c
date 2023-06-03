@@ -55,98 +55,96 @@
 #define APPLE_IR_PLAY             KEY_PLAYPAUSE
 #define APPLE_IR_BACKWARD         KEY_PREVIOUSSONG
 
-static const struct {
-  int linux_keycode;
-  int value;
-  int mp_keycode;
+static const struct
+{
+	int linux_keycode;
+	int value;
+	int mp_keycode;
 } apple_ir_mapping[] = {
-  { APPLE_IR_PLAY,              1,   AR_PLAY      },
-  { APPLE_IR_PLAY,              2,   AR_PLAY_HOLD },
-  { APPLE_IR_FORWARD,           1,   AR_NEXT      },
-  { APPLE_IR_FORWARD,           2,   AR_NEXT_HOLD },
-  { APPLE_IR_BACKWARD,          1,   AR_PREV      },
-  { APPLE_IR_BACKWARD,          2,   AR_PREV_HOLD },
-  { APPLE_IR_MENU,              1,   AR_MENU      },
-  { APPLE_IR_MENU,              2,   AR_MENU_HOLD },
-  { APPLE_IR_PLUS,              1,   AR_VUP       },
-  { APPLE_IR_MINUS,             1,   AR_VDOWN     },
-  { -1,                        -1,   -1           }
+	{APPLE_IR_PLAY, 1, AR_PLAY},
+	{APPLE_IR_PLAY, 2, AR_PLAY_HOLD},
+	{APPLE_IR_FORWARD, 1, AR_NEXT},
+	{APPLE_IR_FORWARD, 2, AR_NEXT_HOLD},
+	{APPLE_IR_BACKWARD, 1, AR_PREV},
+	{APPLE_IR_BACKWARD, 2, AR_PREV_HOLD},
+	{APPLE_IR_MENU, 1, AR_MENU},
+	{APPLE_IR_MENU, 2, AR_MENU_HOLD},
+	{APPLE_IR_PLUS, 1, AR_VUP},
+	{APPLE_IR_MINUS, 1, AR_VDOWN},
+	{-1, -1, -1}
 };
 
-int mp_input_appleir_init (char *dev)
+int mp_input_appleir_init(char* dev)
 {
-  int i, fd;
+	int i, fd;
 
-  if (dev)
-  {
-    mp_msg (MSGT_INPUT, MSGL_V, "Initializing Apple IR on %s\n", dev);
-    fd = open (dev, O_RDONLY | O_NONBLOCK);
-    if (fd < 0)
-    {
-      mp_msg (MSGT_INPUT, MSGL_ERR,
-              MSGTR_INPUT_APPLE_IR_CantOpen, strerror (errno));
-      return -1;
-    }
+	if (dev)
+	{
+		mp_msg(MSGT_INPUT, MSGL_V, "Initializing Apple IR on %s\n", dev);
+		fd = open(dev, O_RDONLY | O_NONBLOCK);
+		if (fd < 0)
+		{
+			mp_msg(MSGT_INPUT, MSGL_ERR,
+			       MSGTR_INPUT_APPLE_IR_CantOpen, strerror(errno));
+			return -1;
+		}
 
-    return fd;
-  }
-  else
-  {
-    /* look for a valid AppleIR device on system */
-    for (i = 0; i < EVDEV_MAX_EVENTS; i++)
-    {
-      struct input_id id;
-      char file[64];
+		return fd;
+	}
+	/* look for a valid AppleIR device on system */
+	for (i = 0; i < EVDEV_MAX_EVENTS; i++)
+	{
+		struct input_id id;
+		char file[64];
 
-      sprintf (file, "/dev/input/event%d", i);
-      fd = open (file, O_RDONLY | O_NONBLOCK);
-      if (fd < 0)
-        continue;
+		sprintf(file, "/dev/input/event%d", i);
+		fd = open(file, O_RDONLY | O_NONBLOCK);
+		if (fd < 0)
+			continue;
 
-      ioctl (fd, EVIOCGID, &id);
-      if (id.bustype == BUS_USB &&
-          id.vendor  == USB_VENDOR_APPLE &&
-          (id.product == USB_DEV_APPLE_IR ||id.product == USB_DEV_APPLE_IR_2))
-      {
-        mp_msg (MSGT_INPUT, MSGL_V, "Detected Apple IR on %s\n", file);
-        return fd;
-      }
-      close (fd);
-    }
+		ioctl(fd, EVIOCGID, &id);
+		if (id.bustype == BUS_USB &&
+			id.vendor == USB_VENDOR_APPLE &&
+			(id.product == USB_DEV_APPLE_IR || id.product == USB_DEV_APPLE_IR_2))
+		{
+			mp_msg(MSGT_INPUT, MSGL_V, "Detected Apple IR on %s\n", file);
+			return fd;
+		}
+		close(fd);
+	}
 
-    mp_msg (MSGT_INPUT, MSGL_ERR,
-            MSGTR_INPUT_APPLE_IR_CantOpen, strerror (errno));
-  }
+	mp_msg(MSGT_INPUT, MSGL_ERR,
+	       MSGTR_INPUT_APPLE_IR_CantOpen, strerror(errno));
 
-  return -1;
+	return -1;
 }
 
-int mp_input_appleir_read (int fd)
+int mp_input_appleir_read(int fd)
 {
-  struct input_event ev;
-  int i, r;
+	struct input_event ev;
+	int i, r;
 
-  r = read (fd, &ev, sizeof (struct input_event));
-  if (r <= 0 || r < sizeof (struct input_event))
-    return MP_INPUT_NOTHING;
+	r = read(fd, &ev, sizeof(struct input_event));
+	if (r <= 0 || r < sizeof(struct input_event))
+		return MP_INPUT_NOTHING;
 
-  /* check for key press only */
-  if (ev.type != EV_KEY)
-    return MP_INPUT_NOTHING;
+	/* check for key press only */
+	if (ev.type != EV_KEY)
+		return MP_INPUT_NOTHING;
 
-  /* EvDev Key values:
-   *  0: key release
-   *  1: key press
-   *  2: key auto-repeat
-   */
-  if (ev.value == 0)
-    return MP_INPUT_NOTHING;
+	/* EvDev Key values:
+	 *  0: key release
+	 *  1: key press
+	 *  2: key auto-repeat
+	 */
+	if (ev.value == 0)
+		return MP_INPUT_NOTHING;
 
-  /* find Linux evdev -> MPlayer keycode mapping */
-  for (i = 0; apple_ir_mapping[i].linux_keycode != -1; i++)
-    if (apple_ir_mapping[i].linux_keycode == ev.code &&
-        apple_ir_mapping[i].value == ev.value)
-      return apple_ir_mapping[i].mp_keycode;
+	/* find Linux evdev -> MPlayer keycode mapping */
+	for (i = 0; apple_ir_mapping[i].linux_keycode != -1; i++)
+		if (apple_ir_mapping[i].linux_keycode == ev.code &&
+			apple_ir_mapping[i].value == ev.value)
+			return apple_ir_mapping[i].mp_keycode;
 
-  return MP_INPUT_NOTHING;
+	return MP_INPUT_NOTHING;
 }

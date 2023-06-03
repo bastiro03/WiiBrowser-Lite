@@ -130,43 +130,43 @@ static int f;
 
 static int mga_init(void)
 {
-    f = open("/dev/mga_vid", O_RDWR);
-    if (f == -1) {
-        fprintf(stderr, "Couldn't open /dev/mga_vid.\n");
-        return -1;
-    }
+	f = open("/dev/mga_vid", O_RDWR);
+	if (f == -1) {
+		fprintf(stderr, "Couldn't open /dev/mga_vid.\n");
+		return -1;
+	}
 
-    mga_vid_config.num_frames = 1;
-    mga_vid_config.frame_size = ARR_SIZE;
-    mga_vid_config.format     = MGA_VID_FORMAT_YUY2;
+	mga_vid_config.num_frames = 1;
+	mga_vid_config.frame_size = ARR_SIZE;
+	mga_vid_config.format = MGA_VID_FORMAT_YUY2;
 
-    mga_vid_config.colkey_on   =   0;
-    mga_vid_config.src_width   = 640;
-    mga_vid_config.src_height  = 480;
-    mga_vid_config.dest_width  = 320;
-    mga_vid_config.dest_height = 200;
-    mga_vid_config.x_org       =   0;
-    mga_vid_config.y_org       =   0;
+	mga_vid_config.colkey_on = 0;
+	mga_vid_config.src_width = 640;
+	mga_vid_config.src_height = 480;
+	mga_vid_config.dest_width = 320;
+	mga_vid_config.dest_height = 200;
+	mga_vid_config.x_org = 0;
+	mga_vid_config.y_org = 0;
 
-    mga_vid_config.version     = MGA_VID_VERSION;
-    if (ioctl(f, MGA_VID_CONFIG, &mga_vid_config)) {
-        perror("Error in mga_vid_config ioctl()");
-        printf("Your mga_vid driver version is incompatible with this MPlayer version!\n");
-        exit(1);
-    }
-    ioctl(f, MGA_VID_ON, 0);
+	mga_vid_config.version = MGA_VID_VERSION;
+	if (ioctl(f, MGA_VID_CONFIG, &mga_vid_config)) {
+		perror("Error in mga_vid_config ioctl()");
+		printf("Your mga_vid driver version is incompatible with this MPlayer version!\n");
+		exit(1);
+	}
+	ioctl(f, MGA_VID_ON, 0);
 
-    frame = (char*)mmap(0, mga_vid_config.frame_size*mga_vid_config.num_frames,
-                        PROT_WRITE,MAP_SHARED, f, 0);
-    if (!frame) {
-        printf("Can't mmap MGA frame.\n");
-        exit(1);
-    }
+	frame = (char*)mmap(0, mga_vid_config.frame_size * mga_vid_config.num_frames,
+		PROT_WRITE, MAP_SHARED, f, 0);
+	if (!frame) {
+		printf("Can't mmap MGA frame.\n");
+		exit(1);
+	}
 
-    //clear the buffer
-    //memset(frames[0], 0x80, mga_vid_config.frame_size*mga_vid_config.num_frames);
+	//clear the buffer
+	//memset(frames[0], 0x80, mga_vid_config.frame_size*mga_vid_config.num_frames);
 
-    return 0;
+	return 0;
 }
 
 #endif
@@ -174,39 +174,45 @@ static int mga_init(void)
 // Returns current time in microseconds
 static unsigned int GetTimer(void)
 {
-    struct timeval tv;
-    struct timezone tz;
-    //float s;
-    gettimeofday(&tv, &tz);
-    //s = tv.tv_usec; s *= 0.000001; s += tv.tv_sec;
-    return tv.tv_sec * 1000000 + tv.tv_usec;
+	struct timeval tv;
+	struct timezone tz;
+	//float s;
+	gettimeofday(&tv, &tz);
+	//s = tv.tv_usec; s *= 0.000001; s += tv.tv_sec;
+	return tv.tv_sec * 1000000 + tv.tv_usec;
 }
 
 static inline unsigned long long int read_tsc(void)
 {
-    unsigned long long int retval;
-    __asm__ volatile ("rdtsc":"=A" (retval)::"memory");
-    return retval;
+	unsigned long long int retval;
+	volatile __asm__ (
+	"rdtsc"
+	:
+	"=A"(retval)
+	::
+	"memory"
+	)
+	return retval;
 }
 
 unsigned char __attribute__((aligned(4096)))arr1[ARR_SIZE], arr2[ARR_SIZE];
 
 int main(void)
 {
-    unsigned long long int v1, v2;
-    unsigned char *marr1, *marr2;
-    int i;
-    unsigned int t;
+	unsigned long long int v1, v2;
+	unsigned char *marr1, *marr2;
+	int i;
+	unsigned int t;
 #ifdef CONFIG_MGA
-    mga_init();
-    marr1 = &frame[3];
+	mga_init();
+	marr1 = &frame[3];
 #else
-    marr1 = &arr1[0];
+	marr1 = &arr1[0];
 #endif
-    marr2 = &arr2[0];
+	marr2 = &arr2[0];
 
-    for (i = 0; i < ARR_SIZE - 16; i++)
-        marr1[i] = marr2[i] = i;
+	for (i = 0; i < ARR_SIZE - 16; i++)
+		marr1[i] = marr2[i] = i;
 
 #define testblock(func, name)                                                \
     t  = GetTimer();                                                         \
@@ -219,23 +225,23 @@ int main(void)
     printf(name "CPU clocks=%llu = %dus  (%5.3ffps)  %5.1fMB/s\n", v2-v1, t, \
            100000000.0f / (float)t, (float)ARR_SIZE*95.36743f / (float)t);
 
-    testblock(memcpy, "libc:   ");
+	testblock(memcpy, "libc:   ");
 
 #if HAVE_MMX
-    testblock(fast_memcpy_MMX, "MMX:    ");
+	testblock(fast_memcpy_MMX, "MMX:    ");
 #endif
 
 #if HAVE_AMD3DNOW
-    testblock(fast_memcpy_3DNow, "3DNow!: ");
+	testblock(fast_memcpy_3DNow, "3DNow!: ");
 #endif
 
 #if HAVE_MMX2
-    testblock(fast_memcpy_MMX2, "MMX2:   ");
+	testblock(fast_memcpy_MMX2, "MMX2:   ");
 #endif
 
 #if HAVE_SSE
-    testblock(fast_memcpy_SSE, "SSE:    ");
+	testblock(fast_memcpy_SSE, "SSE:    ");
 #endif
 
-    return 0;
+	return 0;
 }

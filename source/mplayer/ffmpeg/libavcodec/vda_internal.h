@@ -32,8 +32,8 @@
  */
 
 /** Send frame data to the hardware decoder. */
-int ff_vda_decoder_decode(struct vda_context *vda_ctx,
-                          uint8_t *bitstream,
+int ff_vda_decoder_decode(struct vda_context* vda_ctx,
+                          uint8_t* bitstream,
                           int bitstream_size,
                           int64_t frame_pts);
 

@@ -111,7 +111,6 @@
 #define SISCOL2IDX  SISPART5
 #define SISCOL2DATA SISPART5 + 1
 
-
 #define vc_index_offset    0x00	/* Video capture - unused */
 #define vc_data_offset     0x01
 #define vi_index_offset    VIDEOOFFSET
@@ -324,7 +323,6 @@
 
 #define  Index_VI_Control_Misc3			0x74
 
-
 /* TW: Bits (and helpers) for Index_VI_Control_Misc0 */
 #define  VI_Misc0_Enable_Overlay		0x02
 #define  VI_Misc0_420_Plane_Enable		0x04	/* Select Plane or Packed mode */
@@ -393,7 +391,6 @@
 #define VIN_FIELD_EVEN                             1
 #define VIN_FIELD_ODD                              2
 #define VIN_FIELD_BOTH                             4
-
 
 /* i2c registers (TW; not on 300/310/325 series) */
 #define X_INDEXREG      0x14

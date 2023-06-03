@@ -33,85 +33,84 @@
 #include <inttypes.h>
 #include "xbuffer.h"
 
-
-typedef struct {
-  uint32_t size;
-  uint32_t chunk_size;
+typedef struct
+{
+	uint32_t size;
+	uint32_t chunk_size;
 } xbuffer_header_t;
 
 #define XBUFFER_HEADER_SIZE sizeof (xbuffer_header_t)
 
+void* xbuffer_init(int chunk_size)
+{
+	uint8_t* data = calloc(1, chunk_size + XBUFFER_HEADER_SIZE);
 
+	xbuffer_header_t* header = (xbuffer_header_t*)data;
 
-void *xbuffer_init(int chunk_size) {
-  uint8_t *data=calloc(1,chunk_size+XBUFFER_HEADER_SIZE);
+	header->size = chunk_size;
+	header->chunk_size = chunk_size;
 
-  xbuffer_header_t *header=(xbuffer_header_t*)data;
-
-  header->size=chunk_size;
-  header->chunk_size=chunk_size;
-
-  return data+XBUFFER_HEADER_SIZE;
+	return data + XBUFFER_HEADER_SIZE;
 }
 
+void* xbuffer_free(void* buf)
+{
+	if (!buf)
+	{
+		return NULL;
+	}
 
+	free(((uint8_t*)buf) - XBUFFER_HEADER_SIZE);
 
-void *xbuffer_free(void *buf) {
-  if (!buf) {
-    return NULL;
-  }
-
-  free(((uint8_t*)buf)-XBUFFER_HEADER_SIZE);
-
-  return NULL;
+	return NULL;
 }
 
+void* xbuffer_copyin(void* buf, int index, const void* data, int len)
+{
+	if (!buf || !data)
+	{
+		return NULL;
+	}
 
+	buf = xbuffer_ensure_size(buf, index + len);
+	memcpy(((uint8_t*)buf) + index, data, len);
 
-void *xbuffer_copyin(void *buf, int index, const void *data, int len) {
-    if (!buf || !data) {
-    return NULL;
-  }
-
-  buf = xbuffer_ensure_size(buf, index+len);
-  memcpy(((uint8_t*)buf)+index, data, len);
-
-  return buf;
+	return buf;
 }
 
+void* xbuffer_ensure_size(void* buf, int size)
+{
+	xbuffer_header_t* xbuf;
+	int new_size;
 
+	if (!buf)
+	{
+		return 0;
+	}
 
-void *xbuffer_ensure_size(void *buf, int size) {
-  xbuffer_header_t *xbuf;
-  int new_size;
+	xbuf = ((xbuffer_header_t*)(((uint8_t*)buf) - XBUFFER_HEADER_SIZE));
 
-  if (!buf) {
-    return 0;
-  }
+	if (xbuf->size < size)
+	{
+		new_size = size + xbuf->chunk_size - (size % xbuf->chunk_size);
+		xbuf->size = new_size;
+		buf = ((uint8_t*)realloc(((uint8_t*)buf) - XBUFFER_HEADER_SIZE,
+		                         new_size + XBUFFER_HEADER_SIZE)) + XBUFFER_HEADER_SIZE;
+	}
 
-  xbuf = ((xbuffer_header_t*)(((uint8_t*)buf)-XBUFFER_HEADER_SIZE));
-
-  if (xbuf->size < size) {
-    new_size = size + xbuf->chunk_size - (size % xbuf->chunk_size);
-    xbuf->size = new_size;
-    buf = ((uint8_t*)realloc(((uint8_t*)buf)-XBUFFER_HEADER_SIZE,
-          new_size+XBUFFER_HEADER_SIZE)) + XBUFFER_HEADER_SIZE;
-  }
-
-  return buf;
+	return buf;
 }
 
+void* xbuffer_strcat(void* buf, char* data)
+{
+	if (!buf || !data)
+	{
+		return NULL;
+	}
 
+	buf = xbuffer_ensure_size(buf, strlen(buf) + strlen(data) + 1);
 
-void *xbuffer_strcat(void *buf, char *data) {
+	strcat(buf, data);
 
-  if (!buf || !data) {
-    return NULL;
-  }
-
-  buf = xbuffer_ensure_size(buf, strlen(buf)+strlen(data)+1);
-
-  strcat(buf, data);
-
-  return buf;
+	return buf;
 }

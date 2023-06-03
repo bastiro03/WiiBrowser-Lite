@@ -21,19 +21,19 @@
  */
 
 /*
-    Accessing hardware from userspace as USER (no root needed!)
+	Accessing hardware from userspace as USER (no root needed!)
 
-    Tested on 2.2.x (2.2.19) and 2.4.x (2.4.3,2.4.17).
+	Tested on 2.2.x (2.2.19) and 2.4.x (2.4.3,2.4.17).
 
-    WARNING! THIS MODULE VIOLATES SEVERAL SECURITY LINES! DON'T USE IT
-    ON PRODUCTION SYSTEMS, ONLY AT HOME, ON A "SINGLE-USER" SYSTEM.
-    NO WARRANTY!
+	WARNING! THIS MODULE VIOLATES SEVERAL SECURITY LINES! DON'T USE IT
+	ON PRODUCTION SYSTEMS, ONLY AT HOME, ON A "SINGLE-USER" SYSTEM.
+	NO WARRANTY!
 
-    Tech:
+	Tech:
 	Communication between userspace and kernelspace goes over character
 	device using ioctl.
 
-    Usage:
+	Usage:
 	mknod -m 666 /dev/dhahelper c 180 0
 
 	Also you can change the major number, setting the "dhahelper_major"
@@ -41,7 +41,7 @@
 
 	Note: do not use other than minor==0, the module forbids it.
 
-    TODO:
+	TODO:
 	* do memory mapping without fops:mmap
 	* implement unmap memory
 	* select (request?) a "valid" major number (from Linux project? ;)
@@ -115,229 +115,228 @@ MODULE_PARM_DESC(dhahelper_verbosity, "Level of verbosity (0 = silent, 1 = only 
 
 static dhahelper_memory_t last_mem_request;
 
-
-static int dhahelper_open(struct inode *inode, struct file *file)
+static int dhahelper_open(struct inode* inode, struct file* file)
 {
-    if (dhahelper_verbosity > 1)
-	printk(KERN_DEBUG "dhahelper: device opened\n");
+	if (dhahelper_verbosity > 1)
+		printk(KERN_DEBUG "dhahelper: device opened\n");
 
-    if (MINOR(inode->i_rdev) != 0)
-	return -ENXIO;
+	if (MINOR(inode->i_rdev) != 0)
+		return -ENXIO;
 
-    MOD_INC_USE_COUNT;
+	MOD_INC_USE_COUNT;
 
-    return 0;
+	return 0;
 }
 
-static int dhahelper_release(struct inode *inode, struct file *file)
+static int dhahelper_release(struct inode* inode, struct file* file)
 {
-    if (dhahelper_verbosity > 1)
-	printk(KERN_DEBUG "dhahelper: device released\n");
+	if (dhahelper_verbosity > 1)
+		printk(KERN_DEBUG "dhahelper: device released\n");
 
-    if (MINOR(inode->i_rdev) != 0)
-	return -ENXIO;
+	if (MINOR(inode->i_rdev) != 0)
+		return -ENXIO;
 
-    MOD_DEC_USE_COUNT;
+	MOD_DEC_USE_COUNT;
 
-    return 0;
+	return 0;
 }
 
-static int dhahelper_ioctl(struct inode *inode, struct file *file,
-    unsigned int cmd, unsigned long arg)
+static int dhahelper_ioctl(struct inode* inode, struct file* file,
+                           unsigned int cmd, unsigned long arg)
 {
-    if (dhahelper_verbosity > 1)
-	printk(KERN_DEBUG "dhahelper: ioctl(cmd=%x, arg=%lx)\n",
-	    cmd, arg);
+	if (dhahelper_verbosity > 1)
+		printk(KERN_DEBUG "dhahelper: ioctl(cmd=%x, arg=%lx)\n",
+		       cmd, arg);
 
-    if (MINOR(inode->i_rdev) != 0)
-	return -ENXIO;
+	if (MINOR(inode->i_rdev) != 0)
+		return -ENXIO;
 
-    switch(cmd)
-    {
+	switch (cmd)
+	{
 	case DHAHELPER_GET_VERSION:
-	{
-	    int version = API_VERSION;
+		{
+			int version = API_VERSION;
 
-	    if (copy_to_user((int *)arg, &version, sizeof(int)))
-	    {
-		if (dhahelper_verbosity > 0)
-		    printk(KERN_ERR "dhahelper: failed copy to userspace\n");
-		return -EFAULT;
-	    }
+			if (copy_to_user((int*)arg, &version, sizeof(int)))
+			{
+				if (dhahelper_verbosity > 0)
+					printk(KERN_ERR "dhahelper: failed copy to userspace\n");
+				return -EFAULT;
+			}
 
-	    break;
-	}
+			break;
+		}
 	case DHAHELPER_PORT:
-	{
-	    dhahelper_port_t port;
-
-	    if (copy_from_user(&port, (dhahelper_port_t *)arg, sizeof(dhahelper_port_t)))
-	    {
-		if (dhahelper_verbosity > 0)
-		    printk(KERN_ERR "dhahelper: failed copy from userspace\n");
-		return -EFAULT;
-	    }
-
-	    switch(port.operation)
-	    {
-		case PORT_OP_READ:
 		{
-		    switch(port.size)
-		    {
-			case 1:
-			    port.value = inb(port.addr);
-			    break;
-			case 2:
-			    port.value = inw(port.addr);
-			    break;
-			case 4:
-			    port.value = inl(port.addr);
-			    break;
-			default:
-			    if (dhahelper_verbosity > 0)
-				printk(KERN_ERR "dhahelper: invalid port read size (%d)\n",
-				    port.size);
-			    return -EINVAL;
-		    }
-		    break;
-		}
-		case PORT_OP_WRITE:
-		{
-		    switch(port.size)
-		    {
-			case 1:
-			    outb(port.value, port.addr);
-			    break;
-			case 2:
-			    outw(port.value, port.addr);
-			    break;
-			case 4:
-			    outl(port.value, port.addr);
-			    break;
-			default:
-			    if (dhahelper_verbosity > 0)
-				printk(KERN_ERR "dhahelper: invalid port write size (%d)\n",
-				    port.size);
-			    return -EINVAL;
-		    }
-		    break;
-		}
-		default:
-		    if (dhahelper_verbosity > 0)
-		        printk(KERN_ERR "dhahelper: invalid port operation (%d)\n",
-		    	    port.operation);
-		    return -EINVAL;
-	    }
+			dhahelper_port_t port;
 
-	    /* copy back only if read was performed */
-	    if (port.operation == PORT_OP_READ)
-	    if (copy_to_user((dhahelper_port_t *)arg, &port, sizeof(dhahelper_port_t)))
-	    {
-		if (dhahelper_verbosity > 0)
-		    printk(KERN_ERR "dhahelper: failed copy to userspace\n");
-		return -EFAULT;
-	    }
+			if (copy_from_user(&port, (dhahelper_port_t*)arg, sizeof(dhahelper_port_t)))
+			{
+				if (dhahelper_verbosity > 0)
+					printk(KERN_ERR "dhahelper: failed copy from userspace\n");
+				return -EFAULT;
+			}
 
-	    break;
-	}
+			switch (port.operation)
+			{
+			case PORT_OP_READ:
+				{
+					switch (port.size)
+					{
+					case 1:
+						port.value = inb(port.addr);
+						break;
+					case 2:
+						port.value = inw(port.addr);
+						break;
+					case 4:
+						port.value = inl(port.addr);
+						break;
+					default:
+						if (dhahelper_verbosity > 0)
+							printk(KERN_ERR "dhahelper: invalid port read size (%d)\n",
+							       port.size);
+						return -EINVAL;
+					}
+					break;
+				}
+			case PORT_OP_WRITE:
+				{
+					switch (port.size)
+					{
+					case 1:
+						outb(port.value, port.addr);
+						break;
+					case 2:
+						outw(port.value, port.addr);
+						break;
+					case 4:
+						outl(port.value, port.addr);
+						break;
+					default:
+						if (dhahelper_verbosity > 0)
+							printk(KERN_ERR "dhahelper: invalid port write size (%d)\n",
+							       port.size);
+						return -EINVAL;
+					}
+					break;
+				}
+			default:
+				if (dhahelper_verbosity > 0)
+					printk(KERN_ERR "dhahelper: invalid port operation (%d)\n",
+					       port.operation);
+				return -EINVAL;
+			}
+
+			/* copy back only if read was performed */
+			if (port.operation == PORT_OP_READ)
+				if (copy_to_user((dhahelper_port_t*)arg, &port, sizeof(dhahelper_port_t)))
+				{
+					if (dhahelper_verbosity > 0)
+						printk(KERN_ERR "dhahelper: failed copy to userspace\n");
+					return -EFAULT;
+				}
+
+			break;
+		}
 	case DHAHELPER_MEMORY:
-	{
-	    dhahelper_memory_t mem;
-
-	    if (copy_from_user(&mem, (dhahelper_memory_t *)arg, sizeof(dhahelper_memory_t)))
-	    {
-		if (dhahelper_verbosity > 0)
-		    printk(KERN_ERR "dhahelper: failed copy from userspace\n");
-		return -EFAULT;
-	    }
-
-	    switch(mem.operation)
-	    {
-		case MEMORY_OP_MAP:
 		{
+			dhahelper_memory_t mem;
+
+			if (copy_from_user(&mem, (dhahelper_memory_t*)arg, sizeof(dhahelper_memory_t)))
+			{
+				if (dhahelper_verbosity > 0)
+					printk(KERN_ERR "dhahelper: failed copy from userspace\n");
+				return -EFAULT;
+			}
+
+			switch (mem.operation)
+			{
+			case MEMORY_OP_MAP:
+				{
 #if 1
-		    memcpy(&last_mem_request, &mem, sizeof(dhahelper_memory_t));
+					memcpy(&last_mem_request, &mem, sizeof(dhahelper_memory_t));
 #else
-		    mem.ret = do_mmap(file, mem.start, mem.size, PROT_READ|PROT_WRITE,
-			MAP_SHARED, mem.offset);
+			mem.ret = do_mmap(file, mem.start, mem.size, PROT_READ | PROT_WRITE,
+				MAP_SHARED, mem.offset);
 #endif
 
-		    break;
+					break;
+				}
+			case MEMORY_OP_UNMAP:
+				break;
+			default:
+				if (dhahelper_verbosity > 0)
+					printk(KERN_ERR "dhahelper: invalid memory operation (%d)\n",
+					       mem.operation);
+				return -EINVAL;
+			}
+
+			if (copy_to_user((dhahelper_memory_t*)arg, &mem, sizeof(dhahelper_memory_t)))
+			{
+				if (dhahelper_verbosity > 0)
+					printk(KERN_ERR "dhahelper: failed copy to userspace\n");
+				return -EFAULT;
+			}
+
+			break;
 		}
-		case MEMORY_OP_UNMAP:
-		    break;
-		default:
-		    if (dhahelper_verbosity > 0)
-			printk(KERN_ERR "dhahelper: invalid memory operation (%d)\n",
-			    mem.operation);
-		    return -EINVAL;
-	    }
-
-	    if (copy_to_user((dhahelper_memory_t *)arg, &mem, sizeof(dhahelper_memory_t)))
-	    {
-		if (dhahelper_verbosity > 0)
-		    printk(KERN_ERR "dhahelper: failed copy to userspace\n");
-		return -EFAULT;
-	    }
-
-	    break;
-	}
 	default:
-    	    if (dhahelper_verbosity > 0)
-		printk(KERN_ERR "dhahelper: invalid ioctl (%x)\n", cmd);
-	    return -EINVAL;
-    }
+		if (dhahelper_verbosity > 0)
+			printk(KERN_ERR "dhahelper: invalid ioctl (%x)\n", cmd);
+		return -EINVAL;
+	}
 
-    return 0;
+	return 0;
 }
 
-static int dhahelper_mmap(struct file *file, struct vm_area_struct *vma)
+static int dhahelper_mmap(struct file* file, struct vm_area_struct* vma)
 {
-    if (last_mem_request.operation != MEMORY_OP_MAP)
-    {
-	if (dhahelper_verbosity > 0)
-	    printk(KERN_ERR "dhahelper: mapping not requested before mmap\n");
-	return -EFAULT;
-    }
+	if (last_mem_request.operation != MEMORY_OP_MAP)
+	{
+		if (dhahelper_verbosity > 0)
+			printk(KERN_ERR "dhahelper: mapping not requested before mmap\n");
+		return -EFAULT;
+	}
 
-    if (dhahelper_verbosity > 1)
-	printk(KERN_INFO "dhahelper: mapping %x (size: %x)\n",
-	    last_mem_request.start+last_mem_request.offset, last_mem_request.size);
+	if (dhahelper_verbosity > 1)
+		printk(KERN_INFO "dhahelper: mapping %x (size: %x)\n",
+		       last_mem_request.start + last_mem_request.offset, last_mem_request.size);
 
-    if (remap_page_range(0, last_mem_request.start + last_mem_request.offset,
-	last_mem_request.size, vma->vm_page_prot))
-    {
-	if (dhahelper_verbosity > 0)
-	    printk(KERN_ERR "dhahelper: error mapping memory\n");
-	return -EFAULT;
-    }
+	if (remap_page_range(0, last_mem_request.start + last_mem_request.offset,
+	                     last_mem_request.size, vma->vm_page_prot))
+	{
+		if (dhahelper_verbosity > 0)
+			printk(KERN_ERR "dhahelper: error mapping memory\n");
+		return -EFAULT;
+	}
 
-    return 0;
+	return 0;
 }
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,4,0)
 static struct file_operations dhahelper_fops =
 {
-    /*llseek*/	NULL,
-    /*read*/	NULL,
-    /*write*/	NULL,
-    /*readdir*/	NULL,
-    /*poll*/	NULL,
-    /*ioctl*/	dhahelper_ioctl,
-    /*mmap*/	dhahelper_mmap,
-    /*open*/	dhahelper_open,
-    /*flush*/	NULL,
-    /*release*/	dhahelper_release,
-    /* zero out the last 5 entries too ? */
+	/*llseek*/	NULL,
+	/*read*/	NULL,
+	/*write*/	NULL,
+	/*readdir*/	NULL,
+	/*poll*/	NULL,
+	/*ioctl*/	dhahelper_ioctl,
+	/*mmap*/	dhahelper_mmap,
+	/*open*/	dhahelper_open,
+	/*flush*/	NULL,
+	/*release*/	dhahelper_release,
+	/* zero out the last 5 entries too ? */
 };
 #else
 static struct file_operations dhahelper_fops =
 {
-    owner:	THIS_MODULE,
-    ioctl:	dhahelper_ioctl,
-    mmap:	dhahelper_mmap,
-    open:	dhahelper_open,
-    release:	dhahelper_release
+	owner:	THIS_MODULE,
+	ioctl: dhahelper_ioctl,
+	mmap: dhahelper_mmap,
+	open: dhahelper_open,
+	release: dhahelper_release
 };
 #endif
 
@@ -347,17 +346,17 @@ int init_module(void)
 static int __init init_dhahelper(void)
 #endif
 {
-    printk(KERN_INFO "Direct Hardware Access kernel helper (C) Alex Beregszaszi\n");
+	printk(KERN_INFO "Direct Hardware Access kernel helper (C) Alex Beregszaszi\n");
 
-    if(register_chrdev(dhahelper_major, "dhahelper", &dhahelper_fops))
-    {
-    	if (dhahelper_verbosity > 0)
-	    printk(KERN_ERR "dhahelper: unable to register character device (major: %d)\n",
-		dhahelper_major);
-	return -EIO;
-    }
+	if (register_chrdev(dhahelper_major, "dhahelper", &dhahelper_fops))
+	{
+		if (dhahelper_verbosity > 0)
+			printk(KERN_ERR "dhahelper: unable to register character device (major: %d)\n",
+			       dhahelper_major);
+		return -EIO;
+	}
 
-    return 0;
+	return 0;
 }
 
 #if KERNEL_VERSION < KERNEL_VERSION(2,4,0)
@@ -366,7 +365,7 @@ void cleanup_module(void)
 static void __exit exit_dhahelper(void)
 #endif
 {
-    unregister_chrdev(dhahelper_major, "dhahelper");
+	unregister_chrdev(dhahelper_major, "dhahelper");
 }
 
 EXPORT_NO_SYMBOLS;

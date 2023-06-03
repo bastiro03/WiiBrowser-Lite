@@ -22,7 +22,7 @@
 #include "m_config.h"
 #include "m_option.h"
 
-extern m_config_t *gui_conf;
+extern m_config_t* gui_conf;
 
 extern int gtkCacheOn;
 extern int gtkCacheSize;
@@ -30,7 +30,7 @@ extern int gtkCacheSize;
 extern int gtkVfPP;
 extern int gtkVfLAVC;
 
-extern char *gtkDXR3Device;
+extern char* gtkDXR3Device;
 
 extern int gtkAutoSyncOn;
 extern int gtkAutoSync;
@@ -40,35 +40,36 @@ extern int gtkAOSurround;
 extern int gtkAOExtraStereo;
 extern float gtkAOExtraStereoMul;
 
-extern char *gtkAOALSAMixer;
-extern char *gtkAOALSAMixerChannel;
-extern char *gtkAOALSADevice;
+extern char* gtkAOALSAMixer;
+extern char* gtkAOALSAMixerChannel;
+extern char* gtkAOALSADevice;
 
-extern char *gtkAOOSSMixer;
-extern char *gtkAOOSSMixerChannel;
-extern char *gtkAOOSSDevice;
+extern char* gtkAOOSSMixer;
+extern char* gtkAOOSSMixerChannel;
+extern char* gtkAOOSSDevice;
 
-extern char *gtkAOESDDevice;
+extern char* gtkAOESDDevice;
 
-extern char *gtkAOSDLDriver;
+extern char* gtkAOSDLDriver;
 
 extern int gtkEnableAudioEqualizer;
-extern char *gtkEquChannel1;
-extern char *gtkEquChannel2;
-extern char *gtkEquChannel3;
-extern char *gtkEquChannel4;
-extern char *gtkEquChannel5;
-extern char *gtkEquChannel6;
+extern char* gtkEquChannel1;
+extern char* gtkEquChannel2;
+extern char* gtkEquChannel3;
+extern char* gtkEquChannel4;
+extern char* gtkEquChannel5;
+extern char* gtkEquChannel6;
 extern float gtkEquChannels[6][10];
 
 extern int gtkSubDumpMPSub;
 extern int gtkSubDumpSrt;
 
-typedef struct {
-    int enabled;
-    int use_margins;
-    int top_margin;
-    int bottom_margin;
+typedef struct
+{
+	int enabled;
+	int use_margins;
+	int top_margin;
+	int bottom_margin;
 } gtkASS_t;
 
 extern gtkASS_t gtkASS;
@@ -85,11 +86,11 @@ extern int gui_video_pos_y;
 
 extern int guiWinID;
 
-extern char *skinName;
+extern char* skinName;
 
-extern char *fsHistory[5];
+extern char* fsHistory[5];
 
-int cfg_gui_include(m_option_t *conf, const char *filename);
+int cfg_gui_include(m_option_t* conf, const char* filename);
 void cfg_read(void);
 void cfg_write(void);
 

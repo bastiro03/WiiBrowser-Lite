@@ -30,83 +30,86 @@
 #include "gui/interface.h"
 #include "widgets.h"
 
-int             uiVideoRender = 0;
-int             videoVisible = 0;
+int uiVideoRender = 0;
+int videoVisible = 0;
 
-void uiVideoDraw( void )
+void uiVideoDraw(void)
 {
- if ( guiApp.videoWindow.State == wsWindowClosed ) mplayer( MPLAYER_EXIT_GUI, EXIT_QUIT, 0 );
+	if (guiApp.videoWindow.State == wsWindowClosed) mplayer(MPLAYER_EXIT_GUI, EXIT_QUIT, 0);
 
- if ( guiApp.videoWindow.State == wsWindowFocusIn ) videoVisible++;
- if ( guiApp.videoWindow.State == wsWindowFocusOut && metacity_hack != 3 ) videoVisible--;
+	if (guiApp.videoWindow.State == wsWindowFocusIn) videoVisible++;
+	if (guiApp.videoWindow.State == wsWindowFocusOut && metacity_hack != 3) videoVisible--;
 
- if ( !guiApp.videoWindow.Mapped ||
-      guiApp.videoWindow.Visible == wsWindowNotVisible ) return;
+	if (!guiApp.videoWindow.Mapped ||
+		guiApp.videoWindow.Visible == wsWindowNotVisible)
+		return;
 
- if ( guiInfo.Playing ) uiVideoRender=0;
+	if (guiInfo.Playing) uiVideoRender = 0;
 
- if ( uiVideoRender && guiApp.videoWindow.State == wsWindowExpose )
-  {
-   if ( guiApp.video.Bitmap.Image ) wsPutImage( &guiApp.videoWindow );
-  }
- guiApp.videoWindow.State=0;
+	if (uiVideoRender && guiApp.videoWindow.State == wsWindowExpose)
+	{
+		if (guiApp.video.Bitmap.Image) wsPutImage(&guiApp.videoWindow);
+	}
+	guiApp.videoWindow.State = 0;
 }
 
-void uiVideoMouseHandle( int Button,int X,int Y,int RX,int RY )
+void uiVideoMouseHandle(int Button, int X, int Y, int RX, int RY)
 {
- static int mplVideoMoved = 0;
- static int msButton = 0;
+	static int mplVideoMoved = 0;
+	static int msButton = 0;
 
- uiPlaybarShow( Y );
+	uiPlaybarShow(Y);
 
- switch( Button )
-  {
-   case wsRRMouseButton:
-          gtkShow( ivShowPopUpMenu,NULL );
-          break;
-   case wsPMMouseButton:
-          gtkShow( ivHidePopUpMenu,NULL );
-          uiShowMenu( RX,RY );
-          msButton=wsPMMouseButton;
-          break;
-   case wsRMMouseButton:
-          uiHideMenu( RX,RY,1 );
-          msButton=0;
-          break;
-/* --- */
-   case wsPLMouseButton:
-          gtkShow( ivHidePopUpMenu,NULL );
-          sx=X; sy=Y;
-          msButton=wsPLMouseButton;
-          mplVideoMoved=0;
-          break;
-   case wsMoveMouse:
-          switch ( msButton )
-           {
-            case wsPLMouseButton:
-                   mplVideoMoved=1;
-                   if ( !guiApp.videoWindow.isFullScreen )
-                    {
-                     wsMoveWindow( &guiApp.videoWindow,True,RX - sx,RY - sy );
-                     guiApp.video.x = guiApp.videoWindow.X;
-                     guiApp.video.y = guiApp.videoWindow.Y;
-                     // NOTE TO MYSELF: dragging the title bar goes unnoticed?
-                    }
-                   break;
-            case wsPMMouseButton:
-                   uiMenuMouseHandle( RX,RY );
-                   break;
-	    default: uiPlaybarShow( Y ); break;
-           }
-          break;
-   case wsRLMouseButton:
-          if ( ( !mplVideoMoved )&&( guiApp.videoWindow.isFullScreen ) )
-           {
-            if( videoVisible++%2 ) wsRaiseWindowTop( wsDisplay,guiApp.mainWindow.WindowID );
-             else wsRaiseWindowTop( wsDisplay,guiApp.videoWindow.WindowID );
-	   }
-          msButton=0;
-          mplVideoMoved=0;
-          break;
-  }
+	switch (Button)
+	{
+	case wsRRMouseButton:
+		gtkShow(ivShowPopUpMenu, NULL);
+		break;
+	case wsPMMouseButton:
+		gtkShow(ivHidePopUpMenu, NULL);
+		uiShowMenu(RX, RY);
+		msButton = wsPMMouseButton;
+		break;
+	case wsRMMouseButton:
+		uiHideMenu(RX, RY, 1);
+		msButton = 0;
+		break;
+	/* --- */
+	case wsPLMouseButton:
+		gtkShow(ivHidePopUpMenu, NULL);
+		sx = X;
+		sy = Y;
+		msButton = wsPLMouseButton;
+		mplVideoMoved = 0;
+		break;
+	case wsMoveMouse:
+		switch (msButton)
+		{
+		case wsPLMouseButton:
+			mplVideoMoved = 1;
+			if (!guiApp.videoWindow.isFullScreen)
+			{
+				wsMoveWindow(&guiApp.videoWindow, True, RX - sx, RY - sy);
+				guiApp.video.x = guiApp.videoWindow.X;
+				guiApp.video.y = guiApp.videoWindow.Y;
+				// NOTE TO MYSELF: dragging the title bar goes unnoticed?
+			}
+			break;
+		case wsPMMouseButton:
+			uiMenuMouseHandle(RX, RY);
+			break;
+		default: uiPlaybarShow(Y);
+			break;
+		}
+		break;
+	case wsRLMouseButton:
+		if ((!mplVideoMoved) && (guiApp.videoWindow.isFullScreen))
+		{
+			if (videoVisible++ % 2) wsRaiseWindowTop(wsDisplay, guiApp.mainWindow.WindowID);
+			else wsRaiseWindowTop(wsDisplay, guiApp.videoWindow.WindowID);
+		}
+		msButton = 0;
+		mplVideoMoved = 0;
+		break;
+	}
 }

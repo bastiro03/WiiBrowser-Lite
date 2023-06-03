@@ -14,31 +14,34 @@
 extern "C" {
 #endif
 
-struct property_t {
-	char *name;
-	char *val;
+struct property_t
+{
+	char* name;
+	char* val;
 	int important;
 	int count;
-	struct property_t *next;
+	struct property_t* next;
 };
 
-struct selector_t {
-	char *element_name;
-	char *id;
-	char *e_class;
+struct selector_t
+{
+	char* element_name;
+	char* id;
+	char* e_class;
 	int pseudo_class;
 	int pseudo_element;
-	struct property_t *property;
-	struct selector_t *next;
+	struct property_t* property;
+	struct selector_t* next;
 };
 
-struct selector_list_t {
-	struct selector_t *selector;
-	struct selector_list_t *next;
+struct selector_list_t
+{
+	struct selector_t* selector;
+	struct selector_list_t* next;
 };
 
-struct selector_list_t* css_parse(const char *buffer, int buf_len);
-void free_rulesets(struct selector_list_t *rules);
+struct selector_list_t* css_parse(const char* buffer, int buf_len);
+void free_rulesets(struct selector_list_t* rules);
 
 #ifdef __cplusplus
 }

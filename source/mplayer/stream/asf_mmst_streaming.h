@@ -21,6 +21,6 @@
 
 #include "stream.h"
 
-int asf_mmst_streaming_start(stream_t *stream);
+int asf_mmst_streaming_start(stream_t* stream);
 
 #endif /* MPLAYER_ASF_MMST_STREAMING_H */

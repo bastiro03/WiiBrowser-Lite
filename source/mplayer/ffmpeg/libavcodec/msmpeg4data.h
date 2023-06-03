@@ -35,14 +35,15 @@
 #include "rl.h"
 
 /* motion vector table */
-typedef struct MVTable {
-    int n;
-    const uint16_t *table_mv_code;
-    const uint8_t *table_mv_bits;
-    const uint8_t *table_mvx;
-    const uint8_t *table_mvy;
-    uint16_t *table_mv_index; /* encoding: convert mv to index in table_mv */
-    VLC vlc;                /* decoding: vlc */
+typedef struct MVTable
+{
+	int n;
+	const uint16_t* table_mv_code;
+	const uint8_t* table_mv_bits;
+	const uint8_t* table_mvx;
+	const uint8_t* table_mvy;
+	uint16_t* table_mv_index; /* encoding: convert mv to index in table_mv */
+	VLC vlc; /* decoding: vlc */
 } MVTable;
 
 extern VLC ff_msmp4_mb_i_vlc;
@@ -74,7 +75,7 @@ extern const uint8_t ff_v2_mb_type[8][2];
 extern const uint8_t ff_v2_intra_cbpc[4][2];
 
 extern const uint32_t ff_table_mb_non_intra[128][2];
-extern const uint8_t  ff_table_inter_intra[4][2];
+extern const uint8_t ff_table_inter_intra[4][2];
 
 extern const uint32_t ff_table0_dc_lum[120][2];
 extern const uint32_t ff_table1_dc_lum[120][2];

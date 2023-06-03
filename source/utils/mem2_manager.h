@@ -15,7 +15,8 @@
 #undef DEBUG_MEM2_LEVEL  // to get info about used mem, it's an approximation because of memory fragmentation
 #undef DONT_USE_MEM2
 
-enum mem2_areas_enum {
+enum mem2_areas_enum
+{
 	MEM2_VIDEO,
 	MEM2_BROWSER,
 	MEM2_GUI,
@@ -58,21 +59,21 @@ extern "C" {
 #define mem2_strndup(a,b,c) _mem2_strndup(a,b,c,NULL,0)
 #endif
 
-bool AddMem2Area (u32 size, const int index);
-bool RemoveMem2Area(const int area);
-void ClearMem2Area (const int area);
+bool AddMem2Area(u32 size, int index);
+bool RemoveMem2Area(int area);
+void ClearMem2Area(int area);
 
-void* _mem2_memalign(u8 align, u32 size, const int area, const char *file, int line);
-void* _mem2_malloc(u32 size, const int area, const char *file, int line);
-void _mem2_free(void *ptr, const int area, const char *file, int line);
-void* _mem2_calloc(u32 num, u32 size, const int area, const char *file, int line);
-void* _mem2_realloc(void *ptr, u32 newsize, const int area, const char *file, int line);
-char *_mem2_strdup(const char *s, const int area, const char *file, int line);
-char *_mem2_strndup(const char *s, size_t n, const int area, const char *file, int line);
+void* _mem2_memalign(u8 align, u32 size, int area, const char* file, int line);
+void* _mem2_malloc(u32 size, int area, const char* file, int line);
+void _mem2_free(void* ptr, int area, const char* file, int line);
+void* _mem2_calloc(u32 num, u32 size, int area, const char* file, int line);
+void* _mem2_realloc(void* ptr, u32 newsize, int area, const char* file, int line);
+char* _mem2_strdup(const char* s, int area, const char* file, int line);
+char* _mem2_strndup(const char* s, size_t n, int area, const char* file, int line);
 
-u32 mem2_size(const int i);
+u32 mem2_size(int i);
 
-void ShowAreaInfo(const int area); //if area == -1 print all areas info
+void ShowAreaInfo(int area); //if area == -1 print all areas info
 
 #ifdef __cplusplus
 }

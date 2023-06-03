@@ -26,13 +26,14 @@
 #include <stdint.h>
 
 /** Sparse representation for the algebraic codebook (fixed) vector */
-typedef struct {
-    int      n;
-    int      x[10];
-    float    y[10];
-    int      no_repeat_mask;
-    int      pitch_lag;
-    float    pitch_fac;
+typedef struct
+{
+	int n;
+	int x[10];
+	float y[10];
+	int no_repeat_mask;
+	int pitch_lag;
+	float pitch_fac;
 } AMRFixed;
 
 /**
@@ -147,8 +148,8 @@ extern const float ff_pow_0_55[10];
  * Used in G.729 @@8k, G.729 @@4.4k, G.729 @@6.4k, AMR @@7.95k, AMR @@7.40k
  */
 void ff_acelp_fc_pulse_per_track(int16_t* fc_v,
-                                 const uint8_t *tab1,
-                                 const uint8_t *tab2,
+                                 const uint8_t* tab1,
+                                 const uint8_t* tab2,
                                  int pulse_indexes,
                                  int pulse_signs,
                                  int pulse_count,
@@ -166,11 +167,10 @@ void ff_acelp_fc_pulse_per_track(int16_t* fc_v,
  * @param half_pulse_count     number of couples of pulses
  * @param bits                 length of one pulse index in bits
  */
-void ff_decode_10_pulses_35bits(const int16_t *fixed_index,
-                                AMRFixed *fixed_sparse,
-                                const uint8_t *gray_decode,
+void ff_decode_10_pulses_35bits(const int16_t* fixed_index,
+                                AMRFixed* fixed_sparse,
+                                const uint8_t* gray_decode,
                                 int half_pulse_count, int bits);
-
 
 /**
  * weighted sum of two vectors with rounding.
@@ -188,8 +188,8 @@ void ff_decode_10_pulses_35bits(const int16_t *fixed_index,
  *  out[i] = (in_a[i]*weight_a + in_b[i]*weight_b + rounder) >> shift
  */
 void ff_acelp_weighted_vector_sum(int16_t* out,
-                                  const int16_t *in_a,
-                                  const int16_t *in_b,
+                                  const int16_t* in_a,
+                                  const int16_t* in_b,
                                   int16_t weight_coeff_a,
                                   int16_t weight_coeff_b,
                                   int16_t rounder,
@@ -207,7 +207,7 @@ void ff_acelp_weighted_vector_sum(int16_t* out,
  *
  * @note It is safe to pass the same buffer for out and in_a or in_b.
  */
-void ff_weighted_vector_sumf(float *out, const float *in_a, const float *in_b,
+void ff_weighted_vector_sumf(float* out, const float* in_a, const float* in_b,
                              float weight_coeff_a, float weight_coeff_b,
                              int length);
 
@@ -221,8 +221,8 @@ void ff_weighted_vector_sumf(float *out, const float *in_a, const float *in_b,
  * @param alpha exponential filter factor
  * @param gain_mem a pointer to the filter memory (single float of size)
  */
-void ff_adaptive_gain_control(float *out, const float *in, float speech_energ,
-                              int size, float alpha, float *gain_mem);
+void ff_adaptive_gain_control(float* out, const float* in, float speech_energ,
+                              int size, float alpha, float* gain_mem);
 
 /**
  * Set the sum of squares of a signal by scaling
@@ -239,8 +239,8 @@ void ff_adaptive_gain_control(float *out, const float *in, float speech_energ,
  * TIA/EIA/IS-733 2.4.8.3-2/3/4/5, 2.4.8.6
  * 3GPP TS 26.090 6.1 (6)
  */
-void ff_scale_vector_to_given_sum_of_squares(float *out, const float *in,
-                                             float sum_of_squares, const int n);
+void ff_scale_vector_to_given_sum_of_squares(float* out, const float* in,
+                                             float sum_of_squares, int n);
 
 /**
  * Add fixed vector to an array from a sparse representation
@@ -250,7 +250,7 @@ void ff_scale_vector_to_given_sum_of_squares(float *out, const float *in,
  * @param scale number to multiply the fixed vector by
  * @param size the output vector size
  */
-void ff_set_fixed_vector(float *out, const AMRFixed *in, float scale, int size);
+void ff_set_fixed_vector(float* out, const AMRFixed* in, float scale, int size);
 
 /**
  * Clear array values set by set_fixed_vector
@@ -259,6 +259,6 @@ void ff_set_fixed_vector(float *out, const AMRFixed *in, float scale, int size);
  * @param in sparse fixed vector
  * @param size the output vector size
  */
-void ff_clear_fixed_vector(float *out, const AMRFixed *in, int size);
+void ff_clear_fixed_vector(float* out, const AMRFixed* in, int size);
 
 #endif /* AVCODEC_ACELP_VECTORS_H */

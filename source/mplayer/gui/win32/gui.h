@@ -36,60 +36,62 @@ extern play_tree_t* playtree;
 extern int video_window;
 extern int console;
 extern NOTIFYICONDATA nid;
-extern char *codecname;
+extern char* codecname;
 
 typedef struct window_priv_t window_priv_t;
+
 struct window_priv_t
 {
-    HWND hwnd;
-    image img;
-    image *background;
-    HBITMAP bitmap;
-    int type;
+	HWND hwnd;
+	image img;
+	image* background;
+	HBITMAP bitmap;
+	int type;
 };
 
 typedef struct gui_t gui_t;
+
 struct gui_t
 {
-    /* screenproperties */
-    int screenw, screenh, screenbpp;
-    /* window related stuff */
-    char *classname;
-    HICON icon;
-    unsigned int window_priv_count;
-    window_priv_t **window_priv;
+	/* screenproperties */
+	int screenw, screenh, screenbpp;
+	/* window related stuff */
+	char* classname;
+	HICON icon;
+	unsigned int window_priv_count;
+	window_priv_t** window_priv;
 
-    HWND mainwindow;
-    HWND videowindow;
+	HWND mainwindow;
+	HWND videowindow;
 
-    /* for event handling */
-    widget *activewidget;
+	/* for event handling */
+	widget* activewidget;
 
-    int mousewx, mousewy; /* mousepos inside widget */
-    int mousex, mousey;
+	int mousewx, mousewy; /* mousepos inside widget */
+	int mousex, mousey;
 
-    HMENU menu;
-    HMENU diskmenu;
-    HMENU traymenu;
-    HMENU trayplaymenu;
-    HMENU trayplaybackmenu;
-    HMENU videomenu;
-    HMENU subtitlemenu;
-    HMENU aspectmenu;
-    HMENU dvdmenu;
-    HMENU playlistmenu;
+	HMENU menu;
+	HMENU diskmenu;
+	HMENU traymenu;
+	HMENU trayplaymenu;
+	HMENU trayplaybackmenu;
+	HMENU videomenu;
+	HMENU subtitlemenu;
+	HMENU aspectmenu;
+	HMENU dvdmenu;
+	HMENU playlistmenu;
 
-    int skinbrowserwindow;
-    int playlistwindow;
-    int aboutwindow;
+	int skinbrowserwindow;
+	int playlistwindow;
+	int aboutwindow;
 
-    skin_t *skin;
-    playlist_t *playlist;
+	skin_t* skin;
+	playlist_t* playlist;
 
-    void (*startplay)(gui_t *gui);
-    void (*updatedisplay)(gui_t *gui, HWND hwnd);
-    void (*playercontrol)(int event);   /* userdefine call back function */
-    void (*uninit)(gui_t *gui);
+	void (*startplay)(gui_t* gui);
+	void (*updatedisplay)(gui_t* gui, HWND hwnd);
+	void (*playercontrol)(int event); /* userdefine call back function */
+	void (*uninit)(gui_t* gui);
 };
 
 #define     wsShowWindow    8
@@ -98,26 +100,26 @@ struct gui_t
 #define     wsMovable       2
 #define     wsSizeable      4
 
-gui_t *create_gui(char *skindir, void (*playercontrol)(int event));
-int destroy_window(gui_t *gui);
-int create_window(gui_t *gui, char *skindir);
-int create_videowindow(gui_t *gui);
-int parse_filename(char *file, play_tree_t *playtree, m_config_t *mconfig, int clear);
-void capitalize(char *filename);
+gui_t* create_gui(char* skindir, void (*playercontrol)(int event));
+int destroy_window(gui_t* gui);
+int create_window(gui_t* gui, char* skindir);
+int create_videowindow(gui_t* gui);
+int parse_filename(char* file, play_tree_t* playtree, m_config_t* mconfig, int clear);
+void capitalize(char* filename);
 LPSTR acp(LPCSTR utf8);
 
-void renderinfobox(skin_t *skin, window_priv_t *priv);
-void renderwidget(skin_t *skin, image *dest, widget *item, int state);
+void renderinfobox(skin_t* skin, window_priv_t* priv);
+void renderwidget(skin_t* skin, image* dest, widget* item, int state);
 
 /* Dialogs */
-void display_playlistwindow(gui_t *gui);
+void display_playlistwindow(gui_t* gui);
 void update_playlistwindow(void);
-int display_openfilewindow(gui_t *gui, int add);
-void display_openurlwindow(gui_t *gui, int add);
-void display_skinbrowser(gui_t *gui);
-void display_chapterselwindow(gui_t *gui);
-void display_eqwindow(gui_t *gui);
-void display_prefswindow(gui_t *gui);
-void display_opensubtitlewindow(gui_t *gui);
+int display_openfilewindow(gui_t* gui, int add);
+void display_openurlwindow(gui_t* gui, int add);
+void display_skinbrowser(gui_t* gui);
+void display_chapterselwindow(gui_t* gui);
+void display_eqwindow(gui_t* gui);
+void display_prefswindow(gui_t* gui);
+void display_opensubtitlewindow(gui_t* gui);
 
 #endif /* MPLAYER_GUI_GUI_H */

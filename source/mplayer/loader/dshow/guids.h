@@ -21,24 +21,27 @@ under MinGW
 //#define Debug if(1)
 #define Debug if(0)
 
-
 typedef long long REFERENCE_TIME;
 
-typedef struct __attribute__((__packed__)) RECT32
+typedef struct __attribute__ ((__packed__)) RECT32
 {
-    int left, top, right, bottom;
-} RECT32;
+	int left, top, right, bottom;
+}
 
-typedef struct __attribute__((__packed__)) tagVIDEOINFOHEADER
+RECT32;
+
+typedef struct __attribute__ ((__packed__)) tagVIDEOINFOHEADER
 {
-    RECT32            rcSource;          // The bit we really want to use
-    RECT32            rcTarget;          // Where the video should go
-    unsigned long     dwBitRate;         // Approximate bit data rate
-    unsigned long     dwBitErrorRate;    // Bit error rate for this stream
-    REFERENCE_TIME    AvgTimePerFrame;   // Average time per frame (100ns units)
-    BITMAPINFOHEADER  bmiHeader;
-    //int               reserved[3];
-} VIDEOINFOHEADER;
+	RECT32 rcSource; // The bit we really want to use
+	RECT32 rcTarget; // Where the video should go
+	unsigned long dwBitRate; // Approximate bit data rate
+	unsigned long dwBitErrorRate; // Bit error rate for this stream
+	REFERENCE_TIME AvgTimePerFrame; // Average time per frame (100ns units)
+	BITMAPINFOHEADER bmiHeader;
+	//int               reserved[3];
+}
+
+VIDEOINFOHEADER;
 
 typedef GUID CLSID;
 typedef GUID IID;

@@ -53,8 +53,8 @@
  *                  the layout of the numpad (1-3 sub, 4-6 mid, 7-9 top)
  * @return >= 0 on success otherwise an error code <0
  */
-int ff_ass_subtitle_header(AVCodecContext *avctx,
-                           const char *font, int font_size,
+int ff_ass_subtitle_header(AVCodecContext* avctx,
+                           const char* font, int font_size,
                            int color, int back_color,
                            int bold, int italic, int underline,
                            int alignment);
@@ -66,7 +66,7 @@ int ff_ass_subtitle_header(AVCodecContext *avctx,
  * @param avctx pointer to the AVCodecContext
  * @return >= 0 on success otherwise an error code <0
  */
-int ff_ass_subtitle_header_default(AVCodecContext *avctx);
+int ff_ass_subtitle_header_default(AVCodecContext* avctx);
 
 /**
  * Add an ASS dialog line to an AVSubtitle as a new AVSubtitleRect.
@@ -85,7 +85,7 @@ int ff_ass_subtitle_header_default(AVCodecContext *avctx);
  *         length of dialog, if dialog contains several lines of text.
  *         A negative value indicates an error.
  */
-int ff_ass_add_rect(AVSubtitle *sub, const char *dialog,
+int ff_ass_add_rect(AVSubtitle* sub, const char* dialog,
                     int ts_start, int duration, int raw);
 
 #endif /* AVCODEC_ASS_H */

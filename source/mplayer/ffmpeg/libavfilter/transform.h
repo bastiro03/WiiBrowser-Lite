@@ -36,11 +36,16 @@
  *                      0, 0, 1};
  */
 
-enum InterpolateMethod {
-    INTERPOLATE_NEAREST,        //< Nearest-neighbor (fast)
-    INTERPOLATE_BILINEAR,       //< Bilinear
-    INTERPOLATE_BIQUADRATIC,    //< Biquadratic (best)
-    INTERPOLATE_COUNT,          //< Number of interpolation methods
+enum InterpolateMethod
+{
+	INTERPOLATE_NEAREST,
+	//< Nearest-neighbor (fast)
+	INTERPOLATE_BILINEAR,
+	//< Bilinear
+	INTERPOLATE_BIQUADRATIC,
+	//< Biquadratic (best)
+	INTERPOLATE_COUNT,
+	//< Number of interpolation methods
 };
 
 // Shortcuts for the fastest and best interpolation methods
@@ -48,12 +53,18 @@ enum InterpolateMethod {
 #define INTERPOLATE_FAST    INTERPOLATE_NEAREST
 #define INTERPOLATE_BEST    INTERPOLATE_BIQUADRATIC
 
-enum FillMethod {
-    FILL_BLANK,         //< Fill zeroes at blank locations
-    FILL_ORIGINAL,      //< Original image at blank locations
-    FILL_CLAMP,         //< Extruded edge value at blank locations
-    FILL_MIRROR,        //< Mirrored edge at blank locations
-    FILL_COUNT,         //< Number of edge fill methods
+enum FillMethod
+{
+	FILL_BLANK,
+	//< Fill zeroes at blank locations
+	FILL_ORIGINAL,
+	//< Original image at blank locations
+	FILL_CLAMP,
+	//< Extruded edge value at blank locations
+	FILL_MIRROR,
+	//< Mirrored edge at blank locations
+	FILL_COUNT,
+	//< Number of edge fill methods
 };
 
 // Shortcuts for fill methods
@@ -73,7 +84,7 @@ enum FillMethod {
  * @param zoom    scale percent (1.0 = 100%)
  * @param matrix  9-item affine transformation matrix
  */
-void avfilter_get_matrix(float x_shift, float y_shift, float angle, float zoom, float *matrix);
+void avfilter_get_matrix(float x_shift, float y_shift, float angle, float zoom, float* matrix);
 
 /**
  * Add two matrices together. result = m1 + m2.
@@ -82,7 +93,7 @@ void avfilter_get_matrix(float x_shift, float y_shift, float angle, float zoom, 
  * @param m2     9-item transformation matrix
  * @param result 9-item transformation matrix
  */
-void avfilter_add_matrix(const float *m1, const float *m2, float *result);
+void avfilter_add_matrix(const float* m1, const float* m2, float* result);
 
 /**
  * Subtract one matrix from another. result = m1 - m2.
@@ -91,7 +102,7 @@ void avfilter_add_matrix(const float *m1, const float *m2, float *result);
  * @param m2     9-item transformation matrix
  * @param result 9-item transformation matrix
  */
-void avfilter_sub_matrix(const float *m1, const float *m2, float *result);
+void avfilter_sub_matrix(const float* m1, const float* m2, float* result);
 
 /**
  * Multiply a matrix by a scalar value. result = m1 * scalar.
@@ -100,7 +111,7 @@ void avfilter_sub_matrix(const float *m1, const float *m2, float *result);
  * @param scalar a number
  * @param result 9-item transformation matrix
  */
-void avfilter_mul_matrix(const float *m1, float scalar, float *result);
+void avfilter_mul_matrix(const float* m1, float scalar, float* result);
 
 /**
  * Do an affine transformation with the given interpolation method. This
@@ -117,9 +128,9 @@ void avfilter_mul_matrix(const float *m1, float scalar, float *result);
  * @param interpolate pixel interpolation method
  * @param fill        edge fill method
  */
-void avfilter_transform(const uint8_t *src, uint8_t *dst,
+void avfilter_transform(const uint8_t* src, uint8_t* dst,
                         int src_stride, int dst_stride,
-                        int width, int height, const float *matrix,
+                        int width, int height, const float* matrix,
                         enum InterpolateMethod interpolate,
                         enum FillMethod fill);
 

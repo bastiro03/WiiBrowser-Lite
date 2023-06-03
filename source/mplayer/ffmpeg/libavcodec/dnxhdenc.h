@@ -29,70 +29,79 @@
 #include "mpegvideo.h"
 #include "dnxhddata.h"
 
-typedef struct {
-    uint16_t mb;
-    int value;
+typedef struct
+{
+	uint16_t mb;
+	int value;
 } RCCMPEntry;
 
-typedef struct {
-    int ssd;
-    int bits;
+typedef struct
+{
+	int ssd;
+	int bits;
 } RCEntry;
 
-typedef struct DNXHDEncContext {
-    AVClass *class;
-    MpegEncContext m; ///< Used for quantization dsp functions
+typedef struct DNXHDEncContext
+{
+	AVClass* class;
+	MpegEncContext m; ///< Used for quantization dsp functions
 
-    AVFrame frame;
-    int cid;
-    const CIDEntry *cid_table;
-    uint8_t *msip; ///< Macroblock Scan Indexes Payload
-    uint32_t *slice_size;
-    uint32_t *slice_offs;
+	AVFrame frame;
+	int cid;
+	const CIDEntry* cid_table;
+	uint8_t* msip; ///< Macroblock Scan Indexes Payload
+	uint32_t* slice_size;
+	uint32_t* slice_offs;
 
-    struct DNXHDEncContext *thread[MAX_THREADS];
+	struct DNXHDEncContext* thread[MAX_THREADS];
 
-    // Because our samples are either 8 or 16 bits for 8-bit and 10-bit
-    // encoding respectively, these refer either to bytes or to two-byte words.
-    unsigned dct_y_offset;
-    unsigned dct_uv_offset;
-    unsigned block_width_l2;
+	// Because our samples are either 8 or 16 bits for 8-bit and 10-bit
+	// encoding respectively, these refer either to bytes or to two-byte words.
+	unsigned dct_y_offset;
+	unsigned dct_uv_offset;
+	unsigned block_width_l2;
 
-    int interlaced;
-    int cur_field;
+	int interlaced;
+	int cur_field;
 
-    int nitris_compat;
-    unsigned min_padding;
+	int nitris_compat;
+	unsigned min_padding;
 
-    DECLARE_ALIGNED(16, DCTELEM, blocks)[8][64];
+	DECLARE_ALIGNED (
+	16
+	,
+	DCTELEM
+	,
+	blocks
+	)[8][64];
 
-    int      (*qmatrix_c)     [64];
-    int      (*qmatrix_l)     [64];
-    uint16_t (*qmatrix_l16)[2][64];
-    uint16_t (*qmatrix_c16)[2][64];
+	int (*qmatrix_c)[64];
+	int (*qmatrix_l)[64];
+	uint16_t (*qmatrix_l16)[2][64];
+	uint16_t (*qmatrix_c16)[2][64];
 
-    unsigned frame_bits;
-    uint8_t *src[3];
+	unsigned frame_bits;
+	uint8_t* src[3];
 
-    uint32_t *vlc_codes;
-    uint8_t  *vlc_bits;
-    uint16_t *run_codes;
-    uint8_t  *run_bits;
+	uint32_t* vlc_codes;
+	uint8_t* vlc_bits;
+	uint16_t* run_codes;
+	uint8_t* run_bits;
 
-    /** Rate control */
-    unsigned slice_bits;
-    unsigned qscale;
-    unsigned lambda;
+	/** Rate control */
+	unsigned slice_bits;
+	unsigned qscale;
+	unsigned lambda;
 
-    uint16_t *mb_bits;
-    uint8_t  *mb_qscale;
+	uint16_t* mb_bits;
+	uint8_t* mb_qscale;
 
-    RCCMPEntry *mb_cmp;
-    RCEntry   (*mb_rc)[8160];
+	RCCMPEntry* mb_cmp;
+	RCEntry (*mb_rc)[8160];
 
-    void (*get_pixels_8x4_sym)(DCTELEM */*align 16*/, const uint8_t *, int);
+	void (*get_pixels_8x4_sym)(DCTELEM*/*align 16*/, const uint8_t*, int);
 } DNXHDEncContext;
 
-void ff_dnxhd_init_mmx(DNXHDEncContext *ctx);
+void ff_dnxhd_init_mmx(DNXHDEncContext* ctx);
 
 #endif /* AVCODEC_DNXHDENC_H */

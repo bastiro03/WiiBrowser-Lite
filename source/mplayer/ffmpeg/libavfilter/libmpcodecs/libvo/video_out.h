@@ -84,15 +84,19 @@
 #define VOCTRL_XOVERLAY_SUPPORT 22
 
 #define VOCTRL_XOVERLAY_SET_COLORKEY 24
-typedef struct {
-  uint32_t x11; // The raw x11 color
-  uint16_t r,g,b;
+
+typedef struct
+{
+	uint32_t x11; // The raw x11 color
+	uint16_t r, g, b;
 } mp_colorkey_t;
 
 #define VOCTRL_XOVERLAY_SET_WIN 23
-typedef struct {
-  int x,y;
-  int w,h;
+
+typedef struct
+{
+	int x, y;
+	int w, h;
 } mp_win_t;
 
 #define VO_TRUE      1
@@ -111,87 +115,87 @@ typedef struct {
 
 typedef struct vo_info_s
 {
-    /* driver name ("Matrox Millennium G200/G400" */
-    const char *name;
-    /* short name (for config strings) ("mga") */
-    const char *short_name;
-    /* author ("Aaron Holtzman <aholtzma@ess.engr.uvic.ca>") */
-    const char *author;
-    /* any additional comments */
-    const char *comment;
+	/* driver name ("Matrox Millennium G200/G400" */
+	const char* name;
+	/* short name (for config strings) ("mga") */
+	const char* short_name;
+	/* author ("Aaron Holtzman <aholtzma@ess.engr.uvic.ca>") */
+	const char* author;
+	/* any additional comments */
+	const char* comment;
 } vo_info_t;
 
 typedef struct vo_functions_s
 {
-    const vo_info_t *info;
-    /*
-     * Preinitializes driver (real INITIALIZATION)
-     *   arg - currently it's vo_subdevice
-     *   returns: zero on successful initialization, non-zero on error.
-     */
-    int (*preinit)(const char *arg);
-    /*
-     * Initialize (means CONFIGURE) the display driver.
-     * params:
-     *   width,height: image source size
-     *   d_width,d_height: size of the requested window size, just a hint
-     *   fullscreen: flag, 0=windowd 1=fullscreen, just a hint
-     *   title: window title, if available
-     *   format: fourcc of pixel format
-     * returns : zero on successful initialization, non-zero on error.
-     */
-    int (*config)(uint32_t width, uint32_t height, uint32_t d_width,
-                  uint32_t d_height, uint32_t fullscreen, char *title,
-                  uint32_t format);
+	const vo_info_t* info;
+	/*
+	 * Preinitializes driver (real INITIALIZATION)
+	 *   arg - currently it's vo_subdevice
+	 *   returns: zero on successful initialization, non-zero on error.
+	 */
+	int (*preinit)(const char* arg);
+	/*
+	 * Initialize (means CONFIGURE) the display driver.
+	 * params:
+	 *   width,height: image source size
+	 *   d_width,d_height: size of the requested window size, just a hint
+	 *   fullscreen: flag, 0=windowd 1=fullscreen, just a hint
+	 *   title: window title, if available
+	 *   format: fourcc of pixel format
+	 * returns : zero on successful initialization, non-zero on error.
+	 */
+	int (*config)(uint32_t width, uint32_t height, uint32_t d_width,
+	              uint32_t d_height, uint32_t fullscreen, char* title,
+	              uint32_t format);
 
-    /*
-     * Control interface
-     */
-    int (*control)(uint32_t request, void *data, ...);
+	/*
+	 * Control interface
+	 */
+	int (*control)(uint32_t request, void* data, ...);
 
-    /*
-     * Display a new RGB/BGR frame of the video to the screen.
-     * params:
-     *   src[0] - pointer to the image
-     */
-    int (*draw_frame)(uint8_t *src[]);
+	/*
+	 * Display a new RGB/BGR frame of the video to the screen.
+	 * params:
+	 *   src[0] - pointer to the image
+	 */
+	int (*draw_frame)(uint8_t* src[]);
 
-    /*
-     * Draw a planar YUV slice to the buffer:
-     * params:
-     *   src[3] = source image planes (Y,U,V)
-     *   stride[3] = source image planes line widths (in bytes)
-     *   w,h = width*height of area to be copied (in Y pixels)
-     *   x,y = position at the destination image (in Y pixels)
-     */
-    int (*draw_slice)(uint8_t *src[], int stride[], int w,int h, int x,int y);
+	/*
+	 * Draw a planar YUV slice to the buffer:
+	 * params:
+	 *   src[3] = source image planes (Y,U,V)
+	 *   stride[3] = source image planes line widths (in bytes)
+	 *   w,h = width*height of area to be copied (in Y pixels)
+	 *   x,y = position at the destination image (in Y pixels)
+	 */
+	int (*draw_slice)(uint8_t* src[], int stride[], int w, int h, int x, int y);
 
-    /*
-     * Draws OSD to the screen buffer
-     */
-    void (*draw_osd)(void);
+	/*
+	 * Draws OSD to the screen buffer
+	 */
+	void (*draw_osd)(void);
 
-    /*
-     * Blit/Flip buffer to the screen. Must be called after each frame!
-     */
-    void (*flip_page)(void);
+	/*
+	 * Blit/Flip buffer to the screen. Must be called after each frame!
+	 */
+	void (*flip_page)(void);
 
-    /*
-     * This func is called after every frames to handle keyboard and
-     * other events. It's called in PAUSE mode too!
-     */
-    void (*check_events)(void);
+	/*
+	 * This func is called after every frames to handle keyboard and
+	 * other events. It's called in PAUSE mode too!
+	 */
+	void (*check_events)(void);
 
-    /*
-     * Closes driver. Should restore the original state of the system.
-     */
-    void (*uninit)(void);
+	/*
+	 * Closes driver. Should restore the original state of the system.
+	 */
+	void (*uninit)(void);
 } vo_functions_t;
 
 const vo_functions_t* init_best_video_out(char** vo_list);
-int config_video_out(const vo_functions_t *vo, uint32_t width, uint32_t height,
+int config_video_out(const vo_functions_t* vo, uint32_t width, uint32_t height,
                      uint32_t d_width, uint32_t d_height, uint32_t flags,
-                     char *title, uint32_t format);
+                     char* title, uint32_t format);
 void list_video_out(void);
 
 // NULL terminated array of all drivers
@@ -246,42 +250,48 @@ extern int enable_mouse_movements;
 extern int vo_pts;
 extern float vo_fps;
 
-extern char *vo_subdevice;
+extern char* vo_subdevice;
 
 extern int vo_colorkey;
 
-extern char *vo_winname;
-extern char *vo_wintitle;
+extern char* vo_winname;
+extern char* vo_wintitle;
 
 extern int64_t WinID;
 
-typedef struct {
-        float min;
-        float max;
-        } range_t;
+typedef struct
+{
+	float min;
+	float max;
+} range_t;
 
-float range_max(range_t *r);
-int in_range(range_t *r, float f);
-range_t *str2range(char *s);
-extern char *monitor_hfreq_str;
-extern char *monitor_vfreq_str;
-extern char *monitor_dotclock_str;
+float range_max(range_t* r);
+int in_range(range_t* r, float f);
+range_t* str2range(char* s);
+extern char* monitor_hfreq_str;
+extern char* monitor_vfreq_str;
+extern char* monitor_dotclock_str;
 
-struct mp_keymap {
-  int from;
-  int to;
+struct mp_keymap
+{
+	int from;
+	int to;
 };
-int lookup_keymap_table(const struct mp_keymap *map, int key);
-struct vo_rect {
-  int left, right, top, bottom, width, height;
+
+int lookup_keymap_table(const struct mp_keymap* map, int key);
+
+struct vo_rect
+{
+	int left, right, top, bottom, width, height;
 };
-void calc_src_dst_rects(int src_width, int src_height, struct vo_rect *src, struct vo_rect *dst,
-                        struct vo_rect *borders, const struct vo_rect *crop);
+
+void calc_src_dst_rects(int src_width, int src_height, struct vo_rect* src, struct vo_rect* dst,
+                        struct vo_rect* borders, const struct vo_rect* crop);
 void vo_mouse_movement(int posx, int posy);
 
 static inline int aspect_scaling(void)
 {
-  return vo_fs;
+	return vo_fs;
 }
 
 #endif /* MPLAYER_VIDEO_OUT_H */

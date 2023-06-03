@@ -58,10 +58,9 @@ void ff_acelp_interpolate(int16_t* out, const int16_t* in,
 /**
  * Floating point version of ff_acelp_interpolate()
  */
-void ff_acelp_interpolatef(float *out, const float *in,
-                           const float *filter_coeffs, int precision,
+void ff_acelp_interpolatef(float* out, const float* in,
+                           const float* filter_coeffs, int precision,
                            int frac_pos, int filter_length, int length);
-
 
 /**
  * high-pass filtering and upscaling (4.2.5 of G.729).
@@ -100,7 +99,7 @@ void ff_acelp_high_pass_filter(int16_t* out, int hpf_f[2],
  * @param mem intermediate values used by filter (should be 0 initially)
  * @param n number of samples
  */
-void ff_acelp_apply_order_2_transfer_function(float *out, const float *in,
+void ff_acelp_apply_order_2_transfer_function(float* out, const float* in,
                                               const float zero_coeffs[2],
                                               const float pole_coeffs[2],
                                               float gain,
@@ -114,7 +113,6 @@ void ff_acelp_apply_order_2_transfer_function(float *out, const float *in,
  * @param samples array where the filter is applied
  * @param size the size of the samples array
  */
-void ff_tilt_compensation(float *mem, float tilt, float *samples, int size);
-
+void ff_tilt_compensation(float* mem, float tilt, float* samples, int size);
 
 #endif /* AVCODEC_ACELP_FILTERS_H */

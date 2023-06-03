@@ -26,29 +26,29 @@
 
 struct RAR_archive_entry
 {
-  char           *Name;
-  unsigned long  PackSize;
-  unsigned long  UnpSize;
-  unsigned long  FileCRC;
-  unsigned long  FileTime;
-  unsigned char  UnpVer;
-  unsigned char  Method;
-  unsigned long  FileAttr;
+	char* Name;
+	unsigned long PackSize;
+	unsigned long UnpSize;
+	unsigned long FileCRC;
+	unsigned long FileTime;
+	unsigned char UnpVer;
+	unsigned char Method;
+	unsigned long FileAttr;
 };
 
-typedef struct  archivelist
+typedef struct archivelist
 {
-  struct RAR_archive_entry item;
-  struct archivelist         *next;
+	struct RAR_archive_entry item;
+	struct archivelist* next;
 } ArchiveList_struct;
 
 extern char* unrar_executable;
 
-int unrar_exec_get(unsigned char **output, unsigned long *size,
-                   const char *filename, const char *rarfile);
+int unrar_exec_get(unsigned char** output, unsigned long* size,
+                   const char* filename, const char* rarfile);
 
-int unrar_exec_list(const char *rarfile, ArchiveList_struct **list);
+int unrar_exec_list(const char* rarfile, ArchiveList_struct** list);
 
-void unrar_exec_freelist(ArchiveList_struct *list);
+void unrar_exec_freelist(ArchiveList_struct* list);
 
 #endif /* MPLAYER_UNRAR_EXEC_H */

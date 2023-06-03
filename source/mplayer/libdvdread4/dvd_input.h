@@ -29,7 +29,7 @@
 
 #define DVDINPUT_READ_DECRYPT    (1 << 0)
 
-typedef struct dvd_input_s *dvd_input_t;
+typedef struct dvd_input_s* dvd_input_t;
 
 #if defined( __MINGW32__ )
 #   undef  lseek
@@ -46,12 +46,12 @@ typedef struct dvd_input_s *dvd_input_t;
  * Function pointers that will be filled in by the input implementation.
  * These functions provide the main API.
  */
-extern dvd_input_t (*dvdinput_open)  (const char *);
-extern int         (*dvdinput_close) (dvd_input_t);
-extern int         (*dvdinput_seek)  (dvd_input_t, int);
-extern int         (*dvdinput_title) (dvd_input_t, int);
-extern int         (*dvdinput_read)  (dvd_input_t, void *, int, int);
-extern char *      (*dvdinput_error) (dvd_input_t);
+extern dvd_input_t (*dvdinput_open)(const char*);
+extern int (*dvdinput_close)(dvd_input_t);
+extern int (*dvdinput_seek)(dvd_input_t, int);
+extern int (*dvdinput_title)(dvd_input_t, int);
+extern int (*dvdinput_read)(dvd_input_t, void*, int, int);
+extern char* (*dvdinput_error)(dvd_input_t);
 
 /**
  * Setup function accessed by dvd_reader.c.  Returns 1 if there is CSS support.

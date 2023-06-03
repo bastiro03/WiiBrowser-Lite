@@ -47,462 +47,469 @@ extern "C" {
 
 enum
 {
-    HEAD,
-    POST,
-    GET,
-    REQUESTS
+	HEAD,
+	POST,
+	GET,
+	REQUESTS
 };
 
 enum
 {
-    DFOUND = -1,
-    DCOMPLETE = -2,
-    DSTOPPED = -3,
+	DFOUND = -1,
+	DCOMPLETE = -2,
+	DSTOPPED = -3,
 };
 
 const char Agents[MAXAGENTS][256] =
 {
-    "",
-    "libcurl-agent/1.0",
-    "Mozilla/5.0 (Nintendo Wii; U; WiiBrowser rev37) like Gecko Firefox/4.0",
-    "Mozilla/5.0 (Windows NT 6.2; WOW64; rv:16.0.1) Gecko/20121011 Firefox/16.0.1",
+	"",
+	"libcurl-agent/1.0",
+	"Mozilla/5.0 (Nintendo Wii; U; WiiBrowser rev37) like Gecko Firefox/4.0",
+	"Mozilla/5.0 (Windows NT 6.2; WOW64; rv:16.0.1) Gecko/20121011 Firefox/16.0.1",
 	"Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; Trident/6.0)",
 	"Mozilla/5.0 (Linux; U; Android 1.1; en-gb; dream) AppleWebKit/525.10+ (KHTML, like Gecko) Version/3.0.4 Mobile Safari/523.12.2",
 };
 
-const struct block emptyblock = {NULL, 0};
+const struct block emptyblock = {nullptr, 0};
 static int firstRun = true;
 
 // -----------------------------------------------------------
 // DATA HANDLING
 // -----------------------------------------------------------
 
-struct HeaderStruct {
-    char *memory;
-    u32 size;
-    bool download;
-    char filename[256];
+struct HeaderStruct
+{
+	char* memory;
+	u32 size;
+	bool download;
+	char filename[256];
 };
 
-struct MemoryStruct {
-    char *memory;
-    u32 size;
+struct MemoryStruct
+{
+	char* memory;
+	u32 size;
 };
 
-int parseline(HeaderStruct *mem, size_t realsize);
-void fillstruct(CURL *handle, HeaderStruct *head, struct block *dest);
-bool mustdownload(char *content);
+int parseline(HeaderStruct* mem, size_t realsize);
+void fillstruct(CURL* handle, HeaderStruct* head, struct block* dest);
+bool mustdownload(char* content);
 
-int close_callback (void *clientp, curl_socket_t item) {
+int close_callback(void* clientp, curl_socket_t item)
+{
 	return net_close(item);
 }
 
 static size_t
-WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp)
+WriteMemoryCallback(void* contents, size_t size, size_t nmemb, void* userp)
 {
-    size_t realsize = size * nmemb;
-    struct MemoryStruct *mem = (struct MemoryStruct *)userp;
-    mem->memory = (char *)realloc(mem->memory, mem->size + realsize + 1);
-    if (mem->memory == NULL) {
-        Debug("not enough memory (realloc returned NULL)\n");
-        exit(EXIT_FAILURE);
-    }
-    memcpy(&(mem->memory[mem->size]), contents, realsize);
-    mem->memory[mem->size+=realsize] = 0;
-    return realsize;
+	size_t realsize = size * nmemb;
+	auto mem = static_cast<struct MemoryStruct*>(userp);
+	mem->memory = static_cast<char*>(realloc(mem->memory, mem->size + realsize + 1));
+	if (mem->memory == nullptr)
+	{
+		Debug("not enough memory (realloc returned NULL)\n");
+		exit(EXIT_FAILURE);
+	}
+	memcpy(&(mem->memory[mem->size]), contents, realsize);
+	mem->memory[mem->size += realsize] = 0;
+	return realsize;
 }
 
-static size_t writedata(void *ptr, size_t size, size_t nmemb, void *stream)
+static size_t writedata(void* ptr, size_t size, size_t nmemb, void* stream)
 {
-    int written = fwrite(ptr, size, nmemb, (FILE *)stream);
-    return written;
+	int written = fwrite(ptr, size, nmemb, static_cast<FILE*>(stream));
+	return written;
 }
 
-static size_t parseheader(void *contents, size_t size, size_t nmemb, void *userp)
+static size_t parseheader(void* contents, size_t size, size_t nmemb, void* userp)
 {
-    size_t realsize = size * nmemb;
-    struct HeaderStruct *mem = (struct HeaderStruct *)userp;
-    mem->memory = (char *)realloc(mem->memory, mem->size + realsize + 1);
-    if (mem->memory == NULL) {
-        Debug("not enough memory (realloc returned NULL)\n");
-        exit(EXIT_FAILURE);
-    }
-    memcpy(&(mem->memory[mem->size]), contents, realsize);
-    mem->memory[mem->size+=realsize] = 0;
-    return parseline(mem, realsize);
+	size_t realsize = size * nmemb;
+	auto mem = static_cast<struct HeaderStruct*>(userp);
+	mem->memory = static_cast<char*>(realloc(mem->memory, mem->size + realsize + 1));
+	if (mem->memory == nullptr)
+	{
+		Debug("not enough memory (realloc returned NULL)\n");
+		exit(EXIT_FAILURE);
+	}
+	memcpy(&(mem->memory[mem->size]), contents, realsize);
+	mem->memory[mem->size += realsize] = 0;
+	return parseline(mem, realsize);
 }
 
-int parseline(HeaderStruct *mem, size_t realsize)
+int parseline(HeaderStruct* mem, size_t realsize)
 {
-    unsigned int i;
-    for(i = mem->size - realsize; i <= mem->size; i++)
-        mem->memory[i] = tolower(mem->memory[i]);
+	unsigned int i;
+	for (i = mem->size - realsize; i <= mem->size; i++)
+		mem->memory[i] = tolower(mem->memory[i]);
 
-    char *line = &mem->memory[mem->size - realsize];
-    char buff[50];
-    bzero(buff, sizeof(buff));
+	char* line = &mem->memory[mem->size - realsize];
+	char buff[50];
+	bzero(buff, sizeof(buff));
 
-    if(!strncmp(line, "content-type", 12))
-    {
-        sscanf(line, "content-type: %s", buff);
-        findChr(buff, ';');
+	if (!strncmp(line, "content-type", 12))
+	{
+		sscanf(line, "content-type: %s", buff);
+		findChr(buff, ';');
 
-        if(mustdownload(buff))
-            mem->download = 1;
-    }
+		if (mustdownload(buff))
+			mem->download = true;
+	}
 
-    else if(!strncmp(line, "content-disposition", 19))
-    {
-        strcpy(mem->filename, line);
-    }
+	else if (!strncmp(line, "content-disposition", 19))
+	{
+		strcpy(mem->filename, line);
+	}
 
-    else if(!strncmp(line, "\r\n", 2))
-        return (!mem->download) * realsize;
-    return realsize;
+	else if (!strncmp(line, "\r\n", 2))
+		return (!mem->download) * realsize;
+	return realsize;
 }
 
 // -----------------------------------------------------------
 // SET HEADERS
 // -----------------------------------------------------------
 
-void setmainheaders(CURL *curl_handle, const char *url)
+void setmainheaders(CURL* curl_handle, const char* url)
 {
-    if(!curl_handle)
-        return;
+	if (!curl_handle)
+		return;
 
-    /* send all data to this function */
-    curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
+	/* send all data to this function */
+	curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
 
-    /* set proxy if specified */
-    if(validProxy())
-        curl_easy_setopt(curl_handle, CURLOPT_PROXY, Settings.Proxy);
+	/* set proxy if specified */
+	if (validProxy())
+		curl_easy_setopt(curl_handle, CURLOPT_PROXY, Settings.Proxy);
 
-    /* follow redirects */
-    curl_easy_setopt(curl_handle, CURLOPT_AUTOREFERER, 1);
-    curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
-    curl_easy_setopt(curl_handle, CURLOPT_NOPROGRESS, 1);
+	/* follow redirects */
+	curl_easy_setopt(curl_handle, CURLOPT_AUTOREFERER, 1);
+	curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
+	curl_easy_setopt(curl_handle, CURLOPT_NOPROGRESS, 1);
 
-    /* some servers don't like requests that are made without a user-agent
-    field, so we provide one */
-    curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, Agents[Settings.UserAgent]);
-    curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0L);
+	/* some servers don't like requests that are made without a user-agent
+	field, so we provide one */
+	curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, Agents[Settings.UserAgent]);
+	curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0L);
 
-    /* proper function to close sockets */
-    curl_easy_setopt(curl_handle, CURLOPT_CLOSESOCKETFUNCTION, close_callback);
-    curl_easy_setopt(curl_handle, CURLOPT_URL, url);
+	/* proper function to close sockets */
+	curl_easy_setopt(curl_handle, CURLOPT_CLOSESOCKETFUNCTION, close_callback);
+	curl_easy_setopt(curl_handle, CURLOPT_URL, url);
 }
 
-int showprogress(void *bar,
-                    double total, /* dltotal */
-                    double done, /* dlnow */
-                    double ultotal,
-                    double ulnow)
+int showprogress(void* bar,
+                 double total, /* dltotal */
+                 double done, /* dlnow */
+                 double ultotal,
+                 double ulnow)
 {
-    char msg[20];
-    sprintf(msg, "Loading...%2.2f%%", done*100.0/total);
-    SetMessage(msg);
+	char msg[20];
+	sprintf(msg, "Loading...%2.2f%%", done * 100.0 / total);
+	SetMessage(msg);
 
-    if(CancelDownload())
-        return 1;
-    return 0;
+	if (CancelDownload())
+		return 1;
+	return 0;
 }
 
-void setrequestheaders(CURL *curl_handle, int request)
+void setrequestheaders(CURL* curl_handle, int request)
 {
-    if(!curl_handle)
-        return;
+	if (!curl_handle)
+		return;
 
-    if(request == HEAD)
-    {
-        /* get header only */
-        curl_easy_setopt(curl_handle, CURLOPT_HEADER, 1);
-        curl_easy_setopt(curl_handle, CURLOPT_NOBODY, 1);
-    }
+	if (request == HEAD)
+	{
+		/* get header only */
+		curl_easy_setopt(curl_handle, CURLOPT_HEADER, 1);
+		curl_easy_setopt(curl_handle, CURLOPT_NOBODY, 1);
+	}
 
-    else if(request == GET)
-    {
-        /* reset handle to perform get */
-        curl_easy_setopt(curl_handle, CURLOPT_HTTPGET, 1);
-        curl_easy_setopt(curl_handle, CURLOPT_NOPROGRESS, 0);
-        curl_easy_setopt(curl_handle, CURLOPT_PROGRESSFUNCTION, showprogress);
-    }
+	else if (request == GET)
+	{
+		/* reset handle to perform get */
+		curl_easy_setopt(curl_handle, CURLOPT_HTTPGET, 1);
+		curl_easy_setopt(curl_handle, CURLOPT_NOPROGRESS, 0);
+		curl_easy_setopt(curl_handle, CURLOPT_PROGRESSFUNCTION, showprogress);
+	}
 
-    else if(request == POST)
-    {
-
-    }
+	else if (request == POST)
+	{
+	}
 }
 
 // -----------------------------------------------------------
 // REQUEST FUNCTIONS
 // -----------------------------------------------------------
 
-struct block postrequest(CURL *curl_handle, const char *url, curl_httppost *data)
+struct block postrequest(CURL* curl_handle, const char* url, curl_httppost* data)
 {
-    char *ct = NULL;
-    char *post = findRchr(url, '?');
-    struct block b, h;
-    int res;
+	char* ct = nullptr;
+	char* post = findRchr(url, '?');
+	struct block b, h;
+	int res;
 
-    struct HeaderStruct head;
-    struct MemoryStruct chunk;
+	struct HeaderStruct head;
+	struct MemoryStruct chunk;
 
-    chunk.memory = (char *)malloc(1);   /* will be grown as needed by the realloc above */
-    chunk.size = 0; /* no data at this point */
+	chunk.memory = static_cast<char*>(malloc(1)); /* will be grown as needed by the realloc above */
+	chunk.size = 0; /* no data at this point */
 
-    head.memory = (char *)malloc(1);   /* will be grown as needed by the realloc above */
-    head.size = 0; /* no data at this point */
-    head.download = 0; /* not yet known at this point */
+	head.memory = static_cast<char*>(malloc(1)); /* will be grown as needed by the realloc above */
+	head.size = 0; /* no data at this point */
+	head.download = false; /* not yet known at this point */
 
-    setmainheaders(curl_handle, url);
-    setrequestheaders(curl_handle, POST);
+	setmainheaders(curl_handle, url);
+	setrequestheaders(curl_handle, POST);
 
-    if(curl_handle) {
-        /* we pass our 'chunk' struct to the callback function */
-        curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, parseheader);
-        curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&chunk);
-        curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, (void *)&head);
+	if (curl_handle)
+	{
+		/* we pass our 'chunk' struct to the callback function */
+		curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, parseheader);
+		curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, static_cast<void*>(&chunk));
+		curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, static_cast<void*>(&head));
 
-        if (data == NULL)
-            curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, post+1);
-        else curl_easy_setopt(curl_handle, CURLOPT_HTTPPOST, data);
+		if (data == nullptr)
+			curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, post + 1);
+		else curl_easy_setopt(curl_handle, CURLOPT_HTTPPOST, data);
 
-        if ((res = curl_easy_perform(curl_handle)) != 0)      /*error!*/
-        {
-            if (data)
-                curl_formfree(data);
+		if ((res = curl_easy_perform(curl_handle)) != 0) /*error!*/
+		{
+			if (data)
+				curl_formfree(data);
 
-            if (res == CURLE_WRITE_ERROR)
-            {
-                fillstruct(curl_handle, &head, &h);
-                free(head.memory);
-                return h;
-            }
+			if (res == CURLE_WRITE_ERROR)
+			{
+				fillstruct(curl_handle, &head, &h);
+				free(head.memory);
+				return h;
+			}
 
-            Debug(curl_easy_strerror((CURLcode)res));
-            return emptyblock;
-        }
+			Debug(curl_easy_strerror(static_cast<CURLcode>(res)));
+			return emptyblock;
+		}
 
-        if (data)
-            curl_formfree(data);
+		if (data)
+			curl_formfree(data);
 
-        if(CURLE_OK != curl_easy_getinfo(curl_handle, CURLINFO_CONTENT_TYPE, &ct) || !ct)
-            return emptyblock;
-    }
-    else
-        return emptyblock;
+		if (CURLE_OK != curl_easy_getinfo(curl_handle, CURLINFO_CONTENT_TYPE, &ct) || !ct)
+			return emptyblock;
+	}
+	else
+		return emptyblock;
 
 	b.data = chunk.memory;
 	b.size = chunk.size;
 	free(head.memory);
 
-    findChr(ct, ';');
-    strcpy(b.type, ct);
+	findChr(ct, ';');
+	strcpy(b.type, ct);
 	return b;
 }
 
-bool postcomment(CURL *curl_handle, char *name, char *content)
+bool postcomment(CURL* curl_handle, char* name, char* content)
 {
-    char request[512];
-    char *r = request;
+	char request[512];
+	char* r = request;
 
-    r += sprintf(r, "http://www.htmlcommentbox.com/post?");
-    r += sprintf(r, "ajax=true&page=http%%3A%%2F%%2Fwiibrowser.altervista.org%%2Fmainsite%%2Ftracker.php");
-    r += sprintf(r, "&refer=http%%3A%%2F%%2Fwiibrowser.altervista.org%%2Fmainsite%%2Ftracker.php%%23HCB_comment_box&opts=16862");
-    r += sprintf(r, "&mod=%%241%%24wq1rdBcg%%249ZNKlgbkqbvBdR6hqvyy91&replies_to=&name=%s //%s&content=%s", name, Settings.Uuid, content);
+	r += sprintf(r, "http://www.htmlcommentbox.com/post?");
+	r += sprintf(r, "ajax=true&page=http%%3A%%2F%%2Fwiibrowser.altervista.org%%2Fmainsite%%2Ftracker.php");
+	r += sprintf(
+		r, "&refer=http%%3A%%2F%%2Fwiibrowser.altervista.org%%2Fmainsite%%2Ftracker.php%%23HCB_comment_box&opts=16862");
+	r += sprintf(r, "&mod=%%241%%24wq1rdBcg%%249ZNKlgbkqbvBdR6hqvyy91&replies_to=&name=%s //%s&content=%s", name,
+	             Settings.Uuid, content);
 
-    struct block html = postrequest(curl_handle, request, NULL);
-    free(html.data);
-    return (html.size > 0);
+	struct block html = postrequest(curl_handle, request, nullptr);
+	free(html.data);
+	return (html.size > 0);
 }
 
-struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
+struct block getrequest(CURL* curl_handle, const char* url, FILE* hfile)
 {
-    char *ct = NULL;
-    struct block b, h;
-    int res;
+	char* ct = nullptr;
+	struct block b, h;
+	int res;
 
-    struct HeaderStruct head;
-    struct MemoryStruct chunk;
+	struct HeaderStruct head;
+	struct MemoryStruct chunk;
 
-    chunk.memory = (char *)malloc(1);   /* will be grown as needed by the realloc above */
-    chunk.size = 0; /* no data at this point */
+	chunk.memory = static_cast<char*>(malloc(1)); /* will be grown as needed by the realloc above */
+	chunk.size = 0; /* no data at this point */
 
-    head.memory = (char *)malloc(1);   /* will be grown as needed by the realloc above */
-    head.size = 0; /* no data at this point */
-    head.download = 0; /* not yet known at this point */
+	head.memory = static_cast<char*>(malloc(1)); /* will be grown as needed by the realloc above */
+	head.size = 0; /* no data at this point */
+	head.download = false; /* not yet known at this point */
 
-    setmainheaders(curl_handle, url);
-    setrequestheaders(curl_handle, GET);
+	setmainheaders(curl_handle, url);
+	setrequestheaders(curl_handle, GET);
 
-    if(curl_handle) {
-        /* we pass our 'chunk' struct or 'hfile' to the callback function */
-        if(hfile)
-        {
-            /* send all data to this function */
-            curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, writedata);
-            curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)hfile);
-        }
-        else
-        {
-            curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, parseheader);
-            curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&chunk);
-            curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, (void *)&head);
-        }
+	if (curl_handle)
+	{
+		/* we pass our 'chunk' struct or 'hfile' to the callback function */
+		if (hfile)
+		{
+			/* send all data to this function */
+			curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, writedata);
+			curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, static_cast<void*>(hfile));
+		}
+		else
+		{
+			curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, parseheader);
+			curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, static_cast<void*>(&chunk));
+			curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, static_cast<void*>(&head));
+		}
 
-        if ((res = curl_easy_perform(curl_handle)) != 0)      /*error!*/
-        {
-            if (res == CURLE_ABORTED_BY_CALLBACK)
-            {
-                h.size = DSTOPPED;
-                return h;
-            }
+		if ((res = curl_easy_perform(curl_handle)) != 0) /*error!*/
+		{
+			if (res == CURLE_ABORTED_BY_CALLBACK)
+			{
+				h.size = DSTOPPED;
+				return h;
+			}
 
-            if (res == CURLE_WRITE_ERROR)
-            {
-                fillstruct(curl_handle, &head, &h);
-                free(head.memory);
-                return h;
-            }
+			if (res == CURLE_WRITE_ERROR)
+			{
+				fillstruct(curl_handle, &head, &h);
+				free(head.memory);
+				return h;
+			}
 
-            Debug(curl_easy_strerror((CURLcode)res));
-            return emptyblock;
-        }
+			Debug(curl_easy_strerror(static_cast<CURLcode>(res)));
+			return emptyblock;
+		}
 
-        if(CURLE_OK != curl_easy_getinfo(curl_handle, CURLINFO_CONTENT_TYPE, &ct) || !ct)
-            return emptyblock;
-    }
-    else
-        return emptyblock;
+		if (CURLE_OK != curl_easy_getinfo(curl_handle, CURLINFO_CONTENT_TYPE, &ct) || !ct)
+			return emptyblock;
+	}
+	else
+		return emptyblock;
 
 	b.data = chunk.memory;
 	b.size = chunk.size;
 
-    findChr(ct, ';');
-    strcpy(b.type, ct);
-    free(head.memory);
+	findChr(ct, ';');
+	strcpy(b.type, ct);
+	free(head.memory);
 
-    if(hfile)
-    {
-        h.size = DCOMPLETE;
-        fclose(hfile);
-        return h;
-    }
+	if (hfile)
+	{
+		h.size = DCOMPLETE;
+		fclose(hfile);
+		return h;
+	}
 	return b;
 }
 
-struct curl_httppost *multipartform(const char *url)
+struct curl_httppost* multipartform(const char* url)
 {
-    struct curl_httppost *formpost = NULL;
-    struct curl_httppost *lastptr = NULL;
+	struct curl_httppost* formpost = nullptr;
+	struct curl_httppost* lastptr = nullptr;
 
-    char *temp = strrchr(url, '?');
-    char *begin = url_decode(temp);
-    char *mid = NULL;
+	char* temp = strrchr(url, '?');
+	char* begin = url_decode(temp);
+	char* mid = nullptr;
 
-    char *name, *value;
-    char *file, *path;
+	char *name, *value;
+	char *file, *path;
 
-    /* Fill in the filename field */
-    do
-    {
-        mid = strchr(begin, '=');
-        begin++;
-        name = strndup(begin, mid-begin);
+	/* Fill in the filename field */
+	do
+	{
+		mid = strchr(begin, '=');
+		begin++;
+		name = strndup(begin, mid - begin);
 
-        begin = strchr(begin, '&');
-        mid++;
+		begin = strchr(begin, '&');
+		mid++;
 
-        if (!begin)
-            value = strdup(mid);
-        else value = strndup(mid, begin-mid);
+		if (!begin)
+			value = strdup(mid);
+		else value = strndup(mid, begin - mid);
 
-        if(strstr(value, "_UPLOAD"))
-        {
-            path = strrchr(value, '_');
-            file = strndup(value, path-value);
+		if (strstr(value, "_UPLOAD"))
+		{
+			path = strrchr(value, '_');
+			file = strndup(value, path - value);
 
-            curl_formadd(&formpost,
-                &lastptr,
-                CURLFORM_COPYNAME, name,
-                CURLFORM_FILE, file,
-                CURLFORM_END);
+			curl_formadd(&formpost,
+			             &lastptr,
+			             CURLFORM_COPYNAME, name,
+			             CURLFORM_FILE, file,
+			             CURLFORM_END);
 
-            free(file);
-        }
-        else
-        {
-            curl_formadd(&formpost,
-                &lastptr,
-                CURLFORM_COPYNAME, name,
-                CURLFORM_COPYCONTENTS, value,
-                CURLFORM_END);
-        }
+			free(file);
+		}
+		else
+		{
+			curl_formadd(&formpost,
+			             &lastptr,
+			             CURLFORM_COPYNAME, name,
+			             CURLFORM_COPYCONTENTS, value,
+			             CURLFORM_END);
+		}
 
-        free(name);
-        free(value);
-    }
-    while (begin);
+		free(name);
+		free(value);
+	}
+	while (begin);
 
-    free(begin);
-    return formpost;
+	free(begin);
+	return formpost;
 }
 
-struct block downloadfile(CURL *curl_handle, const char *url, FILE *hfile)
+struct block downloadfile(CURL* curl_handle, const char* url, FILE* hfile)
 {
-    const char *mode = strrchr(url, '\\');
-    findRchr(url, '\\');
+	const char* mode = strrchr(url, '\\');
+	findRchr(url, '\\');
 
-    if (firstRun)
-        firstRun = false;
-    else curl_easy_reset(curl_handle);
+	if (firstRun)
+		firstRun = false;
+	else curl_easy_reset(curl_handle);
 
-    if (!mode)
-        return getrequest(curl_handle, url, hfile);
+	if (!mode)
+		return getrequest(curl_handle, url, hfile);
 
-    if (strcasestr(mode + 1, "post"))
-        return postrequest(curl_handle, url, NULL);
+	if (strcasestr(mode + 1, "post"))
+		return postrequest(curl_handle, url, nullptr);
+	if (strcasestr(mode + 1, "multipart"))
+	{
+		curl_httppost* data = multipartform(url);
+		return postrequest(curl_handle, url, data);
+	}
 
-    else if (strcasestr(mode + 1, "multipart"))
-    {
-        curl_httppost *data = multipartform(url);
-        return postrequest(curl_handle, url, data);
-    }
-
-    return getrequest(curl_handle, url, hfile);
+	return getrequest(curl_handle, url, hfile);
 }
 
 // -----------------------------------------------------------
 // DEBUG METHODES
 // -----------------------------------------------------------
 
-void Debug(const char *msg)
+void Debug(const char* msg)
 {
-    #ifdef DEBUG_LEVEL
-        FILE *f = fopen ("debug.txt", "a");
-        fputs (msg ,f);
-        fputs ("\r\n" ,f);
-        fclose(f);
-    #endif
+#ifdef DEBUG_LEVEL
+	FILE* f = fopen("debug.txt", "a");
+	fputs(msg, f);
+	fputs("\r\n", f);
+	fclose(f);
+#endif
 }
 
 void DebugInt(u32 msg)
 {
-    #ifdef DEBUG_LEVEL
-        FILE *f = fopen ("debug.txt", "a");
-        fprintf (f, "%d", msg);
-        fputs ("\r\n" ,f);
-        fclose(f);
-    #endif
+#ifdef DEBUG_LEVEL
+	FILE* f = fopen("debug.txt", "a");
+	fprintf(f, "%d", msg);
+	fputs("\r\n", f);
+	fclose(f);
+#endif
 }
 
-void save(struct block *b, FILE *hfile)
+void save(struct block* b, FILE* hfile)
 {
-    FILE *f = hfile;
-    if (!f)
-        f = fopen ("page.wbr", "wb");
-    fwrite (b->data, b->size, 1, f);
-    fclose(f);
+	FILE* f = hfile;
+	if (!f)
+		f = fopen("page.wbr", "wb");
+	fwrite(b->data, b->size, 1, f);
+	fclose(f);
 }
 
 // -----------------------------------------------------------
@@ -511,72 +518,72 @@ void save(struct block *b, FILE *hfile)
 
 bool mustdownload(char content[])
 {
-    if (strstr(content, "text/html") || strstr(content, "application/xhtml")
-           /* || strstr(content, "text") */ || strstr(content, "image")
+	if (strstr(content, "text/html") || strstr(content, "application/xhtml")
+		/* || strstr(content, "text") */ || strstr(content, "image")
 #ifdef MPLAYER
-                || strstr(content, "video")
+		|| strstr(content, "video")
 #endif
-        )
-        return false;
-    return true;
+	)
+		return false;
+	return true;
 }
 
-char *findChr (const char *str, char chr)
+char* findChr(const char* str, char chr)
 {
-    char *c = strchr(str, chr);
-    if (c != NULL)
-        *c = '\0';
-    return (char*)c;
+	char* c = strchr(str, chr);
+	if (c != nullptr)
+		*c = '\0';
+	return c;
 }
 
-char *findRchr (const char *str, char chr)
+char* findRchr(const char* str, char chr)
 {
-    char *c = strrchr(str, chr);
-    if (c != NULL)
-        *c = '\0';
-    return (char*)c;
+	char* c = strrchr(str, chr);
+	if (c != nullptr)
+		*c = '\0';
+	return c;
 }
 
 bool validProxy()
 {
-    if(strlen(Settings.Proxy))
-        return true;
+	if (strlen(Settings.Proxy))
+		return true;
 
-    return false;
+	return false;
 }
 
-void trimline(char *init, struct block *dest)
+void trimline(char* init, struct block* dest)
 {
-    int len = strlen(init);
-    while (len > 0 && strchr(" \r\n", init[len-1]))
-        len--;
+	int len = strlen(init);
+	while (len > 0 && strchr(" \r\n", init[len - 1]))
+		len--;
 
-	dest->data = (char *)malloc(256);
+	dest->data = static_cast<char*>(malloc(256));
 	init[len] = 0;
 
-    if(init[0] == '"')
-    {
-        findChr(init+1, '"');
-        strcpy(dest->data, init+1);
-    }
-    else strcpy(dest->data, init);
+	if (init[0] == '"')
+	{
+		findChr(init + 1, '"');
+		strcpy(dest->data, init + 1);
+	}
+	else strcpy(dest->data, init);
 }
 
-void fillstruct(CURL *handle, HeaderStruct *head, struct block *dest)
+void fillstruct(CURL* handle, HeaderStruct* head, struct block* dest)
 {
-    char *ct = NULL;
-    char *ft;
-    dest->size = DFOUND;
+	char* ct = nullptr;
+	char* ft;
+	dest->size = DFOUND;
 
-    if(CURLE_OK == curl_easy_getinfo(curl_handle, CURLINFO_CONTENT_TYPE, &ct) && ct)
-    {
-        findChr(ct, ';');
-        strcpy(dest->type, ct);
-    }
+	if (CURLE_OK == curl_easy_getinfo(curl_handle, CURLINFO_CONTENT_TYPE, &ct) && ct)
+	{
+		findChr(ct, ';');
+		strcpy(dest->type, ct);
+	}
 
-    if((ft = strstr(head->filename, "filename=")))
-    {
-        trimline(ft+9, dest);
-    }
-    else dest->data = NULL;
+	if ((ft = strstr(head->filename, "filename=")))
+	{
+		trimline(ft + 9, dest);
+	}
+	else dest->data = nullptr;
 }

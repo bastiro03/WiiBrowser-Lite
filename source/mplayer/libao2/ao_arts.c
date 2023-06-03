@@ -40,15 +40,15 @@ static arts_stream_t stream;
 
 static const ao_info_t info =
 {
-    "aRts audio output",
-    "arts",
-    "Michele Balistreri <brain87@gmx.net>",
-    ""
+	"aRts audio output",
+	"arts",
+	"Michele Balistreri <brain87@gmx.net>",
+	""
 };
 
 LIBAO_EXTERN(arts)
 
-static int control(int cmd, void *arg)
+static int control(int cmd, void* arg)
 {
 	return CONTROL_UNKNOWN;
 }
@@ -58,7 +58,8 @@ static int init(int rate_hz, int channels, int format, int flags)
 	int err;
 	int frag_spec;
 
-	if( (err=arts_init()) ) {
+	if ((err = arts_init()))
+	{
 		mp_msg(MSGT_AO, MSGL_ERR, MSGTR_AO_ARTS_CantInit, arts_error_text(err));
 		return 0;
 	}
@@ -72,27 +73,29 @@ static int init(int rate_hz, int channels, int format, int flags)
 	 * Unsupported formats are translated to one of these two formats
 	 * using mplayer's audio filters.
 	 */
-	switch (format) {
+	switch (format)
+	{
 	case AF_FORMAT_U8:
 	case AF_FORMAT_S8:
-	    format = AF_FORMAT_U8;
-	    break;
+		format = AF_FORMAT_U8;
+		break;
 	default:
-	    format = AF_FORMAT_S16_LE;    /* artsd always expects little endian?*/
-	    break;
+		format = AF_FORMAT_S16_LE; /* artsd always expects little endian?*/
+		break;
 	}
 
 	ao_data.format = format;
 	ao_data.channels = channels;
 	ao_data.samplerate = rate_hz;
-	ao_data.bps = (rate_hz*channels);
+	ao_data.bps = (rate_hz * channels);
 
-	if(format != AF_FORMAT_U8 && format != AF_FORMAT_S8)
-		ao_data.bps*=2;
+	if (format != AF_FORMAT_U8 && format != AF_FORMAT_S8)
+		ao_data.bps *= 2;
 
-	stream=arts_play_stream(rate_hz, OBTAIN_BITRATE(format), channels, "MPlayer");
+	stream = arts_play_stream(rate_hz, OBTAIN_BITRATE(format), channels, "MPlayer");
 
-	if(stream == NULL) {
+	if (stream == NULL)
+	{
 		mp_msg(MSGT_AO, MSGL_ERR, MSGTR_AO_ARTS_CantOpenStream);
 		arts_free();
 		return 0;
@@ -107,9 +110,9 @@ static int init(int rate_hz, int channels, int format, int flags)
 	mp_msg(MSGT_AO, MSGL_INFO, MSGTR_AO_ARTS_StreamOpen);
 
 	mp_msg(MSGT_AO, MSGL_INFO, MSGTR_AO_ARTS_BufferSize,
-	    ao_data.buffersize);
+	       ao_data.buffersize);
 	mp_msg(MSGT_AO, MSGL_INFO, MSGTR_AO_ARTS_BufferSize,
-	    arts_stream_get(stream, ARTS_P_PACKET_SIZE));
+	       arts_stream_get(stream, ARTS_P_PACKET_SIZE));
 
 	return 1;
 }
@@ -120,7 +123,7 @@ static void uninit(int immed)
 	arts_free();
 }
 
-static int play(void* data,int len,int flags)
+static int play(void* data, int len, int flags)
 {
 	return arts_write(stream, data, len);
 }
@@ -144,6 +147,6 @@ static int get_space(void)
 
 static float get_delay(void)
 {
-	return ((float) (ao_data.buffersize - arts_stream_get(stream,
-		ARTS_P_BUFFER_SPACE))) / ((float) ao_data.bps);
+	return ((float)(ao_data.buffersize - arts_stream_get(stream,
+	                                                     ARTS_P_BUFFER_SPACE))) / ((float)ao_data.bps);
 }

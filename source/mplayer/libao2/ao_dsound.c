@@ -24,7 +24,6 @@
 \todo verify/extend multichannel support
 */
 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
@@ -40,7 +39,6 @@
 #include "libvo/fastmemcpy.h"
 #include "osdep/timer.h"
 #include "subopt-helper.h"
-
 
 static const ao_info_t info =
 {
@@ -59,7 +57,7 @@ LIBAO_EXTERN(dsound)
 #define WAVE_FORMAT_DOLBY_AC3_SPDIF 0x0092
 #define WAVE_FORMAT_EXTENSIBLE 0xFFFE
 
-static const GUID KSDATAFORMAT_SUBTYPE_PCM = {0x1,0x0000,0x0010, {0x80,0x00,0x00,0xaa,0x00,0x38,0x9b,0x71}};
+static const GUID KSDATAFORMAT_SUBTYPE_PCM = {0x1, 0x0000, 0x0010, {0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71}};
 
 #define SPEAKER_FRONT_LEFT             0x1
 #define SPEAKER_FRONT_RIGHT            0x2
@@ -89,38 +87,44 @@ static const GUID KSDATAFORMAT_SUBTYPE_PCM = {0x1,0x0000,0x0010, {0x80,0x00,0x00
 #define DSSPEAKER_5POINT1           0x00000006
 
 #ifndef _WAVEFORMATEXTENSIBLE_
-typedef struct {
-    WAVEFORMATEX    Format;
-    union {
-        WORD wValidBitsPerSample;       /* bits of precision  */
-        WORD wSamplesPerBlock;          /* valid if wBitsPerSample==0 */
-        WORD wReserved;                 /* If neither applies, set to zero. */
-    } Samples;
-    DWORD           dwChannelMask;      /* which channels are */
-                                        /* present in stream  */
-    GUID            SubFormat;
+typedef struct
+{
+	WAVEFORMATEX Format;
+
+	union
+	{
+		WORD wValidBitsPerSample; /* bits of precision  */
+		WORD wSamplesPerBlock; /* valid if wBitsPerSample==0 */
+		WORD wReserved; /* If neither applies, set to zero. */
+	} Samples;
+
+	DWORD dwChannelMask; /* which channels are */
+	/* present in stream  */
+	GUID SubFormat;
 } WAVEFORMATEXTENSIBLE, *PWAVEFORMATEXTENSIBLE;
 #endif
 
 static const int channel_mask[] = {
-  SPEAKER_FRONT_LEFT   | SPEAKER_FRONT_RIGHT  | SPEAKER_LOW_FREQUENCY,
-  SPEAKER_FRONT_LEFT   | SPEAKER_FRONT_RIGHT  | SPEAKER_BACK_LEFT    | SPEAKER_BACK_RIGHT,
-  SPEAKER_FRONT_LEFT   | SPEAKER_FRONT_RIGHT  | SPEAKER_BACK_LEFT    | SPEAKER_BACK_RIGHT   | SPEAKER_LOW_FREQUENCY,
-  SPEAKER_FRONT_LEFT   | SPEAKER_FRONT_CENTER | SPEAKER_FRONT_RIGHT  | SPEAKER_BACK_LEFT    | SPEAKER_BACK_RIGHT     | SPEAKER_LOW_FREQUENCY
+	SPEAKER_FRONT_LEFT | SPEAKER_FRONT_RIGHT | SPEAKER_LOW_FREQUENCY,
+	SPEAKER_FRONT_LEFT | SPEAKER_FRONT_RIGHT | SPEAKER_BACK_LEFT | SPEAKER_BACK_RIGHT,
+	SPEAKER_FRONT_LEFT | SPEAKER_FRONT_RIGHT | SPEAKER_BACK_LEFT | SPEAKER_BACK_RIGHT | SPEAKER_LOW_FREQUENCY,
+	SPEAKER_FRONT_LEFT | SPEAKER_FRONT_CENTER | SPEAKER_FRONT_RIGHT | SPEAKER_BACK_LEFT | SPEAKER_BACK_RIGHT |
+	SPEAKER_LOW_FREQUENCY
 };
 
-static HINSTANCE hdsound_dll = NULL;      ///handle to the dll
-static LPDIRECTSOUND hds = NULL;          ///direct sound object
+static HINSTANCE hdsound_dll = NULL; ///handle to the dll
+static LPDIRECTSOUND hds = NULL; ///direct sound object
 static LPDIRECTSOUNDBUFFER hdspribuf = NULL; ///primary direct sound buffer
 static LPDIRECTSOUNDBUFFER hdsbuf = NULL; ///secondary direct sound buffer (stream buffer)
-static int buffer_size = 0;               ///size in bytes of the direct sound buffer
-static int write_offset = 0;              ///offset of the write cursor in the direct sound buffer
-static int min_free_space = 0;            ///if the free space is below this value get_space() will return 0
-                                          ///there will always be at least this amout of free space to prevent
-                                          ///get_space() from returning wrong values when buffer is 100% full.
-                                          ///will be replaced with nBlockAlign in init()
-static int device_num = 0;                ///wanted device number
-static GUID device;                       ///guid of the device
+static int buffer_size = 0; ///size in bytes of the direct sound buffer
+static int write_offset = 0; ///offset of the write cursor in the direct sound buffer
+static int min_free_space = 0;
+///if the free space is below this value get_space() will return 0
+///there will always be at least this amout of free space to prevent
+///get_space() from returning wrong values when buffer is 100% full.
+///will be replaced with nBlockAlign in init()
+static int device_num = 0; ///wanted device number
+static GUID device; ///guid of the device
 
 /***************************************************************************************/
 
@@ -129,29 +133,30 @@ static GUID device;                       ///guid of the device
 \param err error code
 \return string with the error message
 */
-static char * dserr2str(int err)
+static char* dserr2str(int err)
 {
-	switch (err) {
-		case DS_OK: return "DS_OK";
-		case DS_NO_VIRTUALIZATION: return "DS_NO_VIRTUALIZATION";
-		case DSERR_ALLOCATED: return "DS_NO_VIRTUALIZATION";
-		case DSERR_CONTROLUNAVAIL: return "DSERR_CONTROLUNAVAIL";
-		case DSERR_INVALIDPARAM: return "DSERR_INVALIDPARAM";
-		case DSERR_INVALIDCALL: return "DSERR_INVALIDCALL";
-		case DSERR_GENERIC: return "DSERR_GENERIC";
-		case DSERR_PRIOLEVELNEEDED: return "DSERR_PRIOLEVELNEEDED";
-		case DSERR_OUTOFMEMORY: return "DSERR_OUTOFMEMORY";
-		case DSERR_BADFORMAT: return "DSERR_BADFORMAT";
-		case DSERR_UNSUPPORTED: return "DSERR_UNSUPPORTED";
-		case DSERR_NODRIVER: return "DSERR_NODRIVER";
-		case DSERR_ALREADYINITIALIZED: return "DSERR_ALREADYINITIALIZED";
-		case DSERR_NOAGGREGATION: return "DSERR_NOAGGREGATION";
-		case DSERR_BUFFERLOST: return "DSERR_BUFFERLOST";
-		case DSERR_OTHERAPPHASPRIO: return "DSERR_OTHERAPPHASPRIO";
-		case DSERR_UNINITIALIZED: return "DSERR_UNINITIALIZED";
-		case DSERR_NOINTERFACE: return "DSERR_NOINTERFACE";
-		case DSERR_ACCESSDENIED: return "DSERR_ACCESSDENIED";
-		default: return "unknown";
+	switch (err)
+	{
+	case DS_OK: return "DS_OK";
+	case DS_NO_VIRTUALIZATION: return "DS_NO_VIRTUALIZATION";
+	case DSERR_ALLOCATED: return "DS_NO_VIRTUALIZATION";
+	case DSERR_CONTROLUNAVAIL: return "DSERR_CONTROLUNAVAIL";
+	case DSERR_INVALIDPARAM: return "DSERR_INVALIDPARAM";
+	case DSERR_INVALIDCALL: return "DSERR_INVALIDCALL";
+	case DSERR_GENERIC: return "DSERR_GENERIC";
+	case DSERR_PRIOLEVELNEEDED: return "DSERR_PRIOLEVELNEEDED";
+	case DSERR_OUTOFMEMORY: return "DSERR_OUTOFMEMORY";
+	case DSERR_BADFORMAT: return "DSERR_BADFORMAT";
+	case DSERR_UNSUPPORTED: return "DSERR_UNSUPPORTED";
+	case DSERR_NODRIVER: return "DSERR_NODRIVER";
+	case DSERR_ALREADYINITIALIZED: return "DSERR_ALREADYINITIALIZED";
+	case DSERR_NOAGGREGATION: return "DSERR_NOAGGREGATION";
+	case DSERR_BUFFERLOST: return "DSERR_BUFFERLOST";
+	case DSERR_OTHERAPPHASPRIO: return "DSERR_OTHERAPPHASPRIO";
+	case DSERR_UNINITIALIZED: return "DSERR_UNINITIALIZED";
+	case DSERR_NOINTERFACE: return "DSERR_NOINTERFACE";
+	case DSERR_ACCESSDENIED: return "DSERR_ACCESSDENIED";
+	default: return "unknown";
 	}
 }
 
@@ -160,16 +165,18 @@ static char * dserr2str(int err)
 */
 static void UninitDirectSound(void)
 {
-    // finally release the DirectSound object
-    if (hds) {
-    	IDirectSound_Release(hds);
-    	hds = NULL;
-    }
-    // free DSOUND.DLL
-    if (hdsound_dll) {
-    	FreeLibrary(hdsound_dll);
-    	hdsound_dll = NULL;
-    }
+	// finally release the DirectSound object
+	if (hds)
+	{
+		IDirectSound_Release(hds);
+		hds = NULL;
+	}
+	// free DSOUND.DLL
+	if (hdsound_dll)
+	{
+		FreeLibrary(hdsound_dll);
+		hdsound_dll = NULL;
+	}
 	mp_msg(MSGT_AO, MSGL_V, "ao_dsound: DirectSound uninitialized\n");
 }
 
@@ -178,35 +185,35 @@ static void UninitDirectSound(void)
 */
 static void print_help(void)
 {
-  mp_msg(MSGT_AO, MSGL_FATAL,
-           "\n-ao dsound commandline help:\n"
-           "Example: mplayer -ao dsound:device=1\n"
-           "  sets 1st device\n"
-           "\nOptions:\n"
-           "  device=<device-number>\n"
-           "    Sets device number, use -v to get a list\n");
+	mp_msg(MSGT_AO, MSGL_FATAL,
+	       "\n-ao dsound commandline help:\n"
+	       "Example: mplayer -ao dsound:device=1\n"
+	       "  sets 1st device\n"
+	       "\nOptions:\n"
+	       "  device=<device-number>\n"
+	       "    Sets device number, use -v to get a list\n");
 }
-
 
 /**
 \brief enumerate direct sound devices
 \return TRUE to continue with the enumeration
 */
-static BOOL CALLBACK DirectSoundEnum(LPGUID guid,LPCSTR desc,LPCSTR module,LPVOID context)
+static BOOL CALLBACK DirectSoundEnum(LPGUID guid, LPCSTR desc, LPCSTR module, LPVOID context)
 {
-    int* device_index=context;
-    mp_msg(MSGT_AO, MSGL_V,"%i %s ",*device_index,desc);
-    if(device_num==*device_index){
-        mp_msg(MSGT_AO, MSGL_V,"<--");
-        if(guid){
-            memcpy(&device,guid,sizeof(GUID));
-        }
-    }
-    mp_msg(MSGT_AO, MSGL_V,"\n");
-    (*device_index)++;
-    return TRUE;
+	int* device_index = context;
+	mp_msg(MSGT_AO, MSGL_V, "%i %s ", *device_index, desc);
+	if (device_num == *device_index)
+	{
+		mp_msg(MSGT_AO, MSGL_V, "<--");
+		if (guid)
+		{
+			memcpy(&device, guid, sizeof(GUID));
+		}
+	}
+	mp_msg(MSGT_AO, MSGL_V, "\n");
+	(*device_index)++;
+	return TRUE;
 }
-
 
 /**
 \brief initilize direct sound
@@ -217,38 +224,42 @@ static int InitDirectSound(void)
 	DSCAPS dscaps;
 
 	// initialize directsound
-    HRESULT (WINAPI *OurDirectSoundCreate)(LPGUID, LPDIRECTSOUND *, LPUNKNOWN);
+	HRESULT (WINAPI *OurDirectSoundCreate)(LPGUID, LPDIRECTSOUND*, LPUNKNOWN);
 	HRESULT (WINAPI *OurDirectSoundEnumerate)(LPDSENUMCALLBACKA, LPVOID);
-	int device_index=0;
+	int device_index = 0;
 	const opt_t subopts[] = {
-	  {"device", OPT_ARG_INT, &device_num,NULL},
-	  {NULL}
+		{"device", OPT_ARG_INT, &device_num,NULL},
+		{NULL}
 	};
-	if (subopt_parse(ao_subdevice, subopts) != 0) {
+	if (subopt_parse(ao_subdevice, subopts) != 0)
+	{
 		print_help();
 		return 0;
 	}
 
 	hdsound_dll = LoadLibrary("DSOUND.DLL");
-	if (hdsound_dll == NULL) {
+	if (hdsound_dll == NULL)
+	{
 		mp_msg(MSGT_AO, MSGL_ERR, "ao_dsound: cannot load DSOUND.DLL\n");
 		return 0;
 	}
 	OurDirectSoundCreate = (void*)GetProcAddress(hdsound_dll, "DirectSoundCreate");
 	OurDirectSoundEnumerate = (void*)GetProcAddress(hdsound_dll, "DirectSoundEnumerateA");
 
-	if (OurDirectSoundCreate == NULL || OurDirectSoundEnumerate == NULL) {
+	if (OurDirectSoundCreate == NULL || OurDirectSoundEnumerate == NULL)
+	{
 		mp_msg(MSGT_AO, MSGL_ERR, "ao_dsound: GetProcAddress FAILED\n");
 		FreeLibrary(hdsound_dll);
 		return 0;
 	}
 
 	// Enumerate all directsound devices
-	mp_msg(MSGT_AO, MSGL_V,"ao_dsound: Output Devices:\n");
-	OurDirectSoundEnumerate(DirectSoundEnum,&device_index);
+	mp_msg(MSGT_AO, MSGL_V, "ao_dsound: Output Devices:\n");
+	OurDirectSoundEnumerate(DirectSoundEnum, &device_index);
 
 	// Create the direct sound object
-	if FAILED(OurDirectSoundCreate((device_num)?&device:NULL, &hds, NULL )) {
+	if FAILED(OurDirectSoundCreate((device_num) ? &device : NULL, &hds, NULL))
+	{
 		mp_msg(MSGT_AO, MSGL_ERR, "ao_dsound: cannot create a DirectSound device\n");
 		FreeLibrary(hdsound_dll);
 		return 0;
@@ -264,7 +275,8 @@ static int InitDirectSound(void)
 	 * sound without any video, and so what window handle should we use ???
 	 * The hack for now is to use the Desktop window handle - it seems to be
 	 * working */
-	if (IDirectSound_SetCooperativeLevel(hds, GetDesktopWindow(), DSSCL_EXCLUSIVE)) {
+	if (IDirectSound_SetCooperativeLevel(hds, GetDesktopWindow(), DSSCL_EXCLUSIVE))
+	{
 		mp_msg(MSGT_AO, MSGL_ERR, "ao_dsound: cannot set direct sound cooperative level\n");
 		IDirectSound_Release(hds);
 		FreeLibrary(hdsound_dll);
@@ -274,9 +286,13 @@ static int InitDirectSound(void)
 
 	memset(&dscaps, 0, sizeof(DSCAPS));
 	dscaps.dwSize = sizeof(DSCAPS);
-	if (DS_OK == IDirectSound_GetCaps(hds, &dscaps)) {
-		if (dscaps.dwFlags & DSCAPS_EMULDRIVER) mp_msg(MSGT_AO, MSGL_V, "ao_dsound: DirectSound is emulated, waveOut may give better performance\n");
-	} else {
+	if (DS_OK == IDirectSound_GetCaps(hds, &dscaps))
+	{
+		if (dscaps.dwFlags & DSCAPS_EMULDRIVER) mp_msg(MSGT_AO, MSGL_V,
+		                                               "ao_dsound: DirectSound is emulated, waveOut may give better performance\n");
+	}
+	else
+	{
 		mp_msg(MSGT_AO, MSGL_V, "ao_dsound: cannot get device capabilities\n");
 	}
 
@@ -288,11 +304,13 @@ static int InitDirectSound(void)
 */
 static void DestroyBuffer(void)
 {
-	if (hdsbuf) {
+	if (hdsbuf)
+	{
 		IDirectSoundBuffer_Release(hdsbuf);
 		hdsbuf = NULL;
 	}
-	if (hdspribuf) {
+	if (hdspribuf)
+	{
 		IDirectSoundBuffer_Release(hdspribuf);
 		hdspribuf = NULL;
 	}
@@ -304,75 +322,84 @@ static void DestroyBuffer(void)
 \param len length of the data to copy in bytes
 \return number of copyed bytes
 */
-static int write_buffer(unsigned char *data, int len)
+static int write_buffer(unsigned char* data, int len)
 {
-  HRESULT res;
-  LPVOID lpvPtr1;
-  DWORD dwBytes1;
-  LPVOID lpvPtr2;
-  DWORD dwBytes2;
+	HRESULT res;
+	LPVOID lpvPtr1;
+	DWORD dwBytes1;
+	LPVOID lpvPtr2;
+	DWORD dwBytes2;
 
-  // Lock the buffer
-  res = IDirectSoundBuffer_Lock(hdsbuf,write_offset, len, &lpvPtr1, &dwBytes1, &lpvPtr2, &dwBytes2, 0);
-  // If the buffer was lost, restore and retry lock.
-  if (DSERR_BUFFERLOST == res)
-  {
-    IDirectSoundBuffer_Restore(hdsbuf);
-	res = IDirectSoundBuffer_Lock(hdsbuf,write_offset, len, &lpvPtr1, &dwBytes1, &lpvPtr2, &dwBytes2, 0);
-  }
+	// Lock the buffer
+	res = IDirectSoundBuffer_Lock(hdsbuf, write_offset, len, &lpvPtr1, &dwBytes1, &lpvPtr2, &dwBytes2, 0);
+	// If the buffer was lost, restore and retry lock.
+	if (DSERR_BUFFERLOST == res)
+	{
+		IDirectSoundBuffer_Restore(hdsbuf);
+		res = IDirectSoundBuffer_Lock(hdsbuf, write_offset, len, &lpvPtr1, &dwBytes1, &lpvPtr2, &dwBytes2, 0);
+	}
 
+	if (SUCCEEDED(res))
+	{
+		if ((ao_data.channels == 6) && !AF_FORMAT_IS_AC3(ao_data.format))
+		{
+			// reorder channels while writing to pointers.
+			// it's this easy because buffer size and len are always
+			// aligned to multiples of channels*bytespersample
+			// there's probably some room for speed improvements here
+			const int chantable[6] = {0, 1, 4, 5, 2, 3}; // reorder "matrix"
+			int i, j;
+			int numsamp, sampsize;
 
-  if (SUCCEEDED(res))
-  {
-  	if( (ao_data.channels == 6) && !AF_FORMAT_IS_AC3(ao_data.format) ) {
-  	    // reorder channels while writing to pointers.
-  	    // it's this easy because buffer size and len are always
-  	    // aligned to multiples of channels*bytespersample
-  	    // there's probably some room for speed improvements here
-  	    const int chantable[6] = {0, 1, 4, 5, 2, 3}; // reorder "matrix"
-  	    int i, j;
-  	    int numsamp,sampsize;
+			sampsize = af_fmt2bits(ao_data.format) >> 3; // bytes per sample
+			numsamp = dwBytes1 / (ao_data.channels * sampsize); // number of samples for each channel in this buffer
 
-  	    sampsize = af_fmt2bits(ao_data.format)>>3; // bytes per sample
-  	    numsamp = dwBytes1 / (ao_data.channels * sampsize);  // number of samples for each channel in this buffer
+			for (i = 0; i < numsamp; i++)
+				for (j = 0; j < ao_data.channels; j++)
+				{
+					memcpy(lpvPtr1 + (i * ao_data.channels * sampsize) + (chantable[j] * sampsize),
+					       data + (i * ao_data.channels * sampsize) + (j * sampsize), sampsize);
+				}
 
-  	    for( i = 0; i < numsamp; i++ ) for( j = 0; j < ao_data.channels; j++ ) {
-  	        memcpy(lpvPtr1+(i*ao_data.channels*sampsize)+(chantable[j]*sampsize),data+(i*ao_data.channels*sampsize)+(j*sampsize),sampsize);
-  	    }
+			if (NULL != lpvPtr2)
+			{
+				numsamp = dwBytes2 / (ao_data.channels * sampsize);
+				for (i = 0; i < numsamp; i++)
+					for (j = 0; j < ao_data.channels; j++)
+					{
+						memcpy(lpvPtr2 + (i * ao_data.channels * sampsize) + (chantable[j] * sampsize),
+						       data + dwBytes1 + (i * ao_data.channels * sampsize) + (j * sampsize), sampsize);
+					}
+			}
 
-  	    if (NULL != lpvPtr2 )
-  	    {
-  	        numsamp = dwBytes2 / (ao_data.channels * sampsize);
-  	        for( i = 0; i < numsamp; i++ ) for( j = 0; j < ao_data.channels; j++ ) {
-  	            memcpy(lpvPtr2+(i*ao_data.channels*sampsize)+(chantable[j]*sampsize),data+dwBytes1+(i*ao_data.channels*sampsize)+(j*sampsize),sampsize);
-  	        }
-  	    }
+			write_offset += dwBytes1 + dwBytes2;
+			if (write_offset >= buffer_size)write_offset = dwBytes2;
+		}
+		else
+		{
+			// Write to pointers without reordering.
+			fast_memcpy(lpvPtr1, data, dwBytes1);
+			if (NULL != lpvPtr2)fast_memcpy(lpvPtr2, data + dwBytes1, dwBytes2);
+			write_offset += dwBytes1 + dwBytes2;
+			if (write_offset >= buffer_size)write_offset = dwBytes2;
+		}
 
-  	    write_offset+=dwBytes1+dwBytes2;
-  	    if(write_offset>=buffer_size)write_offset=dwBytes2;
-  	} else {
-  	    // Write to pointers without reordering.
-	fast_memcpy(lpvPtr1,data,dwBytes1);
-    if (NULL != lpvPtr2 )fast_memcpy(lpvPtr2,data+dwBytes1,dwBytes2);
-	write_offset+=dwBytes1+dwBytes2;
-    if(write_offset>=buffer_size)write_offset=dwBytes2;
-  	}
-
-   // Release the data back to DirectSound.
-    res = IDirectSoundBuffer_Unlock(hdsbuf,lpvPtr1,dwBytes1,lpvPtr2,dwBytes2);
-    if (SUCCEEDED(res))
-    {
-	  // Success.
-	  DWORD status;
-	  IDirectSoundBuffer_GetStatus(hdsbuf, &status);
-      if (!(status & DSBSTATUS_PLAYING)){
-	    res = IDirectSoundBuffer_Play(hdsbuf, 0, 0, DSBPLAY_LOOPING);
-	  }
-	  return dwBytes1+dwBytes2;
-    }
-  }
-  // Lock, Unlock, or Restore failed.
-  return 0;
+		// Release the data back to DirectSound.
+		res = IDirectSoundBuffer_Unlock(hdsbuf, lpvPtr1, dwBytes1, lpvPtr2, dwBytes2);
+		if (SUCCEEDED(res))
+		{
+			// Success.
+			DWORD status;
+			IDirectSoundBuffer_GetStatus(hdsbuf, &status);
+			if (!(status & DSBSTATUS_PLAYING))
+			{
+				res = IDirectSoundBuffer_Play(hdsbuf, 0, 0, DSBPLAY_LOOPING);
+			}
+			return dwBytes1 + dwBytes2;
+		}
+	}
+	// Lock, Unlock, or Restore failed.
+	return 0;
 }
 
 /***************************************************************************************/
@@ -383,19 +410,22 @@ static int write_buffer(unsigned char *data, int len)
 \param arg argument
 \return CONTROL_OK or -1 in case the command can't be handled
 */
-static int control(int cmd, void *arg)
+static int control(int cmd, void* arg)
 {
 	DWORD volume;
-	switch (cmd) {
-		case AOCONTROL_GET_VOLUME: {
-			ao_control_vol_t* vol = (ao_control_vol_t*)arg;
+	switch (cmd)
+	{
+	case AOCONTROL_GET_VOLUME:
+		{
+			ao_control_vol_t* vol = arg;
 			IDirectSoundBuffer_GetVolume(hdsbuf, &volume);
-			vol->left = vol->right = pow(10.0, (float)(volume+10000) / 5000.0);
+			vol->left = vol->right = pow(10.0, (float)(volume + 10000) / 5000.0);
 			//printf("ao_dsound: volume: %f\n",vol->left);
 			return CONTROL_OK;
 		}
-		case AOCONTROL_SET_VOLUME: {
-			ao_control_vol_t* vol = (ao_control_vol_t*)arg;
+	case AOCONTROL_SET_VOLUME:
+		{
+			ao_control_vol_t* vol = arg;
 			volume = (DWORD)(log10(vol->right) * 5000.0) - 10000;
 			IDirectSoundBuffer_SetVolume(hdsbuf, volume);
 			//printf("ao_dsound: volume: %f\n",vol->left);
@@ -415,7 +445,7 @@ static int control(int cmd, void *arg)
 */
 static int init(int rate, int channels, int format, int flags)
 {
-    int res;
+	int res;
 	if (!InitDirectSound()) return 0;
 
 	// ok, now create the buffers
@@ -424,7 +454,8 @@ static int init(int rate, int channels, int format, int flags)
 	DSBUFFERDESC dsbdesc;
 
 	//check if the channel count and format is supported in general
-	if (channels > 6) {
+	if (channels > 6)
+	{
 		UninitDirectSound();
 		mp_msg(MSGT_AO, MSGL_ERR, "ao_dsound: 8 channel audio not yet supported\n");
 		return 0;
@@ -432,56 +463,63 @@ static int init(int rate, int channels, int format, int flags)
 
 	if (AF_FORMAT_IS_AC3(format))
 		format = AF_FORMAT_AC3_NE;
-	switch(format){
-		case AF_FORMAT_AC3_NE:
-		case AF_FORMAT_S24_LE:
-		case AF_FORMAT_S16_LE:
-		case AF_FORMAT_U8:
-			break;
-		default:
-			mp_msg(MSGT_AO, MSGL_V,"ao_dsound: format %s not supported defaulting to Signed 16-bit Little-Endian\n",af_fmt2str_short(format));
-			format=AF_FORMAT_S16_LE;
+	switch (format)
+	{
+	case AF_FORMAT_AC3_NE:
+	case AF_FORMAT_S24_LE:
+	case AF_FORMAT_S16_LE:
+	case AF_FORMAT_U8:
+		break;
+	default:
+		mp_msg(MSGT_AO, MSGL_V, "ao_dsound: format %s not supported defaulting to Signed 16-bit Little-Endian\n",
+		       af_fmt2str_short(format));
+		format = AF_FORMAT_S16_LE;
 	}
 	//fill global ao_data
 	ao_data.channels = channels;
 	ao_data.samplerate = rate;
 	ao_data.format = format;
-	ao_data.bps = channels * rate * (af_fmt2bits(format)>>3);
-	if(ao_data.buffersize==-1) ao_data.buffersize = ao_data.bps; // space for 1 sec
-	mp_msg(MSGT_AO, MSGL_V,"ao_dsound: Samplerate:%iHz Channels:%i Format:%s\n", rate, channels, af_fmt2str_short(format));
-	mp_msg(MSGT_AO, MSGL_V,"ao_dsound: Buffersize:%d bytes (%d msec)\n", ao_data.buffersize, ao_data.buffersize / ao_data.bps * 1000);
+	ao_data.bps = channels * rate * (af_fmt2bits(format) >> 3);
+	if (ao_data.buffersize == -1) ao_data.buffersize = ao_data.bps; // space for 1 sec
+	mp_msg(MSGT_AO, MSGL_V, "ao_dsound: Samplerate:%iHz Channels:%i Format:%s\n", rate, channels,
+	       af_fmt2str_short(format));
+	mp_msg(MSGT_AO, MSGL_V, "ao_dsound: Buffersize:%d bytes (%d msec)\n", ao_data.buffersize,
+	       ao_data.buffersize / ao_data.bps * 1000);
 
 	//fill waveformatex
 	ZeroMemory(&wformat, sizeof(WAVEFORMATEXTENSIBLE));
-	wformat.Format.cbSize          = (channels > 2) ? sizeof(WAVEFORMATEXTENSIBLE)-sizeof(WAVEFORMATEX) : 0;
-	wformat.Format.nChannels       = channels;
-	wformat.Format.nSamplesPerSec  = rate;
-	if (AF_FORMAT_IS_AC3(format)) {
-		wformat.Format.wFormatTag      = WAVE_FORMAT_DOLBY_AC3_SPDIF;
-		wformat.Format.wBitsPerSample  = 16;
-		wformat.Format.nBlockAlign     = 4;
-	} else {
-		wformat.Format.wFormatTag      = (channels > 2) ? WAVE_FORMAT_EXTENSIBLE : WAVE_FORMAT_PCM;
-		wformat.Format.wBitsPerSample  = af_fmt2bits(format);
-		wformat.Format.nBlockAlign     = wformat.Format.nChannels * (wformat.Format.wBitsPerSample >> 3);
+	wformat.Format.cbSize = (channels > 2) ? sizeof(WAVEFORMATEXTENSIBLE) - sizeof(WAVEFORMATEX) : 0;
+	wformat.Format.nChannels = channels;
+	wformat.Format.nSamplesPerSec = rate;
+	if (AF_FORMAT_IS_AC3(format))
+	{
+		wformat.Format.wFormatTag = WAVE_FORMAT_DOLBY_AC3_SPDIF;
+		wformat.Format.wBitsPerSample = 16;
+		wformat.Format.nBlockAlign = 4;
+	}
+	else
+	{
+		wformat.Format.wFormatTag = (channels > 2) ? WAVE_FORMAT_EXTENSIBLE : WAVE_FORMAT_PCM;
+		wformat.Format.wBitsPerSample = af_fmt2bits(format);
+		wformat.Format.nBlockAlign = wformat.Format.nChannels * (wformat.Format.wBitsPerSample >> 3);
 	}
 
 	// fill in primary sound buffer descriptor
 	memset(&dsbpridesc, 0, sizeof(DSBUFFERDESC));
 	dsbpridesc.dwSize = sizeof(DSBUFFERDESC);
-	dsbpridesc.dwFlags       = DSBCAPS_PRIMARYBUFFER;
+	dsbpridesc.dwFlags = DSBCAPS_PRIMARYBUFFER;
 	dsbpridesc.dwBufferBytes = 0;
-	dsbpridesc.lpwfxFormat   = NULL;
-
+	dsbpridesc.lpwfxFormat = NULL;
 
 	// fill in the secondary sound buffer (=stream buffer) descriptor
 	memset(&dsbdesc, 0, sizeof(DSBUFFERDESC));
 	dsbdesc.dwSize = sizeof(DSBUFFERDESC);
 	dsbdesc.dwFlags = DSBCAPS_GETCURRENTPOSITION2 /** Better position accuracy */
-	                | DSBCAPS_GLOBALFOCUS         /** Allows background playing */
-	                | DSBCAPS_CTRLVOLUME;         /** volume control enabled */
+		| DSBCAPS_GLOBALFOCUS /** Allows background playing */
+		| DSBCAPS_CTRLVOLUME; /** volume control enabled */
 
-	if (channels > 2) {
+	if (channels > 2)
+	{
 		wformat.dwChannelMask = channel_mask[channels - 3];
 		wformat.SubFormat = KSDATAFORMAT_SUBTYPE_PCM;
 		wformat.Samples.wValidBitsPerSample = wformat.Format.wBitsPerSample;
@@ -491,7 +529,7 @@ static int init(int rate, int channels, int format, int flags)
 	wformat.Format.nAvgBytesPerSec = wformat.Format.nSamplesPerSec * wformat.Format.nBlockAlign;
 
 	dsbdesc.dwBufferBytes = ao_data.buffersize;
-	dsbdesc.lpwfxFormat = (WAVEFORMATEX *)&wformat;
+	dsbdesc.lpwfxFormat = (WAVEFORMATEX*)&wformat;
 	buffer_size = dsbdesc.dwBufferBytes;
 	write_offset = 0;
 	min_free_space = wformat.Format.nBlockAlign;
@@ -499,27 +537,33 @@ static int init(int rate, int channels, int format, int flags)
 
 	// create primary buffer and set its format
 
-	res = IDirectSound_CreateSoundBuffer( hds, &dsbpridesc, &hdspribuf, NULL );
-	if ( res != DS_OK ) {
+	res = IDirectSound_CreateSoundBuffer(hds, &dsbpridesc, &hdspribuf, NULL);
+	if (res != DS_OK)
+	{
 		UninitDirectSound();
-		mp_msg(MSGT_AO, MSGL_ERR,"ao_dsound: cannot create primary buffer (%s)\n", dserr2str(res));
+		mp_msg(MSGT_AO, MSGL_ERR, "ao_dsound: cannot create primary buffer (%s)\n", dserr2str(res));
 		return 0;
 	}
-	res = IDirectSoundBuffer_SetFormat( hdspribuf, (WAVEFORMATEX *)&wformat );
-	if ( res != DS_OK ) mp_msg(MSGT_AO, MSGL_WARN,"ao_dsound: cannot set primary buffer format (%s), using standard setting (bad quality)", dserr2str(res));
+	res = IDirectSoundBuffer_SetFormat(hdspribuf, (WAVEFORMATEX*)&wformat);
+	if (res != DS_OK) mp_msg(MSGT_AO, MSGL_WARN,
+	                         "ao_dsound: cannot set primary buffer format (%s), using standard setting (bad quality)",
+	                         dserr2str(res));
 
 	mp_msg(MSGT_AO, MSGL_V, "ao_dsound: primary buffer created\n");
 
 	// now create the stream buffer
 
 	res = IDirectSound_CreateSoundBuffer(hds, &dsbdesc, &hdsbuf, NULL);
-	if (res != DS_OK) {
-		if (dsbdesc.dwFlags & DSBCAPS_LOCHARDWARE) {
+	if (res != DS_OK)
+	{
+		if (dsbdesc.dwFlags & DSBCAPS_LOCHARDWARE)
+		{
 			// Try without DSBCAPS_LOCHARDWARE
 			dsbdesc.dwFlags &= ~DSBCAPS_LOCHARDWARE;
 			res = IDirectSound_CreateSoundBuffer(hds, &dsbdesc, &hdsbuf, NULL);
 		}
-		if (res != DS_OK) {
+		if (res != DS_OK)
+		{
 			UninitDirectSound();
 			mp_msg(MSGT_AO, MSGL_ERR, "ao_dsound: cannot create secondary (stream)buffer (%s)\n", dserr2str(res));
 			return 0;
@@ -529,8 +573,6 @@ static int init(int rate, int channels, int format, int flags)
 	return 1;
 }
 
-
-
 /**
 \brief stop playing and empty buffers (for seeking/pause)
 */
@@ -539,7 +581,7 @@ static void reset(void)
 	IDirectSoundBuffer_Stop(hdsbuf);
 	// reset directsound buffer
 	IDirectSoundBuffer_SetCurrentPosition(hdsbuf, 0);
-	write_offset=0;
+	write_offset = 0;
 }
 
 /**
@@ -564,11 +606,12 @@ static void audio_resume(void)
 */
 static void uninit(int immed)
 {
-	if(immed)reset();
-	else{
+	if (immed)reset();
+	else
+	{
 		DWORD status;
 		IDirectSoundBuffer_Play(hdsbuf, 0, 0, 0);
-		while(!IDirectSoundBuffer_GetStatus(hdsbuf,&status) && (status&DSBSTATUS_PLAYING))
+		while (!IDirectSoundBuffer_GetStatus(hdsbuf, &status) && (status & DSBSTATUS_PLAYING))
 			usec_sleep(20000);
 	}
 	DestroyBuffer();
@@ -583,16 +626,16 @@ static int get_space(void)
 {
 	int space;
 	DWORD play_offset;
-	IDirectSoundBuffer_GetCurrentPosition(hdsbuf,&play_offset,NULL);
-	space=buffer_size-(write_offset-play_offset);
+	IDirectSoundBuffer_GetCurrentPosition(hdsbuf, &play_offset, NULL);
+	space = buffer_size - (write_offset - play_offset);
 	//                |                                                      | <-- const --> |                |                 |
 	//                buffer start                                           play_cursor     write_cursor     write_offset      buffer end
 	// play_cursor is the actual postion of the play cursor
 	// write_cursor is the position after which it is assumed to be save to write data
 	// write_offset is the postion where we actually write the data to
-	if(space > buffer_size)space -= buffer_size; // write_offset < play_offset
-	if(space < min_free_space)return 0;
-	return space-min_free_space;
+	if (space > buffer_size)space -= buffer_size; // write_offset < play_offset
+	if (space < min_free_space)return 0;
+	return space - min_free_space;
 }
 
 /**
@@ -608,13 +651,13 @@ static int play(void* data, int len, int flags)
 	int space;
 
 	// make sure we have enough space to write data
-	IDirectSoundBuffer_GetCurrentPosition(hdsbuf,&play_offset,NULL);
-	space=buffer_size-(write_offset-play_offset);
-	if(space > buffer_size)space -= buffer_size; // write_offset < play_offset
-	if(space < len) len = space;
+	IDirectSoundBuffer_GetCurrentPosition(hdsbuf, &play_offset, NULL);
+	space = buffer_size - (write_offset - play_offset);
+	if (space > buffer_size)space -= buffer_size; // write_offset < play_offset
+	if (space < len) len = space;
 
 	if (!(flags & AOPLAY_FINAL_CHUNK))
-	len = (len / ao_data.outburst) * ao_data.outburst;
+		len = (len / ao_data.outburst) * ao_data.outburst;
 	return write_buffer(data, len);
 }
 
@@ -626,8 +669,8 @@ static float get_delay(void)
 {
 	DWORD play_offset;
 	int space;
-	IDirectSoundBuffer_GetCurrentPosition(hdsbuf,&play_offset,NULL);
-	space=play_offset-write_offset;
-	if(space <= 0)space += buffer_size;
+	IDirectSoundBuffer_GetCurrentPosition(hdsbuf, &play_offset, NULL);
+	space = play_offset - write_offset;
+	if (space <= 0)space += buffer_size;
 	return (float)(buffer_size - space) / (float)ao_data.bps;
 }

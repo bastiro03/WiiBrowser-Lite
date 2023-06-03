@@ -33,231 +33,262 @@
 #include "audio.h"
 #include "internal.h"
 
-static const char * const var_names[] = {
-    "n",            ///< number of frame
-    "t",            ///< timestamp expressed in seconds
-    "s",            ///< sample rate
-    NULL
+static const char* const var_names[] = {
+	"n", ///< number of frame
+	"t", ///< timestamp expressed in seconds
+	"s", ///< sample rate
+	NULL
 };
 
-enum var_name {
-    VAR_N,
-    VAR_T,
-    VAR_S,
-    VAR_VARS_NB
+enum var_name
+{
+	VAR_N,
+	VAR_T,
+	VAR_S,
+	VAR_VARS_NB
 };
 
-typedef struct {
-    const AVClass *class;
-    char *sample_rate_str;
-    int sample_rate;
-    int64_t chlayout;
-    char *chlayout_str;
-    int nb_channels;
-    int64_t pts;
-    AVExpr *expr[8];
-    char *expr_str[8];
-    int nb_samples;             ///< number of samples per requested frame
-    char *duration_str;         ///< total duration of the generated audio
-    double duration;
-    uint64_t n;
-    double var_values[VAR_VARS_NB];
+typedef struct
+{
+	const AVClass* class;
+	char* sample_rate_str;
+	int sample_rate;
+	int64_t chlayout;
+	char* chlayout_str;
+	int nb_channels;
+	int64_t pts;
+	AVExpr* expr[8];
+	char* expr_str[8];
+	int nb_samples; ///< number of samples per requested frame
+	char* duration_str; ///< total duration of the generated audio
+	double duration;
+	uint64_t n;
+	double var_values[VAR_VARS_NB];
 } EvalContext;
 
 #define OFFSET(x) offsetof(EvalContext, x)
 
-static const AVOption eval_options[]= {
-    { "nb_samples",  "set the number of samples per requested frame", OFFSET(nb_samples),      AV_OPT_TYPE_INT,    {.dbl = 1024},    0,        INT_MAX },
-    { "n",           "set the number of samples per requested frame", OFFSET(nb_samples),      AV_OPT_TYPE_INT,    {.dbl = 1024},    0,        INT_MAX },
-    { "sample_rate", "set the sample rate",                           OFFSET(sample_rate_str), AV_OPT_TYPE_STRING, {.str = "44100"}, CHAR_MIN, CHAR_MAX },
-    { "s",           "set the sample rate",                           OFFSET(sample_rate_str), AV_OPT_TYPE_STRING, {.str = "44100"}, CHAR_MIN, CHAR_MAX },
-    { "duration",    "set audio duration", OFFSET(duration_str), AV_OPT_TYPE_STRING, {.str = NULL}, 0, 0 },
-    { "d",           "set audio duration", OFFSET(duration_str), AV_OPT_TYPE_STRING, {.str = NULL}, 0, 0 },
-    { "channel_layout", "set channel layout", OFFSET(chlayout_str), AV_OPT_TYPE_STRING, {.str = NULL}, 0, 0 },
-    { "c",              "set channel layout", OFFSET(chlayout_str), AV_OPT_TYPE_STRING, {.str = NULL}, 0, 0 },
-{NULL},
+static const AVOption eval_options[] = {
+	{
+		"nb_samples", "set the number of samples per requested frame", OFFSET(nb_samples), AV_OPT_TYPE_INT,
+		{.dbl = 1024}, 0, INT_MAX
+	},
+	{
+		"n", "set the number of samples per requested frame", OFFSET(nb_samples), AV_OPT_TYPE_INT, {.dbl = 1024}, 0,
+		INT_MAX
+	},
+	{
+		"sample_rate", "set the sample rate", OFFSET(sample_rate_str), AV_OPT_TYPE_STRING, {.str = "44100"}, CHAR_MIN,
+		CHAR_MAX
+	},
+	{"s", "set the sample rate", OFFSET(sample_rate_str), AV_OPT_TYPE_STRING, {.str = "44100"}, CHAR_MIN, CHAR_MAX},
+	{"duration", "set audio duration", OFFSET(duration_str), AV_OPT_TYPE_STRING, {.str = NULL}, 0, 0},
+	{"d", "set audio duration", OFFSET(duration_str), AV_OPT_TYPE_STRING, {.str = NULL}, 0, 0},
+	{"channel_layout", "set channel layout", OFFSET(chlayout_str), AV_OPT_TYPE_STRING, {.str = NULL}, 0, 0},
+	{"c", "set channel layout", OFFSET(chlayout_str), AV_OPT_TYPE_STRING, {.str = NULL}, 0, 0},
+	{NULL},
 };
 
-static const char *eval_get_name(void *ctx)
+static const char* eval_get_name(void* ctx)
 {
-    return "aevalsrc";
+	return "aevalsrc";
 }
 
 static const AVClass eval_class = {
-    "AEvalSrcContext",
-    eval_get_name,
-    eval_options
+	"AEvalSrcContext",
+	eval_get_name,
+	eval_options
 };
 
-static int init(AVFilterContext *ctx, const char *args, void *opaque)
+static int init(AVFilterContext* ctx, const char* args, void* opaque)
 {
-    EvalContext *eval = ctx->priv;
-    char *args1 = av_strdup(args);
-    char *expr, *buf, *bufptr;
-    int ret, i;
+	EvalContext* eval = ctx->priv;
+	char* args1 = av_strdup(args);
+	char *expr, *buf, *bufptr;
+	int ret, i;
 
-    eval->class = &eval_class;
-    av_opt_set_defaults(eval);
+	eval->class = &eval_class;
+	av_opt_set_defaults(eval);
 
-    /* parse expressions */
-    buf = args1;
-    i = 0;
-    while (expr = av_strtok(buf, ":", &bufptr)) {
-        ret = av_expr_parse(&eval->expr[i], expr, var_names,
-                            NULL, NULL, NULL, NULL, 0, ctx);
-        if (ret < 0)
-            goto end;
-        i++;
-        if (bufptr && *bufptr == ':') { /* found last expression */
-            bufptr++;
-            break;
-        }
-        buf = NULL;
-    }
-    eval->nb_channels = i;
+	/* parse expressions */
+	buf = args1;
+	i = 0;
+	while (expr = av_strtok(buf, ":", &bufptr))
+	{
+		ret = av_expr_parse(&eval->expr[i], expr, var_names,
+		                    NULL, NULL, NULL, NULL, 0, ctx);
+		if (ret < 0)
+			goto end;
+		i++;
+		if (bufptr && *bufptr == ':')
+		{
+			/* found last expression */
+			bufptr++;
+			break;
+		}
+		buf = NULL;
+	}
+	eval->nb_channels = i;
 
-    if (bufptr && (ret = av_set_options_string(eval, bufptr, "=", ":")) < 0)
-        goto end;
+	if (bufptr && (ret = av_set_options_string(eval, bufptr, "=", ":")) < 0)
+		goto end;
 
-    if (eval->chlayout_str) {
-        int n;
-        ret = ff_parse_channel_layout(&eval->chlayout, eval->chlayout_str, ctx);
-        if (ret < 0)
-            goto end;
+	if (eval->chlayout_str)
+	{
+		int n;
+		ret = ff_parse_channel_layout(&eval->chlayout, eval->chlayout_str, ctx);
+		if (ret < 0)
+			goto end;
 
-        n = av_get_channel_layout_nb_channels(eval->chlayout);
-        if (n != eval->nb_channels) {
-            av_log(ctx, AV_LOG_ERROR,
-                   "Mismatch between the specified number of channels '%d' "
-                   "and the number of channels '%d' in the specified channel layout '%s'\n",
-                   eval->nb_channels, n, eval->chlayout_str);
-            ret = AVERROR(EINVAL);
-            goto end;
-        }
-    } else {
-        /* guess channel layout from nb expressions/channels */
-        eval->chlayout = av_get_default_channel_layout(eval->nb_channels);
-        if (!eval->chlayout) {
-            av_log(ctx, AV_LOG_ERROR, "Invalid number of channels '%d' provided\n",
-                   eval->nb_channels);
-            ret = AVERROR(EINVAL);
-            goto end;
-        }
-    }
+		n = av_get_channel_layout_nb_channels(eval->chlayout);
+		if (n != eval->nb_channels)
+		{
+			av_log(ctx, AV_LOG_ERROR,
+			       "Mismatch between the specified number of channels '%d' "
+			       "and the number of channels '%d' in the specified channel layout '%s'\n",
+			       eval->nb_channels, n, eval->chlayout_str);
+			ret = AVERROR(EINVAL);
+			goto end;
+		}
+	}
+	else
+	{
+		/* guess channel layout from nb expressions/channels */
+		eval->chlayout = av_get_default_channel_layout(eval->nb_channels);
+		if (!eval->chlayout)
+		{
+			av_log(ctx, AV_LOG_ERROR, "Invalid number of channels '%d' provided\n",
+			       eval->nb_channels);
+			ret = AVERROR(EINVAL);
+			goto end;
+		}
+	}
 
-    if ((ret = ff_parse_sample_rate(&eval->sample_rate, eval->sample_rate_str, ctx)))
-        goto end;
+	if ((ret = ff_parse_sample_rate(&eval->sample_rate, eval->sample_rate_str, ctx)))
+		goto end;
 
-    eval->duration = -1;
-    if (eval->duration_str) {
-        int64_t us = -1;
-        if ((ret = av_parse_time(&us, eval->duration_str, 1)) < 0) {
-            av_log(ctx, AV_LOG_ERROR, "Invalid duration: '%s'\n", eval->duration_str);
-            goto end;
-        }
-        eval->duration = (double)us / 1000000;
-    }
-    eval->n = 0;
+	eval->duration = -1;
+	if (eval->duration_str)
+	{
+		int64_t us = -1;
+		if ((ret = av_parse_time(&us, eval->duration_str, 1)) < 0)
+		{
+			av_log(ctx, AV_LOG_ERROR, "Invalid duration: '%s'\n", eval->duration_str);
+			goto end;
+		}
+		eval->duration = (double)us / 1000000;
+	}
+	eval->n = 0;
 
 end:
-    av_free(args1);
-    return ret;
+	av_free(args1);
+	return ret;
 }
 
-static void uninit(AVFilterContext *ctx)
+static void uninit(AVFilterContext* ctx)
 {
-    EvalContext *eval = ctx->priv;
-    int i;
+	EvalContext* eval = ctx->priv;
+	int i;
 
-    for (i = 0; i < 8; i++) {
-        av_expr_free(eval->expr[i]);
-        eval->expr[i] = NULL;
-    }
-    av_freep(&eval->chlayout_str);
-    av_freep(&eval->duration_str);
-    av_freep(&eval->sample_rate_str);
+	for (i = 0; i < 8; i++)
+	{
+		av_expr_free(eval->expr[i]);
+		eval->expr[i] = NULL;
+	}
+	av_freep(&eval->chlayout_str);
+	av_freep(&eval->duration_str);
+	av_freep(&eval->sample_rate_str);
 }
 
-static int config_props(AVFilterLink *outlink)
+static int config_props(AVFilterLink* outlink)
 {
-    EvalContext *eval = outlink->src->priv;
-    char buf[128];
+	EvalContext* eval = outlink->src->priv;
+	char buf[128];
 
-    outlink->time_base = (AVRational){1, eval->sample_rate};
-    outlink->sample_rate = eval->sample_rate;
+	outlink->time_base = (AVRational)
+	{
+		1, eval->sample_rate
+	}
+	outlink->sample_rate = eval->sample_rate;
 
-    eval->var_values[VAR_S] = eval->sample_rate;
+	eval->var_values[VAR_S] = eval->sample_rate;
 
-    av_get_channel_layout_string(buf, sizeof(buf), 0, eval->chlayout);
+	av_get_channel_layout_string(buf, sizeof(buf), 0, eval->chlayout);
 
-    av_log(outlink->src, AV_LOG_INFO,
-           "sample_rate:%d chlayout:%s duration:%f\n",
-           eval->sample_rate, buf, eval->duration);
+	av_log(outlink->src, AV_LOG_INFO,
+	       "sample_rate:%d chlayout:%s duration:%f\n",
+	       eval->sample_rate, buf, eval->duration);
 
-    return 0;
+	return 0;
 }
 
-static int query_formats(AVFilterContext *ctx)
+static int query_formats(AVFilterContext* ctx)
 {
-    EvalContext *eval = ctx->priv;
-    enum AVSampleFormat sample_fmts[] = { AV_SAMPLE_FMT_DBLP, AV_SAMPLE_FMT_NONE };
-    int64_t chlayouts[] = { eval->chlayout, -1 };
-    int sample_rates[] = { eval->sample_rate, -1 };
+	EvalContext* eval = ctx->priv;
+	enum AVSampleFormat sample_fmts[] = {AV_SAMPLE_FMT_DBLP, AV_SAMPLE_FMT_NONE};
+	int64_t chlayouts[] = {eval->chlayout, -1};
+	int sample_rates[] = {eval->sample_rate, -1};
 
-    avfilter_set_common_sample_formats (ctx, avfilter_make_format_list(sample_fmts));
-    ff_set_common_channel_layouts(ctx, avfilter_make_format64_list(chlayouts));
-    ff_set_common_samplerates(ctx, avfilter_make_format_list(sample_rates));
+	avfilter_set_common_sample_formats(ctx, avfilter_make_format_list(sample_fmts));
+	ff_set_common_channel_layouts(ctx, avfilter_make_format64_list(chlayouts));
+	ff_set_common_samplerates(ctx, avfilter_make_format_list(sample_rates));
 
-    return 0;
+	return 0;
 }
 
-static int request_frame(AVFilterLink *outlink)
+static int request_frame(AVFilterLink* outlink)
 {
-    EvalContext *eval = outlink->src->priv;
-    AVFilterBufferRef *samplesref;
-    int i, j;
-    double t = eval->var_values[VAR_N] * (double)1/eval->sample_rate;
+	EvalContext* eval = outlink->src->priv;
+	AVFilterBufferRef* samplesref;
+	int i, j;
+	double t = eval->var_values[VAR_N] * (double)1 / eval->sample_rate;
 
-    if (eval->duration >= 0 && t > eval->duration)
-        return AVERROR_EOF;
+	if (eval->duration >= 0 && t > eval->duration)
+		return AVERROR_EOF;
 
-    samplesref = ff_get_audio_buffer(outlink, AV_PERM_WRITE, eval->nb_samples);
+	samplesref = ff_get_audio_buffer(outlink, AV_PERM_WRITE, eval->nb_samples);
 
-    /* evaluate expression for each single sample and for each channel */
-    for (i = 0; i < eval->nb_samples; i++, eval->n++) {
-        eval->var_values[VAR_N] = eval->n;
-        eval->var_values[VAR_T] = eval->var_values[VAR_N] * (double)1/eval->sample_rate;
+	/* evaluate expression for each single sample and for each channel */
+	for (i = 0; i < eval->nb_samples; i++, eval->n++)
+	{
+		eval->var_values[VAR_N] = eval->n;
+		eval->var_values[VAR_T] = eval->var_values[VAR_N] * (double)1 / eval->sample_rate;
 
-        for (j = 0; j < eval->nb_channels; j++) {
-            *((double *) samplesref->extended_data[j] + i) =
-                av_expr_eval(eval->expr[j], eval->var_values, NULL);
-        }
-    }
+		for (j = 0; j < eval->nb_channels; j++)
+		{
+			*((double*)samplesref->extended_data[j] + i) =
+				av_expr_eval(eval->expr[j], eval->var_values, NULL);
+		}
+	}
 
-    samplesref->pts = eval->pts;
-    samplesref->pos = -1;
-    samplesref->audio->sample_rate = eval->sample_rate;
-    eval->pts += eval->nb_samples;
+	samplesref->pts = eval->pts;
+	samplesref->pos = -1;
+	samplesref->audio->sample_rate = eval->sample_rate;
+	eval->pts += eval->nb_samples;
 
-    ff_filter_samples(outlink, samplesref);
+	ff_filter_samples(outlink, samplesref);
 
-    return 0;
+	return 0;
 }
 
 AVFilter avfilter_asrc_aevalsrc = {
-    .name        = "aevalsrc",
-    .description = NULL_IF_CONFIG_SMALL("Generate an audio signal generated by an expression."),
+	.name = "aevalsrc",
+	.description = NULL_IF_CONFIG_SMALL("Generate an audio signal generated by an expression."),
 
-    .query_formats = query_formats,
-    .init        = init,
-    .uninit      = uninit,
-    .priv_size   = sizeof(EvalContext),
+	.query_formats = query_formats,
+	.init = init,
+	.uninit = uninit,
+	.priv_size = sizeof(EvalContext),
 
-    .inputs      = (const AVFilterPad[]) {{ .name = NULL}},
+	.inputs = (const AVFilterPad[]){{.name = NULL}},
 
-    .outputs     = (const AVFilterPad[]) {{ .name = "default",
-                                      .type = AVMEDIA_TYPE_AUDIO,
-                                      .config_props = config_props,
-                                      .request_frame = request_frame, },
-                                    { .name = NULL}},
+	.outputs = (const AVFilterPad[]){
+		{
+			.name = "default",
+			.type = AVMEDIA_TYPE_AUDIO,
+			.config_props = config_props,
+			.request_frame = request_frame,
+		},
+		{.name = NULL}
+	},
 };

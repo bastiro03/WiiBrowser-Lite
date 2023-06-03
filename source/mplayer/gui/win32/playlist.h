@@ -26,26 +26,27 @@
 
 typedef struct
 {
-    char *filename;
-    char *artist;
-    char *title;
-    int duration;
+	char* filename;
+	char* artist;
+	char* title;
+	int duration;
 } pl_track_t;
 
 typedef struct playlist_t playlist_t;
+
 struct playlist_t
 {
-    int current;                  /* currently used track */
-    int trackcount;               /* number of tracknumber */
-    pl_track_t **tracks;             /* tracklist */
-    void (*add_track)(playlist_t* playlist, const char *filename, const char *artist, const char *title, int duration);
-    void (*remove_track)(playlist_t* playlist, int number);
-    void (*moveup_track)(playlist_t* playlist, int number);
-    void (*movedown_track)(playlist_t* playlist, int number);
-    void (*dump_playlist)(playlist_t* playlist);
-    void (*sort_playlist)(playlist_t* playlist, int opt);
-    void (*clear_playlist)(playlist_t* playlist);
-    void (*free_playlist)(playlist_t* playlist);
+	int current; /* currently used track */
+	int trackcount; /* number of tracknumber */
+	pl_track_t** tracks; /* tracklist */
+	void (*add_track)(playlist_t* playlist, const char* filename, const char* artist, const char* title, int duration);
+	void (*remove_track)(playlist_t* playlist, int number);
+	void (*moveup_track)(playlist_t* playlist, int number);
+	void (*movedown_track)(playlist_t* playlist, int number);
+	void (*dump_playlist)(playlist_t* playlist);
+	void (*sort_playlist)(playlist_t* playlist, int opt);
+	void (*clear_playlist)(playlist_t* playlist);
+	void (*free_playlist)(playlist_t* playlist);
 };
 
 #define SORT_BYFILENAME     1
@@ -53,7 +54,7 @@ struct playlist_t
 #define SORT_BYTITLE        3
 #define SORT_BYDURATION     4
 
-playlist_t *create_playlist(void);
-int adddirtoplaylist(playlist_t *playlist, const char* path, int recursive);
+playlist_t* create_playlist(void);
+int adddirtoplaylist(playlist_t* playlist, const char* path, int recursive);
 
 #endif /* MPLAYER_GUI_PLAYLIST_H */

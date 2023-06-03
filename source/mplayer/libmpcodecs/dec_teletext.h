@@ -23,23 +23,24 @@
 #ifndef MPLAYER_DEC_TELETEXT_H
 #define MPLAYER_DEC_TELETEXT_H
 
-struct tt_param {
-    char *device;  ///< teletext device
-    int format;    ///< teletext display format
-    int page;      ///< start teletext page
-    int lang;      ///< primary language code
+struct tt_param
+{
+	char* device; ///< teletext device
+	int format; ///< teletext display format
+	int page; ///< start teletext page
+	int lang; ///< primary language code
 };
 
 #define VBI_CONTROL_FALSE              0
 #define VBI_CONTROL_TRUE               1
 #define VBI_CONTROL_UNKNOWN           -1
 
-int teletext_control(void* p, int cmd, void *arg);
+int teletext_control(void* p, int cmd, void* arg);
 
 /*
   TELETEXT controls (through teletext_control() )
    NOTE:
-    _SET_ should be _GET_ +1
+	_SET_ should be _GET_ +1
    _STEP_ should be _GET_ +2
 */
 #define TV_VBI_CONTROL_GET_MODE        0x510   ///< get current mode teletext
@@ -84,48 +85,56 @@ int teletext_control(void* p, int cmd, void *arg);
 #define VBI_TIME_LINEPOS    26              ///< time line pos in page header
 
 typedef
-enum{
-    TT_FORMAT_OPAQUE=0,       ///< opaque
-    TT_FORMAT_TRANSPARENT,    ///< transparent
-    TT_FORMAT_OPAQUE_INV,     ///< opaque with inverted colors
-    TT_FORMAT_TRANSPARENT_INV ///< transparent with inverted colors
+enum
+{
+	TT_FORMAT_OPAQUE = 0,
+	///< opaque
+	TT_FORMAT_TRANSPARENT,
+	///< transparent
+	TT_FORMAT_OPAQUE_INV,
+	///< opaque with inverted colors
+	TT_FORMAT_TRANSPARENT_INV ///< transparent with inverted colors
 } teletext_format;
 
 typedef
-enum{
-    TT_ZOOM_NORMAL=0,
-    TT_ZOOM_TOP_HALF,
-    TT_ZOOM_BOTTOM_HALF
+enum
+{
+	TT_ZOOM_NORMAL = 0,
+	TT_ZOOM_TOP_HALF,
+	TT_ZOOM_BOTTOM_HALF
 } teletext_zoom;
 
-typedef struct tt_char_s{
-    unsigned int unicode; ///< unicode (utf8) character
-    unsigned char fg;  ///< foreground color
-    unsigned char bg;  ///< background color
-    unsigned char gfx; ///< 0-no gfx, 1-solid gfx, 2-separated gfx
-    unsigned char flh; ///< 0-no flash, 1-flash
-    unsigned char hidden; ///< char is hidden (for subtitle pages)
-    unsigned char ctl; ///< control character
-    unsigned char lng; ///< lang: 0-secondary language,1-primary language
-    unsigned char raw; ///< raw character (as received from device)
+typedef struct tt_char_s
+{
+	unsigned int unicode; ///< unicode (utf8) character
+	unsigned char fg; ///< foreground color
+	unsigned char bg; ///< background color
+	unsigned char gfx; ///< 0-no gfx, 1-solid gfx, 2-separated gfx
+	unsigned char flh; ///< 0-no flash, 1-flash
+	unsigned char hidden; ///< char is hidden (for subtitle pages)
+	unsigned char ctl; ///< control character
+	unsigned char lng; ///< lang: 0-secondary language,1-primary language
+	unsigned char raw; ///< raw character (as received from device)
 } tt_char;
 
-typedef struct tt_link_s{
-    int pagenum;          ///< page number
-    int subpagenum;       ///< subpage number
+typedef struct tt_link_s
+{
+	int pagenum; ///< page number
+	int subpagenum; ///< subpage number
 } tt_link_t;
 
-typedef struct tt_page_s{
-    int pagenum;          ///< page number
-    int subpagenum;       ///< subpage number
-    unsigned char primary_lang;   ///< primary language code
-    unsigned char secondary_lang; ///< secondary language code
-    unsigned char active; ///< page is complete and ready for rendering
-    unsigned char flags;  ///< page flags
-    unsigned char raw[VBI_ROWS*VBI_COLUMNS]; ///< page data
-    struct tt_page_s* next_subpage;
-    struct tt_link_s links[6];
-}  tt_page;
+typedef struct tt_page_s
+{
+	int pagenum; ///< page number
+	int subpagenum; ///< subpage number
+	unsigned char primary_lang; ///< primary language code
+	unsigned char secondary_lang; ///< secondary language code
+	unsigned char active; ///< page is complete and ready for rendering
+	unsigned char flags; ///< page flags
+	unsigned char raw[VBI_ROWS * VBI_COLUMNS]; ///< page data
+	struct tt_page_s* next_subpage;
+	struct tt_link_s links[6];
+} tt_page;
 
 #define TT_PGFL_SUPPRESS_HEADER  0x01
 #define TT_PGFL_UPDATE_INDICATOR 0x02
@@ -136,13 +145,14 @@ typedef struct tt_page_s{
 #define TT_PGFL_ERASE_PAGE       0x40
 #define TT_PGFL_MAGAZINE_SERIAL  0x80
 
-typedef struct tt_stream_props_s{
-    int sampling_rate;
-    int samples_per_line;
-    int offset;
-    int count[2];     ///< number of lines in first and second fields
-    int interlaced;   ///< vbi data are interlaced
-    int bufsize;      ///< required buffer size
+typedef struct tt_stream_props_s
+{
+	int sampling_rate;
+	int samples_per_line;
+	int offset;
+	int count[2]; ///< number of lines in first and second fields
+	int interlaced; ///< vbi data are interlaced
+	int bufsize; ///< required buffer size
 } tt_stream_props;
 
 #endif /* MPLAYER_DEC_TELETEXT_H */

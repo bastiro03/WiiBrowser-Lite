@@ -17,16 +17,17 @@
 /* modreference used for attached processes
  * all section are calculated here, relocations etc.
  */
-typedef struct {
-	PIMAGE_IMPORT_DESCRIPTOR	pe_import;
-	PIMAGE_EXPORT_DIRECTORY	pe_export;
-	PIMAGE_RESOURCE_DIRECTORY	pe_resource;
-	int				tlsindex;
+typedef struct
+{
+	PIMAGE_IMPORT_DESCRIPTOR pe_import;
+	PIMAGE_EXPORT_DIRECTORY pe_export;
+	PIMAGE_RESOURCE_DIRECTORY pe_resource;
+	int tlsindex;
 } PE_MODREF;
 
 struct wine_modref;
 int PE_unloadImage(HMODULE hModule);
-FARPROC PE_FindExportedFunction(struct wine_modref *wm, LPCSTR funcName, WIN_BOOL snoop);
+FARPROC PE_FindExportedFunction(struct wine_modref* wm, LPCSTR funcName, WIN_BOOL snoop);
 WIN_BOOL PE_EnumResourceTypesA(HMODULE, ENUMRESTYPEPROCA, LONG);
 WIN_BOOL PE_EnumResourceTypesW(HMODULE, ENUMRESTYPEPROCW, LONG);
 WIN_BOOL PE_EnumResourceNamesA(HMODULE, LPCSTR, ENUMRESNAMEPROCA, LONG);
@@ -35,11 +36,11 @@ WIN_BOOL PE_EnumResourceLanguagesA(HMODULE, LPCSTR, LPCSTR, ENUMRESLANGPROCA, LO
 WIN_BOOL PE_EnumResourceLanguagesW(HMODULE, LPCWSTR, LPCWSTR, ENUMRESLANGPROCW, LONG);
 HRSRC PE_FindResourceExW(struct wine_modref*, LPCWSTR, LPCWSTR, WORD);
 DWORD PE_SizeofResource(HMODULE, HRSRC);
-struct wine_modref *PE_LoadLibraryExA(LPCSTR, DWORD);
-void PE_UnloadLibrary(struct wine_modref *);
-HGLOBAL PE_LoadResource(struct wine_modref *wm, HRSRC);
-HMODULE PE_LoadImage(int hFile, LPCSTR filename, WORD *version);
-struct wine_modref *PE_CreateModule(HMODULE hModule, LPCSTR filename,
+struct wine_modref* PE_LoadLibraryExA(LPCSTR, DWORD);
+void PE_UnloadLibrary(struct wine_modref*);
+HGLOBAL PE_LoadResource(struct wine_modref* wm, HRSRC);
+HMODULE PE_LoadImage(int hFile, LPCSTR filename, WORD* version);
+struct wine_modref* PE_CreateModule(HMODULE hModule, LPCSTR filename,
                                     DWORD flags, WIN_BOOL builtin);
 WIN_BOOL PE_CreateProcess(HANDLE hFile, LPCSTR filename, LPCSTR cmd_line, LPCSTR env,
                           LPSECURITY_ATTRIBUTES psa, LPSECURITY_ATTRIBUTES tsa,
@@ -47,35 +48,36 @@ WIN_BOOL PE_CreateProcess(HANDLE hFile, LPCSTR filename, LPCSTR cmd_line, LPCSTR
                           LPPROCESS_INFORMATION info);
 
 void PE_InitTls(void);
-WIN_BOOL PE_InitDLL(struct wine_modref *wm, DWORD type, LPVOID lpReserved);
+WIN_BOOL PE_InitDLL(struct wine_modref* wm, DWORD type, LPVOID lpReserved);
 
 PIMAGE_RESOURCE_DIRECTORY GetResDirEntryA(PIMAGE_RESOURCE_DIRECTORY, LPCSTR, DWORD, WIN_BOOL);
 PIMAGE_RESOURCE_DIRECTORY GetResDirEntryW(PIMAGE_RESOURCE_DIRECTORY, LPCWSTR, DWORD, WIN_BOOL);
 
-typedef DWORD CALLBACK (*DLLENTRYPROC)(HMODULE,DWORD,LPVOID);
+typedef DWORD CALLBACK(*DLLENTRYPROC)(HMODULE, DWORD, LPVOID);
 
 typedef struct WINE_PACKED {
-	WORD	popl;		/* 0x8f 0x05 */
-	DWORD	addr_popped;	/* ...  */
-	BYTE	pushl1;		/* 0x68 */
-	DWORD	newret;		/* ...  */
-	BYTE	pushl2;		/* 0x68 */
-	DWORD	origfun;	/* original function */
-	BYTE	ret1;		/* 0xc3 */
-	WORD	addesp;		/* 0x83 0xc4 */
-	BYTE	nrofargs;	/* nr of arguments to add esp, */
-	BYTE	pushl3;		/* 0x68 */
-	DWORD	oldret;		/* Filled out from popl above  */
-	BYTE	ret2;		/* 0xc3 */
+	WORD popl; /* 0x8f 0x05 */
+	DWORD addr_popped; /* ...  */
+	BYTE pushl1; /* 0x68 */
+	DWORD newret; /* ...  */
+	BYTE pushl2; /* 0x68 */
+	DWORD origfun; /* original function */
+	BYTE ret1; /* 0xc3 */
+	WORD addesp; /* 0x83 0xc4 */
+	BYTE nrofargs; /* nr of arguments to add esp, */
+	BYTE pushl3; /* 0x68 */
+	DWORD oldret; /* Filled out from popl above  */
+	BYTE ret2; /* 0xc3 */
 } ELF_STDCALL_STUB;
 
-typedef struct {
-	void*			dlhandle;
-	ELF_STDCALL_STUB	*stubs;
+typedef struct
+{
+	void* dlhandle;
+	ELF_STDCALL_STUB* stubs;
 } ELF_MODREF;
 
-struct wine_modref *ELF_LoadLibraryExA( LPCSTR libname, DWORD flags);
-void ELF_UnloadLibrary(struct wine_modref *);
-FARPROC ELF_FindExportedFunction(struct wine_modref *wm, LPCSTR funcName);
+struct wine_modref* ELF_LoadLibraryExA(LPCSTR libname, DWORD flags);
+void ELF_UnloadLibrary(struct wine_modref*);
+FARPROC ELF_FindExportedFunction(struct wine_modref* wm, LPCSTR funcName);
 
 #endif /* MPLAYER_PE_IMAGE_H */

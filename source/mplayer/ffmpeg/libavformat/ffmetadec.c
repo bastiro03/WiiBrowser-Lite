@@ -25,151 +25,168 @@
 #include "internal.h"
 #include "libavutil/dict.h"
 
-static int probe(AVProbeData *p)
+static int probe(AVProbeData* p)
 {
-    if(!memcmp(p->buf, ID_STRING, strlen(ID_STRING)))
-        return AVPROBE_SCORE_MAX;
-    return 0;
+	if (!memcmp(p->buf, ID_STRING, strlen(ID_STRING)))
+		return AVPROBE_SCORE_MAX;
+	return 0;
 }
 
-static void get_line(AVIOContext *s, uint8_t *buf, int size)
+static void get_line(AVIOContext* s, uint8_t* buf, int size)
 {
-    do {
-        uint8_t c;
-        int i = 0;
+	do
+	{
+		uint8_t c;
+		int i = 0;
 
-        while ((c = avio_r8(s))) {
-            if (c == '\\') {
-                if (i < size - 1)
-                    buf[i++] = c;
-                c = avio_r8(s);
-            } else if (c == '\n')
-                break;
+		while ((c = avio_r8(s)))
+		{
+			if (c == '\\')
+			{
+				if (i < size - 1)
+					buf[i++] = c;
+				c = avio_r8(s);
+			}
+			else if (c == '\n')
+				break;
 
-            if (i < size - 1)
-                buf[i++] = c;
-        }
-        buf[i] = 0;
-    } while (!url_feof(s) && (buf[0] == ';' || buf[0] == '#' || buf[0] == 0));
+			if (i < size - 1)
+				buf[i++] = c;
+		}
+		buf[i] = 0;
+	}
+	while (!url_feof(s) && (buf[0] == ';' || buf[0] == '#' || buf[0] == 0));
 }
 
-static AVChapter *read_chapter(AVFormatContext *s)
+static AVChapter* read_chapter(AVFormatContext* s)
 {
-    uint8_t line[256];
-    int64_t start, end;
-    AVRational tb = {1, 1e9};
+	uint8_t line[256];
+	int64_t start, end;
+	AVRational tb = {1, 1e9};
 
-    get_line(s->pb, line, sizeof(line));
+	get_line(s->pb, line, sizeof(line));
 
-    if (sscanf(line, "TIMEBASE=%d/%d", &tb.num, &tb.den))
-        get_line(s->pb, line, sizeof(line));
-    if (!sscanf(line, "START=%"SCNd64, &start)) {
-        av_log(s, AV_LOG_ERROR, "Expected chapter start timestamp, found %s.\n", line);
-        start = (s->nb_chapters && s->chapters[s->nb_chapters - 1]->end != AV_NOPTS_VALUE) ?
-                 s->chapters[s->nb_chapters - 1]->end : 0;
-    } else
-        get_line(s->pb, line, sizeof(line));
+	if (sscanf(line, "TIMEBASE=%d/%d", &tb.num, &tb.den))
+		get_line(s->pb, line, sizeof(line));
+	if (!sscanf(line, "START=%"SCNd64, &start))
+	{
+		av_log(s, AV_LOG_ERROR, "Expected chapter start timestamp, found %s.\n", line);
+		start = (s->nb_chapters && s->chapters[s->nb_chapters - 1]->end != AV_NOPTS_VALUE)
+			        ? s->chapters[s->nb_chapters - 1]->end
+			        : 0;
+	}
+	else
+		get_line(s->pb, line, sizeof(line));
 
-    if (!sscanf(line, "END=%"SCNd64, &end)) {
-        av_log(s, AV_LOG_ERROR, "Expected chapter end timestamp, found %s.\n", line);
-        end = AV_NOPTS_VALUE;
-    }
+	if (!sscanf(line, "END=%"SCNd64, &end))
+	{
+		av_log(s, AV_LOG_ERROR, "Expected chapter end timestamp, found %s.\n", line);
+		end = AV_NOPTS_VALUE;
+	}
 
-    return avpriv_new_chapter(s, s->nb_chapters, tb, start, end, NULL);
+	return avpriv_new_chapter(s, s->nb_chapters, tb, start, end, NULL);
 }
 
-static uint8_t *unescape(uint8_t *buf, int size)
+static uint8_t* unescape(uint8_t* buf, int size)
 {
-    uint8_t *ret = av_malloc(size + 1);
-    uint8_t *p1  = ret, *p2 = buf;
+	uint8_t* ret = av_malloc(size + 1);
+	uint8_t *p1 = ret, *p2 = buf;
 
-    if (!ret)
-        return NULL;
+	if (!ret)
+		return NULL;
 
-    while (p2 < buf + size) {
-        if (*p2 == '\\')
-            p2++;
-        *p1++ = *p2++;
-    }
-    *p1 = 0;
-    return ret;
+	while (p2 < buf + size)
+	{
+		if (*p2 == '\\')
+			p2++;
+		*p1++ = *p2++;
+	}
+	*p1 = 0;
+	return ret;
 }
 
-static int read_tag(uint8_t *line, AVDictionary **m)
+static int read_tag(uint8_t* line, AVDictionary** m)
 {
-    uint8_t *key, *value, *p = line;
+	uint8_t *key, *value, *p = line;
 
-    /* find first not escaped '=' */
-    while (1) {
-        if (*p == '=')
-            break;
-        else if (*p == '\\')
-            p++;
+	/* find first not escaped '=' */
+	while (1)
+	{
+		if (*p == '=')
+			break;
+		if (*p == '\\')
+			p++;
 
-        if (*p++)
-            continue;
+		if (*p++)
+			continue;
 
-        return 0;
-    }
+		return 0;
+	}
 
-    if (!(key = unescape(line, p - line)))
-        return AVERROR(ENOMEM);
-    if (!(value = unescape(p + 1, strlen(p + 1)))) {
-        av_free(key);
-        return AVERROR(ENOMEM);
-    }
+	if (!(key = unescape(line, p - line)))
+		return AVERROR(ENOMEM);
+	if (!(value = unescape(p + 1, strlen(p + 1))))
+	{
+		av_free(key);
+		return AVERROR(ENOMEM);
+	}
 
-    av_dict_set(m, key, value, AV_DICT_DONT_STRDUP_KEY | AV_DICT_DONT_STRDUP_VAL);
-    return 0;
+	av_dict_set(m, key, value, AV_DICT_DONT_STRDUP_KEY | AV_DICT_DONT_STRDUP_VAL);
+	return 0;
 }
 
-static int read_header(AVFormatContext *s)
+static int read_header(AVFormatContext* s)
 {
-    AVDictionary **m = &s->metadata;
-    uint8_t line[1024];
+	AVDictionary** m = &s->metadata;
+	uint8_t line[1024];
 
-    while(!url_feof(s->pb)) {
-        get_line(s->pb, line, sizeof(line));
+	while (!url_feof(s->pb))
+	{
+		get_line(s->pb, line, sizeof(line));
 
-        if (!memcmp(line, ID_STREAM, strlen(ID_STREAM))) {
-            AVStream *st = avformat_new_stream(s, NULL);
+		if (!memcmp(line, ID_STREAM, strlen(ID_STREAM)))
+		{
+			AVStream* st = avformat_new_stream(s, NULL);
 
-            if (!st)
-                return -1;
+			if (!st)
+				return -1;
 
-            st->codec->codec_type = AVMEDIA_TYPE_DATA;
-            st->codec->codec_id   = CODEC_ID_FFMETADATA;
+			st->codec->codec_type = AVMEDIA_TYPE_DATA;
+			st->codec->codec_id = CODEC_ID_FFMETADATA;
 
-            m = &st->metadata;
-        } else if (!memcmp(line, ID_CHAPTER, strlen(ID_CHAPTER))) {
-            AVChapter *ch = read_chapter(s);
+			m = &st->metadata;
+		}
+		else if (!memcmp(line, ID_CHAPTER, strlen(ID_CHAPTER)))
+		{
+			AVChapter* ch = read_chapter(s);
 
-            if (!ch)
-                return -1;
+			if (!ch)
+				return -1;
 
-            m = &ch->metadata;
-        } else
-            read_tag(line, m);
-    }
+			m = &ch->metadata;
+		}
+		else
+			read_tag(line, m);
+	}
 
-    s->start_time = 0;
-    if (s->nb_chapters)
-        s->duration = av_rescale_q(s->chapters[s->nb_chapters - 1]->end,
-                                   s->chapters[s->nb_chapters - 1]->time_base,
-                                   AV_TIME_BASE_Q);
+	s->start_time = 0;
+	if (s->nb_chapters)
+		s->duration = av_rescale_q(s->chapters[s->nb_chapters - 1]->end,
+		                           s->chapters[s->nb_chapters - 1]->time_base,
+		                           AV_TIME_BASE_Q);
 
-    return 0;
+	return 0;
 }
 
-static int read_packet(AVFormatContext *s, AVPacket *pkt)
+static int read_packet(AVFormatContext* s, AVPacket* pkt)
 {
-    return AVERROR_EOF;
+	return AVERROR_EOF;
 }
 
 AVInputFormat ff_ffmetadata_demuxer = {
-    .name        = "ffmetadata",
-    .long_name   = NULL_IF_CONFIG_SMALL("FFmpeg metadata in text format"),
-    .read_probe  = probe,
-    .read_header = read_header,
-    .read_packet = read_packet,
+	.name = "ffmetadata",
+	.long_name = NULL_IF_CONFIG_SMALL("FFmpeg metadata in text format"),
+	.read_probe = probe,
+	.read_header = read_header,
+	.read_packet = read_packet,
 };

@@ -23,7 +23,7 @@
 #ifndef MPLAYER_PRIORITY_H
 #define MPLAYER_PRIORITY_H
 
-extern char *proc_priority;
+extern char* proc_priority;
 
 void set_priority(void);
 

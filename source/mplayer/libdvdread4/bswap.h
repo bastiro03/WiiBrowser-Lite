@@ -25,7 +25,7 @@
 #include <config.h>
 
 #if defined(WORDS_BIGENDIAN)
-/* All bigendian systems are fine, just ignore the swaps. */
+ /* All bigendian systems are fine, just ignore the swaps. */
 #define B2N_16(x) (void)(x)
 #define B2N_32(x) (void)(x)
 #define B2N_64(x) (void)(x)

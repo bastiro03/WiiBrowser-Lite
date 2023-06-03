@@ -35,7 +35,8 @@
 
 #define N 9
 
-enum {
+enum
+{
 	LANG_JAPANESE = 0,
 	LANG_ENGLISH,
 	LANG_GERMAN,
@@ -63,177 +64,178 @@ enum {
 
 enum
 {
-    DISABLED = 0,
-    STABLE,
-    NIGHTLY,
-    CHANNELS
+	DISABLED = 0,
+	STABLE,
+	NIGHTLY,
+	CHANNELS
 };
 
 enum
 {
-    NEVER = 0,
-    UNZIP,
-    ASK
+	NEVER = 0,
+	UNZIP,
+	ASK
 };
 
-typedef struct favorite
+using favorite = struct favorite
 {
-    char url[512];
-    char name[512];
-} favorite;
+	char url[512];
+	char name[512];
+};
 
 class SSettings
 {
-    public:
-		//!Constructor
-        SSettings();
-		//!Destructor
-		~SSettings();
-		//!Set Default Settings
-		void SetDefault();
-		//!Set Default folder
-		void ChangeFolder();
-		//!Load Settings
-		bool Load();
-        //!Find the config file in the default paths
-        bool FindConfig();
-        //!Return favorite
-        struct favorite *GetFav(int f);
-        //!Return top site
-        char *GetUrl(int f);
-        //!Return index
-        int FindUrl(char *url);
-        //!Remove top site
-        void Remove(int f, bool update = false);
-        //!Check if url is in favorites
-        int IsBookmarked(char *url);
-        //!Add favorite
-        void AddFavorite(char *url, char *title);
-        //!Remove favorite
-        void DelFavorite(char *url);
-        //!Save Settings
-        bool Save(bool clean);
-		//!Reset Settings
-        bool Reset();
-		//!Set a Setting
-		//!\param name Settingname
-		//!\param value Settingvalue
-        bool SetSetting(char *name, char *value);
-        //!Set a Startup Setting
-		//!\param name Settingname
-		//!\param value Settingvalue
-        bool SetStartup(char *name, char *value);
-        //!Set Start Page
-		void SetStartPage(char *page);
-        //!Get Start Page
-		int GetStartPage(char *dest);
+public:
+	//!Constructor
+	SSettings();
+	//!Destructor
+	~SSettings();
+	//!Set Default Settings
+	void SetDefault();
+	//!Set Default folder
+	void ChangeFolder();
+	//!Load Settings
+	bool Load();
+	//!Find the config file in the default paths
+	bool FindConfig();
+	//!Return favorite
+	struct favorite* GetFav(int f);
+	//!Return top site
+	char* GetUrl(int f);
+	//!Return index
+	int FindUrl(char* url);
+	//!Remove top site
+	void Remove(int f, bool update = false);
+	//!Check if url is in favorites
+	int IsBookmarked(char* url);
+	//!Add favorite
+	void AddFavorite(char* url, char* title);
+	//!Remove favorite
+	void DelFavorite(char* url);
+	//!Save Settings
+	bool Save(bool clean);
+	//!Reset Settings
+	bool Reset();
+	//!Set a Setting
+	//!\param name Settingname
+	//!\param value Settingvalue
+	bool SetSetting(char* name, char* value);
+	//!Set a Startup Setting
+	//!\param name Settingname
+	//!\param value Settingvalue
+	bool SetStartup(char* name, char* value);
+	//!Set Start Page
+	void SetStartPage(char* page);
+	//!Get Start Page
+	int GetStartPage(char* dest);
 
-        //!Variables
-        int Language;
-        int UserAgent;
-        int ZipFile;
-        int Autoupdate;
-        int RevInt;
+	//!Variables
+	int Language;
+	int UserAgent;
+	int ZipFile;
+	int Autoupdate;
+	int RevInt;
 
-        bool MuteSound;
-        bool ShowTooltip;
-        bool ShowThumbs;
-        bool Restore;
+	bool MuteSound;
+	bool ShowTooltip;
+	bool ShowThumbs;
+	bool Restore;
 
-        char AppPath[256];
-        char ConfigPath[256];
-        char BootDevice[6];
+	char AppPath[256];
+	char ConfigPath[256];
+	char BootDevice[6];
 
-        char Homepage[512];
-        char Revision[7];
-        char Uuid[20];
+	char Homepage[512];
+	char Revision[7];
+	char Uuid[20];
 
-        char DefaultFolder[256];
-        char UserFolder[256];
-        char Proxy[256];
+	char DefaultFolder[256];
+	char UserFolder[256];
+	char Proxy[256];
 
-        //!Plugin settings
-        char StartPage[512];
-        char DownloadFolder[256];
+	//!Plugin settings
+	char StartPage[512];
+	char DownloadFolder[256];
 
-        bool DocWrite;
-        bool IFrame;
-        bool ExecLua;
-        bool CleanExit;
+	bool DocWrite;
+	bool IFrame;
+	bool ExecLua;
+	bool CleanExit;
 
-        char *TopSites[N];
-        u8 *Thumbnails[N];
+	char* TopSites[N];
+	u8* Thumbnails[N];
 
-        struct favorite *Favorites;
-    protected:
-        //!Find value
-        void ParseLine(char *line);
-        //!Discard spaces
-        void TrimLine(char *dest, char *src, int size);
-        //!Check file
-        bool CheckFile(const char* path);
-        //!Check file integrity
-        bool CheckIntegrity(const char *path);
-        //!Check path
-        bool IsWritable(const char *path);
-        //!Load favorites
-        bool LoadFavorites();
-        //!Save favorites
-        bool SaveFavorites();
-        //!Create XML file
-        bool CreateXMLFile();
-        //!Variables
-        FILE * file;
-        int num_fav;
+	struct favorite* Favorites;
+
+protected:
+	//!Find value
+	void ParseLine(char* line);
+	//!Discard spaces
+	void TrimLine(char* dest, char* src, int size);
+	//!Check file
+	bool CheckFile(const char* path);
+	//!Check file integrity
+	bool CheckIntegrity(const char* path);
+	//!Check path
+	bool IsWritable(const char* path);
+	//!Load favorites
+	bool LoadFavorites();
+	//!Save favorites
+	bool SaveFavorites();
+	//!Create XML file
+	bool CreateXMLFile();
+	//!Variables
+	FILE* file;
+	int num_fav;
 };
 
 enum
 {
-    FILENAME = 0,
-    RELATIVE,
-    ABSOLUTE
+	FILENAME = 0,
+	RELATIVE,
+	ABSOLUTE
 };
 
 enum
 {
-    SD = 0,
-    USB,
-    CARDA,
-    CARDB,
+	SD = 0,
+	USB,
+	CARDA,
+	CARDB,
 	DVD,
-    MAXDEVICES
+	MAXDEVICES
 };
 
 const char DeviceName[MAXDEVICES][6] =
 {
-    "sd",
-    "usb",
-    "carda",
-    "cardb",
+	"sd",
+	"usb",
+	"carda",
+	"cardb",
 	"dvd",
 };
 
 enum
 {
-    EMPTY = 0,
-    LIBCURL,
-    WIIBROWSER,
-    MOZILLA,
+	EMPTY = 0,
+	LIBCURL,
+	WIIBROWSER,
+	MOZILLA,
 	IEXPLORER,
 	ANDROID,
-    MAXAGENTS
+	MAXAGENTS
 };
 
 const char AgentName[MAXAGENTS][11] =
 {
-    "None",
-    "Libcurl",
-    "WiiBrowser",
-    "Firefox",
+	"None",
+	"Libcurl",
+	"WiiBrowser",
+	"Firefox",
 	"IExplorer",
 	"Android",
 };
 
-int CheckFolder(const char *folder);
+int CheckFolder(const char* folder);
 
 #endif

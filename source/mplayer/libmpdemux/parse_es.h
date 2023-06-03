@@ -32,14 +32,14 @@ extern unsigned char videobuf_code[4];
 extern int videobuf_code_len;
 
 // sync video stream, and returns next packet code
-int sync_video_packet(demux_stream_t *ds);
+int sync_video_packet(demux_stream_t* ds);
 
 // return: packet length
-int read_video_packet(demux_stream_t *ds);
+int read_video_packet(demux_stream_t* ds);
 
 // return: next packet code
-int skip_video_packet(demux_stream_t *ds);
+int skip_video_packet(demux_stream_t* ds);
 
-int mp_a52_framesize(uint8_t *buf, int *srate);
+int mp_a52_framesize(uint8_t* buf, int* srate);
 
 #endif /* MPLAYER_PARSE_ES_H */

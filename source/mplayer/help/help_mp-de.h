@@ -8,15 +8,14 @@
 // TODO: cosmetic commit 27072
 // FIXME: improve wording/meaning of periodsize|timer.. for ao_alsa.c strings
 
-
 // ========================= MPlayer help ===========================
 
-static const char help_text[]=
-"Verwendung:   mplayer [Optionen] [URL|Verzeichnis/]Dateiname\n"
-"\n"
-"Grundlegende Optionen: (vollständige Liste in der Manpage)\n"
-" -vo <treiber>     Videoausgabetreiber wählen ('-vo help' für eine Liste)\n"
-" -ao <treiber>     Audioausgabetreiber wählen ('-ao help' für eine Liste)\n"
+static const char help_text[] =
+	"Verwendung:   mplayer [Optionen] [URL|Verzeichnis/]Dateiname\n"
+	"\n"
+	"Grundlegende Optionen: (vollständige Liste in der Manpage)\n"
+	" -vo <treiber>     Videoausgabetreiber wählen ('-vo help' für eine Liste)\n"
+	" -ao <treiber>     Audioausgabetreiber wählen ('-ao help' für eine Liste)\n"
 #ifdef CONFIG_VCD
 " vcd://<tracknr>   (S)VCD-Titel (Super Video CD) spielen\n"
 "                   (direkter Gerätezugriff, kein mount)\n"
@@ -24,38 +23,37 @@ static const char help_text[]=
 #ifdef CONFIG_DVDREAD
 " dvd://<titelnr>   DVD-Titel (statt einfach die ganze Datei) spielen\n"
 #endif
-" -alang/-slang     DVD-Audio/Untertitel-Sprache wählen (2-Zeichen-Ländercode)\n"
-" -ss <position>    zur Position (Sekunden oder HH:MM:SS) spulen\n"
-" -nosound          ohne Ton spielen\n"
-" -fs               im Vollbildmodus spielen (oder -vm, -zoom, siehe Manpage)\n"
-" -x <x> -y <y>     Bildschirmauflösung festlegen\n"
-"                   (bei Verwendung mit -vm oder -zoom)\n"
-" -sub <datei>      Untertitel-Datei verwenden (siehe auch -subfps, -subdelay)\n"
-" -playlist <datei> Playlist aus Datei verwenden\n"
-" -vid x -aid y     Videostream (x) und Audiostream (y) zum Abspielen wählen\n"
-" -fps x -srate y   Videoframerate (x fps) und Audiosamplingrate (y Hz) ändern\n"
-" -pp <qualität>    Nachbearbeitungsfilter aktivieren (siehe Manpage für Details)\n"
-" -framedrop        einzelne Frames verwerfen (bei langsamen Rechnern)\n"
-"\n"
-"Grundlegende Tasten: (vollständige Liste in der Manpage, siehe auch input.conf)\n"
-" <- oder ->        10 Sekunden zurück-/vorspringen\n"
-" runter/hoch       1 Minute zurück-/vorspringen\n"
-" Bild runter/hoch  10 Minuten zurück-/vorspringen\n"
-" < oder >          in der Playlist zurück-/vorspringen\n"
-" p oder LEERTASTE  Pause (eine beliebige Taste zur Fortsetzung drücken)\n"
-" q oder ESC        Abspielen stoppen und Programm beenden\n"
-" + oder -          Audio-Verzögerung um +/- 0,1 Sekunde anpassen\n"
-" o                 OSD-Modi (Aus, Suchleiste, Suchleiste+Zeitangabe) durchlaufen\n"
-" * oder /          PCM-Lautstärke erhöhen oder vermindern\n"
-" x oder z          Untertitel-Verzögerung um +/- 0,1 Sekunde anpassen\n"
-" r oder t          Untertitel nach oben/unten schieben, siehe auch '-vf expand'\n"
-"\n"
-" * * * SIEHE MANPAGE FÜR DETAILS, WEITERE OPTIONEN UND TASTEN * * *\n"
-"\n";
+	" -alang/-slang     DVD-Audio/Untertitel-Sprache wählen (2-Zeichen-Ländercode)\n"
+	" -ss <position>    zur Position (Sekunden oder HH:MM:SS) spulen\n"
+	" -nosound          ohne Ton spielen\n"
+	" -fs               im Vollbildmodus spielen (oder -vm, -zoom, siehe Manpage)\n"
+	" -x <x> -y <y>     Bildschirmauflösung festlegen\n"
+	"                   (bei Verwendung mit -vm oder -zoom)\n"
+	" -sub <datei>      Untertitel-Datei verwenden (siehe auch -subfps, -subdelay)\n"
+	" -playlist <datei> Playlist aus Datei verwenden\n"
+	" -vid x -aid y     Videostream (x) und Audiostream (y) zum Abspielen wählen\n"
+	" -fps x -srate y   Videoframerate (x fps) und Audiosamplingrate (y Hz) ändern\n"
+	" -pp <qualität>    Nachbearbeitungsfilter aktivieren (siehe Manpage für Details)\n"
+	" -framedrop        einzelne Frames verwerfen (bei langsamen Rechnern)\n"
+	"\n"
+	"Grundlegende Tasten: (vollständige Liste in der Manpage, siehe auch input.conf)\n"
+	" <- oder ->        10 Sekunden zurück-/vorspringen\n"
+	" runter/hoch       1 Minute zurück-/vorspringen\n"
+	" Bild runter/hoch  10 Minuten zurück-/vorspringen\n"
+	" < oder >          in der Playlist zurück-/vorspringen\n"
+	" p oder LEERTASTE  Pause (eine beliebige Taste zur Fortsetzung drücken)\n"
+	" q oder ESC        Abspielen stoppen und Programm beenden\n"
+	" + oder -          Audio-Verzögerung um +/- 0,1 Sekunde anpassen\n"
+	" o                 OSD-Modi (Aus, Suchleiste, Suchleiste+Zeitangabe) durchlaufen\n"
+	" * oder /          PCM-Lautstärke erhöhen oder vermindern\n"
+	" x oder z          Untertitel-Verzögerung um +/- 0,1 Sekunde anpassen\n"
+	" r oder t          Untertitel nach oben/unten schieben, siehe auch '-vf expand'\n"
+	"\n"
+	" * * * SIEHE MANPAGE FÜR DETAILS, WEITERE OPTIONEN UND TASTEN * * *\n"
+	"\n";
 
 // libmpcodecs/ad_dvdpcm.c
 #define MSGTR_SamplesWanted "Beispiele für dieses Format werden gebraucht, um die Unterstützung zu verbessern. Bitte kontaktiere die Entwickler.\n"
-
 
 // ========================= MPlayer Ausgaben ===========================
 
@@ -739,7 +737,6 @@ static const char help_text[]=
 #define MSGTR_NoVolume "[Mixer] Keine Lautstärkeregelung verfügbar.\n"
 #define MSGTR_NoBalance "[Mixer] Keine Regelung für Balance verfügbar.\n"
 
-
 // ====================== GUI-Nachrichten/-Buttons ========================
 
 // --- labels ---
@@ -1088,7 +1085,6 @@ static const char help_text[]=
 #define MSGTR_PREFERENCES_PriorityNormalBelow "niedriger als normal"
 #define MSGTR_PREFERENCES_ShowInVideoWin "Im Videofenster anzeigen (nur DirectX)"
 
-
 // ======================= Videoausgabetreiber ========================
 
 #define MSGTR_VOincompCodec \
@@ -1168,7 +1164,6 @@ static const char help_text[]=
 // alte Videoausgabetreiber, die ersetzt wurden
 #define MSGTR_VO_PGM_HasBeenReplaced "Der pgm-Videoausgabetreiber wurde ersetzt durch -vo pnm:pgmyuv.\n"
 #define MSGTR_VO_MD5_HasBeenReplaced "Der md5-Videoausgabetreiber wurde ersetzt durch -vo md5sum.\n"
-
 
 // ======================= Audioausgabetreiber ========================
 
@@ -1308,7 +1303,6 @@ static const char help_text[]=
 // ao_plugin.c
 #define MSGTR_AO_PLUGIN_InvalidPlugin "[AO PLUGIN] ungültiges Plugin: %s\n"
 
-
 // ======================= Audiofilter ================================
 
 // af_scaletempo.c
@@ -1333,7 +1327,6 @@ static const char help_text[]=
 // format.c
 
 #define MSGTR_AF_FORMAT_UnknownFormat "unbekanntes Format "
-
 
 // ========================== INPUT =========================================
 
@@ -1373,7 +1366,6 @@ static const char help_text[]=
 #define MSGTR_INPUT_INPUT_ErrCantInitJoystick "Konnte Joystick nicht initialisieren.\n"
 #define MSGTR_INPUT_INPUT_ErrCantOpenFile "Konnte Datei '%s' nicht öffnen: %s\n"
 #define MSGTR_INPUT_INPUT_ErrCantInitAppleRemote "Konnte Apple Remote Fernbedienung nicht initialisieren.\n"
-
 
 // ========================== LIBMPDEMUX ===================================
 
@@ -1608,7 +1600,6 @@ static const char help_text[]=
 #define MSGTR_MPDEMUX_XMMS_ClosingPlugin "Plugin geschlossen: %s.\n"
 #define MSGTR_MPDEMUX_XMMS_WaitForStart "Warte auf die Wiedergabe des XMMS-Plugins von '%s'...\n"
 
-
 // ========================== LIBMENU ===================================
 
 // common
@@ -1665,7 +1656,6 @@ static const char help_text[]=
 // libmenu/vf_menu.c
 #define MSGTR_LIBMENU_UnknownMenuCommand "[MENU] Unbekannter Befehl: '%s'.\n"
 #define MSGTR_LIBMENU_FailedToOpenMenu "[MENU] Konnte folgendes Menü nicht öffnen: '%s'.\n"
-
 
 // ========================== LIBMPCODECS ===================================
 
@@ -1724,7 +1714,6 @@ static const char help_text[]=
 // libmpcodecs/vf_test.c, vf_yuy2.c, vf_yvu9.c
 #define MSGTR_MPCODECS_WarnNextFilterDoesntSupport "%s vom nächsten Filter/vo nicht unterstützt :(\n"
 
-
 // ================================== LIBVO ====================================
 
 // mga_template.c
@@ -1737,7 +1726,6 @@ static const char help_text[]=
 #define MSGTR_LIBVO_MGA_CouldntOpen "[MGA] Konnte %s nicht öffnen\n"
 #define MSGTR_LIBVO_MGA_ResolutionTooHigh "[MGA] Auflösung der Quelle ist in mindestens einer Dimension größer als 1023x1023.\n[MGA] Bitte skaliere in Software oder verwende -lavdopts lowres=1.\n"
 #define MSGTR_LIBVO_MGA_mgavidVersionMismatch "[MGA] Unterschiedliche Versionen des mga_vid-Treibers des Kernels (%u) und MPlayer (%u).\n"
-
 
 // libvo/vesa_lvo.c
 #define MSGTR_LIBVO_VESA_ThisBranchIsNoLongerSupported "[VESA_LVO] Dieser Zweig wird nicht länger unterstützt.\n[VESA_LVO] Benutze stattdessen bitte -vo vesa:vidix.\n"
@@ -2027,7 +2015,6 @@ static const char help_text[]=
 #define MSGTR_RADIO_DriverV4L2 "[Radio] Benutze V4Lv2-Radioschnittstelle.\n"
 #define MSGTR_RADIO_DriverV4L "[Radio] Benutze V4Lv1-Radioschnittstelle.\n"
 #define MSGTR_RADIO_DriverBSDBT848 "[Radio] Benutze *BSD BT848-Radioschnittstelle.\n"
-
 
 // ================================== LIBASS ====================================
 

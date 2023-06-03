@@ -21,10 +21,10 @@
 
 #include <gtk/gtk.h>
 
-extern char      * sbSelectedSkin;
-extern GtkWidget * SkinBrowser;
+extern char* sbSelectedSkin;
+extern GtkWidget* SkinBrowser;
 
-void ShowSkinBrowser( void );
-GtkWidget * create_SkinBrowser( void );
+void ShowSkinBrowser(void);
+GtkWidget* create_SkinBrowser(void);
 
 #endif /* MPLAYER_GUI_SKINBROWSER_H */

@@ -35,146 +35,157 @@
  *
  ****************************************************************************/
 
-static inline void cavs_idct8_1d(int16_t *block, uint64_t bias)
+static inline void cavs_idct8_1d(int16_t* block, uint64_t bias)
 {
-    __asm__ volatile(
-        "movq 112(%0), %%mm4  \n\t" /* mm4 = src7 */
-        "movq  16(%0), %%mm5  \n\t" /* mm5 = src1 */
-        "movq  80(%0), %%mm2  \n\t" /* mm2 = src5 */
-        "movq  48(%0), %%mm7  \n\t" /* mm7 = src3 */
-        "movq   %%mm4, %%mm0  \n\t"
-        "movq   %%mm5, %%mm3  \n\t"
-        "movq   %%mm2, %%mm6  \n\t"
-        "movq   %%mm7, %%mm1  \n\t"
+	volatile __asm__ (
+		
+	"movq 112(%0), %%mm4  \n\t" /* mm4 = src7 */
+		"movq  16(%0), %%mm5  \n\t" /* mm5 = src1 */
+		"movq  80(%0), %%mm2  \n\t" /* mm2 = src5 */
+		"movq  48(%0), %%mm7  \n\t" /* mm7 = src3 */
+		"movq   %%mm4, %%mm0  \n\t"
+		"movq   %%mm5, %%mm3  \n\t"
+		"movq   %%mm2, %%mm6  \n\t"
+		"movq   %%mm7, %%mm1  \n\t"
 
-        "paddw  %%mm4, %%mm4  \n\t" /* mm4 = 2*src7 */
-        "paddw  %%mm3, %%mm3  \n\t" /* mm3 = 2*src1 */
-        "paddw  %%mm6, %%mm6  \n\t" /* mm6 = 2*src5 */
-        "paddw  %%mm1, %%mm1  \n\t" /* mm1 = 2*src3 */
-        "paddw  %%mm4, %%mm0  \n\t" /* mm0 = 3*src7 */
-        "paddw  %%mm3, %%mm5  \n\t" /* mm5 = 3*src1 */
-        "paddw  %%mm6, %%mm2  \n\t" /* mm2 = 3*src5 */
-        "paddw  %%mm1, %%mm7  \n\t" /* mm7 = 3*src3 */
-        "psubw  %%mm4, %%mm5  \n\t" /* mm5 = 3*src1 - 2*src7 = a0 */
-        "paddw  %%mm6, %%mm7  \n\t" /* mm7 = 3*src3 + 2*src5 = a1 */
-        "psubw  %%mm2, %%mm1  \n\t" /* mm1 = 2*src3 - 3*src5 = a2 */
-        "paddw  %%mm0, %%mm3  \n\t" /* mm3 = 2*src1 + 3*src7 = a3 */
+		"paddw  %%mm4, %%mm4  \n\t" /* mm4 = 2*src7 */
+		"paddw  %%mm3, %%mm3  \n\t" /* mm3 = 2*src1 */
+		"paddw  %%mm6, %%mm6  \n\t" /* mm6 = 2*src5 */
+		"paddw  %%mm1, %%mm1  \n\t" /* mm1 = 2*src3 */
+		"paddw  %%mm4, %%mm0  \n\t" /* mm0 = 3*src7 */
+		"paddw  %%mm3, %%mm5  \n\t" /* mm5 = 3*src1 */
+		"paddw  %%mm6, %%mm2  \n\t" /* mm2 = 3*src5 */
+		"paddw  %%mm1, %%mm7  \n\t" /* mm7 = 3*src3 */
+		"psubw  %%mm4, %%mm5  \n\t" /* mm5 = 3*src1 - 2*src7 = a0 */
+		"paddw  %%mm6, %%mm7  \n\t" /* mm7 = 3*src3 + 2*src5 = a1 */
+		"psubw  %%mm2, %%mm1  \n\t" /* mm1 = 2*src3 - 3*src5 = a2 */
+		"paddw  %%mm0, %%mm3  \n\t" /* mm3 = 2*src1 + 3*src7 = a3 */
 
-        "movq   %%mm5, %%mm4  \n\t"
-        "movq   %%mm7, %%mm6  \n\t"
-        "movq   %%mm3, %%mm0  \n\t"
-        "movq   %%mm1, %%mm2  \n\t"
-        SUMSUB_BA( %%mm7, %%mm5 )   /* mm7 = a0 + a1  mm5 = a0 - a1 */
-        "paddw  %%mm3, %%mm7  \n\t" /* mm7 = a0 + a1 + a3 */
-        "paddw  %%mm1, %%mm5  \n\t" /* mm5 = a0 - a1 + a2 */
-        "paddw  %%mm7, %%mm7  \n\t"
-        "paddw  %%mm5, %%mm5  \n\t"
-        "paddw  %%mm6, %%mm7  \n\t" /* mm7 = b4 */
-        "paddw  %%mm4, %%mm5  \n\t" /* mm5 = b5 */
+		"movq   %%mm5, %%mm4  \n\t"
+		"movq   %%mm7, %%mm6  \n\t"
+		"movq   %%mm3, %%mm0  \n\t"
+		"movq   %%mm1, %%mm2  \n\t"
+		SUMSUB_BA(% %mm7, %% mm5) /* mm7 = a0 + a1  mm5 = a0 - a1 */
+		"paddw  %%mm3, %%mm7  \n\t" /* mm7 = a0 + a1 + a3 */
+		"paddw  %%mm1, %%mm5  \n\t" /* mm5 = a0 - a1 + a2 */
+		"paddw  %%mm7, %%mm7  \n\t"
+		"paddw  %%mm5, %%mm5  \n\t"
+		"paddw  %%mm6, %%mm7  \n\t" /* mm7 = b4 */
+		"paddw  %%mm4, %%mm5  \n\t" /* mm5 = b5 */
 
-        SUMSUB_BA( %%mm1, %%mm3 )   /* mm1 = a3 + a2  mm3 = a3 - a2 */
-        "psubw  %%mm1, %%mm4  \n\t" /* mm4 = a0 - a2 - a3 */
-        "movq   %%mm4, %%mm1  \n\t" /* mm1 = a0 - a2 - a3 */
-        "psubw  %%mm6, %%mm3  \n\t" /* mm3 = a3 - a2 - a1 */
-        "paddw  %%mm1, %%mm1  \n\t"
-        "paddw  %%mm3, %%mm3  \n\t"
-        "psubw  %%mm2, %%mm1  \n\t" /* mm1 = b7 */
-        "paddw  %%mm0, %%mm3  \n\t" /* mm3 = b6 */
+		SUMSUB_BA(% %mm1, %% mm3) /* mm1 = a3 + a2  mm3 = a3 - a2 */
+		"psubw  %%mm1, %%mm4  \n\t" /* mm4 = a0 - a2 - a3 */
+		"movq   %%mm4, %%mm1  \n\t" /* mm1 = a0 - a2 - a3 */
+		"psubw  %%mm6, %%mm3  \n\t" /* mm3 = a3 - a2 - a1 */
+		"paddw  %%mm1, %%mm1  \n\t"
+		"paddw  %%mm3, %%mm3  \n\t"
+		"psubw  %%mm2, %%mm1  \n\t" /* mm1 = b7 */
+		"paddw  %%mm0, %%mm3  \n\t" /* mm3 = b6 */
 
-        "movq  32(%0), %%mm2  \n\t" /* mm2 = src2 */
-        "movq  96(%0), %%mm6  \n\t" /* mm6 = src6 */
-        "movq   %%mm2, %%mm4  \n\t"
-        "movq   %%mm6, %%mm0  \n\t"
-        "psllw  $2,    %%mm4  \n\t" /* mm4 = 4*src2 */
-        "psllw  $2,    %%mm6  \n\t" /* mm6 = 4*src6 */
-        "paddw  %%mm4, %%mm2  \n\t" /* mm2 = 5*src2 */
-        "paddw  %%mm6, %%mm0  \n\t" /* mm0 = 5*src6 */
-        "paddw  %%mm2, %%mm2  \n\t"
-        "paddw  %%mm0, %%mm0  \n\t"
-        "psubw  %%mm0, %%mm4  \n\t" /* mm4 = 4*src2 - 10*src6 = a7 */
-        "paddw  %%mm2, %%mm6  \n\t" /* mm6 = 4*src6 + 10*src2 = a6 */
+		"movq  32(%0), %%mm2  \n\t" /* mm2 = src2 */
+		"movq  96(%0), %%mm6  \n\t" /* mm6 = src6 */
+		"movq   %%mm2, %%mm4  \n\t"
+		"movq   %%mm6, %%mm0  \n\t"
+		"psllw  $2,    %%mm4  \n\t" /* mm4 = 4*src2 */
+		"psllw  $2,    %%mm6  \n\t" /* mm6 = 4*src6 */
+		"paddw  %%mm4, %%mm2  \n\t" /* mm2 = 5*src2 */
+		"paddw  %%mm6, %%mm0  \n\t" /* mm0 = 5*src6 */
+		"paddw  %%mm2, %%mm2  \n\t"
+		"paddw  %%mm0, %%mm0  \n\t"
+		"psubw  %%mm0, %%mm4  \n\t" /* mm4 = 4*src2 - 10*src6 = a7 */
+		"paddw  %%mm2, %%mm6  \n\t" /* mm6 = 4*src6 + 10*src2 = a6 */
 
-        "movq    (%0), %%mm2  \n\t" /* mm2 = src0 */
-        "movq  64(%0), %%mm0  \n\t" /* mm0 = src4 */
-        SUMSUB_BA( %%mm0, %%mm2 )   /* mm0 = src0+src4  mm2 = src0-src4 */
-        "psllw  $3,    %%mm0  \n\t"
-        "psllw  $3,    %%mm2  \n\t"
-        "paddw  %1,    %%mm0  \n\t" /* add rounding bias */
-        "paddw  %1,    %%mm2  \n\t" /* add rounding bias */
+		"movq    (%0), %%mm2  \n\t" /* mm2 = src0 */
+		"movq  64(%0), %%mm0  \n\t" /* mm0 = src4 */
+		SUMSUB_BA(% %mm0, %% mm2) /* mm0 = src0+src4  mm2 = src0-src4 */
+		"psllw  $3,    %%mm0  \n\t"
+		"psllw  $3,    %%mm2  \n\t"
+		"paddw  %1,    %%mm0  \n\t" /* add rounding bias */
+		"paddw  %1,    %%mm2  \n\t" /* add rounding bias */
 
-        SUMSUB_BA( %%mm6, %%mm0 )   /* mm6 = a4 + a6  mm0 = a4 - a6 */
-        SUMSUB_BA( %%mm4, %%mm2 )   /* mm4 = a5 + a7  mm2 = a5 - a7 */
-        SUMSUB_BA( %%mm7, %%mm6 )   /* mm7 = dst0  mm6 = dst7 */
-        SUMSUB_BA( %%mm5, %%mm4 )   /* mm5 = dst1  mm4 = dst6 */
-        SUMSUB_BA( %%mm3, %%mm2 )   /* mm3 = dst2  mm2 = dst5 */
-        SUMSUB_BA( %%mm1, %%mm0 )   /* mm1 = dst3  mm0 = dst4 */
-        :: "r"(block), "m"(bias)
-    );
+		SUMSUB_BA(% %mm6, %% mm0) /* mm6 = a4 + a6  mm0 = a4 - a6 */
+		SUMSUB_BA(% %mm4, %% mm2) /* mm4 = a5 + a7  mm2 = a5 - a7 */
+		SUMSUB_BA(% %mm7, %% mm6) /* mm7 = dst0  mm6 = dst7 */
+		SUMSUB_BA(% %mm5, %% mm4) /* mm5 = dst1  mm4 = dst6 */
+		SUMSUB_BA(% %mm3, %% mm2) /* mm3 = dst2  mm2 = dst5 */
+		SUMSUB_BA(% %mm1, %% mm0) /* mm1 = dst3  mm0 = dst4 */
+	::
+	"r"(block), "m"(bias)
+	)
 }
 
-static void cavs_idct8_add_mmx(uint8_t *dst, int16_t *block, int stride)
+static void cavs_idct8_add_mmx(uint8_t* dst, int16_t* block, int stride)
 {
-    int i;
-    DECLARE_ALIGNED(8, int16_t, b2)[64];
+	int i;
+	DECLARE_ALIGNED(8, int16_t, b2)[64];
 
-    for(i=0; i<2; i++){
-        DECLARE_ALIGNED(8, uint64_t, tmp);
+	for (i = 0; i < 2; i++)
+	{
+		DECLARE_ALIGNED(8, uint64_t, tmp);
 
-        cavs_idct8_1d(block+4*i, ff_pw_4.a);
+		cavs_idct8_1d(block + 4 * i, ff_pw_4.a);
 
-        __asm__ volatile(
-            "psraw     $3, %%mm7  \n\t"
-            "psraw     $3, %%mm6  \n\t"
-            "psraw     $3, %%mm5  \n\t"
-            "psraw     $3, %%mm4  \n\t"
-            "psraw     $3, %%mm3  \n\t"
-            "psraw     $3, %%mm2  \n\t"
-            "psraw     $3, %%mm1  \n\t"
-            "psraw     $3, %%mm0  \n\t"
-            "movq   %%mm7,    %0   \n\t"
-            TRANSPOSE4( %%mm0, %%mm2, %%mm4, %%mm6, %%mm7 )
-            "movq   %%mm0,  8(%1)  \n\t"
-            "movq   %%mm6, 24(%1)  \n\t"
-            "movq   %%mm7, 40(%1)  \n\t"
-            "movq   %%mm4, 56(%1)  \n\t"
-            "movq    %0,    %%mm7  \n\t"
-            TRANSPOSE4( %%mm7, %%mm5, %%mm3, %%mm1, %%mm0 )
-            "movq   %%mm7,   (%1)  \n\t"
-            "movq   %%mm1, 16(%1)  \n\t"
-            "movq   %%mm0, 32(%1)  \n\t"
-            "movq   %%mm3, 48(%1)  \n\t"
-            : "=m"(tmp)
-            : "r"(b2+32*i)
-            : "memory"
-        );
-    }
+		volatile __asm__ (
+			
+		"psraw     $3, %%mm7  \n\t"
+			"psraw     $3, %%mm6  \n\t"
+			"psraw     $3, %%mm5  \n\t"
+			"psraw     $3, %%mm4  \n\t"
+			"psraw     $3, %%mm3  \n\t"
+			"psraw     $3, %%mm2  \n\t"
+			"psraw     $3, %%mm1  \n\t"
+			"psraw     $3, %%mm0  \n\t"
+			"movq   %%mm7,    %0   \n\t"
+			TRANSPOSE4(% %mm0, %% mm2, %% mm4, %% mm6, %% mm7)
+			"movq   %%mm0,  8(%1)  \n\t"
+			"movq   %%mm6, 24(%1)  \n\t"
+			"movq   %%mm7, 40(%1)  \n\t"
+			"movq   %%mm4, 56(%1)  \n\t"
+			"movq    %0,    %%mm7  \n\t"
+			TRANSPOSE4(% %mm7, %% mm5, %% mm3, %% mm1, %% mm0)
+			"movq   %%mm7,   (%1)  \n\t"
+			"movq   %%mm1, 16(%1)  \n\t"
+			"movq   %%mm0, 32(%1)  \n\t"
+			"movq   %%mm3, 48(%1)  \n\t"
+		:
+		"=m"(tmp)
+		:
+		"r"(b2 + 32 * i)
+		:
+		"memory"
+		)
+	}
 
-    for(i=0; i<2; i++){
-        cavs_idct8_1d(b2+4*i, ff_pw_64.a);
+	for (i = 0; i < 2; i++)
+	{
+		cavs_idct8_1d(b2 + 4 * i, ff_pw_64.a);
 
-        __asm__ volatile(
-            "psraw     $7, %%mm7  \n\t"
-            "psraw     $7, %%mm6  \n\t"
-            "psraw     $7, %%mm5  \n\t"
-            "psraw     $7, %%mm4  \n\t"
-            "psraw     $7, %%mm3  \n\t"
-            "psraw     $7, %%mm2  \n\t"
-            "psraw     $7, %%mm1  \n\t"
-            "psraw     $7, %%mm0  \n\t"
-            "movq   %%mm7,    (%0)  \n\t"
-            "movq   %%mm5,  16(%0)  \n\t"
-            "movq   %%mm3,  32(%0)  \n\t"
-            "movq   %%mm1,  48(%0)  \n\t"
-            "movq   %%mm0,  64(%0)  \n\t"
-            "movq   %%mm2,  80(%0)  \n\t"
-            "movq   %%mm4,  96(%0)  \n\t"
-            "movq   %%mm6, 112(%0)  \n\t"
-            :: "r"(b2+4*i)
-            : "memory"
-        );
-    }
+		volatile __asm__ (
+			
+		"psraw     $7, %%mm7  \n\t"
+			"psraw     $7, %%mm6  \n\t"
+			"psraw     $7, %%mm5  \n\t"
+			"psraw     $7, %%mm4  \n\t"
+			"psraw     $7, %%mm3  \n\t"
+			"psraw     $7, %%mm2  \n\t"
+			"psraw     $7, %%mm1  \n\t"
+			"psraw     $7, %%mm0  \n\t"
+			"movq   %%mm7,    (%0)  \n\t"
+			"movq   %%mm5,  16(%0)  \n\t"
+			"movq   %%mm3,  32(%0)  \n\t"
+			"movq   %%mm1,  48(%0)  \n\t"
+			"movq   %%mm0,  64(%0)  \n\t"
+			"movq   %%mm2,  80(%0)  \n\t"
+			"movq   %%mm4,  96(%0)  \n\t"
+			"movq   %%mm6, 112(%0)  \n\t"
+		::
+		"r"(b2 + 4 * i)
+		:
+		"memory"
+		)
+	}
 
-    ff_add_pixels_clamped_mmx(b2, dst, stride);
+	ff_add_pixels_clamped_mmx(b2, dst, stride);
 }
 
 /*****************************************************************************
@@ -248,7 +259,6 @@ static void cavs_idct8_add_mmx(uint8_t *dst, int16_t *block, int stride)
         "packuswb %%mm6, %%mm6      \n\t"\
         OP(%%mm6, (%1), A, d)            \
         "add %3, %1                 \n\t"
-
 
 #define QPEL_CAVSVNUM(VOP,OP,ADD,MUL1,MUL2)\
     int w= 2;\
@@ -396,8 +406,7 @@ static void OPNAME ## cavs_qpel16_h_ ## MMX(uint8_t *dst, uint8_t *src, int dstS
     dst += 8*dstStride;\
     OPNAME ## cavs_qpel8_h_ ## MMX(dst  , src  , dstStride, srcStride);\
     OPNAME ## cavs_qpel8_h_ ## MMX(dst+8, src+8, dstStride, srcStride);\
-}\
-
+}
 #define CAVS_MC(OPNAME, SIZE, MMX) \
 static void ff_ ## OPNAME ## cavs_qpel ## SIZE ## _mc20_ ## MMX(uint8_t *dst, uint8_t *src, int stride){\
     OPNAME ## cavs_qpel ## SIZE ## _h_ ## MMX(dst, src, stride, stride);\
@@ -413,8 +422,7 @@ static void ff_ ## OPNAME ## cavs_qpel ## SIZE ## _mc02_ ## MMX(uint8_t *dst, ui
 \
 static void ff_ ## OPNAME ## cavs_qpel ## SIZE ## _mc03_ ## MMX(uint8_t *dst, uint8_t *src, int stride){\
     OPNAME ## cavs_qpel ## SIZE ## _v3_ ## MMX(dst, src, stride, stride);\
-}\
-
+}
 #define PUT_OP(a,b,temp, size) "mov" #size " " #a ", " #b "    \n\t"
 #define AVG_3DNOW_OP(a,b,temp, size) \
 "mov" #size " " #b ", " #temp "   \n\t"\
@@ -425,56 +433,56 @@ static void ff_ ## OPNAME ## cavs_qpel ## SIZE ## _mc03_ ## MMX(uint8_t *dst, ui
 "pavgb " #temp ", " #a "          \n\t"\
 "mov" #size " " #a ", " #b "      \n\t"
 
-QPEL_CAVS(put_,       PUT_OP, 3dnow)
+QPEL_CAVS(put_, PUT_OP, 3dnow)
 QPEL_CAVS(avg_, AVG_3DNOW_OP, 3dnow)
-QPEL_CAVS(put_,       PUT_OP, mmx2)
-QPEL_CAVS(avg_,  AVG_MMX2_OP, mmx2)
+QPEL_CAVS(put_, PUT_OP, mmx2)
+QPEL_CAVS(avg_, AVG_MMX2_OP, mmx2)
 
 CAVS_MC(put_, 8, 3dnow)
-CAVS_MC(put_, 16,3dnow)
+CAVS_MC(put_, 16, 3dnow)
 CAVS_MC(avg_, 8, 3dnow)
-CAVS_MC(avg_, 16,3dnow)
+CAVS_MC(avg_, 16, 3dnow)
 CAVS_MC(put_, 8, mmx2)
-CAVS_MC(put_, 16,mmx2)
+CAVS_MC(put_, 16, mmx2)
 CAVS_MC(avg_, 8, mmx2)
-CAVS_MC(avg_, 16,mmx2)
+CAVS_MC(avg_, 16, mmx2)
 
-static void ff_cavsdsp_init_mmx2(CAVSDSPContext* c, AVCodecContext *avctx) {
+static void ff_cavsdsp_init_mmx2(CAVSDSPContext* c, AVCodecContext* avctx)
+{
 #define dspfunc(PFX, IDX, NUM) \
     c->PFX ## _pixels_tab[IDX][ 0] = ff_ ## PFX ## NUM ## _mc00_mmx2; \
     c->PFX ## _pixels_tab[IDX][ 2] = ff_ ## PFX ## NUM ## _mc20_mmx2; \
     c->PFX ## _pixels_tab[IDX][ 4] = ff_ ## PFX ## NUM ## _mc01_mmx2; \
     c->PFX ## _pixels_tab[IDX][ 8] = ff_ ## PFX ## NUM ## _mc02_mmx2; \
-    c->PFX ## _pixels_tab[IDX][12] = ff_ ## PFX ## NUM ## _mc03_mmx2; \
-
-    dspfunc(put_cavs_qpel, 0, 16);
-    dspfunc(put_cavs_qpel, 1, 8);
-    dspfunc(avg_cavs_qpel, 0, 16);
-    dspfunc(avg_cavs_qpel, 1, 8);
+    c->PFX ## _pixels_tab[IDX][12] = ff_ ## PFX ## NUM ## _mc03_mmx2;
+	dspfunc(put_cavs_qpel, 0, 16);
+	dspfunc(put_cavs_qpel, 1, 8);
+	dspfunc(avg_cavs_qpel, 0, 16);
+	dspfunc(avg_cavs_qpel, 1, 8);
 #undef dspfunc
-    c->cavs_idct8_add = cavs_idct8_add_mmx;
+	c->cavs_idct8_add = cavs_idct8_add_mmx;
 }
 
-static void ff_cavsdsp_init_3dnow(CAVSDSPContext* c, AVCodecContext *avctx) {
+static void ff_cavsdsp_init_3dnow(CAVSDSPContext* c, AVCodecContext* avctx)
+{
 #define dspfunc(PFX, IDX, NUM) \
     c->PFX ## _pixels_tab[IDX][ 0] = ff_ ## PFX ## NUM ## _mc00_mmx2; \
     c->PFX ## _pixels_tab[IDX][ 2] = ff_ ## PFX ## NUM ## _mc20_3dnow; \
     c->PFX ## _pixels_tab[IDX][ 4] = ff_ ## PFX ## NUM ## _mc01_3dnow; \
     c->PFX ## _pixels_tab[IDX][ 8] = ff_ ## PFX ## NUM ## _mc02_3dnow; \
-    c->PFX ## _pixels_tab[IDX][12] = ff_ ## PFX ## NUM ## _mc03_3dnow; \
-
-    dspfunc(put_cavs_qpel, 0, 16);
-    dspfunc(put_cavs_qpel, 1, 8);
-    dspfunc(avg_cavs_qpel, 0, 16);
-    dspfunc(avg_cavs_qpel, 1, 8);
+    c->PFX ## _pixels_tab[IDX][12] = ff_ ## PFX ## NUM ## _mc03_3dnow;
+	dspfunc(put_cavs_qpel, 0, 16);
+	dspfunc(put_cavs_qpel, 1, 8);
+	dspfunc(avg_cavs_qpel, 0, 16);
+	dspfunc(avg_cavs_qpel, 1, 8);
 #undef dspfunc
-    c->cavs_idct8_add = cavs_idct8_add_mmx;
+	c->cavs_idct8_add = cavs_idct8_add_mmx;
 }
 
-void ff_cavsdsp_init_mmx(CAVSDSPContext *c, AVCodecContext *avctx)
+void ff_cavsdsp_init_mmx(CAVSDSPContext* c, AVCodecContext* avctx)
 {
-    int mm_flags = av_get_cpu_flags();
+	int mm_flags = av_get_cpu_flags();
 
-    if (mm_flags & AV_CPU_FLAG_MMX2)  ff_cavsdsp_init_mmx2 (c, avctx);
-    if (mm_flags & AV_CPU_FLAG_3DNOW) ff_cavsdsp_init_3dnow(c, avctx);
+	if (mm_flags & AV_CPU_FLAG_MMX2) ff_cavsdsp_init_mmx2(c, avctx);
+	if (mm_flags & AV_CPU_FLAG_3DNOW) ff_cavsdsp_init_3dnow(c, avctx);
 }

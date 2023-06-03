@@ -22,7 +22,6 @@
 #include <inttypes.h>
 #include "stream/stream.h"
 
-
 /* EBML version supported */
 #define EBML_VERSION 1
 
@@ -47,7 +46,6 @@
 
 /* ID returned in error cases */
 #define EBML_ID_INVALID                  0xFFFFFFFF
-
 
 /*
  * Matroska element IDs. max. 32-bit.
@@ -193,18 +191,17 @@
 #define EBML_INT_INVALID    INT64_MAX
 #define EBML_FLOAT_INVALID  -1000000000.0
 
-
-uint32_t ebml_read_id (stream_t *s, int *length);
-uint64_t ebml_read_vlen_uint (uint8_t *buffer, int *length);
-int64_t ebml_read_vlen_int (uint8_t *buffer, int *length);
-uint64_t ebml_read_length (stream_t *s, int *length);
-uint64_t ebml_read_uint (stream_t *s, uint64_t *length);
-int64_t ebml_read_int (stream_t *s, uint64_t *length);
-long double ebml_read_float (stream_t *s, uint64_t *length);
-char *ebml_read_ascii (stream_t *s, uint64_t *length);
-char *ebml_read_utf8 (stream_t *s, uint64_t *length);
-int ebml_read_skip (stream_t *s, uint64_t *length);
-uint32_t ebml_read_master (stream_t *s, uint64_t *length);
-char *ebml_read_header (stream_t *s, int *version);
+uint32_t ebml_read_id(stream_t* s, int* length);
+uint64_t ebml_read_vlen_uint(uint8_t* buffer, int* length);
+int64_t ebml_read_vlen_int(uint8_t* buffer, int* length);
+uint64_t ebml_read_length(stream_t* s, int* length);
+uint64_t ebml_read_uint(stream_t* s, uint64_t* length);
+int64_t ebml_read_int(stream_t* s, uint64_t* length);
+long double ebml_read_float(stream_t* s, uint64_t* length);
+char* ebml_read_ascii(stream_t* s, uint64_t* length);
+char* ebml_read_utf8(stream_t* s, uint64_t* length);
+int ebml_read_skip(stream_t* s, uint64_t* length);
+uint32_t ebml_read_master(stream_t* s, uint64_t* length);
+char* ebml_read_header(stream_t* s, int* version);
 
 #endif /* MPLAYER_EBML_H */

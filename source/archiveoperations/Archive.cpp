@@ -31,122 +31,122 @@
 
 #include "Archive.h"
 
-ArchiveHandle::ArchiveHandle(const char  * filepath)
+ArchiveHandle::ArchiveHandle(const char* filepath)
 {
-    szFile = NULL;
-    zipFile = NULL;
-    rarFile = NULL;
+	szFile = nullptr;
+	zipFile = nullptr;
+	rarFile = nullptr;
 
-    char checkbuffer[6];
-    memset(checkbuffer, 0, sizeof(checkbuffer));
+	char checkbuffer[6];
+	memset(checkbuffer, 0, sizeof(checkbuffer));
 
-    FILE * file = fopen(filepath, "rb");
-    if(!file)
-        return;
+	FILE* file = fopen(filepath, "rb");
+	if (!file)
+		return;
 
-    int ret = 1;
+	int ret = 1;
 
-    while(checkbuffer[0] == 0 && ret > 0)
-        ret = fread(&checkbuffer, 1, 1, file);
+	while (checkbuffer[0] == 0 && ret > 0)
+		ret = fread(&checkbuffer, 1, 1, file);
 
-    fread(&checkbuffer[1], 1, 5, file);
-    fclose(file);
+	fread(&checkbuffer[1], 1, 5, file);
+	fclose(file);
 
-    if(IsZipFile(checkbuffer))
-        zipFile = new ZipFile(filepath);
+	if (IsZipFile(checkbuffer))
+		zipFile = new ZipFile(filepath);
 
-    if(Is7ZipFile(checkbuffer))
-        szFile = new SzFile(filepath);
+	if (Is7ZipFile(checkbuffer))
+		szFile = new SzFile(filepath);
 
-    if(IsRarFile(checkbuffer))
-        rarFile = new RarFile(filepath);
+	if (IsRarFile(checkbuffer))
+		rarFile = new RarFile(filepath);
 }
 
 ArchiveHandle::~ArchiveHandle()
 {
-    if(zipFile)
-        delete zipFile;
+	if (zipFile)
+		delete zipFile;
 
-    if(szFile)
-        delete szFile;
+	if (szFile)
+		delete szFile;
 
-    if(rarFile)
-        delete rarFile;
+	if (rarFile)
+		delete rarFile;
 
-    zipFile = NULL;
-    szFile = NULL;
-    rarFile = NULL;
+	zipFile = nullptr;
+	szFile = nullptr;
+	rarFile = nullptr;
 }
 
-ArchiveFileStruct * ArchiveHandle::GetFileStruct(int ind)
+ArchiveFileStruct* ArchiveHandle::GetFileStruct(int ind)
 {
-    if(zipFile)
-        return zipFile->GetFileStruct(ind);
+	if (zipFile)
+		return zipFile->GetFileStruct(ind);
 
-    if(szFile)
-        return szFile->GetFileStruct(ind);
+	if (szFile)
+		return szFile->GetFileStruct(ind);
 
-    if(rarFile)
-        return rarFile->GetFileStruct(ind);
+	if (rarFile)
+		return rarFile->GetFileStruct(ind);
 
-    return NULL;
+	return nullptr;
 }
 
 u32 ArchiveHandle::GetItemCount()
 {
-    if(zipFile)
-        return zipFile->GetItemCount();
+	if (zipFile)
+		return zipFile->GetItemCount();
 
-    if(szFile)
-        return szFile->GetItemCount();
+	if (szFile)
+		return szFile->GetItemCount();
 
-    if(rarFile)
-        return rarFile->GetItemCount();
-
-    return 0;
-}
-
-bool ArchiveHandle::ReloadList()
-{
-    if(zipFile)
-        return zipFile->LoadList();
-
-    return false;
-}
-
-int ArchiveHandle::ExtractFile(int ind, const char *destpath, bool withpath)
-{
-    if(zipFile)
-        return zipFile->ExtractFile(ind, destpath, withpath);
-
-    if(szFile)
-        return szFile->ExtractFile(ind, destpath, withpath);
-
-    if(rarFile)
-        return rarFile->ExtractFile(ind, destpath, withpath);
-
-    return 0;
-}
-
-int ArchiveHandle::ExtractAll(const char * destpath)
-{
-    if(zipFile)
-        return zipFile->ExtractAll(destpath);
-
-    if(szFile)
-        return szFile->ExtractAll(destpath);
-
-    if(rarFile)
-        return rarFile->ExtractAll(destpath);
+	if (rarFile)
+		return rarFile->GetItemCount();
 
 	return 0;
 }
 
-bool ArchiveHandle::IsZipFile (const char *buffer)
+bool ArchiveHandle::ReloadList()
 {
-	unsigned int *check;
+	if (zipFile)
+		return zipFile->LoadList();
 
-	check = (unsigned int *) buffer;
+	return false;
+}
+
+int ArchiveHandle::ExtractFile(int ind, const char* destpath, bool withpath)
+{
+	if (zipFile)
+		return zipFile->ExtractFile(ind, destpath, withpath);
+
+	if (szFile)
+		return szFile->ExtractFile(ind, destpath, withpath);
+
+	if (rarFile)
+		return rarFile->ExtractFile(ind, destpath, withpath);
+
+	return 0;
+}
+
+int ArchiveHandle::ExtractAll(const char* destpath)
+{
+	if (zipFile)
+		return zipFile->ExtractAll(destpath);
+
+	if (szFile)
+		return szFile->ExtractAll(destpath);
+
+	if (rarFile)
+		return rarFile->ExtractAll(destpath);
+
+	return 0;
+}
+
+bool ArchiveHandle::IsZipFile(const char* buffer)
+{
+	unsigned int* check;
+
+	check = (unsigned int*)buffer;
 
 	if (check[0] == 0x504b0304)
 		return true;
@@ -154,25 +154,25 @@ bool ArchiveHandle::IsZipFile (const char *buffer)
 	return false;
 }
 
-bool ArchiveHandle::Is7ZipFile(const char *buffer)
+bool ArchiveHandle::Is7ZipFile(const char* buffer)
 {
 	// 7z signature
 	int i;
-	for(i = 0; i < 6; i++)
-		if(buffer[i] != k7zSignature[i])
+	for (i = 0; i < 6; i++)
+		if (buffer[i] != k7zSignature[i])
 			return false;
 
 	return true; // 7z archive found
 }
 
-bool ArchiveHandle::IsRarFile(const char *buffer)
+bool ArchiveHandle::IsRarFile(const char* buffer)
 {
 	// Rar signature    Rar!\x1A\a\0
 	Byte Signature[6] = {'R', 'a', 'r', 0x21, 0x1a, 0x07};
 
 	int i;
-	for(i = 0; i < 6; i++)
-		if(buffer[i] != Signature[i])
+	for (i = 0; i < 6; i++)
+		if (buffer[i] != Signature[i])
 			return false;
 
 	return true; // RAR archive found

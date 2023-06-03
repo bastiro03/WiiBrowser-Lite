@@ -54,92 +54,101 @@
 #define MAP_ANON MAP_ANONYMOUS
 #endif
 
-static int shmem_type=0;
+static int shmem_type = 0;
 
-void* shmem_alloc(int64_t size){
+void* shmem_alloc(int64_t size)
+{
 #ifdef GEKKO
-return malloc(size);
+	return malloc(size);
 #else
-void* p;
-static int devzero = -1;
-if (size > SIZE_MAX) {
-  mp_msg(MSGT_OSDEP, MSGL_FATAL,
-         "Shared memory allocation larger than system max. allocation size.\n");
-  return NULL;
-}
-while(1){
-  switch(shmem_type){
-  case 0:  // ========= MAP_ANON|MAP_SHARED ==========
+	void* p;
+	static int devzero = -1;
+	if (size > SIZE_MAX)
+	{
+		mp_msg(MSGT_OSDEP, MSGL_FATAL,
+		       "Shared memory allocation larger than system max. allocation size.\n");
+		return NULL;
+	}
+	while (1)
+	{
+		switch (shmem_type)
+		{
+		case 0: // ========= MAP_ANON|MAP_SHARED ==========
 #ifdef MAP_ANON
-    p=mmap(0,size,PROT_READ|PROT_WRITE,MAP_ANON|MAP_SHARED,-1,0);
-    if(p==MAP_FAILED) break; // failed
-    mp_dbg(MSGT_OSDEP, MSGL_DBG2, "shmem: %"PRId64" bytes allocated using mmap anon (%p)\n",size,p);
-    return p;
+			p = mmap(0, size, PROT_READ | PROT_WRITE, MAP_ANON | MAP_SHARED, -1, 0);
+			if (p == MAP_FAILED) break; // failed
+			mp_dbg(MSGT_OSDEP, MSGL_DBG2, "shmem: %"PRId64" bytes allocated using mmap anon (%p)\n", size, p);
+			return p;
 #else
-// system does not support MAP_ANON at all (e.g. solaris 2.5.1/2.6), just fail
-    mp_dbg(MSGT_OSDEP, MSGL_DBG3, "shmem: using mmap anon failed\n");
+			// system does not support MAP_ANON at all (e.g. solaris 2.5.1/2.6), just fail
+			mp_dbg(MSGT_OSDEP, MSGL_DBG3, "shmem: using mmap anon failed\n");
 #endif
-    break;
-  case 1:  // ========= MAP_SHARED + /dev/zero ==========
-    if (devzero == -1 && (devzero = open("/dev/zero", O_RDWR, 0)) == -1) break;
-    p=mmap(0,size,PROT_READ|PROT_WRITE,MAP_SHARED,devzero,0);
-    if(p==MAP_FAILED) break; // failed
-    mp_dbg(MSGT_OSDEP, MSGL_DBG2, "shmem: %"PRId64" bytes allocated using mmap /dev/zero (%p)\n",size,p);
-    return p;
-  case 2: { // ========= shmget() ==========
+			break;
+		case 1: // ========= MAP_SHARED + /dev/zero ==========
+			if (devzero == -1 && (devzero = open("/dev/zero", O_RDWR, 0)) == -1) break;
+			p = mmap(0, size, PROT_READ | PROT_WRITE, MAP_SHARED, devzero, 0);
+			if (p == MAP_FAILED) break; // failed
+			mp_dbg(MSGT_OSDEP, MSGL_DBG2, "shmem: %"PRId64" bytes allocated using mmap /dev/zero (%p)\n", size, p);
+			return p;
+		case 2:
+			{
+				// ========= shmget() ==========
 #ifdef HAVE_SHM
-    struct shmid_ds shmemds;
-    int shmemid;
-    if ((shmemid = shmget(IPC_PRIVATE, size, IPC_CREAT | 0600)) == -1) break;
-    if ((p = shmat(shmemid, 0, 0)) == (void *)-1){
-      mp_msg(MSGT_OSDEP, MSGL_ERR, "shmem: shmat() failed: %s\n", strerror(errno));
-      shmctl (shmemid, IPC_RMID, &shmemds);
-      break;
-    }
-    if (shmctl(shmemid, IPC_RMID, &shmemds) == -1) {
-      mp_msg(MSGT_OSDEP, MSGL_ERR, "shmem: shmctl() failed: %s\n", strerror(errno));
-      if (shmdt(p) == -1) perror ("shmdt()");
-      break;
-    }
-    mp_dbg(MSGT_OSDEP, MSGL_DBG2, "shmem: %"PRId64" bytes allocated using SHM (%p)\n",size,p);
-    return p;
+			struct shmid_ds shmemds;
+			int shmemid;
+			if ((shmemid = shmget(IPC_PRIVATE, size, IPC_CREAT | 0600)) == -1) break;
+			if ((p = shmat(shmemid, 0, 0)) == (void*)-1) {
+				mp_msg(MSGT_OSDEP, MSGL_ERR, "shmem: shmat() failed: %s\n", strerror(errno));
+				shmctl(shmemid, IPC_RMID, &shmemds);
+				break;
+			}
+			if (shmctl(shmemid, IPC_RMID, &shmemds) == -1) {
+				mp_msg(MSGT_OSDEP, MSGL_ERR, "shmem: shmctl() failed: %s\n", strerror(errno));
+				if (shmdt(p) == -1) perror("shmdt()");
+				break;
+			}
+			mp_dbg(MSGT_OSDEP, MSGL_DBG2, "shmem: %"PRId64" bytes allocated using SHM (%p)\n", size, p);
+			return p;
 #else
-    mp_msg(MSGT_OSDEP, MSGL_FATAL, "shmem: no SHM support was compiled in!\n");
-    return NULL;
+				mp_msg(MSGT_OSDEP, MSGL_FATAL, "shmem: no SHM support was compiled in!\n");
+				return NULL;
 #endif
-    }
-  default:
-    mp_msg(MSGT_OSDEP, MSGL_FATAL,
-	"FATAL: Cannot allocate %"PRId64" bytes of shared memory :(\n",size);
-    return NULL;
-  }
-  ++shmem_type;
-}
+			}
+		default:
+			mp_msg(MSGT_OSDEP, MSGL_FATAL,
+			       "FATAL: Cannot allocate %"PRId64" bytes of shared memory :(\n", size);
+			return NULL;
+		}
+		++shmem_type;
+	}
 #endif
 }
 
-void shmem_free(void* p,int64_t size){
+void shmem_free(void* p, int64_t size)
+{
 #ifdef GEKKO
-free(p);
-p = NULL;
+	free(p);
+	p = NULL;
 #else
-  switch(shmem_type){
-    case 0:
-    case 1:
-	    if(munmap(p,size)) {
-		mp_msg(MSGT_OSDEP, MSGL_ERR, "munmap failed on %p %"PRId64" bytes: %s\n",
-		    p,size,strerror(errno));
-	    }
-      break;
-    case 2:
+	switch (shmem_type)
+	{
+	case 0:
+	case 1:
+		if (munmap(p, size))
+		{
+			mp_msg(MSGT_OSDEP, MSGL_ERR, "munmap failed on %p %"PRId64" bytes: %s\n",
+			       p, size, strerror(errno));
+		}
+		break;
+	case 2:
 #ifdef HAVE_SHM
-	    if (shmdt(p) == -1)
-		mp_msg(MSGT_OSDEP, MSGL_ERR, "shmfree: shmdt() failed: %s\n",
-		    strerror(errno));
+		if (shmdt(p) == -1)
+			mp_msg(MSGT_OSDEP, MSGL_ERR, "shmfree: shmdt() failed: %s\n",
+				strerror(errno));
 #else
-	    mp_msg(MSGT_OSDEP, MSGL_ERR, "shmfree: no SHM support was compiled in!\n");
+		mp_msg(MSGT_OSDEP, MSGL_ERR, "shmfree: no SHM support was compiled in!\n");
 #endif
-      break;
-  }
+		break;
+	}
 #endif
 }

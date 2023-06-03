@@ -26,18 +26,19 @@
 #include "libavutil/fifo.h"
 #include "avformat.h"
 
-typedef struct {
-    AVFifoBuffer *fifo;
-    unsigned fifo_size;           ///< size of currently allocated FIFO
-    uint64_t dts;                 ///< current dts
-    int sample_size;              ///< size of one sample all channels included
-    const int *samples_per_frame; ///< must be 0-terminated
-    const int *samples;           ///< current samples per frame, pointer to samples_per_frame
-    AVRational time_base;         ///< time base of output audio packets
+typedef struct
+{
+	AVFifoBuffer* fifo;
+	unsigned fifo_size; ///< size of currently allocated FIFO
+	uint64_t dts; ///< current dts
+	int sample_size; ///< size of one sample all channels included
+	const int* samples_per_frame; ///< must be 0-terminated
+	const int* samples; ///< current samples per frame, pointer to samples_per_frame
+	AVRational time_base; ///< time base of output audio packets
 } AudioInterleaveContext;
 
-int ff_audio_interleave_init(AVFormatContext *s, const int *samples_per_frame, AVRational time_base);
-void ff_audio_interleave_close(AVFormatContext *s);
+int ff_audio_interleave_init(AVFormatContext* s, const int* samples_per_frame, AVRational time_base);
+void ff_audio_interleave_close(AVFormatContext* s);
 
 /**
  * Rechunk audio PCM packets per AudioInterleaveContext->samples_per_frame
@@ -48,8 +49,8 @@ void ff_audio_interleave_close(AVFormatContext *s);
  * @param get_packet function will output a packet when streams are correctly interleaved.
  * @param compare_ts function will compare AVPackets and decide interleaving order.
  */
-int ff_audio_rechunk_interleave(AVFormatContext *s, AVPacket *out, AVPacket *pkt, int flush,
-                        int (*get_packet)(AVFormatContext *, AVPacket *, AVPacket *, int),
-                        int (*compare_ts)(AVFormatContext *, AVPacket *, AVPacket *));
+int ff_audio_rechunk_interleave(AVFormatContext* s, AVPacket* out, AVPacket* pkt, int flush,
+                                int (*get_packet)(AVFormatContext*, AVPacket*, AVPacket*, int),
+                                int (*compare_ts)(AVFormatContext*, AVPacket*, AVPacket*));
 
 #endif /* AVFORMAT_AUDIOINTERLEAVE_H */

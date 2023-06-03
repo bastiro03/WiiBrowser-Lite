@@ -1,7 +1,6 @@
 #ifndef MPLAYER_WINERROR_H
 #define MPLAYER_WINERROR_H
 
-
 extern int WIN32_LastError;
 
 #define FACILITY_NULL      0
@@ -17,7 +16,6 @@ extern int WIN32_LastError;
 #define FACILITY_INTERNET  12
 
 #define SEVERITY_ERROR		1
-
 
 #define MAKE_HRESULT(sev,fac,code) \
     ((HRESULT) (((unsigned long)(sev)<<31) | ((unsigned long)(fac)<<16) | ((unsigned long)(code))) )
@@ -1631,7 +1629,6 @@ extern int WIN32_LastError;
 /* Obtained from lcc-win32 include files */
 #define GDI_ERROR			0xffffffff
 
-
 /* registry errors */
 #define REGDB_E_READREGDB               0x80040150
 #define REGDB_E_CLASSNOTREG             0x80040154
@@ -1649,7 +1646,6 @@ extern int WIN32_LastError;
 #define CLASS_E_NOTLICENSED             (CLASSFACTORY_E_FIRST+2)
 #define CLASS_E_NOAGGREGATION           0x80040110
 #define	CLASS_E_CLASSNOTAVAILABLE	      0x80040111
-
 
 #define OLEOBJ_E_NOVERBS                0x00040180L
 #define OLEOBJ_E_INVALIDVERB            0x00040181L

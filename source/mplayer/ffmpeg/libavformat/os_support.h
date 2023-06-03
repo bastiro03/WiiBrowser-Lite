@@ -39,13 +39,13 @@
 #  define fstat(f,s) _fstati64((f), (s))
 #endif /* defined(__MINGW32__) && !defined(__MINGW32CE__) */
 
-static inline int is_dos_path(const char *path)
+static inline int is_dos_path(const char* path)
 {
 #if HAVE_DOS_PATHS
-    if (path[0] && path[1] == ':')
-        return 1;
+	if (path[0] && path[1] == ':')
+		return 1;
 #endif
-    return 0;
+	return 0;
 }
 
 #if defined(__OS2__)
@@ -61,7 +61,7 @@ static inline int is_dos_path(const char *path)
 #endif
 
 #if defined(_WIN32) && !defined(__MINGW32CE__)
-int ff_win32_open(const char *filename, int oflag, int pmode);
+int ff_win32_open(const char* filename, int oflag, int pmode);
 #define open ff_win32_open
 #endif
 
@@ -80,9 +80,9 @@ typedef int socklen_t;
 typedef unsigned long nfds_t;
 
 struct pollfd {
-    int fd;
-    short events;  /* events to look for */
-    short revents; /* events that occurred */
+	int fd;
+	short events;  /* events to look for */
+	short revents; /* events that occurred */
 };
 
 /* events & revents */
@@ -99,8 +99,7 @@ struct pollfd {
 #define POLLHUP    0x0080  /* disconnected */
 #define POLLNVAL   0x1000  /* invalid file descriptor */
 
-
-int poll(struct pollfd *fds, nfds_t numfds, int timeout);
+int poll(struct pollfd* fds, nfds_t numfds, int timeout);
 #endif /* HAVE_POLL_H */
 #endif /* GEKKO */
 #endif /* CONFIG_NETWORK */

@@ -25,16 +25,18 @@
 
 float ff_sbr_sum_square_sse(float (*x)[2], int n);
 void ff_sbr_hf_g_filt_sse(float (*Y)[2], const float (*X_high)[40][2],
-                          const float *g_filt, int m_max, intptr_t ixh);
+                          const float* g_filt, int m_max, intptr_t ixh);
 
-void ff_sbrdsp_init_x86(SBRDSPContext *s)
+void ff_sbrdsp_init_x86(SBRDSPContext* s)
 {
-    if (HAVE_YASM) {
-        int mm_flags = av_get_cpu_flags();
+	if (HAVE_YASM)
+	{
+		int mm_flags = av_get_cpu_flags();
 
-        if (mm_flags & AV_CPU_FLAG_SSE) {
-            s->sum_square = ff_sbr_sum_square_sse;
-            s->hf_g_filt = ff_sbr_hf_g_filt_sse;
-        }
-    }
+		if (mm_flags & AV_CPU_FLAG_SSE)
+		{
+			s->sum_square = ff_sbr_sum_square_sse;
+			s->hf_g_filt = ff_sbr_hf_g_filt_sse;
+		}
+	}
 }

@@ -50,27 +50,26 @@
 #define RTSP_HEADER_SIZE 1024
 #define MAX_FIELDS 256
 
+struct rtsp_s
+{
+	int s;
 
-struct rtsp_s {
+	char* host;
+	int port;
+	char* path;
+	char* param;
+	char* mrl;
+	char* user_agent;
 
-  int           s;
+	char* server;
+	unsigned int server_state;
+	uint32_t server_caps;
 
-  char         *host;
-  int           port;
-  char         *path;
-  char         *param;
-  char         *mrl;
-  char         *user_agent;
+	unsigned int cseq;
+	char* session;
 
-  char         *server;
-  unsigned int  server_state;
-  uint32_t      server_caps;
-
-  unsigned int  cseq;
-  char         *session;
-
-  char        *answers[MAX_FIELDS];   /* data of last message */
-  char        *scheduled[MAX_FIELDS]; /* will be sent with next message */
+	char* answers[MAX_FIELDS]; /* data of last message */
+	char* scheduled[MAX_FIELDS]; /* will be sent with next message */
 };
 
 /*
@@ -97,39 +96,38 @@ struct rtsp_s {
 #define RTSP_PLAY          0x080
 #define RTSP_RECORD        0x100
 
-
 typedef struct rtsp_s rtsp_t;
 
-rtsp_t*  rtsp_connect (int fd, char *mrl, char *path, char *host, int port, char *user_agent);
+rtsp_t* rtsp_connect(int fd, char* mrl, char* path, char* host, int port, char* user_agent);
 
-int rtsp_request_options(rtsp_t *s, const char *what);
-int rtsp_request_describe(rtsp_t *s, const char *what);
-int rtsp_request_setup(rtsp_t *s, const char *what, char *control);
-int rtsp_request_setparameter(rtsp_t *s, const char *what);
-int rtsp_request_play(rtsp_t *s, const char *what);
-int rtsp_request_teardown(rtsp_t *s, const char *what);
+int rtsp_request_options(rtsp_t* s, const char* what);
+int rtsp_request_describe(rtsp_t* s, const char* what);
+int rtsp_request_setup(rtsp_t* s, const char* what, char* control);
+int rtsp_request_setparameter(rtsp_t* s, const char* what);
+int rtsp_request_play(rtsp_t* s, const char* what);
+int rtsp_request_teardown(rtsp_t* s, const char* what);
 
-int rtsp_send_ok(rtsp_t *s);
+int rtsp_send_ok(rtsp_t* s);
 
-int rtsp_read_data(rtsp_t *s, char *buffer, unsigned int size);
+int rtsp_read_data(rtsp_t* s, char* buffer, unsigned int size);
 
-char* rtsp_search_answers(rtsp_t *s, const char *tag);
-void rtsp_add_to_payload(char **payload, const char *string);
+char* rtsp_search_answers(rtsp_t* s, const char* tag);
+void rtsp_add_to_payload(char** payload, const char* string);
 
-void rtsp_free_answers(rtsp_t *this);
+void rtsp_free_answers(rtsp_t* this);
 
-int      rtsp_read (rtsp_t *this, char *data, int len);
+int rtsp_read(rtsp_t* this, char* data, int len);
 
-void  rtsp_set_session(rtsp_t *s, const char *id);
-char *rtsp_get_session(rtsp_t *s);
+void rtsp_set_session(rtsp_t* s, const char* id);
+char* rtsp_get_session(rtsp_t* s);
 
-char *rtsp_get_mrl(rtsp_t *s);
-char *rtsp_get_param(rtsp_t *s, const char *param);
+char* rtsp_get_mrl(rtsp_t* s);
+char* rtsp_get_param(rtsp_t* s, const char* param);
 
 /*int      rtsp_peek_header (rtsp_t *this, char *data); */
 
-void rtsp_schedule_field(rtsp_t *s, const char *string);
-void rtsp_unschedule_field(rtsp_t *s, const char *string);
-void rtsp_unschedule_all(rtsp_t *s);
+void rtsp_schedule_field(rtsp_t* s, const char* string);
+void rtsp_unschedule_field(rtsp_t* s, const char* string);
+void rtsp_unschedule_all(rtsp_t* s);
 
 #endif /* MPLAYER_RTSP_H */

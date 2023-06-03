@@ -39,7 +39,6 @@ extern "C" {
 /** Library instance handle, to be used for each library call. */
 typedef struct dvdcss_s* dvdcss_t;
 
-
 /** The block size of a DVD. */
 #define DVDCSS_BLOCK_SIZE      2048
 
@@ -55,7 +54,6 @@ typedef struct dvdcss_s* dvdcss_t;
 /** Flag to ask dvdcss_seek() to check the current title key. */
 #define DVDCSS_SEEK_KEY        (1 << 1)
 
-
 #if defined(LIBDVDCSS_EXPORTS)
 #define LIBDVDCSS_EXPORT __declspec(dllexport) extern
 #elif defined(LIBDVDCSS_IMPORTS)
@@ -67,29 +65,27 @@ typedef struct dvdcss_s* dvdcss_t;
 /*
  * Our version number. The variable name contains the interface version.
  */
-LIBDVDCSS_EXPORT char *        dvdcss_interface_2;
-
+LIBDVDCSS_EXPORT char* dvdcss_interface_2;
 
 /*
  * Exported prototypes.
  */
-LIBDVDCSS_EXPORT dvdcss_t dvdcss_open  ( char *psz_target );
-LIBDVDCSS_EXPORT int      dvdcss_close ( dvdcss_t );
-LIBDVDCSS_EXPORT int      dvdcss_seek  ( dvdcss_t,
-                               int i_blocks,
-                               int i_flags );
-LIBDVDCSS_EXPORT int      dvdcss_read  ( dvdcss_t,
-                               void *p_buffer,
-                               int i_blocks,
-                               int i_flags );
-LIBDVDCSS_EXPORT int      dvdcss_readv ( dvdcss_t,
-                               void *p_iovec,
-                               int i_blocks,
-                               int i_flags );
-LIBDVDCSS_EXPORT char *   dvdcss_error ( dvdcss_t );
+LIBDVDCSS_EXPORT dvdcss_t dvdcss_open(char* psz_target);
+LIBDVDCSS_EXPORT int dvdcss_close(dvdcss_t);
+LIBDVDCSS_EXPORT int dvdcss_seek(dvdcss_t,
+                                 int i_blocks,
+                                 int i_flags);
+LIBDVDCSS_EXPORT int dvdcss_read(dvdcss_t,
+                                 void* p_buffer,
+                                 int i_blocks,
+                                 int i_flags);
+LIBDVDCSS_EXPORT int dvdcss_readv(dvdcss_t,
+                                  void* p_iovec,
+                                  int i_blocks,
+                                  int i_flags);
+LIBDVDCSS_EXPORT char* dvdcss_error(dvdcss_t);
 
-LIBDVDCSS_EXPORT int      dvdcss_is_scrambled ( dvdcss_t );
-
+LIBDVDCSS_EXPORT int dvdcss_is_scrambled(dvdcss_t);
 
 /*
  * Deprecated stuff.
@@ -98,7 +94,6 @@ LIBDVDCSS_EXPORT int      dvdcss_is_scrambled ( dvdcss_t );
 #define dvdcss_title(a,b) dvdcss_seek(a,b,DVDCSS_SEEK_KEY)
 #define dvdcss_handle dvdcss_t
 #endif
-
 
 #ifdef __cplusplus
 }

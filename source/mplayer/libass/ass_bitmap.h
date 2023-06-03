@@ -26,18 +26,19 @@
 
 typedef struct ass_synth_priv ASS_SynthPriv;
 
-ASS_SynthPriv *ass_synth_init(double);
-void ass_synth_done(ASS_SynthPriv *priv);
+ASS_SynthPriv* ass_synth_init(double);
+void ass_synth_done(ASS_SynthPriv* priv);
 
-typedef struct {
-    int left, top;
-    int w, h;                   // width, height
-    int stride;
-    unsigned char *buffer;      // w x h buffer
+typedef struct
+{
+	int left, top;
+	int w, h; // width, height
+	int stride;
+	unsigned char* buffer; // w x h buffer
 } Bitmap;
 
-Bitmap *outline_to_bitmap(ASS_Library *library, FT_Library ftlib,
-                          FT_Outline *outline, int bord);
+Bitmap* outline_to_bitmap(ASS_Library* library, FT_Library ftlib,
+                          FT_Outline* outline, int bord);
 /**
  * \brief perform glyph rendering
  * \param glyph original glyph
@@ -47,12 +48,12 @@ Bitmap *outline_to_bitmap(ASS_Library *library, FT_Library ftlib,
  * \param bm_g out: pointer to the bitmap of glyph shadow is returned here
  * \param be 1 = produces blurred bitmaps, 0 = normal bitmaps
  */
-int outline_to_bitmap3(ASS_Library *library, ASS_SynthPriv *priv_blur,
-                       FT_Library ftlib, FT_Outline *outline, FT_Outline *border,
-                       Bitmap **bm_g, Bitmap **bm_o, Bitmap **bm_s,
+int outline_to_bitmap3(ASS_Library* library, ASS_SynthPriv* priv_blur,
+                       FT_Library ftlib, FT_Outline* outline, FT_Outline* border,
+                       Bitmap** bm_g, Bitmap** bm_o, Bitmap** bm_s,
                        int be, double blur_radius, FT_Vector shadow_offset,
                        int border_style);
 
-void ass_free_bitmap(Bitmap *bm);
+void ass_free_bitmap(Bitmap* bm);
 
 #endif                          /* LIBASS_BITMAP_H */

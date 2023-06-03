@@ -22,14 +22,15 @@
 #include "libavutil/log.h"
 #include "libavutil/opt.h"
 
-typedef struct {
-    AVClass *av_class;
-    int custom_stride;
-    int aligned_input;
-    int stride_warning_shown;
-    void (*unpack_frame)(const uint32_t *src, uint16_t *y, uint16_t *u, uint16_t *v, int width);
+typedef struct
+{
+	AVClass* av_class;
+	int custom_stride;
+	int aligned_input;
+	int stride_warning_shown;
+	void (*unpack_frame)(const uint32_t* src, uint16_t* y, uint16_t* u, uint16_t* v, int width);
 } V210DecContext;
 
-void v210_x86_init(V210DecContext *s);
+void v210_x86_init(V210DecContext* s);
 
 #endif /* AVCODEC_V210DEC_H */

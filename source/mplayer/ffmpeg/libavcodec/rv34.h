@@ -40,20 +40,33 @@
 /**
  * RV30 and RV40 Macroblock types
  */
-enum RV40BlockTypes{
-    RV34_MB_TYPE_INTRA,      ///< Intra macroblock
-    RV34_MB_TYPE_INTRA16x16, ///< Intra macroblock with DCs in a separate 4x4 block
-    RV34_MB_P_16x16,         ///< P-frame macroblock, one motion frame
-    RV34_MB_P_8x8,           ///< P-frame macroblock, 8x8 motion compensation partitions
-    RV34_MB_B_FORWARD,       ///< B-frame macroblock, forward prediction
-    RV34_MB_B_BACKWARD,      ///< B-frame macroblock, backward prediction
-    RV34_MB_SKIP,            ///< Skipped block
-    RV34_MB_B_DIRECT,        ///< Bidirectionally predicted B-frame macroblock, no motion vectors
-    RV34_MB_P_16x8,          ///< P-frame macroblock, 16x8 motion compensation partitions
-    RV34_MB_P_8x16,          ///< P-frame macroblock, 8x16 motion compensation partitions
-    RV34_MB_B_BIDIR,         ///< Bidirectionally predicted B-frame macroblock, two motion vectors
-    RV34_MB_P_MIX16x16,      ///< P-frame macroblock with DCs in a separate 4x4 block, one motion vector
-    RV34_MB_TYPES
+enum RV40BlockTypes
+{
+	RV34_MB_TYPE_INTRA,
+	///< Intra macroblock
+	RV34_MB_TYPE_INTRA16x16,
+	///< Intra macroblock with DCs in a separate 4x4 block
+	RV34_MB_P_16x16,
+	///< P-frame macroblock, one motion frame
+	RV34_MB_P_8x8,
+	///< P-frame macroblock, 8x8 motion compensation partitions
+	RV34_MB_B_FORWARD,
+	///< B-frame macroblock, forward prediction
+	RV34_MB_B_BACKWARD,
+	///< B-frame macroblock, backward prediction
+	RV34_MB_SKIP,
+	///< Skipped block
+	RV34_MB_B_DIRECT,
+	///< Bidirectionally predicted B-frame macroblock, no motion vectors
+	RV34_MB_P_16x8,
+	///< P-frame macroblock, 16x8 motion compensation partitions
+	RV34_MB_P_8x16,
+	///< P-frame macroblock, 8x16 motion compensation partitions
+	RV34_MB_B_BIDIR,
+	///< Bidirectionally predicted B-frame macroblock, two motion vectors
+	RV34_MB_P_MIX16x16,
+	///< P-frame macroblock with DCs in a separate 4x4 block, one motion vector
+	RV34_MB_TYPES
 };
 
 /**
@@ -61,81 +74,90 @@ enum RV40BlockTypes{
  *
  * Intra frame VLC sets do not contain some of those tables.
  */
-typedef struct RV34VLC{
-    VLC cbppattern[2];     ///< VLCs used for pattern of coded block patterns decoding
-    VLC cbp[2][4];         ///< VLCs used for coded block patterns decoding
-    VLC first_pattern[4];  ///< VLCs used for decoding coefficients in the first subblock
-    VLC second_pattern[2]; ///< VLCs used for decoding coefficients in the subblocks 2 and 3
-    VLC third_pattern[2];  ///< VLCs used for decoding coefficients in the last subblock
-    VLC coefficient;       ///< VLCs used for decoding big coefficients
-}RV34VLC;
+typedef struct RV34VLC
+{
+	VLC cbppattern[2]; ///< VLCs used for pattern of coded block patterns decoding
+	VLC cbp[2][4]; ///< VLCs used for coded block patterns decoding
+	VLC first_pattern[4]; ///< VLCs used for decoding coefficients in the first subblock
+	VLC second_pattern[2]; ///< VLCs used for decoding coefficients in the subblocks 2 and 3
+	VLC third_pattern[2]; ///< VLCs used for decoding coefficients in the last subblock
+	VLC coefficient; ///< VLCs used for decoding big coefficients
+} RV34VLC;
 
 /** essential slice information */
-typedef struct SliceInfo{
-    int type;              ///< slice type (intra, inter)
-    int quant;             ///< quantizer used for this slice
-    int vlc_set;           ///< VLCs used for this slice
-    int start, end;        ///< start and end macroblocks of the slice
-    int width;             ///< coded width
-    int height;            ///< coded height
-    int pts;               ///< frame timestamp
-}SliceInfo;
+typedef struct SliceInfo
+{
+	int type; ///< slice type (intra, inter)
+	int quant; ///< quantizer used for this slice
+	int vlc_set; ///< VLCs used for this slice
+	int start, end; ///< start and end macroblocks of the slice
+	int width; ///< coded width
+	int height; ///< coded height
+	int pts; ///< frame timestamp
+} SliceInfo;
 
 /** decoder context */
-typedef struct RV34DecContext{
-    MpegEncContext s;
-    RV34DSPContext rdsp;
-    int8_t *intra_types_hist;///< old block types, used for prediction
-    int8_t *intra_types;     ///< block types
-    int    intra_types_stride;///< block types array stride
-    const uint8_t *luma_dc_quant_i;///< luma subblock DC quantizer for intraframes
-    const uint8_t *luma_dc_quant_p;///< luma subblock DC quantizer for interframes
+typedef struct RV34DecContext
+{
+	MpegEncContext s;
+	RV34DSPContext rdsp;
+	int8_t* intra_types_hist; ///< old block types, used for prediction
+	int8_t* intra_types; ///< block types
+	int intra_types_stride; ///< block types array stride
+	const uint8_t* luma_dc_quant_i; ///< luma subblock DC quantizer for intraframes
+	const uint8_t* luma_dc_quant_p; ///< luma subblock DC quantizer for interframes
 
-    RV34VLC *cur_vlcs;       ///< VLC set used for current frame decoding
-    H264PredContext h;       ///< functions for 4x4 and 16x16 intra block prediction
-    SliceInfo si;            ///< current slice information
+	RV34VLC* cur_vlcs; ///< VLC set used for current frame decoding
+	H264PredContext h; ///< functions for 4x4 and 16x16 intra block prediction
+	SliceInfo si; ///< current slice information
 
-    int *mb_type;            ///< internal macroblock types
-    int block_type;          ///< current block type
-    int luma_vlc;            ///< which VLC set will be used for decoding of luma blocks
-    int chroma_vlc;          ///< which VLC set will be used for decoding of chroma blocks
-    int is16;                ///< current block has additional 16x16 specific features or not
-    int dmv[4][2];           ///< differential motion vectors for the current macroblock
+	int* mb_type; ///< internal macroblock types
+	int block_type; ///< current block type
+	int luma_vlc; ///< which VLC set will be used for decoding of luma blocks
+	int chroma_vlc; ///< which VLC set will be used for decoding of chroma blocks
+	int is16; ///< current block has additional 16x16 specific features or not
+	int dmv[4][2]; ///< differential motion vectors for the current macroblock
 
-    int rv30;                ///< indicates which RV variasnt is currently decoded
-    int rpr;                 ///< one field size in RV30 slice header
+	int rv30; ///< indicates which RV variasnt is currently decoded
+	int rpr; ///< one field size in RV30 slice header
 
-    int cur_pts, last_pts, next_pts;
-    int scaled_weight;
-    int weight1, weight2;    ///< B frame distance fractions (0.14) used in motion compensation
-    int mv_weight1, mv_weight2;
+	int cur_pts, last_pts, next_pts;
+	int scaled_weight;
+	int weight1, weight2; ///< B frame distance fractions (0.14) used in motion compensation
+	int mv_weight1, mv_weight2;
 
-    uint16_t *cbp_luma;      ///< CBP values for luma subblocks
-    uint8_t  *cbp_chroma;    ///< CBP values for chroma subblocks
-    uint16_t *deblock_coefs; ///< deblock coefficients for each macroblock
+	uint16_t* cbp_luma; ///< CBP values for luma subblocks
+	uint8_t* cbp_chroma; ///< CBP values for chroma subblocks
+	uint16_t* deblock_coefs; ///< deblock coefficients for each macroblock
 
-    /** 8x8 block available flags (for MV prediction) */
-    DECLARE_ALIGNED(8, uint32_t, avail_cache)[3*4];
+	/** 8x8 block available flags (for MV prediction) */
+	DECLARE_ALIGNED (
+	8
+	,
+	uint32_t
+	,
+	avail_cache
+	)[3 * 4];
 
-    /** temporary blocks for RV4 weighted MC */
-    uint8_t *tmp_b_block_y[2];
-    uint8_t *tmp_b_block_uv[4];
-    uint8_t *tmp_b_block_base;
+	/** temporary blocks for RV4 weighted MC */
+	uint8_t* tmp_b_block_y[2];
+	uint8_t* tmp_b_block_uv[4];
+	uint8_t* tmp_b_block_base;
 
-    int (*parse_slice_header)(struct RV34DecContext *r, GetBitContext *gb, SliceInfo *si);
-    int (*decode_mb_info)(struct RV34DecContext *r);
-    int (*decode_intra_types)(struct RV34DecContext *r, GetBitContext *gb, int8_t *dst);
-    void (*loop_filter)(struct RV34DecContext *r, int row);
-}RV34DecContext;
+	int (*parse_slice_header)(struct RV34DecContext* r, GetBitContext* gb, SliceInfo* si);
+	int (*decode_mb_info)(struct RV34DecContext* r);
+	int (*decode_intra_types)(struct RV34DecContext* r, GetBitContext* gb, int8_t* dst);
+	void (*loop_filter)(struct RV34DecContext* r, int row);
+} RV34DecContext;
 
 /**
  * common decoding functions
  */
-int ff_rv34_get_start_offset(GetBitContext *gb, int blocks);
-int ff_rv34_decode_init(AVCodecContext *avctx);
-int ff_rv34_decode_frame(AVCodecContext *avctx, void *data, int *data_size, AVPacket *avpkt);
-int ff_rv34_decode_end(AVCodecContext *avctx);
-int ff_rv34_decode_init_thread_copy(AVCodecContext *avctx);
-int ff_rv34_decode_update_thread_context(AVCodecContext *dst, const AVCodecContext *src);
+int ff_rv34_get_start_offset(GetBitContext* gb, int blocks);
+int ff_rv34_decode_init(AVCodecContext* avctx);
+int ff_rv34_decode_frame(AVCodecContext* avctx, void* data, int* data_size, AVPacket* avpkt);
+int ff_rv34_decode_end(AVCodecContext* avctx);
+int ff_rv34_decode_init_thread_copy(AVCodecContext* avctx);
+int ff_rv34_decode_update_thread_context(AVCodecContext* dst, const AVCodecContext* src);
 
 #endif /* AVCODEC_RV34_H */

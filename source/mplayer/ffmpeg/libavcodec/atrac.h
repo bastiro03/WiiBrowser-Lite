@@ -31,6 +31,6 @@
 extern float ff_atrac_sf_table[64];
 
 void ff_atrac_generate_tables(void);
-void ff_atrac_iqmf (float *inlo, float *inhi, unsigned int nIn, float *pOut, float *delayBuf, float *temp);
+void ff_atrac_iqmf(float* inlo, float* inhi, unsigned int nIn, float* pOut, float* delayBuf, float* temp);
 
 #endif /* AVCODEC_ATRAC_H */

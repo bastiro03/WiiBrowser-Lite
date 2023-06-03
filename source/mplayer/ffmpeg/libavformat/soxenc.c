@@ -36,93 +36,102 @@
 #include "avio_internal.h"
 #include "sox.h"
 
-typedef struct {
-    int64_t header_size;
+typedef struct
+{
+	int64_t header_size;
 } SoXContext;
 
-static int sox_write_header(AVFormatContext *s)
+static int sox_write_header(AVFormatContext* s)
 {
-    SoXContext *sox = s->priv_data;
-    AVIOContext *pb = s->pb;
-    AVCodecContext *enc = s->streams[0]->codec;
-    AVDictionaryEntry *comment;
-    size_t comment_len = 0, comment_size;
+	SoXContext* sox = s->priv_data;
+	AVIOContext* pb = s->pb;
+	AVCodecContext* enc = s->streams[0]->codec;
+	AVDictionaryEntry* comment;
+	size_t comment_len = 0, comment_size;
 
-    comment = av_dict_get(s->metadata, "comment", NULL, 0);
-    if (comment)
-        comment_len = strlen(comment->value);
-    comment_size = (comment_len + 7) & ~7;
+	comment = av_dict_get(s->metadata, "comment", NULL, 0);
+	if (comment)
+		comment_len = strlen(comment->value);
+	comment_size = (comment_len + 7) & ~7;
 
-    sox->header_size = SOX_FIXED_HDR + comment_size;
+	sox->header_size = SOX_FIXED_HDR + comment_size;
 
-    if (enc->codec_id == CODEC_ID_PCM_S32LE) {
-        ffio_wfourcc(pb, ".SoX");
-        avio_wl32(pb, sox->header_size);
-        avio_wl64(pb, 0); /* number of samples */
-        avio_wl64(pb, av_double2int(enc->sample_rate));
-        avio_wl32(pb, enc->channels);
-        avio_wl32(pb, comment_size);
-    } else if (enc->codec_id == CODEC_ID_PCM_S32BE) {
-        ffio_wfourcc(pb, "XoS.");
-        avio_wb32(pb, sox->header_size);
-        avio_wb64(pb, 0); /* number of samples */
-        avio_wb64(pb, av_double2int(enc->sample_rate));
-        avio_wb32(pb, enc->channels);
-        avio_wb32(pb, comment_size);
-    } else {
-        av_log(s, AV_LOG_ERROR, "invalid codec; use pcm_s32le or pcm_s32be\n");
-        return -1;
-    }
+	if (enc->codec_id == CODEC_ID_PCM_S32LE)
+	{
+		ffio_wfourcc(pb, ".SoX");
+		avio_wl32(pb, sox->header_size);
+		avio_wl64(pb, 0); /* number of samples */
+		avio_wl64(pb, av_double2int(enc->sample_rate));
+		avio_wl32(pb, enc->channels);
+		avio_wl32(pb, comment_size);
+	}
+	else if (enc->codec_id == CODEC_ID_PCM_S32BE)
+	{
+		ffio_wfourcc(pb, "XoS.");
+		avio_wb32(pb, sox->header_size);
+		avio_wb64(pb, 0); /* number of samples */
+		avio_wb64(pb, av_double2int(enc->sample_rate));
+		avio_wb32(pb, enc->channels);
+		avio_wb32(pb, comment_size);
+	}
+	else
+	{
+		av_log(s, AV_LOG_ERROR, "invalid codec; use pcm_s32le or pcm_s32be\n");
+		return -1;
+	}
 
-    if (comment_len)
-        avio_write(pb, comment->value, comment_len);
+	if (comment_len)
+		avio_write(pb, comment->value, comment_len);
 
-    for ( ; comment_size > comment_len; comment_len++)
-        avio_w8(pb, 0);
+	for (; comment_size > comment_len; comment_len++)
+		avio_w8(pb, 0);
 
-    avio_flush(pb);
+	avio_flush(pb);
 
-    return 0;
+	return 0;
 }
 
-static int sox_write_packet(AVFormatContext *s, AVPacket *pkt)
+static int sox_write_packet(AVFormatContext* s, AVPacket* pkt)
 {
-    AVIOContext *pb = s->pb;
-    avio_write(pb, pkt->data, pkt->size);
-    return 0;
+	AVIOContext* pb = s->pb;
+	avio_write(pb, pkt->data, pkt->size);
+	return 0;
 }
 
-static int sox_write_trailer(AVFormatContext *s)
+static int sox_write_trailer(AVFormatContext* s)
 {
-    SoXContext *sox = s->priv_data;
-    AVIOContext *pb = s->pb;
-    AVCodecContext *enc = s->streams[0]->codec;
+	SoXContext* sox = s->priv_data;
+	AVIOContext* pb = s->pb;
+	AVCodecContext* enc = s->streams[0]->codec;
 
-    if (s->pb->seekable) {
-        /* update number of samples */
-        int64_t file_size = avio_tell(pb);
-        int64_t num_samples = (file_size - sox->header_size - 4LL) >> 2LL;
-        avio_seek(pb, 8, SEEK_SET);
-        if (enc->codec_id == CODEC_ID_PCM_S32LE) {
-            avio_wl64(pb, num_samples);
-        } else
-            avio_wb64(pb, num_samples);
-        avio_seek(pb, file_size, SEEK_SET);
+	if (s->pb->seekable)
+	{
+		/* update number of samples */
+		int64_t file_size = avio_tell(pb);
+		int64_t num_samples = (file_size - sox->header_size - 4LL) >> 2LL;
+		avio_seek(pb, 8, SEEK_SET);
+		if (enc->codec_id == CODEC_ID_PCM_S32LE)
+		{
+			avio_wl64(pb, num_samples);
+		}
+		else
+			avio_wb64(pb, num_samples);
+		avio_seek(pb, file_size, SEEK_SET);
 
-        avio_flush(pb);
-    }
+		avio_flush(pb);
+	}
 
-    return 0;
+	return 0;
 }
 
 AVOutputFormat ff_sox_muxer = {
-    .name              = "sox",
-    .long_name         = NULL_IF_CONFIG_SMALL("SoX native format"),
-    .extensions        = "sox",
-    .priv_data_size    = sizeof(SoXContext),
-    .audio_codec       = CODEC_ID_PCM_S32LE,
-    .video_codec       = CODEC_ID_NONE,
-    .write_header      = sox_write_header,
-    .write_packet      = sox_write_packet,
-    .write_trailer     = sox_write_trailer,
+	.name = "sox",
+	.long_name = NULL_IF_CONFIG_SMALL("SoX native format"),
+	.extensions = "sox",
+	.priv_data_size = sizeof(SoXContext),
+	.audio_codec = CODEC_ID_PCM_S32LE,
+	.video_codec = CODEC_ID_NONE,
+	.write_header = sox_write_header,
+	.write_packet = sox_write_packet,
+	.write_trailer = sox_write_trailer,
 };

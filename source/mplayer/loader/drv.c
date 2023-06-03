@@ -42,7 +42,7 @@
 #define STORE_ALL
 #define REST_ALL
 #else
-// this asm code is no longer needed
+ // this asm code is no longer needed
 #define STORE_ALL \
     __asm__ volatile ( \
     "push %%ebx\n\t" \
@@ -63,114 +63,124 @@
 static DWORD dwDrvID = 0;
 
 LRESULT WINAPI SendDriverMessage(HDRVR hDriver, UINT message,
-				 LPARAM lParam1, LPARAM lParam2)
+                                 LPARAM lParam1, LPARAM lParam2)
 {
-    DRVR* module=(DRVR*)hDriver;
-    int result;
+	DRVR* module = (DRVR*)hDriver;
+	int result;
 #ifndef __svr4__
-    char qw[300];
+	char qw[300];
 #endif
 #ifdef DETAILED_OUT
-    printf("SendDriverMessage: driver %X, message %X, arg1 %X, arg2 %X\n", hDriver, message, lParam1, lParam2);
+	printf("SendDriverMessage: driver %X, message %X, arg1 %X, arg2 %X\n", hDriver, message, lParam1, lParam2);
 #endif
-    if (!module || !module->hDriverModule || !module->DriverProc) return -1;
+	if (!module || !module->hDriverModule || !module->DriverProc) return -1;
 #ifndef __svr4__
-    __asm__ volatile ("fsave (%0)\n\t": :"r"(&qw));
+	volatile __asm__ (
+	"fsave (%0)\n\t"
+	:
+	:
+	"r"(&qw)
+	)
 #endif
 
 #ifdef WIN32_LOADER
-    Setup_FS_Segment();
+	Setup_FS_Segment();
 #endif
 
-    STORE_ALL;
-    result=module->DriverProc(module->dwDriverID, hDriver, message, lParam1, lParam2);
-    REST_ALL;
+	STORE_ALL;
+	result = module->DriverProc(module->dwDriverID, hDriver, message, lParam1, lParam2);
+	REST_ALL;
 
 #ifndef __svr4__
-    __asm__ volatile ("frstor (%0)\n\t": :"r"(&qw));
+	volatile __asm__ (
+	"frstor (%0)\n\t"
+	:
+	:
+	"r"(&qw)
+	)
 #endif
 
 #ifdef DETAILED_OUT
-    printf("\t\tResult: %X\n", result);
+	printf("\t\tResult: %X\n", result);
 #endif
-    return result;
+	return result;
 }
 
 void DrvClose(HDRVR hDriver)
 {
-    if (hDriver)
-    {
-	DRVR* d = (DRVR*)hDriver;
-	if (d->hDriverModule)
+	if (hDriver)
 	{
+		DRVR* d = (DRVR*)hDriver;
+		if (d->hDriverModule)
+		{
 #ifdef WIN32_LOADER
-	    Setup_FS_Segment();
+			Setup_FS_Segment();
 #endif
-	    if (d->DriverProc)
-	    {
-		SendDriverMessage(hDriver, DRV_CLOSE, 0, 0);
-		d->dwDriverID = 0;
-		SendDriverMessage(hDriver, DRV_FREE, 0, 0);
-	    }
-	    FreeLibrary(d->hDriverModule);
+			if (d->DriverProc)
+			{
+				SendDriverMessage(hDriver, DRV_CLOSE, 0, 0);
+				d->dwDriverID = 0;
+				SendDriverMessage(hDriver, DRV_FREE, 0, 0);
+			}
+			FreeLibrary(d->hDriverModule);
+		}
+		free(d);
 	}
-	free(d);
-    }
 #ifdef WIN32_LOADER
-    CodecRelease();
+	CodecRelease();
 #endif
 }
 
 //DrvOpen(LPCSTR lpszDriverName, LPCSTR lpszSectionName, LPARAM lParam2)
 HDRVR DrvOpen(LPARAM lParam2)
 {
-    NPDRVR hDriver;
-    char unknown[0x124];
-    const char* filename = (const char*) ((ICOPEN*) lParam2)->pV1Reserved;
+	NPDRVR hDriver;
+	char unknown[0x124];
+	const char* filename = ((ICOPEN*)lParam2)->pV1Reserved;
 
 #ifdef WIN32_LOADER
-    Setup_LDT_Keeper();
+	Setup_LDT_Keeper();
 #endif
-    printf("Loading codec DLL: '%s'\n",filename);
+	printf("Loading codec DLL: '%s'\n", filename);
 
-    hDriver = malloc(sizeof(DRVR));
-    if (!hDriver)
-	return (HDRVR) 0;
-    memset((void*)hDriver, 0, sizeof(DRVR));
+	hDriver = malloc(sizeof(DRVR));
+	if (!hDriver)
+		return 0;
+	memset(hDriver, 0, sizeof(DRVR));
 
 #ifdef WIN32_LOADER
-    CodecAlloc();
-    Setup_FS_Segment();
+	CodecAlloc();
+	Setup_FS_Segment();
 #endif
 
-    hDriver->hDriverModule = LoadLibraryA(filename);
-    if (!hDriver->hDriverModule)
-    {
-	printf("Can't open library %s\n", filename);
-	DrvClose((HDRVR)hDriver);
-	return (HDRVR) 0;
-    }
+	hDriver->hDriverModule = LoadLibraryA(filename);
+	if (!hDriver->hDriverModule)
+	{
+		printf("Can't open library %s\n", filename);
+		DrvClose((HDRVR)hDriver);
+		return 0;
+	}
 
-    hDriver->DriverProc = (DRIVERPROC) GetProcAddress(hDriver->hDriverModule,
-						      "DriverProc");
-    if (!hDriver->DriverProc)
-    {
-	printf("Library %s is not a valid VfW/ACM codec\n", filename);
-	DrvClose((HDRVR)hDriver);
-	return (HDRVR) 0;
-    }
+	hDriver->DriverProc = (DRIVERPROC)GetProcAddress(hDriver->hDriverModule,
+	                                                 "DriverProc");
+	if (!hDriver->DriverProc)
+	{
+		printf("Library %s is not a valid VfW/ACM codec\n", filename);
+		DrvClose((HDRVR)hDriver);
+		return 0;
+	}
 
-    TRACE("DriverProc == %X\n", hDriver->DriverProc);
-    SendDriverMessage((HDRVR)hDriver, DRV_LOAD, 0, 0);
-    TRACE("DRV_LOAD Ok!\n");
-    SendDriverMessage((HDRVR)hDriver, DRV_ENABLE, 0, 0);
-    TRACE("DRV_ENABLE Ok!\n");
-    hDriver->dwDriverID = ++dwDrvID; // generate new id
+	TRACE("DriverProc == %X\n", hDriver->DriverProc);
+	SendDriverMessage((HDRVR)hDriver, DRV_LOAD, 0, 0);
+	TRACE("DRV_LOAD Ok!\n");
+	SendDriverMessage((HDRVR)hDriver, DRV_ENABLE, 0, 0);
+	TRACE("DRV_ENABLE Ok!\n");
+	hDriver->dwDriverID = ++dwDrvID; // generate new id
 
-    // open driver and remmeber proper DriverID
-    hDriver->dwDriverID = SendDriverMessage((HDRVR)hDriver, DRV_OPEN, (LPARAM) unknown, lParam2);
-    TRACE("DRV_OPEN Ok!(%X)\n", hDriver->dwDriverID);
+	// open driver and remmeber proper DriverID
+	hDriver->dwDriverID = SendDriverMessage((HDRVR)hDriver, DRV_OPEN, unknown, lParam2);
+	TRACE("DRV_OPEN Ok!(%X)\n", hDriver->dwDriverID);
 
-    printf("Loaded DLL driver %s at %x\n", filename, hDriver->hDriverModule);
-    return (HDRVR)hDriver;
+	printf("Loaded DLL driver %s at %x\n", filename, hDriver->hDriverModule);
+	return (HDRVR)hDriver;
 }

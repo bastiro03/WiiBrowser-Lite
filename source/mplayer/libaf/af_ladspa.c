@@ -50,54 +50,53 @@
 
 typedef struct af_ladspa_s
 {
-    int status;     /**< Status of the filter.
-                     *   Either AF_OK or AF_ERROR
-                     *   Because MPlayer re-inits audio filters that
-                     *   _clearly_ returned AF_ERROR anyway, I use this
-                     *   in play() to skip the processing and return
-                     *   the data unchanged.
-                     */
+	int status; /**< Status of the filter.
+					 *   Either AF_OK or AF_ERROR
+					 *   Because MPlayer re-inits audio filters that
+					 *   _clearly_ returned AF_ERROR anyway, I use this
+					 *   in play() to skip the processing and return
+					 *   the data unchanged.
+					 */
 
-    int activated;  /**< 0 or 1. Activate LADSPA filters only once, even
-                     *   if the buffers get resized, to avoid a stuttering
-                     *   filter.
-                     */
+	int activated; /**< 0 or 1. Activate LADSPA filters only once, even
+					 *   if the buffers get resized, to avoid a stuttering
+					 *   filter.
+					 */
 
-    char *file;
-    char *label;
+	char* file;
+	char* label;
 
-    char *myname;   /**< It's easy to have a concatenation of file and label */
+	char* myname; /**< It's easy to have a concatenation of file and label */
 
-    void *libhandle;
-    const LADSPA_Descriptor *plugin_descriptor;
+	void* libhandle;
+	const LADSPA_Descriptor* plugin_descriptor;
 
-    int nports;
+	int nports;
 
-    int ninputs;
-    int *inputs;
+	int ninputs;
+	int* inputs;
 
-    int noutputs;
-    int *outputs;
+	int noutputs;
+	int* outputs;
 
-    int ninputcontrols;
-    int *inputcontrolsmap;  /**< Map input port number [0-] to actual port */
-    float *inputcontrols;
+	int ninputcontrols;
+	int* inputcontrolsmap; /**< Map input port number [0-] to actual port */
+	float* inputcontrols;
 
-    int noutputcontrols;
-    int *outputcontrolsmap;
-    float *outputcontrols;
+	int noutputcontrols;
+	int* outputcontrolsmap;
+	float* outputcontrols;
 
-    int nch;                /**< number of channels */
-    int bufsize;
-    float **inbufs;
-    float **outbufs;
-    LADSPA_Handle *chhandles;
-
+	int nch; /**< number of channels */
+	int bufsize;
+	float** inbufs;
+	float** outbufs;
+	LADSPA_Handle* chhandles;
 } af_ladspa_t;
 
 /* ------------------------------------------------------------------------- */
 
-static int af_open(af_instance_t *af);
+static int af_open(af_instance_t* af);
 static int af_ladspa_malloc_failed(char*);
 
 /* ------------------------------------------------------------------------- */
@@ -105,12 +104,12 @@ static int af_ladspa_malloc_failed(char*);
 /* Description */
 
 af_info_t af_info_ladspa = {
-    "LADSPA plugin loader",
-    "ladspa",
-    "Ivo van Poorten",
-    "",
-    AF_FLAGS_REENTRANT,
-    af_open
+	"LADSPA plugin loader",
+	"ladspa",
+	"Ivo van Poorten",
+	"",
+	AF_FLAGS_REENTRANT,
+	af_open
 };
 
 /* ------------------------------------------------------------------------- */
@@ -133,134 +132,158 @@ af_info_t af_info_ladspa = {
  *          configuration. Else, it returns AF_ERROR.
  */
 
-static int af_ladspa_parse_plugin(af_ladspa_t *setup) {
-    int p, i;
-    const LADSPA_Descriptor *pdes = setup->plugin_descriptor;
-    LADSPA_PortDescriptor d;
-    LADSPA_PortRangeHint hint;
+static int af_ladspa_parse_plugin(af_ladspa_t* setup)
+{
+	int p, i;
+	const LADSPA_Descriptor* pdes = setup->plugin_descriptor;
+	LADSPA_PortDescriptor d;
+	LADSPA_PortRangeHint hint;
 
-    if (!setup->libhandle)
-        return AF_ERROR; /* only call parse after a succesful load */
-    if (!setup->plugin_descriptor)
-        return AF_ERROR; /* same as above */
+	if (!setup->libhandle)
+		return AF_ERROR; /* only call parse after a succesful load */
+	if (!setup->plugin_descriptor)
+		return AF_ERROR; /* same as above */
 
-    /* let's do it */
+	/* let's do it */
 
-    setup->nports = pdes->PortCount;
+	setup->nports = pdes->PortCount;
 
-    /* allocate memory for all inputs/outputs/controls */
+	/* allocate memory for all inputs/outputs/controls */
 
-    setup->inputs = calloc(setup->nports, sizeof(int));
-    if (!setup->inputs) return af_ladspa_malloc_failed(setup->myname);
+	setup->inputs = calloc(setup->nports, sizeof(int));
+	if (!setup->inputs) return af_ladspa_malloc_failed(setup->myname);
 
-    setup->outputs = calloc(setup->nports, sizeof(int));
-    if (!setup->outputs) return af_ladspa_malloc_failed(setup->myname);
+	setup->outputs = calloc(setup->nports, sizeof(int));
+	if (!setup->outputs) return af_ladspa_malloc_failed(setup->myname);
 
-    setup->inputcontrolsmap = calloc(setup->nports, sizeof(int));
-    if (!setup->inputcontrolsmap) return af_ladspa_malloc_failed(setup->myname);
+	setup->inputcontrolsmap = calloc(setup->nports, sizeof(int));
+	if (!setup->inputcontrolsmap) return af_ladspa_malloc_failed(setup->myname);
 
-    setup->inputcontrols = calloc(setup->nports, sizeof(float));
-    if (!setup->inputcontrols) return af_ladspa_malloc_failed(setup->myname);
+	setup->inputcontrols = calloc(setup->nports, sizeof(float));
+	if (!setup->inputcontrols) return af_ladspa_malloc_failed(setup->myname);
 
-    setup->outputcontrolsmap = calloc(setup->nports, sizeof(int));
-    if (!setup->outputcontrolsmap) return af_ladspa_malloc_failed(setup->myname);
+	setup->outputcontrolsmap = calloc(setup->nports, sizeof(int));
+	if (!setup->outputcontrolsmap) return af_ladspa_malloc_failed(setup->myname);
 
-    setup->outputcontrols = calloc(setup->nports, sizeof(float));
-    if (!setup->outputcontrols) return af_ladspa_malloc_failed(setup->myname);
+	setup->outputcontrols = calloc(setup->nports, sizeof(float));
+	if (!setup->outputcontrols) return af_ladspa_malloc_failed(setup->myname);
 
-    /* set counts to zero */
+	/* set counts to zero */
 
-    setup->ninputs = 0;
-    setup->noutputs = 0;
-    setup->ninputcontrols = 0;
-    setup->noutputcontrols = 0;
+	setup->ninputs = 0;
+	setup->noutputs = 0;
+	setup->ninputcontrols = 0;
+	setup->noutputcontrols = 0;
 
-    /* check all ports, see what type it is and set variables according to
-     * what we have found
-     */
+	/* check all ports, see what type it is and set variables according to
+	 * what we have found
+	 */
 
-    for (p=0; p<setup->nports; p++) {
-        d = pdes->PortDescriptors[p];
+	for (p = 0; p < setup->nports; p++)
+	{
+		d = pdes->PortDescriptors[p];
 
-        if (LADSPA_IS_PORT_AUDIO(d)) {
-            if (LADSPA_IS_PORT_INPUT(d)) {
-                setup->inputs[setup->ninputs] = p;
-                setup->ninputs++;
-            } else if (LADSPA_IS_PORT_OUTPUT(d)) {
-                setup->outputs[setup->noutputs] = p;
-                setup->noutputs++;
-            }
-        }
+		if (LADSPA_IS_PORT_AUDIO(d))
+		{
+			if (LADSPA_IS_PORT_INPUT(d))
+			{
+				setup->inputs[setup->ninputs] = p;
+				setup->ninputs++;
+			}
+			else if (LADSPA_IS_PORT_OUTPUT(d))
+			{
+				setup->outputs[setup->noutputs] = p;
+				setup->noutputs++;
+			}
+		}
 
-        if (LADSPA_IS_PORT_CONTROL(d)) {
-            if (LADSPA_IS_PORT_INPUT(d)) {
-                setup->inputcontrolsmap[setup->ninputcontrols] = p;
-                setup->ninputcontrols++;
-                /* set control to zero. set values after reading the rest
-                 * of the suboptions and check LADSPA_?_HINT's later.
-                 */
-                setup->inputcontrols[p] = 0.0f;
-            } else if (LADSPA_IS_PORT_OUTPUT(d)) {
-                /* read and handle these too, otherwise filters that have them
-                 * will sig11
-                 */
-                setup->outputcontrolsmap[setup->noutputcontrols]=p;
-                setup->noutputcontrols++;
-                setup->outputcontrols[p] = 0.0f;
-            }
-        }
+		if (LADSPA_IS_PORT_CONTROL(d))
+		{
+			if (LADSPA_IS_PORT_INPUT(d))
+			{
+				setup->inputcontrolsmap[setup->ninputcontrols] = p;
+				setup->ninputcontrols++;
+				/* set control to zero. set values after reading the rest
+				 * of the suboptions and check LADSPA_?_HINT's later.
+				 */
+				setup->inputcontrols[p] = 0.0f;
+			}
+			else if (LADSPA_IS_PORT_OUTPUT(d))
+			{
+				/* read and handle these too, otherwise filters that have them
+				 * will sig11
+				 */
+				setup->outputcontrolsmap[setup->noutputcontrols] = p;
+				setup->noutputcontrols++;
+				setup->outputcontrols[p] = 0.0f;
+			}
+		}
+	}
 
-    }
+	if (setup->ninputs == 0)
+	{
+		mp_msg(MSGT_AFILTER, MSGL_WARN, "%s: %s\n", setup->myname,
+		       MSGTR_AF_LADSPA_WarnNoInputs);
+	}
+	else if (setup->ninputs == 1)
+	{
+		mp_msg(MSGT_AFILTER, MSGL_V, "%s: this is a mono effect\n", setup->myname);
+	}
+	else if (setup->ninputs == 2)
+	{
+		mp_msg(MSGT_AFILTER, MSGL_V, "%s: this is a stereo effect\n", setup->myname);
+	}
+	else
+	{
+		mp_msg(MSGT_AFILTER, MSGL_V, "%s: this is a %i-channel effect, "
+		       "support is experimental\n", setup->myname, setup->ninputs);
+	}
 
-    if (setup->ninputs == 0) {
-        mp_msg(MSGT_AFILTER, MSGL_WARN, "%s: %s\n", setup->myname,
-                                                MSGTR_AF_LADSPA_WarnNoInputs);
-    } else if (setup->ninputs == 1) {
-        mp_msg(MSGT_AFILTER, MSGL_V, "%s: this is a mono effect\n", setup->myname);
-    } else if (setup->ninputs == 2) {
-        mp_msg(MSGT_AFILTER, MSGL_V, "%s: this is a stereo effect\n", setup->myname);
-    } else {
-        mp_msg(MSGT_AFILTER, MSGL_V, "%s: this is a %i-channel effect, "
-               "support is experimental\n", setup->myname, setup->ninputs);
-    }
+	if (setup->noutputs == 0)
+	{
+		mp_msg(MSGT_AFILTER, MSGL_ERR, "%s: %s\n", setup->myname,
+		       MSGTR_AF_LADSPA_ErrNoOutputs);
+		return AF_ERROR;
+	}
 
-    if (setup->noutputs == 0) {
-        mp_msg(MSGT_AFILTER, MSGL_ERR, "%s: %s\n", setup->myname,
-                                                MSGTR_AF_LADSPA_ErrNoOutputs);
-        return AF_ERROR;
-    }
+	if (setup->noutputs != setup->ninputs)
+	{
+		mp_msg(MSGT_AFILTER, MSGL_ERR, "%s: %s\n", setup->myname,
+		       MSGTR_AF_LADSPA_ErrInOutDiff);
+		return AF_ERROR;
+	}
 
-    if (setup->noutputs != setup->ninputs ) {
-        mp_msg(MSGT_AFILTER, MSGL_ERR, "%s: %s\n", setup->myname,
-                                                MSGTR_AF_LADSPA_ErrInOutDiff);
-        return AF_ERROR;
-    }
+	mp_msg(MSGT_AFILTER, MSGL_V, "%s: this plugin has %d input control(s)\n",
+	       setup->myname, setup->ninputcontrols);
 
-    mp_msg(MSGT_AFILTER, MSGL_V, "%s: this plugin has %d input control(s)\n",
-                                        setup->myname, setup->ninputcontrols);
+	/* Print list of controls and its range of values it accepts */
 
-    /* Print list of controls and its range of values it accepts */
+	for (i = 0; i < setup->ninputcontrols; i++)
+	{
+		p = setup->inputcontrolsmap[i];
+		hint = pdes->PortRangeHints[p];
+		mp_msg(MSGT_AFILTER, MSGL_V, "  --- %d %s [", i, pdes->PortNames[p]);
 
-    for (i=0; i<setup->ninputcontrols; i++) {
-        p = setup->inputcontrolsmap[i];
-        hint = pdes->PortRangeHints[p];
-        mp_msg(MSGT_AFILTER, MSGL_V, "  --- %d %s [", i, pdes->PortNames[p]);
+		if (LADSPA_IS_HINT_BOUNDED_BELOW(hint.HintDescriptor))
+		{
+			mp_msg(MSGT_AFILTER, MSGL_V, "%0.2f , ", hint.LowerBound);
+		}
+		else
+		{
+			mp_msg(MSGT_AFILTER, MSGL_V, "... , ");
+		}
 
-        if (LADSPA_IS_HINT_BOUNDED_BELOW(hint.HintDescriptor)) {
-            mp_msg(MSGT_AFILTER, MSGL_V, "%0.2f , ", hint.LowerBound);
-        } else {
-            mp_msg(MSGT_AFILTER, MSGL_V, "... , ");
-        }
+		if (LADSPA_IS_HINT_BOUNDED_ABOVE(hint.HintDescriptor))
+		{
+			mp_msg(MSGT_AFILTER, MSGL_V, "%0.2f]\n", hint.UpperBound);
+		}
+		else
+		{
+			mp_msg(MSGT_AFILTER, MSGL_V, "...]\n");
+		}
+	}
 
-        if (LADSPA_IS_HINT_BOUNDED_ABOVE(hint.HintDescriptor)) {
-            mp_msg(MSGT_AFILTER, MSGL_V, "%0.2f]\n", hint.UpperBound);
-        } else {
-            mp_msg(MSGT_AFILTER, MSGL_V, "...]\n");
-        }
-
-    }
-
-    return AF_OK;
+	return AF_OK;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -290,76 +313,80 @@ static int af_ladspa_parse_plugin(af_ladspa_t *setup) {
  *                  NULL if it fails to load.
  */
 
-static void* mydlopen(const char *filename, int flag) {
-    char *buf;
-    const char *end, *start, *ladspapath;
-    int endsinso, needslash;
-    size_t filenamelen;
-    void *result = NULL;
+static void* mydlopen(const char* filename, int flag)
+{
+	char* buf;
+	const char *end, *start, *ladspapath;
+	int endsinso, needslash;
+	size_t filenamelen;
+	void* result = NULL;
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
-    /* For Windows there's only absolute path support.
-     * If you have a Windows machine, feel free to fix this.
-     * (path separator, shared objects extension, et cetera). */
-        mp_msg(MSGT_AFILTER, MSGL_V, "\ton windows, only absolute pathnames "
-                "are supported\n");
-        mp_msg(MSGT_AFILTER, MSGL_V, "\ttrying %s\n", filename);
-        return dlopen(filename, flag);
+	/* For Windows there's only absolute path support.
+	 * If you have a Windows machine, feel free to fix this.
+	 * (path separator, shared objects extension, et cetera). */
+	mp_msg(MSGT_AFILTER, MSGL_V, "\ton windows, only absolute pathnames "
+		"are supported\n");
+	mp_msg(MSGT_AFILTER, MSGL_V, "\ttrying %s\n", filename);
+	return dlopen(filename, flag);
 #endif
 
-    filenamelen = strlen(filename);
+	filenamelen = strlen(filename);
 
-    endsinso = 0;
-    if (filenamelen > 3)
-        endsinso = (strcmp(filename+filenamelen-3, ".so") == 0);
-    if (!endsinso) {
-        buf=malloc(filenamelen+4);
-        strcpy(buf, filename);
-        strcat(buf, ".so");
-        result=mydlopen(buf, flag);
-        free(buf);
-    }
+	endsinso = 0;
+	if (filenamelen > 3)
+		endsinso = (strcmp(filename + filenamelen - 3, ".so") == 0);
+	if (!endsinso)
+	{
+		buf = malloc(filenamelen + 4);
+		strcpy(buf, filename);
+		strcat(buf, ".so");
+		result = mydlopen(buf, flag);
+		free(buf);
+	}
 
-    if (result)
-        return result;
+	if (result)
+		return result;
 
-    ladspapath=getenv("LADSPA_PATH");
+	ladspapath = getenv("LADSPA_PATH");
 
-    if (ladspapath) {
+	if (ladspapath)
+	{
+		start = ladspapath;
+		while (*start != '\0')
+		{
+			end = start;
+			while ((*end != ':') && (*end != '\0'))
+				end++;
 
-        start=ladspapath;
-        while (*start != '\0') {
-            end=start;
-            while ( (*end != ':') && (*end != '\0') )
-                end++;
+			buf = malloc(filenamelen + 2 + (end - start));
+			if (end > start)
+				strncpy(buf, start, end - start);
+			needslash = 0;
+			if (end > start)
+				if (*(end - 1) != '/')
+				{
+					needslash = 1;
+					buf[end - start] = '/';
+				}
+			strcpy(buf + needslash + (end - start), filename);
 
-            buf=malloc(filenamelen + 2 + (end-start) );
-            if (end > start)
-                strncpy(buf, start, end-start);
-            needslash=0;
-            if (end > start)
-                if (*(end-1) != '/') {
-                    needslash = 1;
-                    buf[end-start] = '/';
-                }
-            strcpy(buf+needslash+(end-start), filename);
+			mp_msg(MSGT_AFILTER, MSGL_V, "\ttrying %s\n", buf);
+			result = dlopen(buf, flag);
 
-            mp_msg(MSGT_AFILTER, MSGL_V, "\ttrying %s\n", buf);
-            result=dlopen(buf, flag);
+			free(buf);
+			if (result)
+				return result;
 
-            free(buf);
-            if (result)
-                return result;
+			start = end;
+			if (*start == ':')
+				start++;
+		} /* end while there's still more in the path */
+	} /* end if there's a ladspapath */
 
-            start = end;
-            if (*start == ':')
-                start++;
-        } /* end while there's still more in the path */
-    } /* end if there's a ladspapath */
-
-    /* last resort, just open it again, so the dlerror() message is correct */
-    mp_msg(MSGT_AFILTER, MSGL_V, "\ttrying %s\n", filename);
-    return dlopen(filename,flag);
+	/* last resort, just open it again, so the dlerror() message is correct */
+	mp_msg(MSGT_AFILTER, MSGL_V, "\ttrying %s\n", filename);
+	return dlopen(filename, flag);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -379,72 +406,81 @@ static void* mydlopen(const char *filename, int flag) {
  * \return  Either AF_ERROR or AF_OK, depending on the success of the operation.
  */
 
-static int af_ladspa_load_plugin(af_ladspa_t *setup) {
-    const LADSPA_Descriptor *ladspa_descriptor;
-    LADSPA_Descriptor_Function descriptor_function;
-    int i;
+static int af_ladspa_load_plugin(af_ladspa_t* setup)
+{
+	const LADSPA_Descriptor* ladspa_descriptor;
+	LADSPA_Descriptor_Function descriptor_function;
+	int i;
 
-    /* load library */
-    mp_msg(MSGT_AFILTER, MSGL_V, "%s: loading ladspa plugin library %s\n",
-                                                setup->myname, setup->file);
+	/* load library */
+	mp_msg(MSGT_AFILTER, MSGL_V, "%s: loading ladspa plugin library %s\n",
+	       setup->myname, setup->file);
 
-    setup->libhandle = mydlopen(setup->file, RTLD_NOW);
+	setup->libhandle = mydlopen(setup->file, RTLD_NOW);
 
-    if (!setup->libhandle) {
-        mp_msg(MSGT_AFILTER, MSGL_ERR, "%s: %s %s\n\t%s\n", setup->myname,
-                    MSGTR_AF_LADSPA_ErrFailedToLoad, setup->file, dlerror() );
-        return AF_ERROR;
-    }
+	if (!setup->libhandle)
+	{
+		mp_msg(MSGT_AFILTER, MSGL_ERR, "%s: %s %s\n\t%s\n", setup->myname,
+		       MSGTR_AF_LADSPA_ErrFailedToLoad, setup->file, dlerror());
+		return AF_ERROR;
+	}
 
-    mp_msg(MSGT_AFILTER, MSGL_V, "%s: library found.\n", setup->myname);
+	mp_msg(MSGT_AFILTER, MSGL_V, "%s: library found.\n", setup->myname);
 
-    /* find descriptor function */
-    dlerror();
-    descriptor_function = (LADSPA_Descriptor_Function) dlsym (setup->libhandle,
-                                                        "ladspa_descriptor");
+	/* find descriptor function */
+	dlerror();
+	descriptor_function = (LADSPA_Descriptor_Function)dlsym(setup->libhandle,
+	                                                        "ladspa_descriptor");
 
-    if (!descriptor_function) {
-        mp_msg(MSGT_AFILTER, MSGL_ERR, "%s: %s\n\t%s\n", setup->myname,
-                                MSGTR_AF_LADSPA_ErrNoDescriptor, dlerror());
-        return AF_ERROR;
-    }
+	if (!descriptor_function)
+	{
+		mp_msg(MSGT_AFILTER, MSGL_ERR, "%s: %s\n\t%s\n", setup->myname,
+		       MSGTR_AF_LADSPA_ErrNoDescriptor, dlerror());
+		return AF_ERROR;
+	}
 
-    /* if label == help, list all labels in library and exit */
+	/* if label == help, list all labels in library and exit */
 
-    if (strcmp(setup->label, "help") == 0) {
-        mp_msg(MSGT_AFILTER, MSGL_INFO, "%s: %s %s:\n", setup->myname,
-                MSGTR_AF_LADSPA_AvailableLabels, setup->file);
-        for (i=0; ; i++) {
-            ladspa_descriptor = descriptor_function(i);
-            if (ladspa_descriptor == NULL) {
-                return AF_ERROR;
-            }
-            mp_msg(MSGT_AFILTER, MSGL_INFO, "  %-16s - %s (%lu)\n",
-                    ladspa_descriptor->Label,
-                    ladspa_descriptor->Name,
-                    ladspa_descriptor->UniqueID);
-        }
-    }
+	if (strcmp(setup->label, "help") == 0)
+	{
+		mp_msg(MSGT_AFILTER, MSGL_INFO, "%s: %s %s:\n", setup->myname,
+		       MSGTR_AF_LADSPA_AvailableLabels, setup->file);
+		for (i = 0; ; i++)
+		{
+			ladspa_descriptor = descriptor_function(i);
+			if (ladspa_descriptor == NULL)
+			{
+				return AF_ERROR;
+			}
+			mp_msg(MSGT_AFILTER, MSGL_INFO, "  %-16s - %s (%lu)\n",
+			       ladspa_descriptor->Label,
+			       ladspa_descriptor->Name,
+			       ladspa_descriptor->UniqueID);
+		}
+	}
 
-    mp_msg(MSGT_AFILTER, MSGL_V, "%s: looking for label\n", setup->myname);
+	mp_msg(MSGT_AFILTER, MSGL_V, "%s: looking for label\n", setup->myname);
 
-    /* find label in library */
-    for (i=0; ; i++) {
-        ladspa_descriptor = descriptor_function(i);
-        if (ladspa_descriptor == NULL) {
-            mp_msg(MSGT_AFILTER, MSGL_ERR, "%s: %s\n", setup->myname,
-                                            MSGTR_AF_LADSPA_ErrLabelNotFound);
-            return AF_ERROR;
-        }
-        if (strcmp(ladspa_descriptor->Label, setup->label) == 0) {
-            setup->plugin_descriptor = ladspa_descriptor;
-            mp_msg(MSGT_AFILTER, MSGL_V, "%s: %s found\n", setup->myname,
-                                                                setup->label);
-            return AF_OK;
-        }
-    }
+	/* find label in library */
+	for (i = 0; ; i++)
+	{
+		ladspa_descriptor = descriptor_function(i);
+		if (ladspa_descriptor == NULL)
+		{
+			mp_msg(MSGT_AFILTER, MSGL_ERR, "%s: %s\n", setup->myname,
+			       MSGTR_AF_LADSPA_ErrLabelNotFound);
+			return AF_ERROR;
+		}
+		if (strcmp(ladspa_descriptor->Label, setup->label) == 0)
+		{
+			setup->plugin_descriptor = ladspa_descriptor;
+			mp_msg(MSGT_AFILTER, MSGL_V, "%s: %s found\n", setup->myname,
+			       setup->label);
+			return AF_OK;
+		}
+	}
 
-    return AF_OK;
+	return AF_OK;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -458,9 +494,10 @@ static int af_ladspa_load_plugin(af_ladspa_t *setup) {
  * \return  AF_ERROR
  */
 
-static int af_ladspa_malloc_failed(char *myname) {
-    mp_msg(MSGT_AFILTER, MSGL_ERR, "%s: %s", myname, MSGTR_MemAllocFailed);
-    return AF_ERROR;
+static int af_ladspa_malloc_failed(char* myname)
+{
+	mp_msg(MSGT_AFILTER, MSGL_ERR, "%s: %s", myname, MSGTR_MemAllocFailed);
+	return AF_ERROR;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -487,158 +524,172 @@ static int af_ladspa_malloc_failed(char *myname) {
  *              operation.
  */
 
-static int control(struct af_instance_s *af, int cmd, void *arg) {
-    af_ladspa_t *setup = (af_ladspa_t*) af->setup;
-    int i, r;
-    float val;
+static int control(struct af_instance_s* af, int cmd, void* arg)
+{
+	af_ladspa_t* setup = af->setup;
+	int i, r;
+	float val;
 
-    switch(cmd) {
-    case AF_CONTROL_REINIT:
-        mp_msg(MSGT_AFILTER, MSGL_V, "%s: (re)init\n", setup->myname);
+	switch (cmd)
+	{
+	case AF_CONTROL_REINIT:
+		mp_msg(MSGT_AFILTER, MSGL_V, "%s: (re)init\n", setup->myname);
 
-        if (!arg) return AF_ERROR;
+		if (!arg) return AF_ERROR;
 
-        /* accept FLOAT, let af_format do conversion */
+	/* accept FLOAT, let af_format do conversion */
 
-        af->data->rate   = ((af_data_t*)arg)->rate;
-        af->data->nch    = ((af_data_t*)arg)->nch;
-        af->data->format = AF_FORMAT_FLOAT_NE;
-        af->data->bps    = 4;
+		af->data->rate = ((af_data_t*)arg)->rate;
+		af->data->nch = ((af_data_t*)arg)->nch;
+		af->data->format = AF_FORMAT_FLOAT_NE;
+		af->data->bps = 4;
 
-        /* arg->len is not set here yet, so init of buffers and connecting the
-         * filter, has to be done in play() :-/
-         */
+	/* arg->len is not set here yet, so init of buffers and connecting the
+	 * filter, has to be done in play() :-/
+	 */
 
-        return af_test_output(af, (af_data_t*)arg);
-    case AF_CONTROL_COMMAND_LINE: {
-        char *buf;
+		return af_test_output(af, arg);
+	case AF_CONTROL_COMMAND_LINE:
+		{
+			char* buf;
 
-        mp_msg(MSGT_AFILTER, MSGL_V, "%s: parse suboptions\n", setup->myname);
+			mp_msg(MSGT_AFILTER, MSGL_V, "%s: parse suboptions\n", setup->myname);
 
-        /* suboption parser here!
-         * format is (ladspa=)file:label:controls....
-         */
+			/* suboption parser here!
+			 * format is (ladspa=)file:label:controls....
+			 */
 
-        if (!arg) {
-            mp_msg(MSGT_AFILTER, MSGL_ERR, "%s: %s\n", setup->myname,
-                                            MSGTR_AF_LADSPA_ErrNoSuboptions);
-            return AF_ERROR;
-        }
+			if (!arg)
+			{
+				mp_msg(MSGT_AFILTER, MSGL_ERR, "%s: %s\n", setup->myname,
+				       MSGTR_AF_LADSPA_ErrNoSuboptions);
+				return AF_ERROR;
+			}
 
-        buf = malloc(strlen(arg)+1);
-        if (!buf) return af_ladspa_malloc_failed(setup->myname);
+			buf = malloc(strlen(arg) + 1);
+			if (!buf) return af_ladspa_malloc_failed(setup->myname);
 
-        /* file... */
-        buf[0] = '\0';
-        sscanf(arg, "%[^:]", buf);
-        if (buf[0] == '\0') {
-            mp_msg(MSGT_AFILTER, MSGL_ERR, "%s: %s\n", setup->myname,
-                                                MSGTR_AF_LADSPA_ErrNoLibFile);
-            free(buf);
-            return AF_ERROR;
-        }
-        arg += strlen(buf);
-        setup->file = strdup(buf);
-        if (!setup->file) return af_ladspa_malloc_failed(setup->myname);
-        mp_msg(MSGT_AFILTER, MSGL_V, "%s: file --> %s\n", setup->myname,
-                                                        setup->file);
-        if (*(char*)arg != '\0') arg++; /* read ':' */
+			/* file... */
+			buf[0] = '\0';
+			sscanf(arg, "%[^:]", buf);
+			if (buf[0] == '\0')
+			{
+				mp_msg(MSGT_AFILTER, MSGL_ERR, "%s: %s\n", setup->myname,
+				       MSGTR_AF_LADSPA_ErrNoLibFile);
+				free(buf);
+				return AF_ERROR;
+			}
+			arg += strlen(buf);
+			setup->file = strdup(buf);
+			if (!setup->file) return af_ladspa_malloc_failed(setup->myname);
+			mp_msg(MSGT_AFILTER, MSGL_V, "%s: file --> %s\n", setup->myname,
+			       setup->file);
+			if (*(char*)arg != '\0') arg++; /* read ':' */
 
-        /* label... */
-        buf[0] = '\0';
-        sscanf(arg, "%[^:]", buf);
-        if (buf[0] == '\0') {
-            mp_msg(MSGT_AFILTER, MSGL_ERR, "%s: %s\n", setup->myname,
-                                                MSGTR_AF_LADSPA_ErrNoLabel);
-            free(buf);
-            return AF_ERROR;
-        }
-        arg += strlen(buf);
-        setup->label = strdup(buf);
-        if (!setup->label) return af_ladspa_malloc_failed(setup->myname);
-        mp_msg(MSGT_AFILTER, MSGL_V, "%s: label --> %s\n", setup->myname,
-                                                                setup->label);
-/*        if (*(char*)arg != '0') arg++; */ /* read ':' */
+			/* label... */
+			buf[0] = '\0';
+			sscanf(arg, "%[^:]", buf);
+			if (buf[0] == '\0')
+			{
+				mp_msg(MSGT_AFILTER, MSGL_ERR, "%s: %s\n", setup->myname,
+				       MSGTR_AF_LADSPA_ErrNoLabel);
+				free(buf);
+				return AF_ERROR;
+			}
+			arg += strlen(buf);
+			setup->label = strdup(buf);
+			if (!setup->label) return af_ladspa_malloc_failed(setup->myname);
+			mp_msg(MSGT_AFILTER, MSGL_V, "%s: label --> %s\n", setup->myname,
+			       setup->label);
+			/*        if (*(char*)arg != '0') arg++; */ /* read ':' */
 
-        free(buf); /* no longer needed */
+			free(buf); /* no longer needed */
 
-        /* set new setup->myname */
+			/* set new setup->myname */
 
-        free(setup->myname);
-        setup->myname = calloc(strlen(af_info_ladspa.name)+strlen(setup->file)+
-                                                    strlen(setup->label)+6, 1);
-        snprintf(setup->myname, strlen(af_info_ladspa.name)+
-                strlen(setup->file)+strlen(setup->label)+6, "%s: (%s:%s)",
-                            af_info_ladspa.name, setup->file, setup->label);
+			free(setup->myname);
+			setup->myname = calloc(strlen(af_info_ladspa.name) + strlen(setup->file) +
+			                       strlen(setup->label) + 6, 1);
+			snprintf(setup->myname, strlen(af_info_ladspa.name) +
+			         strlen(setup->file) + strlen(setup->label) + 6, "%s: (%s:%s)",
+			         af_info_ladspa.name, setup->file, setup->label);
 
-        /* load plugin :) */
+			/* load plugin :) */
 
-        if ( af_ladspa_load_plugin(setup) != AF_OK )
-            return AF_ERROR;
+			if (af_ladspa_load_plugin(setup) != AF_OK)
+				return AF_ERROR;
 
-        /* see what inputs, outputs and controls this plugin has */
-        if ( af_ladspa_parse_plugin(setup) != AF_OK )
-            return AF_ERROR;
+			/* see what inputs, outputs and controls this plugin has */
+			if (af_ladspa_parse_plugin(setup) != AF_OK)
+				return AF_ERROR;
 
-        /* ninputcontrols is set by now, read control values from arg */
+			/* ninputcontrols is set by now, read control values from arg */
 
-        for(i=0; i<setup->ninputcontrols; i++) {
-            if (!arg || (*(char*)arg != ':') ) {
-                mp_msg(MSGT_AFILTER, MSGL_ERR, "%s: %s\n", setup->myname,
-                                        MSGTR_AF_LADSPA_ErrNotEnoughControls);
-                return AF_ERROR;
-            }
-            arg++;
-            r = sscanf(arg, "%f", &val);
-            if (r!=1) {
-                mp_msg(MSGT_AFILTER, MSGL_ERR, "%s: %s\n", setup->myname,
-                                        MSGTR_AF_LADSPA_ErrNotEnoughControls);
-                return AF_ERROR;
-            }
-            setup->inputcontrols[setup->inputcontrolsmap[i]] = val;
-            arg = strchr(arg, ':');
-        }
+			for (i = 0; i < setup->ninputcontrols; i++)
+			{
+				if (!arg || (*(char*)arg != ':'))
+				{
+					mp_msg(MSGT_AFILTER, MSGL_ERR, "%s: %s\n", setup->myname,
+					       MSGTR_AF_LADSPA_ErrNotEnoughControls);
+					return AF_ERROR;
+				}
+				arg++;
+				r = sscanf(arg, "%f", &val);
+				if (r != 1)
+				{
+					mp_msg(MSGT_AFILTER, MSGL_ERR, "%s: %s\n", setup->myname,
+					       MSGTR_AF_LADSPA_ErrNotEnoughControls);
+					return AF_ERROR;
+				}
+				setup->inputcontrols[setup->inputcontrolsmap[i]] = val;
+				arg = strchr(arg, ':');
+			}
 
-        mp_msg(MSGT_AFILTER, MSGL_V, "%s: input controls: ", setup->myname);
-        for(i=0; i<setup->ninputcontrols; i++) {
-            mp_msg(MSGT_AFILTER, MSGL_V, "%0.4f ",
-                            setup->inputcontrols[setup->inputcontrolsmap[i]]);
-        }
-        mp_msg(MSGT_AFILTER, MSGL_V, "\n");
+			mp_msg(MSGT_AFILTER, MSGL_V, "%s: input controls: ", setup->myname);
+			for (i = 0; i < setup->ninputcontrols; i++)
+			{
+				mp_msg(MSGT_AFILTER, MSGL_V, "%0.4f ",
+				       setup->inputcontrols[setup->inputcontrolsmap[i]]);
+			}
+			mp_msg(MSGT_AFILTER, MSGL_V, "\n");
 
-        /* check boundaries of inputcontrols */
+			/* check boundaries of inputcontrols */
 
-        mp_msg(MSGT_AFILTER, MSGL_V, "%s: checking boundaries of input controls\n",
-                                                                setup->myname);
-        for(i=0; i<setup->ninputcontrols; i++) {
-            int p = setup->inputcontrolsmap[i];
-            LADSPA_PortRangeHint hint =
-                                setup->plugin_descriptor->PortRangeHints[p];
-            val = setup->inputcontrols[p];
+			mp_msg(MSGT_AFILTER, MSGL_V, "%s: checking boundaries of input controls\n",
+			       setup->myname);
+			for (i = 0; i < setup->ninputcontrols; i++)
+			{
+				int p = setup->inputcontrolsmap[i];
+				LADSPA_PortRangeHint hint =
+					setup->plugin_descriptor->PortRangeHints[p];
+				val = setup->inputcontrols[p];
 
-            if (LADSPA_IS_HINT_BOUNDED_BELOW(hint.HintDescriptor) &&
-                    val < hint.LowerBound) {
-                mp_msg(MSGT_AFILTER, MSGL_ERR, MSGTR_AF_LADSPA_ErrControlBelow,
-                                            setup->myname, i, hint.LowerBound);
-                return AF_ERROR;
-            }
-            if (LADSPA_IS_HINT_BOUNDED_ABOVE(hint.HintDescriptor) &&
-                    val > hint.UpperBound) {
-                mp_msg(MSGT_AFILTER, MSGL_ERR, MSGTR_AF_LADSPA_ErrControlAbove,
-                                            setup->myname, i, hint.UpperBound);
-                return AF_ERROR;
-            }
-        }
-        mp_msg(MSGT_AFILTER, MSGL_V, "%s: all controls have sane values\n",
-                                                                setup->myname);
+				if (LADSPA_IS_HINT_BOUNDED_BELOW(hint.HintDescriptor) &&
+					val < hint.LowerBound)
+				{
+					mp_msg(MSGT_AFILTER, MSGL_ERR, MSGTR_AF_LADSPA_ErrControlBelow,
+					       setup->myname, i, hint.LowerBound);
+					return AF_ERROR;
+				}
+				if (LADSPA_IS_HINT_BOUNDED_ABOVE(hint.HintDescriptor) &&
+					val > hint.UpperBound)
+				{
+					mp_msg(MSGT_AFILTER, MSGL_ERR, MSGTR_AF_LADSPA_ErrControlAbove,
+					       setup->myname, i, hint.UpperBound);
+					return AF_ERROR;
+				}
+			}
+			mp_msg(MSGT_AFILTER, MSGL_V, "%s: all controls have sane values\n",
+			       setup->myname);
 
-        /* All is well! */
-        setup->status = AF_OK;
+			/* All is well! */
+			setup->status = AF_OK;
 
-        return AF_OK; }
-    }
+			return AF_OK;
+		}
+	}
 
-    return AF_UNKNOWN;
+	return AF_UNKNOWN;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -651,54 +702,61 @@ static int control(struct af_instance_s *af, int cmd, void *arg) {
  * \return  No return value.
  */
 
-static void uninit(struct af_instance_s *af) {
-    int i;
+static void uninit(struct af_instance_s* af)
+{
+	int i;
 
-    free(af->data);
-    if (af->setup) {
-        af_ladspa_t *setup = (af_ladspa_t*) af->setup;
-        const LADSPA_Descriptor *pdes = setup->plugin_descriptor;
+	free(af->data);
+	if (af->setup)
+	{
+		af_ladspa_t* setup = af->setup;
+		const LADSPA_Descriptor* pdes = setup->plugin_descriptor;
 
-        if (setup->myname) {
-            mp_msg(MSGT_AFILTER, MSGL_V, "%s: cleaning up\n", setup->myname);
-            free(setup->myname);
-        }
+		if (setup->myname)
+		{
+			mp_msg(MSGT_AFILTER, MSGL_V, "%s: cleaning up\n", setup->myname);
+			free(setup->myname);
+		}
 
-        if (setup->chhandles) {
-            for(i=0; i<setup->nch; i+=setup->ninputs) {
-                if (pdes->deactivate) pdes->deactivate(setup->chhandles[i]);
-                if (pdes->cleanup) pdes->cleanup(setup->chhandles[i]);
-            }
-            free(setup->chhandles);
-        }
+		if (setup->chhandles)
+		{
+			for (i = 0; i < setup->nch; i += setup->ninputs)
+			{
+				if (pdes->deactivate) pdes->deactivate(setup->chhandles[i]);
+				if (pdes->cleanup) pdes->cleanup(setup->chhandles[i]);
+			}
+			free(setup->chhandles);
+		}
 
-        free(setup->file);
-        free(setup->label);
-        free(setup->inputcontrolsmap);
-        free(setup->inputcontrols);
-        free(setup->outputcontrolsmap);
-        free(setup->outputcontrols);
-        free(setup->inputs);
-        free(setup->outputs);
+		free(setup->file);
+		free(setup->label);
+		free(setup->inputcontrolsmap);
+		free(setup->inputcontrols);
+		free(setup->outputcontrolsmap);
+		free(setup->outputcontrols);
+		free(setup->inputs);
+		free(setup->outputs);
 
-        if (setup->inbufs) {
-            for(i=0; i<setup->nch; i++)
-                free(setup->inbufs[i]);
-            free(setup->inbufs);
-        }
+		if (setup->inbufs)
+		{
+			for (i = 0; i < setup->nch; i++)
+				free(setup->inbufs[i]);
+			free(setup->inbufs);
+		}
 
-        if (setup->outbufs) {
-            for(i=0; i<setup->nch; i++)
-                free(setup->outbufs[i]);
-            free(setup->outbufs);
-        }
+		if (setup->outbufs)
+		{
+			for (i = 0; i < setup->nch; i++)
+				free(setup->outbufs[i]);
+			free(setup->outbufs);
+		}
 
-        if (setup->libhandle)
-            dlclose(setup->libhandle);
+		if (setup->libhandle)
+			dlclose(setup->libhandle);
 
-        free(setup);
-        setup = NULL;
-    }
+		free(setup);
+		setup = NULL;
+	}
 }
 
 /* ------------------------------------------------------------------------- */
@@ -711,167 +769,185 @@ static void uninit(struct af_instance_s *af) {
  * \return      Either AF_ERROR or AF_OK
  */
 
-static af_data_t* play(struct af_instance_s *af, af_data_t *data) {
-    af_ladspa_t *setup = af->setup;
-    const LADSPA_Descriptor *pdes = setup->plugin_descriptor;
-    float *audio = (float*)data->audio;
-    int nsamples = data->len/4; /* /4 because it's 32-bit float */
-    int nch = data->nch;
-    int rate = data->rate;
-    int i, p;
+static af_data_t* play(struct af_instance_s* af, af_data_t* data)
+{
+	af_ladspa_t* setup = af->setup;
+	const LADSPA_Descriptor* pdes = setup->plugin_descriptor;
+	float* audio = data->audio;
+	int nsamples = data->len / 4; /* /4 because it's 32-bit float */
+	int nch = data->nch;
+	int rate = data->rate;
+	int i, p;
 
-    if (setup->status !=AF_OK)
-        return data;
+	if (setup->status != AF_OK)
+		return data;
 
-    /* See if it's the first call. If so, setup inbufs/outbufs, instantiate
-     * plugin, connect ports and activate plugin
-     */
+	/* See if it's the first call. If so, setup inbufs/outbufs, instantiate
+	 * plugin, connect ports and activate plugin
+	 */
 
-    /* 2004-12-07: Also check if the buffersize has to be changed!
-     *             data->len is not constant per se! re-init buffers.
-     */
+	/* 2004-12-07: Also check if the buffersize has to be changed!
+	 *             data->len is not constant per se! re-init buffers.
+	 */
 
-    if ( (setup->bufsize != nsamples/nch) || (setup->nch != nch) ) {
+	if ((setup->bufsize != nsamples / nch) || (setup->nch != nch))
+	{
+		/* if setup->nch==0, it's the first call, if not, something has
+		 * changed and all previous mallocs have to be freed
+		 */
 
-        /* if setup->nch==0, it's the first call, if not, something has
-         * changed and all previous mallocs have to be freed
-         */
+		if (setup->nch != 0)
+		{
+			mp_msg(MSGT_AFILTER, MSGL_DBG3, "%s: bufsize change; free old buffer\n",
+			       setup->myname);
 
-        if (setup->nch != 0) {
-            mp_msg(MSGT_AFILTER, MSGL_DBG3, "%s: bufsize change; free old buffer\n",
-                                                                setup->myname);
+			if (setup->inbufs)
+			{
+				for (i = 0; i < setup->nch; i++)
+					free(setup->inbufs[i]);
+				free(setup->inbufs);
+			}
+			if (setup->outbufs)
+			{
+				for (i = 0; i < setup->nch; i++)
+					free(setup->outbufs[i]);
+				free(setup->outbufs);
+			}
+		} /* everything is freed */
 
-            if(setup->inbufs) {
-                for(i=0; i<setup->nch; i++)
-                    free(setup->inbufs[i]);
-                free(setup->inbufs);
-            }
-            if(setup->outbufs) {
-                for(i=0; i<setup->nch; i++)
-                    free(setup->outbufs[i]);
-                free(setup->outbufs);
-            }
-        } /* everything is freed */
+		setup->bufsize = nsamples / nch;
+		setup->nch = nch;
 
-        setup->bufsize = nsamples/nch;
-        setup->nch = nch;
+		setup->inbufs = calloc(nch, sizeof(float*));
+		setup->outbufs = calloc(nch, sizeof(float*));
 
-        setup->inbufs = calloc(nch, sizeof(float*));
-        setup->outbufs = calloc(nch, sizeof(float*));
+		mp_msg(MSGT_AFILTER, MSGL_DBG3, "%s: bufsize = %d\n",
+		       setup->myname, setup->bufsize);
 
-        mp_msg(MSGT_AFILTER, MSGL_DBG3, "%s: bufsize = %d\n",
-                                        setup->myname, setup->bufsize);
+		for (i = 0; i < nch; i++)
+		{
+			setup->inbufs[i] = calloc(setup->bufsize, sizeof(float));
+			setup->outbufs[i] = calloc(setup->bufsize, sizeof(float));
+		}
 
-        for(i=0; i<nch; i++) {
-            setup->inbufs[i] = calloc(setup->bufsize, sizeof(float));
-            setup->outbufs[i] = calloc(setup->bufsize, sizeof(float));
-        }
+		/* only on the first call, there are no handles. */
 
-        /* only on the first call, there are no handles. */
+		if (!setup->chhandles)
+		{
+			setup->chhandles = calloc(nch, sizeof(LADSPA_Handle));
 
-        if (!setup->chhandles) {
-            setup->chhandles = calloc(nch, sizeof(LADSPA_Handle));
+			/* create handles
+			 * for stereo effects, create one handle for two channels
+			 */
 
-            /* create handles
-             * for stereo effects, create one handle for two channels
-             */
+			for (i = 0; i < nch; i++)
+			{
+				if (i % setup->ninputs)
+				{
+					/* stereo effect */
+					/* copy the handle from previous channel */
+					setup->chhandles[i] = setup->chhandles[i - 1];
+					continue;
+				}
 
-            for(i=0; i<nch; i++) {
+				setup->chhandles[i] = pdes->instantiate(pdes, rate);
+			}
+		}
 
-                if (i % setup->ninputs) { /* stereo effect */
-                    /* copy the handle from previous channel */
-                    setup->chhandles[i] = setup->chhandles[i-1];
-                    continue;
-                }
+		/* connect input/output ports for each channel/filter instance
+		 *
+		 * always (re)connect ports
+		 */
 
-                setup->chhandles[i] = pdes->instantiate(pdes, rate);
-            }
-        }
+		for (i = 0; i < nch; i++)
+		{
+			pdes->connect_port(setup->chhandles[i],
+			                   setup->inputs[i % setup->ninputs],
+			                   setup->inbufs[i]);
+			pdes->connect_port(setup->chhandles[i],
+			                   setup->outputs[i % setup->ninputs],
+			                   setup->outbufs[i]);
 
-        /* connect input/output ports for each channel/filter instance
-         *
-         * always (re)connect ports
-         */
+			/* connect (input) controls */
 
-        for(i=0; i<nch; i++) {
-            pdes->connect_port(setup->chhandles[i],
-                               setup->inputs[i % setup->ninputs],
-                               setup->inbufs[i]);
-            pdes->connect_port(setup->chhandles[i],
-                               setup->outputs[i % setup->ninputs],
-                               setup->outbufs[i]);
+			for (p = 0; p < setup->nports; p++)
+			{
+				LADSPA_PortDescriptor d = pdes->PortDescriptors[p];
+				if (LADSPA_IS_PORT_CONTROL(d))
+				{
+					if (LADSPA_IS_PORT_INPUT(d))
+					{
+						pdes->connect_port(setup->chhandles[i], p,
+						                   &(setup->inputcontrols[p]));
+					}
+					else
+					{
+						pdes->connect_port(setup->chhandles[i], p,
+						                   &(setup->outputcontrols[p]));
+					}
+				}
+			}
 
-            /* connect (input) controls */
+			/* Activate filter (if it isn't already :) ) */
 
-            for (p=0; p<setup->nports; p++) {
-                LADSPA_PortDescriptor d = pdes->PortDescriptors[p];
-                if (LADSPA_IS_PORT_CONTROL(d)) {
-                    if (LADSPA_IS_PORT_INPUT(d)) {
-                        pdes->connect_port(setup->chhandles[i], p,
-                                                &(setup->inputcontrols[p]) );
-                    } else {
-                        pdes->connect_port(setup->chhandles[i], p,
-                                                &(setup->outputcontrols[p]) );
-                    }
-                }
-            }
+			if (pdes->activate && !setup->activated && i % setup->ninputs == 0)
+				pdes->activate(setup->chhandles[i]);
+		} /* All channels/filters done! except for... */
+		setup->activated = 1;
 
-            /* Activate filter (if it isn't already :) ) */
+		/* Stereo effect with one channel left. Use same buffer for left
+		 * and right. connect it to the second port.
+		 */
 
-            if (pdes->activate && !setup->activated && i % setup->ninputs == 0)
-                pdes->activate(setup->chhandles[i]);
+		for (p = i; p % setup->ninputs; p++)
+		{
+			pdes->connect_port(setup->chhandles[i - 1],
+			                   setup->inputs[p % setup->ninputs],
+			                   setup->inbufs[i - 1]);
+			pdes->connect_port(setup->chhandles[i - 1],
+			                   setup->outputs[p % setup->ninputs],
+			                   setup->outbufs[i - 1]);
+		} /* done! */
+	} /* setup for first call/change of bufsize is done.
+	   * normal playing routine follows...
+	   */
 
-        } /* All channels/filters done! except for... */
-        setup->activated = 1;
+	/* Right now, I use a separate input and output buffer.
+	 * I could change this to in-place processing (inbuf==outbuf), but some
+	 * ladspa filters are broken and are not able to handle that. This seems
+	 * fast enough, so unless somebody complains, it stays this way :)
+	 */
 
-        /* Stereo effect with one channel left. Use same buffer for left
-         * and right. connect it to the second port.
-         */
+	/* Fill inbufs */
 
-        for (p = i; p % setup->ninputs; p++) {
-            pdes->connect_port(setup->chhandles[i-1],
-                               setup->inputs[p % setup->ninputs],
-                               setup->inbufs[i-1]);
-            pdes->connect_port(setup->chhandles[i-1],
-                               setup->outputs[p % setup->ninputs],
-                               setup->outbufs[i-1]);
-        } /* done! */
+	for (p = 0; p < setup->bufsize; p++)
+	{
+		for (i = 0; i < nch; i++)
+		{
+			setup->inbufs[i][p] = audio[p * nch + i];
+		}
+	}
 
-    } /* setup for first call/change of bufsize is done.
-       * normal playing routine follows...
-       */
+	/* Run filter(s) */
 
-    /* Right now, I use a separate input and output buffer.
-     * I could change this to in-place processing (inbuf==outbuf), but some
-     * ladspa filters are broken and are not able to handle that. This seems
-     * fast enough, so unless somebody complains, it stays this way :)
-     */
+	for (i = 0; i < nch; i += setup->ninputs)
+	{
+		pdes->run(setup->chhandles[i], setup->bufsize);
+	}
 
-    /* Fill inbufs */
+	/* Extract outbufs */
 
-    for (p=0; p<setup->bufsize; p++) {
-        for (i=0; i<nch; i++) {
-            setup->inbufs[i][p] = audio[p*nch + i];
-        }
-    }
+	for (p = 0; p < setup->bufsize; p++)
+	{
+		for (i = 0; i < nch; i++)
+		{
+			audio[p * nch + i] = setup->outbufs[i][p];
+		}
+	}
 
-    /* Run filter(s) */
+	/* done */
 
-    for (i=0; i<nch; i+=setup->ninputs) {
-        pdes->run(setup->chhandles[i], setup->bufsize);
-    }
-
-    /* Extract outbufs */
-
-    for (p=0; p<setup->bufsize; p++) {
-        for (i=0; i<nch; i++) {
-            audio[p*nch + i] = setup->outbufs[i][p];
-        }
-    }
-
-    /* done */
-
-    return data;
+	return data;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -883,34 +959,35 @@ static af_data_t* play(struct af_instance_s *af, af_data_t *data) {
  * \return      Either AF_ERROR or AF_OK
  */
 
-static int af_open(af_instance_t *af) {
+static int af_open(af_instance_t* af)
+{
+	af->control = control;
+	af->uninit = uninit;
+	af->play = play;
+	af->mul = 1;
 
-    af->control=control;
-    af->uninit=uninit;
-    af->play=play;
-    af->mul=1;
+	af->data = calloc(1, sizeof(af_data_t));
+	if (af->data == NULL)
+		return af_ladspa_malloc_failed((char*)af_info_ladspa.name);
 
-    af->data = calloc(1, sizeof(af_data_t));
-    if (af->data == NULL)
-        return af_ladspa_malloc_failed((char*)af_info_ladspa.name);
+	af->setup = calloc(1, sizeof(af_ladspa_t));
+	if (af->setup == NULL)
+	{
+		free(af->data);
+		af->data = NULL;
+		return af_ladspa_malloc_failed((char*)af_info_ladspa.name);
+	}
 
-    af->setup = calloc(1, sizeof(af_ladspa_t));
-    if (af->setup == NULL) {
-        free(af->data);
-        af->data=NULL;
-        return af_ladspa_malloc_failed((char*)af_info_ladspa.name);
-    }
+	((af_ladspa_t*)af->setup)->status = AF_ERROR; /* will be set to AF_OK if
+												   * all went OK and play()
+												   * should proceed.
+												   */
 
-    ((af_ladspa_t*)af->setup)->status = AF_ERROR; /* will be set to AF_OK if
-                                                   * all went OK and play()
-                                                   * should proceed.
-                                                   */
+	((af_ladspa_t*)af->setup)->myname = strdup(af_info_ladspa.name);
+	if (!((af_ladspa_t*)af->setup)->myname)
+		return af_ladspa_malloc_failed((char*)af_info_ladspa.name);
 
-    ((af_ladspa_t*)af->setup)->myname = strdup(af_info_ladspa.name);
-    if (!((af_ladspa_t*)af->setup)->myname)
-        return af_ladspa_malloc_failed((char*)af_info_ladspa.name);
-
-    return AF_OK;
+	return AF_OK;
 }
 
 /* ------------------------------------------------------------------------- */

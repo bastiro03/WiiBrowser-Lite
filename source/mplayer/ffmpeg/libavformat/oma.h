@@ -29,12 +29,13 @@
 #define ID3v2_EA3_MAGIC "ea3"
 #define OMA_ENC_HEADER_SIZE 16
 
-enum {
-    OMA_CODECID_ATRAC3  = 0,
-    OMA_CODECID_ATRAC3P = 1,
-    OMA_CODECID_MP3     = 3,
-    OMA_CODECID_LPCM    = 4,
-    OMA_CODECID_WMA     = 5,
+enum
+{
+	OMA_CODECID_ATRAC3 = 0,
+	OMA_CODECID_ATRAC3P = 1,
+	OMA_CODECID_MP3 = 3,
+	OMA_CODECID_LPCM = 4,
+	OMA_CODECID_WMA = 5,
 };
 
 extern const uint16_t ff_oma_srate_tab[8];

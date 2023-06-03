@@ -23,8 +23,9 @@
 
 #include <stdint.h>
 
-typedef struct {
-    int x1, x2, y1, y2;
+typedef struct
+{
+	int x1, x2, y1, y2;
 } FFBoundingBox;
 
 /**
@@ -37,8 +38,8 @@ typedef struct {
  * @return 1 in case at least one pixel with value > min_val was found,
  *         0 otherwise
  */
-int ff_calculate_bounding_box(FFBoundingBox *bbox,
-                              const uint8_t *data, int linesize,
+int ff_calculate_bounding_box(FFBoundingBox* bbox,
+                              const uint8_t* data, int linesize,
                               int w, int h, int min_val);
 
 #endif /* AVFILTER_BBOX_H */

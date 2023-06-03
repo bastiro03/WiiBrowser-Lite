@@ -22,7 +22,7 @@
 #include "asf.h"
 #include "demuxer.h"
 
-int asf_check_header(demuxer_t *demuxer);
-int read_asf_header(demuxer_t *demuxer, struct asf_priv *asf);
+int asf_check_header(demuxer_t* demuxer);
+int read_asf_header(demuxer_t* demuxer, struct asf_priv* asf);
 
 #endif /* MPLAYER_ASFHEADER_H */

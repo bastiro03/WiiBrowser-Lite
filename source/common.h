@@ -9,129 +9,159 @@
 #define LEN 15
 
 using namespace std;
-typedef string TipoElemento;
+using TipoElemento = string;
 
-enum {image,guitext,guibutton,null};
+enum { image, guitext, guibutton, null };
 
-typedef struct Input
+using Input = struct Input
 {
-    TipoElemento name;
-    TipoElemento type;
-    TipoElemento value;
-    TipoElemento option;
-    TipoElemento label;
-    struct Input *prox;
-} Input;
+	TipoElemento name;
+	TipoElemento type;
+	TipoElemento value;
+	TipoElemento option;
+	TipoElemento label;
+	struct Input* prox;
+};
 
-typedef struct Value
+using Value = struct Value
 {
-    TipoElemento text;
-    vector<string> mode;
-} Value;
+	TipoElemento text;
+	vector<string> mode;
+};
 
-typedef struct Form
+using Form = struct Form
 {
-    TipoElemento action;
-    TipoElemento method;
-    TipoElemento enctype;
-    Input *input;
-} Form;
+	TipoElemento action;
+	TipoElemento method;
+	TipoElemento enctype;
+	Input* input;
+};
 
-typedef struct Tag
+using Tag = struct Tag
 {
-    TipoElemento name;
-    TipoElemento attribute;
-    vector<Value> value;
-    struct Form form;
-} Tag;
+	TipoElemento name;
+	TipoElemento attribute;
+	vector<Value> value;
+	struct Form form;
+};
 
-typedef struct Text
+using Text = struct Text
 {
-    GuiText *txt;
-    struct Text *prox;
-} Text;
+	GuiText* txt;
+	struct Text* prox;
+};
 
-typedef struct Image
+using Image = struct Image
 {
-    GuiImageData *imgdata;
-    GuiImage *img;
-    bool fetched;
-    struct Tag *tag;
-    struct Image *prox;
-} Image;
+	GuiImageData* imgdata;
+	GuiImage* img;
+	bool fetched;
+	struct Tag* tag;
+	struct Image* prox;
+};
 
-typedef struct Button
+using Button = struct Button
 {
-    GuiButton *btn;
-    GuiText *label;
-    GuiTooltip *tooltip;
-    TipoElemento url;
-    int outline;
-    struct Tag *refs;
-    struct Button *prox;
-} Button;
+	GuiButton* btn;
+	GuiText* label;
+	GuiTooltip* tooltip;
+	TipoElemento url;
+	int outline;
+	struct Tag* refs;
+	struct Button* prox;
+};
 
-typedef struct Index
+using Index = struct Index
 {
-    GuiElement *elem;
-    int content;
-    int screenSize;
-    struct Index *prec;
-    struct Index *prox;
-} Index;
+	GuiElement* elem;
+	int content;
+	int screenSize;
+	struct Index* prec;
+	struct Index* prox;
+};
 
-typedef struct Page
+using Page = struct Page
 {
-    int XPos;
-    int YPos;
-    int Height;
-} Page;
+	int XPos;
+	int YPos;
+	int Height;
+};
 
-typedef struct Url
+using Url = struct Url
 {
-    TipoElemento url;
-    struct Url *prec;
-    struct Url *prox;
-} Url;
+	TipoElemento url;
+	struct Url* prec;
+	struct Url* prox;
+};
 
-typedef Text * ListaDiTesto;
-typedef Image * ListaDiImg;
-typedef Button * ListaDiBottoni;
-typedef Input * ListaDiInput;
+using ListaDiTesto = Text*;
+using ListaDiImg = Image*;
+using ListaDiBottoni = Button*;
+using ListaDiInput = Input*;
 
-typedef list<Tag> Lista;
-typedef Index * Indice;
-typedef Url * History;
+using Lista = list<Tag>;
+using Indice = Index*;
+using History = Url*;
 
-extern enum html {
-    HTML,HEAD,BODY,BASE,META,TITLE,FORM,P,A,DIV,BR,IMG,
-    H1,H2,H3,H4,H5,H6,B,BIG,BLOCKQUOTE,PRE,TD,DD,DT,/*CENTER,*/LI,CITE,FONT,END
+extern enum html
+{
+	HTML,
+	HEAD,
+	BODY,
+	BASE,
+	META,
+	TITLE,
+	FORM,
+	P,
+	A,
+	DIV,
+	BR,
+	IMG,
+	H1,
+	H2,
+	H3,
+	H4,
+	H5,
+	H6,
+	B,
+	BIG,
+	BLOCKQUOTE,
+	PRE,
+	TD,
+	DD,
+	DT,
+	/*CENTER,*/
+	LI,
+	CITE,
+	FONT,
+	END
 }
 htm;
 
-extern char tags [END][LEN];
+extern char tags[END][LEN];
 extern History history;
 
-extern Lista getTag(char *buffer, char *url);
+extern Lista getTag(char* buffer, char* url);
 extern int checkTag(vector<string> tag, string name);
 
-extern int OnScreenKeyboard(GuiWindow *keyboardWindow, char *var, u16 maxlen);
-extern int WindowPrompt(const char *title, const char *msg, const char *btn1Label, const char *btn2Label, const char *longText = NULL);
-extern void ToggleButtons(GuiToolbar *toolbar, bool checkState = 0);
+extern int OnScreenKeyboard(GuiWindow* keyboardWindow, char* var, u16 maxlen);
+extern int WindowPrompt(const char* title, const char* msg, const char* btn1Label, const char* btn2Label,
+                        const char* longText = nullptr);
+extern void ToggleButtons(GuiToolbar* toolbar, bool checkState = false);
 
 extern void save_mem(string str);
 extern void save_mem_int(float str);
 
-extern string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainWindow, char *url);
+extern string DisplayHTML(struct block* HTML, GuiWindow* parentWindow, GuiWindow* mainWindow, char* url);
 extern string adjustUrl(string link, const char* url);
-extern char *getHost(char *url);
+extern char* getHost(char* url);
 
 extern void ResumeGui();
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-    extern void HaltGui();
+extern void HaltGui();
 #ifdef __cplusplus
 }
 #endif

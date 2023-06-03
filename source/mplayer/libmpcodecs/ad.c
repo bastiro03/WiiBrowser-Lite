@@ -61,61 +61,61 @@ extern const ad_functions_t mpcodecs_ad_twin;
 extern const ad_functions_t mpcodecs_ad_libmusepack;
 extern const ad_functions_t mpcodecs_ad_libdca;
 
-const ad_functions_t * const mpcodecs_ad_drivers[] =
+const ad_functions_t* const mpcodecs_ad_drivers[] =
 {
 #ifdef CONFIG_MPG123
-  &mpcodecs_ad_mpg123,
+  & mpcodecs_ad_mpg123,
 #endif
 #ifdef CONFIG_MP3LIB
-  &mpcodecs_ad_mp3lib,
+  & mpcodecs_ad_mp3lib,
 #endif
 #ifdef CONFIG_LIBA52
-  &mpcodecs_ad_liba52,
+  & mpcodecs_ad_liba52,
 #endif
-  &mpcodecs_ad_hwac3,
-  &mpcodecs_ad_hwmpa,
+	&mpcodecs_ad_hwac3,
+	&mpcodecs_ad_hwmpa,
 #ifdef CONFIG_FFMPEG
-  &mpcodecs_ad_ffmpeg,
+  & mpcodecs_ad_ffmpeg,
   &mpcodecs_ad_spdif,
 #endif
-  &mpcodecs_ad_pcm,
-  &mpcodecs_ad_dvdpcm,
-  &mpcodecs_ad_alaw,
-  &mpcodecs_ad_imaadpcm,
-  &mpcodecs_ad_msadpcm,
-  &mpcodecs_ad_dk3adpcm,
+	&mpcodecs_ad_pcm,
+	&mpcodecs_ad_dvdpcm,
+	&mpcodecs_ad_alaw,
+	&mpcodecs_ad_imaadpcm,
+	&mpcodecs_ad_msadpcm,
+	&mpcodecs_ad_dk3adpcm,
 #ifdef CONFIG_WIN32DLL
-  &mpcodecs_ad_dshow,
+  & mpcodecs_ad_dshow,
   &mpcodecs_ad_dmo,
   &mpcodecs_ad_acm,
   &mpcodecs_ad_twin,
 #endif
 #ifdef CONFIG_QTX_CODECS
-  &mpcodecs_ad_qtaudio,
+  & mpcodecs_ad_qtaudio,
 #endif
 #ifdef CONFIG_FAAD
-  &mpcodecs_ad_faad,
+  & mpcodecs_ad_faad,
 #endif
 #ifdef CONFIG_OGGVORBIS
-  &mpcodecs_ad_libvorbis,
+  & mpcodecs_ad_libvorbis,
 #endif
 #ifdef CONFIG_SPEEX
-  &mpcodecs_ad_speex,
+  & mpcodecs_ad_speex,
 #endif
 #ifdef CONFIG_LIBMAD
-  &mpcodecs_ad_libmad,
+  & mpcodecs_ad_libmad,
 #endif
 #ifdef CONFIG_REALCODECS
-  &mpcodecs_ad_realaud,
+  & mpcodecs_ad_realaud,
 #endif
 #ifdef CONFIG_LIBDV095
-  &mpcodecs_ad_libdv,
+  & mpcodecs_ad_libdv,
 #endif
 #ifdef CONFIG_MUSEPACK
-  &mpcodecs_ad_libmusepack,
+  & mpcodecs_ad_libmusepack,
 #endif
 #ifdef CONFIG_LIBDCA
-  &mpcodecs_ad_libdca,
+  & mpcodecs_ad_libdca,
 #endif
-  NULL
+	NULL
 };

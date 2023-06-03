@@ -21,14 +21,14 @@
 #ifndef MPLAYER_PATH_H
 #define MPLAYER_PATH_H
 
-extern char *codec_path;
+extern char* codec_path;
 
-char *get_path(const char *filename);
+char* get_path(const char* filename);
 void set_path_env(void);
-void set_codec_path(const char *path);
-const char *mp_basename(const char *path);
-char *mp_dirname(const char *path);
-char *mp_path_join(const char *base, const char *new_path);
-char *mp_dir_join(const char *dir, const char *append);
+void set_codec_path(const char* path);
+const char* mp_basename(const char* path);
+char* mp_dirname(const char* path);
+char* mp_path_join(const char* base, const char* new_path);
+char* mp_dir_join(const char* dir, const char* append);
 
 #endif /* MPLAYER_PATH_H */

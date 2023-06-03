@@ -26,14 +26,15 @@
 
 #include "rdft.h"
 
-struct DCTContext {
-    int nbits;
-    int inverse;
-    RDFTContext rdft;
-    const float *costab;
-    FFTSample *csc2;
-    void (*dct_calc)(struct DCTContext *s, FFTSample *data);
-    void (*dct32)(FFTSample *out, const FFTSample *in);
+struct DCTContext
+{
+	int nbits;
+	int inverse;
+	RDFTContext rdft;
+	const float* costab;
+	FFTSample* csc2;
+	void (*dct_calc)(struct DCTContext* s, FFTSample* data);
+	void (*dct32)(FFTSample* out, const FFTSample* in);
 };
 
 /**
@@ -44,9 +45,9 @@ struct DCTContext {
  *
  * @note the first element of the input of DST-I is ignored
  */
-int  ff_dct_init(DCTContext *s, int nbits, enum DCTTransformType type);
-void ff_dct_end (DCTContext *s);
+int ff_dct_init(DCTContext* s, int nbits, enum DCTTransformType type);
+void ff_dct_end(DCTContext* s);
 
-void ff_dct_init_mmx(DCTContext *s);
+void ff_dct_init_mmx(DCTContext* s);
 
 #endif /* AVCODEC_DCT_H */

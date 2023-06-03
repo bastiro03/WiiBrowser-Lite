@@ -21,17 +21,17 @@
 
 #include <stdio.h>
 
-char *decomment(char *in);
-char *fgetstr(char *str, int size, FILE *file);
-char *gstrchr(const char *str, int c);
-int gstrcmp(const char *a, const char *b);
-char *gstrdup(const char *str);
-int gstrncmp(const char *a, const char *b, size_t n);
-void setddup(char **old, const char *dir, const char *name);
-void setdup(char **old, const char *str);
-char *strlower(char *in);
-char *strswap(char *in, char from, char to);
-char *TranslateFilename(int how, char *fname, size_t maxlen);
-char *trim(char *in);
+char* decomment(char* in);
+char* fgetstr(char* str, int size, FILE* file);
+char* gstrchr(const char* str, int c);
+int gstrcmp(const char* a, const char* b);
+char* gstrdup(const char* str);
+int gstrncmp(const char* a, const char* b, size_t n);
+void setddup(char** old, const char* dir, const char* name);
+void setdup(char** old, const char* str);
+char* strlower(char* in);
+char* strswap(char* in, char from, char to);
+char* TranslateFilename(int how, char* fname, size_t maxlen);
+char* trim(char* in);
 
 #endif /* MPLAYER_GUI_STRING_H */

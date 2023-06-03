@@ -45,43 +45,46 @@
 #define ROW_SHIFT 11
 #define COL_SHIFT 20 // 6
 
-DECLARE_ASM_CONST(8, uint64_t, wm1010)= 0xFFFF0000FFFF0000ULL;
-DECLARE_ASM_CONST(8, uint64_t, d40000)= 0x0000000000040000ULL;
+DECLARE_ASM_CONST(8, uint64_t, wm1010) =
+0xFFFF0000FFFF0000ULL;
+DECLARE_ASM_CONST(8, uint64_t, d40000) =
+0x0000000000040000ULL;
 
-DECLARE_ALIGNED(8, static const int16_t, coeffs)[]= {
-        1<<(ROW_SHIFT-1), 0, 1<<(ROW_SHIFT-1), 0,
-//        1<<(COL_SHIFT-1), 0, 1<<(COL_SHIFT-1), 0,
-//        0, 1<<(COL_SHIFT-1-16), 0, 1<<(COL_SHIFT-1-16),
-        1<<(ROW_SHIFT-1), 1, 1<<(ROW_SHIFT-1), 0,
-        // the 1 = ((1<<(COL_SHIFT-1))/C4)<<ROW_SHIFT :)
-//        0, 0, 0, 0,
-//        0, 0, 0, 0,
+DECLARE_ALIGNED(8, static int16_t, coeffs)[] =
+ {
+		1 << (ROW_SHIFT - 1), 0, 1 << (ROW_SHIFT - 1), 0,
+		//        1<<(COL_SHIFT-1), 0, 1<<(COL_SHIFT-1), 0,
+		//        0, 1<<(COL_SHIFT-1-16), 0, 1<<(COL_SHIFT-1-16),
+				1 << (ROW_SHIFT - 1), 1, 1 << (ROW_SHIFT - 1), 0,
+				// the 1 = ((1<<(COL_SHIFT-1))/C4)<<ROW_SHIFT :)
+		//        0, 0, 0, 0,
+		//        0, 0, 0, 0,
 
- C4,  C4,  C4,  C4,
- C4, -C4,  C4, -C4,
+		 C4,  C4,  C4,  C4,
+		 C4, -C4,  C4, -C4,
 
- C2,  C6,  C2,  C6,
- C6, -C2,  C6, -C2,
+		 C2,  C6,  C2,  C6,
+		 C6, -C2,  C6, -C2,
 
- C1,  C3,  C1,  C3,
- C5,  C7,  C5,  C7,
+		 C1,  C3,  C1,  C3,
+		 C5,  C7,  C5,  C7,
 
- C3, -C7,  C3, -C7,
--C1, -C5, -C1, -C5,
+		 C3, -C7,  C3, -C7,
+		-C1, -C5, -C1, -C5,
 
- C5, -C1,  C5, -C1,
- C7,  C3,  C7,  C3,
+		 C5, -C1,  C5, -C1,
+		 C7,  C3,  C7,  C3,
 
- C7, -C5,  C7, -C5,
- C3, -C1,  C3, -C1
+		 C7, -C5,  C7, -C5,
+		 C3, -C1,  C3, -C1
 };
 
-static inline void idct(int16_t *block)
+static inline void idct(int16_t* block)
 {
-        DECLARE_ALIGNED(8, int64_t, align_tmp)[16];
-        int16_t * const temp= (int16_t*)align_tmp;
+	DECLARE_ALIGNED(8, int64_t, align_tmp)[16];
+	int16_t* const temp = (int16_t*)align_tmp;
 
-        __asm__ volatile(
+	volatile __asm__ (
 #if 0 //Alternative, simpler variant
 
 #define ROW_IDCT(src0, src4, src1, src5, dst, rounder, shift) \
@@ -226,7 +229,6 @@ static inline void idct(int16_t *block)
         "movd %%mm4, 64+" #dst "        \n\t"\
         "movd %%mm5, 80+" #dst "        \n\t"\
 
-
 #define DC_COND_ROW_IDCT(src0, src4, src1, src5, dst, rounder, shift) \
         "movq " #src0 ", %%mm0          \n\t" /* R4     R0      r4      r0 */\
         "movq " #src4 ", %%mm1          \n\t" /* R6     R2      r6      r2 */\
@@ -315,23 +317,21 @@ static inline void idct(int16_t *block)
         "movq %%mm0, 24+" #dst "        \n\t"\
         "2:                             \n\t"
 
+		//IDCT(      src0,   src4,   src1,   src5,    dst,    rounder, shift)
+		ROW_IDCT((% 0), 8(% 0), 16(% 0), 24(% 0), 0(% 1), paddd 8(% 2), 11)
+		/*ROW_IDCT(  32(%0), 40(%0), 48(%0), 56(%0), 32(%1), paddd (%2), 11)
+		ROW_IDCT(  64(%0), 72(%0), 80(%0), 88(%0), 64(%1), paddd (%2), 11)
+		ROW_IDCT(  96(%0),104(%0),112(%0),120(%0), 96(%1), paddd (%2), 11)*/
 
-//IDCT(      src0,   src4,   src1,   src5,    dst,    rounder, shift)
-ROW_IDCT(    (%0),  8(%0), 16(%0), 24(%0),  0(%1),paddd 8(%2), 11)
-/*ROW_IDCT(  32(%0), 40(%0), 48(%0), 56(%0), 32(%1), paddd (%2), 11)
-ROW_IDCT(  64(%0), 72(%0), 80(%0), 88(%0), 64(%1), paddd (%2), 11)
-ROW_IDCT(  96(%0),104(%0),112(%0),120(%0), 96(%1), paddd (%2), 11)*/
+		DC_COND_ROW_IDCT(32(% 0), 40(% 0), 48(% 0), 56(% 0), 32(% 1), paddd(% 2), 11)
+		DC_COND_ROW_IDCT(64(% 0), 72(% 0), 80(% 0), 88(% 0), 64(% 1), paddd(% 2), 11)
+		DC_COND_ROW_IDCT(96(% 0), 104(% 0), 112(% 0), 120(% 0), 96(% 1), paddd(% 2), 11)
 
-DC_COND_ROW_IDCT(  32(%0), 40(%0), 48(%0), 56(%0), 32(%1),paddd (%2), 11)
-DC_COND_ROW_IDCT(  64(%0), 72(%0), 80(%0), 88(%0), 64(%1),paddd (%2), 11)
-DC_COND_ROW_IDCT(  96(%0),104(%0),112(%0),120(%0), 96(%1),paddd (%2), 11)
-
-
-//IDCT(      src0,   src4,   src1,    src5,    dst, shift)
-COL_IDCT(    (%1), 64(%1), 32(%1),  96(%1),  0(%0), 20)
-COL_IDCT(   8(%1), 72(%1), 40(%1), 104(%1),  4(%0), 20)
-COL_IDCT(  16(%1), 80(%1), 48(%1), 112(%1),  8(%0), 20)
-COL_IDCT(  24(%1), 88(%1), 56(%1), 120(%1), 12(%0), 20)
+		//IDCT(      src0,   src4,   src1,    src5,    dst, shift)
+		COL_IDCT((% 1), 64(% 1), 32(% 1), 96(% 1), 0(% 0), 20)
+		COL_IDCT(8(% 1), 72(% 1), 40(% 1), 104(% 1), 4(% 0), 20)
+		COL_IDCT(16(% 1), 80(% 1), 48(% 1), 112(% 1), 8(% 0), 20)
+		COL_IDCT(24(% 1), 88(% 1), 56(% 1), 120(% 1), 12(% 0), 20)
 
 #else
 
@@ -497,8 +497,7 @@ COL_IDCT(  24(%1), 88(%1), 56(%1), 120(%1), 12(%0), 20)
         "movq %%mm2, 8+" #dst "         \n\t"\
         "psrad $" #shift ", %%mm4       \n\t"\
         "packssdw %%mm0, %%mm4          \n\t" /* A2-B2  a2-b2   A3-B3   a3-b3 */\
-        "movq %%mm4, 16+" #dst "        \n\t"\
-
+        "movq %%mm4, 16+" #dst "        \n\t"
 #define ROW_IDCT(src0, src4, src1, src5, dst, rounder, shift) \
         "movq " #src0 ", %%mm0          \n\t" /* R4     R0      r4      r0 */\
         "movq " #src4 ", %%mm1          \n\t" /* R6     R2      r6      r2 */\
@@ -565,13 +564,13 @@ COL_IDCT(  24(%1), 88(%1), 56(%1), 120(%1), 12(%0), 20)
         "movq %%mm2, 8+" #dst "         \n\t"\
         "psrad $" #shift ", %%mm4       \n\t"\
         "packssdw %%mm0, %%mm4          \n\t" /* A2-B2  a2-b2   A3-B3   a3-b3 */\
-        "movq %%mm4, 16+" #dst "        \n\t"\
+        "movq %%mm4, 16+" #dst "        \n\t"
+		//IDCT(         src0,   src4,   src1,   src5,    dst,   rounder, shift)
+		DC_COND_IDCT(0(% 0), 8(% 0), 16(% 0), 24(% 0), 0(% 1), paddd 8(% 2), 11)
 
-//IDCT(         src0,   src4,   src1,   src5,    dst,   rounder, shift)
-DC_COND_IDCT(  0(%0),  8(%0), 16(%0), 24(%0),  0(%1),paddd 8(%2), 11)
-Z_COND_IDCT(  32(%0), 40(%0), 48(%0), 56(%0), 32(%1),paddd (%2), 11, 4f)
-Z_COND_IDCT(  64(%0), 72(%0), 80(%0), 88(%0), 64(%1),paddd (%2), 11, 2f)
-Z_COND_IDCT(  96(%0),104(%0),112(%0),120(%0), 96(%1),paddd (%2), 11, 1f)
+		Z_COND_IDCT(32(% 0), 40(% 0), 48(% 0), 56(% 0), 32(% 1), paddd(% 2), 11, 4f)
+		Z_COND_IDCT(64(% 0), 72(% 0), 80(% 0), 88(% 0), 64(% 1), paddd(% 2), 11, 2f)
+		Z_COND_IDCT(96(% 0), 104(% 0), 112(% 0), 120(% 0), 96(% 1), paddd(% 2), 11, 1f)
 
 #undef IDCT
 #define IDCT(src0, src4, src1, src5, dst, shift) \
@@ -648,18 +647,17 @@ Z_COND_IDCT(  96(%0),104(%0),112(%0),120(%0), 96(%1),paddd (%2), 11, 1f)
         "movd %%mm4, 64+" #dst "        \n\t"\
         "movd %%mm5, 80+" #dst "        \n\t"
 
+		//IDCT(  src0,   src4,   src1,    src5,    dst, shift)
+		IDCT((% 1), 64(% 1), 32(% 1), 96(% 1), 0(% 0), 20)
+		IDCT(8(% 1), 72(% 1), 40(% 1), 104(% 1), 4(% 0), 20)
+		IDCT(16(% 1), 80(% 1), 48(% 1), 112(% 1), 8(% 0), 20)
+		IDCT(24(% 1), 88(% 1), 56(% 1), 120(% 1), 12(% 0), 20)
+		"jmp 9f                         \n\t"
 
-//IDCT(  src0,   src4,   src1,    src5,    dst, shift)
-IDCT(    (%1), 64(%1), 32(%1),  96(%1),  0(%0), 20)
-IDCT(   8(%1), 72(%1), 40(%1), 104(%1),  4(%0), 20)
-IDCT(  16(%1), 80(%1), 48(%1), 112(%1),  8(%0), 20)
-IDCT(  24(%1), 88(%1), 56(%1), 120(%1), 12(%0), 20)
-        "jmp 9f                         \n\t"
-
-        "# .p2align 4                   \n\t"\
-        "4:                             \n\t"
-Z_COND_IDCT(  64(%0), 72(%0), 80(%0), 88(%0), 64(%1),paddd (%2), 11, 6f)
-Z_COND_IDCT(  96(%0),104(%0),112(%0),120(%0), 96(%1),paddd (%2), 11, 5f)
+		"# .p2align 4                   \n\t"
+		"4:                             \n\t"
+		Z_COND_IDCT(64(% 0), 72(% 0), 80(% 0), 88(% 0), 64(% 1), paddd(% 2), 11, 6f)
+		Z_COND_IDCT(96(% 0), 104(% 0), 112(% 0), 120(% 0), 96(% 1), paddd(% 2), 11, 5f)
 
 #undef IDCT
 #define IDCT(src0, src4, src1, src5, dst, shift) \
@@ -724,16 +722,16 @@ Z_COND_IDCT(  96(%0),104(%0),112(%0),120(%0), 96(%1),paddd (%2), 11, 5f)
         "movd %%mm1, 64+" #dst "        \n\t"\
         "movd %%mm5, 80+" #dst "        \n\t"
 
-//IDCT(  src0,   src4,   src1,    src5,    dst, shift)
-IDCT(    (%1), 64(%1), 32(%1),  96(%1),  0(%0), 20)
-IDCT(   8(%1), 72(%1), 40(%1), 104(%1),  4(%0), 20)
-IDCT(  16(%1), 80(%1), 48(%1), 112(%1),  8(%0), 20)
-IDCT(  24(%1), 88(%1), 56(%1), 120(%1), 12(%0), 20)
-        "jmp 9f                         \n\t"
+		//IDCT(  src0,   src4,   src1,    src5,    dst, shift)
+		IDCT((% 1), 64(% 1), 32(% 1), 96(% 1), 0(% 0), 20)
+		IDCT(8(% 1), 72(% 1), 40(% 1), 104(% 1), 4(% 0), 20)
+		IDCT(16(% 1), 80(% 1), 48(% 1), 112(% 1), 8(% 0), 20)
+		IDCT(24(% 1), 88(% 1), 56(% 1), 120(% 1), 12(% 0), 20)
+		"jmp 9f                         \n\t"
 
-        "# .p2align 4                   \n\t"\
-        "6:                             \n\t"
-Z_COND_IDCT(  96(%0),104(%0),112(%0),120(%0), 96(%1),paddd (%2), 11, 7f)
+		"# .p2align 4                   \n\t"
+		"6:                             \n\t"
+		Z_COND_IDCT(96(% 0), 104(% 0), 112(% 0), 120(% 0), 96(% 1), paddd(% 2), 11, 7f)
 
 #undef IDCT
 #define IDCT(src0, src4, src1, src5, dst, shift) \
@@ -789,17 +787,16 @@ Z_COND_IDCT(  96(%0),104(%0),112(%0),120(%0), 96(%1),paddd (%2), 11, 7f)
         "movd %%mm1, 64+" #dst "        \n\t"\
         "movd %%mm5, 80+" #dst "        \n\t"
 
+		//IDCT(  src0,   src4,   src1,    src5,    dst, shift)
+		IDCT((% 1), 64(% 1), 32(% 1), 96(% 1), 0(% 0), 20)
+		IDCT(8(% 1), 72(% 1), 40(% 1), 104(% 1), 4(% 0), 20)
+		IDCT(16(% 1), 80(% 1), 48(% 1), 112(% 1), 8(% 0), 20)
+		IDCT(24(% 1), 88(% 1), 56(% 1), 120(% 1), 12(% 0), 20)
+		"jmp 9f                         \n\t"
 
-//IDCT(  src0,   src4,   src1,    src5,    dst, shift)
-IDCT(    (%1), 64(%1), 32(%1),  96(%1),  0(%0), 20)
-IDCT(   8(%1), 72(%1), 40(%1), 104(%1),  4(%0), 20)
-IDCT(  16(%1), 80(%1), 48(%1), 112(%1),  8(%0), 20)
-IDCT(  24(%1), 88(%1), 56(%1), 120(%1), 12(%0), 20)
-        "jmp 9f                         \n\t"
-
-        "# .p2align 4                   \n\t"\
-        "2:                             \n\t"
-Z_COND_IDCT(  96(%0),104(%0),112(%0),120(%0), 96(%1),paddd (%2), 11, 3f)
+		"# .p2align 4                   \n\t"
+		"2:                             \n\t"
+		Z_COND_IDCT(96(% 0), 104(% 0), 112(% 0), 120(% 0), 96(% 1), paddd(% 2), 11, 3f)
 
 #undef IDCT
 #define IDCT(src0, src4, src1, src5, dst, shift) \
@@ -867,15 +864,15 @@ Z_COND_IDCT(  96(%0),104(%0),112(%0),120(%0), 96(%1),paddd (%2), 11, 3f)
         "movd %%mm4, 64+" #dst "        \n\t"\
         "movd %%mm5, 80+" #dst "        \n\t"
 
-//IDCT(  src0,   src4,   src1,    src5,    dst, shift)
-IDCT(    (%1), 64(%1), 32(%1),  96(%1),  0(%0), 20)
-IDCT(   8(%1), 72(%1), 40(%1), 104(%1),  4(%0), 20)
-IDCT(  16(%1), 80(%1), 48(%1), 112(%1),  8(%0), 20)
-IDCT(  24(%1), 88(%1), 56(%1), 120(%1), 12(%0), 20)
-        "jmp 9f                         \n\t"
+		//IDCT(  src0,   src4,   src1,    src5,    dst, shift)
+		IDCT((% 1), 64(% 1), 32(% 1), 96(% 1), 0(% 0), 20)
+		IDCT(8(% 1), 72(% 1), 40(% 1), 104(% 1), 4(% 0), 20)
+		IDCT(16(% 1), 80(% 1), 48(% 1), 112(% 1), 8(% 0), 20)
+		IDCT(24(% 1), 88(% 1), 56(% 1), 120(% 1), 12(% 0), 20)
+		"jmp 9f                         \n\t"
 
-        "# .p2align 4                   \n\t"\
-        "3:                             \n\t"
+		"# .p2align 4                   \n\t"
+		"3:                             \n\t"
 #undef IDCT
 #define IDCT(src0, src4, src1, src5, dst, shift) \
         "movq " #src0 ", %%mm0          \n\t" /* R4     R0      r4      r0 */\
@@ -930,16 +927,15 @@ IDCT(  24(%1), 88(%1), 56(%1), 120(%1), 12(%0), 20)
         "movd %%mm4, 64+" #dst "        \n\t"\
         "movd %%mm5, 80+" #dst "        \n\t"
 
+		//IDCT(  src0,   src4,   src1,    src5,    dst, shift)
+		IDCT((% 1), 64(% 1), 32(% 1), 96(% 1), 0(% 0), 20)
+		IDCT(8(% 1), 72(% 1), 40(% 1), 104(% 1), 4(% 0), 20)
+		IDCT(16(% 1), 80(% 1), 48(% 1), 112(% 1), 8(% 0), 20)
+		IDCT(24(% 1), 88(% 1), 56(% 1), 120(% 1), 12(% 0), 20)
+		"jmp 9f                         \n\t"
 
-//IDCT(  src0,   src4,   src1,    src5,    dst, shift)
-IDCT(    (%1), 64(%1), 32(%1),  96(%1),  0(%0), 20)
-IDCT(   8(%1), 72(%1), 40(%1), 104(%1),  4(%0), 20)
-IDCT(  16(%1), 80(%1), 48(%1), 112(%1),  8(%0), 20)
-IDCT(  24(%1), 88(%1), 56(%1), 120(%1), 12(%0), 20)
-        "jmp 9f                         \n\t"
-
-        "# .p2align 4                   \n\t"\
-        "5:                             \n\t"
+		"# .p2align 4                   \n\t"
+		"5:                             \n\t"
 #undef IDCT
 #define IDCT(src0, src4, src1, src5, dst, shift) \
         "movq " #src0 ", %%mm0          \n\t" /* R4     R0      r4      r0 */\
@@ -994,17 +990,15 @@ IDCT(  24(%1), 88(%1), 56(%1), 120(%1), 12(%0), 20)
         "movq %%mm6, 64+" #dst "        \n\t"\
         "movq %%mm5, 80+" #dst "        \n\t"
 
+		//IDCT(  src0,   src4,   src1,    src5,    dst, shift)
+		IDCT(0(% 1), 64(% 1), 32(% 1), 96(% 1), 0(% 0), 20)
+		//IDCT(   8(%1), 72(%1), 40(%1), 104(%1),  4(%0), 20)
+		IDCT(16(% 1), 80(% 1), 48(% 1), 112(% 1), 8(% 0), 20)
+		//IDCT(  24(%1), 88(%1), 56(%1), 120(%1), 12(%0), 20)
+		"jmp 9f                         \n\t"
 
-//IDCT(  src0,   src4,   src1,    src5,    dst, shift)
-IDCT(    0(%1), 64(%1), 32(%1),  96(%1),  0(%0), 20)
-//IDCT(   8(%1), 72(%1), 40(%1), 104(%1),  4(%0), 20)
-IDCT(  16(%1), 80(%1), 48(%1), 112(%1),  8(%0), 20)
-//IDCT(  24(%1), 88(%1), 56(%1), 120(%1), 12(%0), 20)
-        "jmp 9f                         \n\t"
-
-
-        "# .p2align 4                   \n\t"\
-        "1:                             \n\t"
+		"# .p2align 4                   \n\t"
+		"1:                             \n\t"
 #undef IDCT
 #define IDCT(src0, src4, src1, src5, dst, shift) \
         "movq " #src0 ", %%mm0          \n\t" /* R4     R0      r4      r0 */\
@@ -1068,17 +1062,15 @@ IDCT(  16(%1), 80(%1), 48(%1), 112(%1),  8(%0), 20)
         "movd %%mm4, 64+" #dst "        \n\t"\
         "movd %%mm5, 80+" #dst "        \n\t"
 
+		//IDCT(  src0,   src4,   src1,    src5,    dst, shift)
+		IDCT((% 1), 64(% 1), 32(% 1), 96(% 1), 0(% 0), 20)
+		IDCT(8(% 1), 72(% 1), 40(% 1), 104(% 1), 4(% 0), 20)
+		IDCT(16(% 1), 80(% 1), 48(% 1), 112(% 1), 8(% 0), 20)
+		IDCT(24(% 1), 88(% 1), 56(% 1), 120(% 1), 12(% 0), 20)
+		"jmp 9f                         \n\t"
 
-//IDCT(  src0,   src4,   src1,    src5,    dst, shift)
-IDCT(    (%1), 64(%1), 32(%1),  96(%1),  0(%0), 20)
-IDCT(   8(%1), 72(%1), 40(%1), 104(%1),  4(%0), 20)
-IDCT(  16(%1), 80(%1), 48(%1), 112(%1),  8(%0), 20)
-IDCT(  24(%1), 88(%1), 56(%1), 120(%1), 12(%0), 20)
-        "jmp 9f                         \n\t"
-
-
-        "# .p2align 4                   \n\t"
-        "7:                             \n\t"
+		"# .p2align 4                   \n\t"
+		"7:                             \n\t"
 #undef IDCT
 #define IDCT(src0, src4, src1, src5, dst, shift) \
         "movq " #src0 ", %%mm0          \n\t" /* R4     R0      r4      r0 */\
@@ -1107,57 +1099,59 @@ IDCT(  24(%1), 88(%1), 56(%1), 120(%1), 12(%0), 20)
         "movq %%mm4, 64+" #dst "        \n\t"\
         "movq %%mm0, 80+" #dst "        \n\t"
 
-//IDCT(  src0,   src4,   src1,    src5,    dst, shift)
-IDCT(   0(%1), 64(%1), 32(%1),  96(%1),  0(%0), 20)
-//IDCT(   8(%1), 72(%1), 40(%1), 104(%1),  4(%0), 20)
-IDCT(  16(%1), 80(%1), 48(%1), 112(%1),  8(%0), 20)
-//IDCT(  24(%1), 88(%1), 56(%1), 120(%1), 12(%0), 20)
-
+		//IDCT(  src0,   src4,   src1,    src5,    dst, shift)
+		IDCT(0(% 1), 64(% 1), 32(% 1), 96(% 1), 0(% 0), 20)
+		//IDCT(   8(%1), 72(%1), 40(%1), 104(%1),  4(%0), 20)
+		IDCT(16(% 1), 80(% 1), 48(% 1), 112(% 1), 8(% 0), 20)
+		//IDCT(  24(%1), 88(%1), 56(%1), 120(%1), 12(%0), 20)
 
 #endif
 
-/*
-Input
- 00 40 04 44 20 60 24 64
- 10 30 14 34 50 70 54 74
- 01 41 03 43 21 61 23 63
- 11 31 13 33 51 71 53 73
- 02 42 06 46 22 62 26 66
- 12 32 16 36 52 72 56 76
- 05 45 07 47 25 65 27 67
- 15 35 17 37 55 75 57 77
+		/*
+		Input
+		 00 40 04 44 20 60 24 64
+		 10 30 14 34 50 70 54 74
+		 01 41 03 43 21 61 23 63
+		 11 31 13 33 51 71 53 73
+		 02 42 06 46 22 62 26 66
+		 12 32 16 36 52 72 56 76
+		 05 45 07 47 25 65 27 67
+		 15 35 17 37 55 75 57 77
+		
+		Temp
+		 00 04 10 14 20 24 30 34
+		 40 44 50 54 60 64 70 74
+		 01 03 11 13 21 23 31 33
+		 41 43 51 53 61 63 71 73
+		 02 06 12 16 22 26 32 36
+		 42 46 52 56 62 66 72 76
+		 05 07 15 17 25 27 35 37
+		 45 47 55 57 65 67 75 77
+		*/
 
-Temp
- 00 04 10 14 20 24 30 34
- 40 44 50 54 60 64 70 74
- 01 03 11 13 21 23 31 33
- 41 43 51 53 61 63 71 73
- 02 06 12 16 22 26 32 36
- 42 46 52 56 62 66 72 76
- 05 07 15 17 25 27 35 37
- 45 47 55 57 65 67 75 77
-*/
-
-"9: \n\t"
-                :: "r" (block), "r" (temp), "r" (coeffs)
-                : "%eax"
-        );
+		"9: \n\t"
+	::
+	"r"(block), "r"(temp), "r"(coeffs)
+	:
+	"%eax"
+	)
 }
 
-void ff_simple_idct_mmx(int16_t *block)
+void ff_simple_idct_mmx(int16_t* block)
 {
-    idct(block);
+	idct(block);
 }
 
 //FIXME merge add/put into the idct
 
-void ff_simple_idct_put_mmx(uint8_t *dest, int line_size, DCTELEM *block)
+void ff_simple_idct_put_mmx(uint8_t* dest, int line_size, DCTELEM* block)
 {
-    idct(block);
-    ff_put_pixels_clamped_mmx(block, dest, line_size);
+	idct(block);
+	ff_put_pixels_clamped_mmx(block, dest, line_size);
 }
-void ff_simple_idct_add_mmx(uint8_t *dest, int line_size, DCTELEM *block)
+
+void ff_simple_idct_add_mmx(uint8_t* dest, int line_size, DCTELEM* block)
 {
-    idct(block);
-    ff_add_pixels_clamped_mmx(block, dest, line_size);
+	idct(block);
+	ff_add_pixels_clamped_mmx(block, dest, line_size);
 }

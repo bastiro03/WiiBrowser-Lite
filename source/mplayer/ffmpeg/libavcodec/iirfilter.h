@@ -32,19 +32,21 @@
 struct FFIIRFilterCoeffs;
 struct FFIIRFilterState;
 
-enum IIRFilterType{
-    FF_FILTER_TYPE_BESSEL,
-    FF_FILTER_TYPE_BIQUAD,
-    FF_FILTER_TYPE_BUTTERWORTH,
-    FF_FILTER_TYPE_CHEBYSHEV,
-    FF_FILTER_TYPE_ELLIPTIC,
+enum IIRFilterType
+{
+	FF_FILTER_TYPE_BESSEL,
+	FF_FILTER_TYPE_BIQUAD,
+	FF_FILTER_TYPE_BUTTERWORTH,
+	FF_FILTER_TYPE_CHEBYSHEV,
+	FF_FILTER_TYPE_ELLIPTIC,
 };
 
-enum IIRFilterMode{
-    FF_FILTER_MODE_LOWPASS,
-    FF_FILTER_MODE_HIGHPASS,
-    FF_FILTER_MODE_BANDPASS,
-    FF_FILTER_MODE_BANDSTOP,
+enum IIRFilterMode
+{
+	FF_FILTER_MODE_LOWPASS,
+	FF_FILTER_MODE_HIGHPASS,
+	FF_FILTER_MODE_BANDPASS,
+	FF_FILTER_MODE_BANDSTOP,
 };
 
 /**
@@ -61,11 +63,11 @@ enum IIRFilterMode{
  *
  * @return pointer to filter coefficients structure or NULL if filter cannot be created
  */
-struct FFIIRFilterCoeffs* ff_iir_filter_init_coeffs(void *avc,
-                                                enum IIRFilterType filt_type,
-                                                enum IIRFilterMode filt_mode,
-                                                int order, float cutoff_ratio,
-                                                float stopband, float ripple);
+struct FFIIRFilterCoeffs* ff_iir_filter_init_coeffs(void* avc,
+                                                    enum IIRFilterType filt_type,
+                                                    enum IIRFilterMode filt_mode,
+                                                    int order, float cutoff_ratio,
+                                                    float stopband, float ripple);
 
 /**
  * Create new filter state.
@@ -81,14 +83,14 @@ struct FFIIRFilterState* ff_iir_filter_init_state(int order);
  *
  * @param coeffs pointer allocated with ff_iir_filter_init_coeffs()
  */
-void ff_iir_filter_free_coeffs(struct FFIIRFilterCoeffs *coeffs);
+void ff_iir_filter_free_coeffs(struct FFIIRFilterCoeffs* coeffs);
 
 /**
  * Free filter state.
  *
  * @param state pointer allocated with ff_iir_filter_init_state()
  */
-void ff_iir_filter_free_state(struct FFIIRFilterState *state);
+void ff_iir_filter_free_state(struct FFIIRFilterState* state);
 
 /**
  * Perform IIR filtering on signed 16-bit input samples.
@@ -101,8 +103,8 @@ void ff_iir_filter_free_state(struct FFIIRFilterState *state);
  * @param dst    filtered samples (destination may be the same as input)
  * @param dstep  destination stride
  */
-void ff_iir_filter(const struct FFIIRFilterCoeffs *coeffs, struct FFIIRFilterState *state,
-                   int size, const int16_t *src, int sstep, int16_t *dst, int dstep);
+void ff_iir_filter(const struct FFIIRFilterCoeffs* coeffs, struct FFIIRFilterState* state,
+                   int size, const int16_t* src, int sstep, int16_t* dst, int dstep);
 
 /**
  * Perform IIR filtering on floating-point input samples.
@@ -115,8 +117,8 @@ void ff_iir_filter(const struct FFIIRFilterCoeffs *coeffs, struct FFIIRFilterSta
  * @param dst    filtered samples (destination may be the same as input)
  * @param dstep  destination stride
  */
-void ff_iir_filter_flt(const struct FFIIRFilterCoeffs *coeffs,
-                       struct FFIIRFilterState *state, int size,
-                       const float *src, int sstep, float *dst, int dstep);
+void ff_iir_filter_flt(const struct FFIIRFilterCoeffs* coeffs,
+                       struct FFIIRFilterState* state, int size,
+                       const float* src, int sstep, float* dst, int dstep);
 
 #endif /* AVCODEC_IIRFILTER_H */

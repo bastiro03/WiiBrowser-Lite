@@ -9,48 +9,47 @@
 // note like "sync'ed with help_mp-en.h XXX" in the header of the translation.
 // Do NOT translate the above lines, just follow the instructions.
 
-
 // ========================= MPlayer help ===========================
 
-static const char help_text[]=
-"Usage:   mplayer [options] [url|path/]filename\n"
-"\n"
-"Basic options: (complete list in the man page)\n"
-" -vo <drv>        select video output driver ('-vo help' for a list)\n"
-" -ao <drv>        select audio output driver ('-ao help' for a list)\n"
+static const char help_text[] =
+	"Usage:   mplayer [options] [url|path/]filename\n"
+	"\n"
+	"Basic options: (complete list in the man page)\n"
+	" -vo <drv>        select video output driver ('-vo help' for a list)\n"
+	" -ao <drv>        select audio output driver ('-ao help' for a list)\n"
 #ifdef CONFIG_VCD
 " vcd://<trackno>  play (S)VCD (Super Video CD) track (raw device, no mount)\n"
 #endif
 #ifdef CONFIG_DVDREAD
 " dvd://<titleno>  play DVD title from device instead of plain file\n"
 #endif
-" -alang/-slang    select DVD audio/subtitle language (by 2-char country code)\n"
-" -ss <position>   seek to given (seconds or hh:mm:ss) position\n"
-" -nosound         do not play sound\n"
-" -fs              fullscreen playback (or -vm, -zoom, details in the man page)\n"
-" -x <x> -y <y>    set display resolution (for use with -vm or -zoom)\n"
-" -sub <file>      specify subtitle file to use (also see -subfps, -subdelay)\n"
-" -playlist <file> specify playlist file\n"
-" -vid x -aid y    select video (x) and audio (y) stream to play\n"
-" -fps x -srate y  change video (x fps) and audio (y Hz) rate\n"
-" -pp <quality>    enable postprocessing filter (details in the man page)\n"
-" -framedrop       enable frame dropping (for slow machines)\n"
-"\n"
-"Basic keys: (complete list in the man page, also check input.conf)\n"
-" <-  or  ->       seek backward/forward 10 seconds\n"
-" down or up       seek backward/forward  1 minute\n"
-" pgdown or pgup   seek backward/forward 10 minutes\n"
-" < or >           step backward/forward in playlist\n"
-" p or SPACE       pause movie (press any key to continue)\n"
-" q or ESC         stop playing and quit program\n"
-" + or -           adjust audio delay by +/- 0.1 second\n"
-" o                cycle OSD mode:  none / seekbar / seekbar + timer\n"
-" * or /           increase or decrease PCM volume\n"
-" x or z           adjust subtitle delay by +/- 0.1 second\n"
-" r or t           adjust subtitle position up/down, also see -vf expand\n"
-"\n"
-" * * * SEE THE MAN PAGE FOR DETAILS, FURTHER (ADVANCED) OPTIONS AND KEYS * * *\n"
-"\n";
+	" -alang/-slang    select DVD audio/subtitle language (by 2-char country code)\n"
+	" -ss <position>   seek to given (seconds or hh:mm:ss) position\n"
+	" -nosound         do not play sound\n"
+	" -fs              fullscreen playback (or -vm, -zoom, details in the man page)\n"
+	" -x <x> -y <y>    set display resolution (for use with -vm or -zoom)\n"
+	" -sub <file>      specify subtitle file to use (also see -subfps, -subdelay)\n"
+	" -playlist <file> specify playlist file\n"
+	" -vid x -aid y    select video (x) and audio (y) stream to play\n"
+	" -fps x -srate y  change video (x fps) and audio (y Hz) rate\n"
+	" -pp <quality>    enable postprocessing filter (details in the man page)\n"
+	" -framedrop       enable frame dropping (for slow machines)\n"
+	"\n"
+	"Basic keys: (complete list in the man page, also check input.conf)\n"
+	" <-  or  ->       seek backward/forward 10 seconds\n"
+	" down or up       seek backward/forward  1 minute\n"
+	" pgdown or pgup   seek backward/forward 10 minutes\n"
+	" < or >           step backward/forward in playlist\n"
+	" p or SPACE       pause movie (press any key to continue)\n"
+	" q or ESC         stop playing and quit program\n"
+	" + or -           adjust audio delay by +/- 0.1 second\n"
+	" o                cycle OSD mode:  none / seekbar / seekbar + timer\n"
+	" * or /           increase or decrease PCM volume\n"
+	" x or z           adjust subtitle delay by +/- 0.1 second\n"
+	" r or t           adjust subtitle position up/down, also see -vf expand\n"
+	"\n"
+	" * * * SEE THE MAN PAGE FOR DETAILS, FURTHER (ADVANCED) OPTIONS AND KEYS * * *\n"
+	"\n";
 
 // ========================= MPlayer messages ===========================
 
@@ -533,7 +532,6 @@ static const char help_text[]=
 // loader/ldt_keeper.c
 #define MSGTR_LOADER_DYLD_Warning "WARNING: Attempting to use DLL codecs but environment variable\n         DYLD_BIND_AT_LAUNCH not set. This will likely crash.\n"
 
-
 // ====================== GUI messages/buttons ========================
 
 // --- labels ---
@@ -881,7 +879,6 @@ static const char help_text[]=
 #define MSGTR_PREFERENCES_PriorityNormalBelow "below normal"
 #define MSGTR_PREFERENCES_ShowInVideoWin "Display in the video window (DirectX only)"
 
-
 // ======================= video output drivers ========================
 
 #define MSGTR_VOincompCodec "The selected video_out device is incompatible with this codec.\n"\
@@ -1202,7 +1199,6 @@ static const char help_text[]=
 #define MSGTR_VO_PGM_HasBeenReplaced "The pgm video output driver has been replaced by -vo pnm:pgmyuv.\n"
 #define MSGTR_VO_MD5_HasBeenReplaced "The md5 video output driver has been replaced by -vo md5sum.\n"
 
-
 // ======================= audio output drivers ========================
 
 // audio_out.c
@@ -1331,7 +1327,6 @@ static const char help_text[]=
 // ao_plugin.c
 #define MSGTR_AO_PLUGIN_InvalidPlugin "[AO PLUGIN] invalid plugin: %s\n"
 
-
 // ======================= audio filters ================================
 
 // af_scaletempo.c
@@ -1355,7 +1350,6 @@ static const char help_text[]=
 
 // format.c
 #define MSGTR_AF_FORMAT_UnknownFormat "unknown format "
-
 
 // ========================== INPUT =========================================
 
@@ -1399,7 +1393,6 @@ static const char help_text[]=
 // lirc.c
 #define MSGTR_LIRCopenfailed "Failed to open LIRC support. You will not be able to use your remote control.\n"
 #define MSGTR_LIRCcfgerr "Failed to read LIRC config file %s.\n"
-
 
 // ========================== LIBMPDEMUX ===================================
 
@@ -1538,7 +1531,6 @@ static const char help_text[]=
 #define MSGTR_MPDEMUX_XMMS_ClosingPlugin "Closing plugin: %s.\n"
 #define MSGTR_MPDEMUX_XMMS_WaitForStart "Waiting for the XMMS plugin to start playback of '%s'...\n"
 
-
 // ========================== LIBMENU ===================================
 
 // common
@@ -1595,7 +1587,6 @@ static const char help_text[]=
 // libmenu/vf_menu.c
 #define MSGTR_LIBMENU_UnknownMenuCommand "[MENU] Unknown command: '%s'.\n"
 #define MSGTR_LIBMENU_FailedToOpenMenu "[MENU] Failed to open menu: '%s'.\n"
-
 
 // ========================== LIBMPCODECS ===================================
 
@@ -1701,7 +1692,6 @@ static const char help_text[]=
 // libmpcodecs/vf_test.c, vf_yuy2.c, vf_yvu9.c
 #define MSGTR_MPCODECS_WarnNextFilterDoesntSupport "%s not supported by next filter/vo :(\n"
 
-
 // ================================== LIBASS ====================================
 
 // ass_bitmap.c
@@ -1767,7 +1757,6 @@ static const char help_text[]=
 #define MSGTR_LIBASS_ErrorOpeningMemoryFont "[ass] Error opening memory font: %s\n"
 #define MSGTR_LIBASS_NoCharmaps "[ass] font face with no charmaps\n"
 #define MSGTR_LIBASS_NoCharmapAutodetected "[ass] no charmap autodetected, trying the first one\n"
-
 
 // ================================== stream ====================================
 
@@ -2110,4 +2099,3 @@ static const char help_text[]=
 
 // subtitles
 #define MSGTR_SUBTITLES_SubRip_UnknownFontColor "SubRip: unknown font color in subtitle: %s\n"
-

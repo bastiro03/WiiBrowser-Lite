@@ -39,183 +39,203 @@
 /* cos((M_PI * x / (2 * n)) */
 #define COS(s, n, x) (s->costab[x])
 
-static void ff_dst_calc_I_c(DCTContext *ctx, FFTSample *data)
+static void ff_dst_calc_I_c(DCTContext* ctx, FFTSample* data)
 {
-    int n = 1 << ctx->nbits;
-    int i;
+	int n = 1 << ctx->nbits;
+	int i;
 
-    data[0] = 0;
-    for (i = 1; i < n / 2; i++) {
-        float tmp1   = data[i    ];
-        float tmp2   = data[n - i];
-        float s      = SIN(ctx, n, 2 * i);
+	data[0] = 0;
+	for (i = 1; i < n / 2; i++)
+	{
+		float tmp1 = data[i];
+		float tmp2 = data[n - i];
+		float s = SIN(ctx, n, 2 * i);
 
-        s           *= tmp1 + tmp2;
-        tmp1         = (tmp1 - tmp2) * 0.5f;
-        data[i]      = s + tmp1;
-        data[n - i]  = s - tmp1;
-    }
+		s *= tmp1 + tmp2;
+		tmp1 = (tmp1 - tmp2) * 0.5f;
+		data[i] = s + tmp1;
+		data[n - i] = s - tmp1;
+	}
 
-    data[n / 2] *= 2;
-    ctx->rdft.rdft_calc(&ctx->rdft, data);
+	data[n / 2] *= 2;
+	ctx->rdft.rdft_calc(&ctx->rdft, data);
 
-    data[0] *= 0.5f;
+	data[0] *= 0.5f;
 
-    for (i = 1; i < n - 2; i += 2) {
-        data[i + 1] +=  data[i - 1];
-        data[i]      = -data[i + 2];
-    }
+	for (i = 1; i < n - 2; i += 2)
+	{
+		data[i + 1] += data[i - 1];
+		data[i] = -data[i + 2];
+	}
 
-    data[n - 1] = 0;
+	data[n - 1] = 0;
 }
 
-static void ff_dct_calc_I_c(DCTContext *ctx, FFTSample *data)
+static void ff_dct_calc_I_c(DCTContext* ctx, FFTSample* data)
 {
-    int n = 1 << ctx->nbits;
-    int i;
-    float next = -0.5f * (data[0] - data[n]);
+	int n = 1 << ctx->nbits;
+	int i;
+	float next = -0.5f * (data[0] - data[n]);
 
-    for (i = 0; i < n / 2; i++) {
-        float tmp1 = data[i];
-        float tmp2 = data[n - i];
-        float s    = SIN(ctx, n, 2 * i);
-        float c    = COS(ctx, n, 2 * i);
+	for (i = 0; i < n / 2; i++)
+	{
+		float tmp1 = data[i];
+		float tmp2 = data[n - i];
+		float s = SIN(ctx, n, 2 * i);
+		float c = COS(ctx, n, 2 * i);
 
-        c *= tmp1 - tmp2;
-        s *= tmp1 - tmp2;
+		c *= tmp1 - tmp2;
+		s *= tmp1 - tmp2;
 
-        next += c;
+		next += c;
 
-        tmp1        = (tmp1 + tmp2) * 0.5f;
-        data[i]     = tmp1 - s;
-        data[n - i] = tmp1 + s;
-    }
+		tmp1 = (tmp1 + tmp2) * 0.5f;
+		data[i] = tmp1 - s;
+		data[n - i] = tmp1 + s;
+	}
 
-    ctx->rdft.rdft_calc(&ctx->rdft, data);
-    data[n] = data[1];
-    data[1] = next;
+	ctx->rdft.rdft_calc(&ctx->rdft, data);
+	data[n] = data[1];
+	data[1] = next;
 
-    for (i = 3; i <= n; i += 2)
-        data[i] = data[i - 2] - data[i];
+	for (i = 3; i <= n; i += 2)
+		data[i] = data[i - 2] - data[i];
 }
 
-static void ff_dct_calc_III_c(DCTContext *ctx, FFTSample *data)
+static void ff_dct_calc_III_c(DCTContext* ctx, FFTSample* data)
 {
-    int n = 1 << ctx->nbits;
-    int i;
+	int n = 1 << ctx->nbits;
+	int i;
 
-    float next  = data[n - 1];
-    float inv_n = 1.0f / n;
+	float next = data[n - 1];
+	float inv_n = 1.0f / n;
 
-    for (i = n - 2; i >= 2; i -= 2) {
-        float val1 = data[i];
-        float val2 = data[i - 1] - data[i + 1];
-        float c    = COS(ctx, n, i);
-        float s    = SIN(ctx, n, i);
+	for (i = n - 2; i >= 2; i -= 2)
+	{
+		float val1 = data[i];
+		float val2 = data[i - 1] - data[i + 1];
+		float c = COS(ctx, n, i);
+		float s = SIN(ctx, n, i);
 
-        data[i]     = c * val1 + s * val2;
-        data[i + 1] = s * val1 - c * val2;
-    }
+		data[i] = c * val1 + s * val2;
+		data[i + 1] = s * val1 - c * val2;
+	}
 
-    data[1] = 2 * next;
+	data[1] = 2 * next;
 
-    ctx->rdft.rdft_calc(&ctx->rdft, data);
+	ctx->rdft.rdft_calc(&ctx->rdft, data);
 
-    for (i = 0; i < n / 2; i++) {
-        float tmp1 = data[i]         * inv_n;
-        float tmp2 = data[n - i - 1] * inv_n;
-        float csc  = ctx->csc2[i] * (tmp1 - tmp2);
+	for (i = 0; i < n / 2; i++)
+	{
+		float tmp1 = data[i] * inv_n;
+		float tmp2 = data[n - i - 1] * inv_n;
+		float csc = ctx->csc2[i] * (tmp1 - tmp2);
 
-        tmp1            += tmp2;
-        data[i]          = tmp1 + csc;
-        data[n - i - 1]  = tmp1 - csc;
-    }
+		tmp1 += tmp2;
+		data[i] = tmp1 + csc;
+		data[n - i - 1] = tmp1 - csc;
+	}
 }
 
-static void ff_dct_calc_II_c(DCTContext *ctx, FFTSample *data)
+static void ff_dct_calc_II_c(DCTContext* ctx, FFTSample* data)
 {
-    int n = 1 << ctx->nbits;
-    int i;
-    float next;
+	int n = 1 << ctx->nbits;
+	int i;
+	float next;
 
-    for (i = 0; i < n / 2; i++) {
-        float tmp1 = data[i];
-        float tmp2 = data[n - i - 1];
-        float s    = SIN(ctx, n, 2 * i + 1);
+	for (i = 0; i < n / 2; i++)
+	{
+		float tmp1 = data[i];
+		float tmp2 = data[n - i - 1];
+		float s = SIN(ctx, n, 2 * i + 1);
 
-        s    *= tmp1 - tmp2;
-        tmp1  = (tmp1 + tmp2) * 0.5f;
+		s *= tmp1 - tmp2;
+		tmp1 = (tmp1 + tmp2) * 0.5f;
 
-        data[i]     = tmp1 + s;
-        data[n-i-1] = tmp1 - s;
-    }
+		data[i] = tmp1 + s;
+		data[n - i - 1] = tmp1 - s;
+	}
 
-    ctx->rdft.rdft_calc(&ctx->rdft, data);
+	ctx->rdft.rdft_calc(&ctx->rdft, data);
 
-    next     = data[1] * 0.5;
-    data[1] *= -1;
+	next = data[1] * 0.5;
+	data[1] *= -1;
 
-    for (i = n - 2; i >= 0; i -= 2) {
-        float inr = data[i    ];
-        float ini = data[i + 1];
-        float c   = COS(ctx, n, i);
-        float s   = SIN(ctx, n, i);
+	for (i = n - 2; i >= 0; i -= 2)
+	{
+		float inr = data[i];
+		float ini = data[i + 1];
+		float c = COS(ctx, n, i);
+		float s = SIN(ctx, n, i);
 
-        data[i]     = c * inr + s * ini;
-        data[i + 1] = next;
+		data[i] = c * inr + s * ini;
+		data[i + 1] = next;
 
-        next += s * inr - c * ini;
-    }
+		next += s * inr - c * ini;
+	}
 }
 
-static void dct32_func(DCTContext *ctx, FFTSample *data)
+static void dct32_func(DCTContext* ctx, FFTSample* data)
 {
-    ctx->dct32(data, data);
+	ctx->dct32(data, data);
 }
 
-av_cold int ff_dct_init(DCTContext *s, int nbits, enum DCTTransformType inverse)
+av_cold
+
+int ff_dct_init(DCTContext* s, int nbits, enum DCTTransformType inverse)
 {
-    int n = 1 << nbits;
-    int i;
+	int n = 1 << nbits;
+	int i;
 
-    memset(s, 0, sizeof(*s));
+	memset(s, 0, sizeof(*s));
 
-    s->nbits   = nbits;
-    s->inverse = inverse;
+	s->nbits = nbits;
+	s->inverse = inverse;
 
-    if (inverse == DCT_II && nbits == 5) {
-        s->dct_calc = dct32_func;
-    } else {
-        ff_init_ff_cos_tabs(nbits + 2);
+	if (inverse == DCT_II && nbits == 5)
+	{
+		s->dct_calc = dct32_func;
+	}
+	else
+	{
+		ff_init_ff_cos_tabs(nbits + 2);
 
-        s->costab = ff_cos_tabs[nbits + 2];
-        s->csc2   = av_malloc(n / 2 * sizeof(FFTSample));
+		s->costab = ff_cos_tabs[nbits + 2];
+		s->csc2 = av_malloc(n / 2 * sizeof(FFTSample));
 
-        if (ff_rdft_init(&s->rdft, nbits, inverse == DCT_III) < 0) {
-            av_free(s->csc2);
-            return -1;
-        }
+		if (ff_rdft_init(&s->rdft, nbits, inverse == DCT_III) < 0)
+		{
+			av_free(s->csc2);
+			return -1;
+		}
 
-        for (i = 0; i < n / 2; i++)
-            s->csc2[i] = 0.5 / sin((M_PI / (2 * n) * (2 * i + 1)));
+		for (i = 0; i < n / 2; i++)
+			s->csc2[i] = 0.5 / sin((M_PI / (2 * n) * (2 * i + 1)));
 
-        switch (inverse) {
-        case DCT_I  : s->dct_calc = ff_dct_calc_I_c;   break;
-        case DCT_II : s->dct_calc = ff_dct_calc_II_c;  break;
-        case DCT_III: s->dct_calc = ff_dct_calc_III_c; break;
-        case DST_I  : s->dct_calc = ff_dst_calc_I_c;   break;
-        }
-    }
+		switch (inverse)
+		{
+		case DCT_I: s->dct_calc = ff_dct_calc_I_c;
+			break;
+		case DCT_II: s->dct_calc = ff_dct_calc_II_c;
+			break;
+		case DCT_III: s->dct_calc = ff_dct_calc_III_c;
+			break;
+		case DST_I: s->dct_calc = ff_dst_calc_I_c;
+			break;
+		}
+	}
 
-    s->dct32 = ff_dct32_float;
-    if (HAVE_MMX)
-        ff_dct_init_mmx(s);
+	s->dct32 = ff_dct32_float;
+	if (HAVE_MMX)
+		ff_dct_init_mmx(s);
 
-    return 0;
+	return 0;
 }
 
-av_cold void ff_dct_end(DCTContext *s)
+av_cold
+
+void ff_dct_end(DCTContext* s)
 {
-    ff_rdft_end(&s->rdft);
-    av_free(s->csc2);
+	ff_rdft_end(&s->rdft);
+	av_free(s->csc2);
 }

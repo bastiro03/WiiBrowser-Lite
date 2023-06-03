@@ -22,26 +22,28 @@
 #include "libavutil/cpu.h"
 #include "libavresample/audio_convert.h"
 
-extern void ff_conv_fltp_to_flt_6ch_mmx (float *dst, float *const *src, int len);
-extern void ff_conv_fltp_to_flt_6ch_sse4(float *dst, float *const *src, int len);
-extern void ff_conv_fltp_to_flt_6ch_avx (float *dst, float *const *src, int len);
+extern void ff_conv_fltp_to_flt_6ch_mmx(float* dst, float* const* src, int len);
+extern void ff_conv_fltp_to_flt_6ch_sse4(float* dst, float* const* src, int len);
+extern void ff_conv_fltp_to_flt_6ch_avx(float* dst, float* const* src, int len);
 
-av_cold void ff_audio_convert_init_x86(AudioConvert *ac)
+av_cold
+
+void ff_audio_convert_init_x86(AudioConvert* ac)
 {
 #if HAVE_YASM
-    int mm_flags = av_get_cpu_flags();
+	int mm_flags = av_get_cpu_flags();
 
-    if (mm_flags & AV_CPU_FLAG_MMX && HAVE_MMX) {
-        ff_audio_convert_set_func(ac, AV_SAMPLE_FMT_FLT, AV_SAMPLE_FMT_FLTP,
-                                  6, 1, 4, "MMX", ff_conv_fltp_to_flt_6ch_mmx);
-    }
-    if (mm_flags & AV_CPU_FLAG_SSE4 && HAVE_SSE) {
-        ff_audio_convert_set_func(ac, AV_SAMPLE_FMT_FLT, AV_SAMPLE_FMT_FLTP,
-                                  6, 16, 4, "SSE4", ff_conv_fltp_to_flt_6ch_sse4);
-    }
-    if (mm_flags & AV_CPU_FLAG_AVX && HAVE_AVX) {
-        ff_audio_convert_set_func(ac, AV_SAMPLE_FMT_FLT, AV_SAMPLE_FMT_FLTP,
-                                  6, 16, 4, "AVX", ff_conv_fltp_to_flt_6ch_avx);
-    }
+	if (mm_flags & AV_CPU_FLAG_MMX && HAVE_MMX) {
+		ff_audio_convert_set_func(ac, AV_SAMPLE_FMT_FLT, AV_SAMPLE_FMT_FLTP,
+			6, 1, 4, "MMX", ff_conv_fltp_to_flt_6ch_mmx);
+	}
+	if (mm_flags & AV_CPU_FLAG_SSE4 && HAVE_SSE) {
+		ff_audio_convert_set_func(ac, AV_SAMPLE_FMT_FLT, AV_SAMPLE_FMT_FLTP,
+			6, 16, 4, "SSE4", ff_conv_fltp_to_flt_6ch_sse4);
+	}
+	if (mm_flags & AV_CPU_FLAG_AVX && HAVE_AVX) {
+		ff_audio_convert_set_func(ac, AV_SAMPLE_FMT_FLT, AV_SAMPLE_FMT_FLTP,
+			6, 16, 4, "AVX", ff_conv_fltp_to_flt_6ch_avx);
+	}
 #endif
 }

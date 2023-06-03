@@ -30,63 +30,66 @@
 #include "libavutil/pixfmt.h"
 #include "avcodec.h"
 
-typedef struct InternalBuffer {
-    uint8_t *base[AV_NUM_DATA_POINTERS];
-    uint8_t *data[AV_NUM_DATA_POINTERS];
-    int linesize[AV_NUM_DATA_POINTERS];
-    int width;
-    int height;
-    enum PixelFormat pix_fmt;
-    uint8_t **extended_data;
-    int audio_data_size;
-    int nb_channels;
+typedef struct InternalBuffer
+{
+	uint8_t* base[AV_NUM_DATA_POINTERS];
+	uint8_t* data[AV_NUM_DATA_POINTERS];
+	int linesize[AV_NUM_DATA_POINTERS];
+	int width;
+	int height;
+	enum PixelFormat pix_fmt;
+	uint8_t** extended_data;
+	int audio_data_size;
+	int nb_channels;
 } InternalBuffer;
 
-typedef struct AVCodecInternal {
-    /**
-     * internal buffer count
-     * used by default get/release/reget_buffer().
-     */
-    int buffer_count;
+typedef struct AVCodecInternal
+{
+	/**
+	 * internal buffer count
+	 * used by default get/release/reget_buffer().
+	 */
+	int buffer_count;
 
-    /**
-     * internal buffers
-     * used by default get/release/reget_buffer().
-     */
-    InternalBuffer *buffer;
+	/**
+	 * internal buffers
+	 * used by default get/release/reget_buffer().
+	 */
+	InternalBuffer* buffer;
 
-    /**
-     * Whether the parent AVCodecContext is a copy of the context which had
-     * init() called on it.
-     * This is used by multithreading - shared tables and picture pointers
-     * should be freed from the original context only.
-     */
-    int is_copy;
+	/**
+	 * Whether the parent AVCodecContext is a copy of the context which had
+	 * init() called on it.
+	 * This is used by multithreading - shared tables and picture pointers
+	 * should be freed from the original context only.
+	 */
+	int is_copy;
 
 #if FF_API_OLD_DECODE_AUDIO
-    /**
-     * Internal sample count used by avcodec_encode_audio() to fabricate pts.
-     * Can be removed along with avcodec_encode_audio().
-     */
-    int sample_count;
+	/**
+	 * Internal sample count used by avcodec_encode_audio() to fabricate pts.
+	 * Can be removed along with avcodec_encode_audio().
+	 */
+	int sample_count;
 #endif
 
-    /**
-     * An audio frame with less than required samples has been submitted and
-     * padded with silence. Reject all subsequent frames.
-     */
-    int last_audio_frame;
+	/**
+	 * An audio frame with less than required samples has been submitted and
+	 * padded with silence. Reject all subsequent frames.
+	 */
+	int last_audio_frame;
 
-    /**
-     * temporary buffer used for encoders to store their bitstream
-     */
-    uint8_t *byte_buffer;
-    unsigned int byte_buffer_size;
+	/**
+	 * temporary buffer used for encoders to store their bitstream
+	 */
+	uint8_t* byte_buffer;
+	unsigned int byte_buffer_size;
 } AVCodecInternal;
 
-struct AVCodecDefault {
-    const uint8_t *key;
-    const uint8_t *value;
+struct AVCodecDefault
+{
+	const uint8_t* key;
+	const uint8_t* value;
 };
 
 /**
@@ -102,7 +105,7 @@ int ff_is_hwaccel_pix_fmt(enum PixelFormat pix_fmt);
  * @param pix_fmt the pixel format to match
  * @return the hardware accelerated codec, or NULL if none was found.
  */
-AVHWAccel *ff_find_hwaccel(enum CodecID codec_id, enum PixelFormat pix_fmt);
+AVHWAccel* ff_find_hwaccel(enum CodecID codec_id, enum PixelFormat pix_fmt);
 
 /**
  * Return the index into tab at which {a,b} match elements {[0],[1]} of tab.
@@ -115,12 +118,12 @@ unsigned int avpriv_toupper4(unsigned int x);
 /**
  * does needed setup of pkt_pts/pos and such for (re)get_buffer();
  */
-void ff_init_buffer_info(AVCodecContext *s, AVFrame *pic);
+void ff_init_buffer_info(AVCodecContext* s, AVFrame* pic);
 
 /**
  * Remove and free all side data from packet.
  */
-void ff_packet_free_side_data(AVPacket *pkt);
+void ff_packet_free_side_data(AVPacket* pkt);
 
 int avpriv_lock_avformat(void);
 int avpriv_unlock_avformat(void);
@@ -149,22 +152,27 @@ int avpriv_unlock_avformat(void);
  * @param size    the minimum required packet size
  * @return        0 on success, negative error code on failure
  */
-int ff_alloc_packet2(AVCodecContext *avctx, AVPacket *avpkt, int size);
+int ff_alloc_packet2(AVCodecContext* avctx, AVPacket* avpkt, int size);
 
-int ff_alloc_packet(AVPacket *avpkt, int size);
+int ff_alloc_packet(AVPacket* avpkt, int size);
 
 /**
  * Rescale from sample rate to AVCodecContext.time_base.
  */
-static av_always_inline int64_t ff_samples_to_time_base(AVCodecContext *avctx,
+static av_always_inline int64_t ff_samples_to_time_base(AVCodecContext* avctx,
                                                         int64_t samples)
 {
-    if(samples == AV_NOPTS_VALUE)
-        return AV_NOPTS_VALUE;
-    return av_rescale_q(samples, (AVRational){ 1, avctx->sample_rate },
-                        avctx->time_base);
+	if (samples == AV_NOPTS_VALUE)
+		return AV_NOPTS_VALUE;
+	return av_rescale_q(samples, (AVRational)
+	{
+		1, avctx->sample_rate
+	}
+	,
+	avctx->time_base
+	)
 }
 
-int ff_thread_can_start_frame(AVCodecContext *avctx);
+int ff_thread_can_start_frame(AVCodecContext* avctx);
 
 #endif /* AVCODEC_INTERNAL_H */

@@ -26,7 +26,7 @@
 
 #include "http.h"
 
-void cookies_set(HTTP_header_t * http_hdr, const char *hostname,
-                 const char *url);
+void cookies_set(HTTP_header_t* http_hdr, const char* hostname,
+                 const char* url);
 
 #endif /* MPLAYER_COOKIES_H */

@@ -3,11 +3,12 @@
 
 #include <inttypes.h>
 
-typedef struct {
-  uint32_t edi, esi, ebp, esp, ebx, edx, ecx, eax;
-} reg386_t;
+using reg386_t = struct
+{
+	uint32_t edi, esi, ebp, esp, ebx, edx, ecx, eax;
+};
 
-typedef int (*wrapper_func_t)(void *stack_base, int stack_size, reg386_t *reg,  uint32_t *flags);
+using wrapper_func_t = int(*)(void* stack_base, int stack_size, reg386_t* reg, uint32_t* flags);
 
 extern wrapper_func_t report_entry, report_ret;
 

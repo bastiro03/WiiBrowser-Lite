@@ -6,67 +6,64 @@ litehtml::element* litehtml::elements_iterator::next(bool ret_parent)
 {
 	next_idx();
 
-	while(m_idx < (int) m_el->children().size())
+	while (m_idx < static_cast<int>(m_el->children().size()))
 	{
 		element* el = m_el->children()[m_idx];
-		if(	el->children().size() && m_go_inside && m_go_inside->select(el) )
+		if (el->children().size() && m_go_inside && m_go_inside->select(el))
 		{
 			stack_item si;
-			si.idx		= m_idx;
-			si.el		= m_el;
+			si.idx = m_idx;
+			si.el = m_el;
 			m_stack.push_back(si);
-			m_el		= el;
-			m_idx		= -1;
-			if(ret_parent)
+			m_el = el;
+			m_idx = -1;
+			if (ret_parent)
 			{
 				return el;
 			}
 			next_idx();
-		} else
+		}
+		else
 		{
-			if(!m_select || m_select && m_select->select(m_el->children()[m_idx]))
+			if (!m_select || m_select && m_select->select(m_el->children()[m_idx]))
 			{
 				return m_el->children()[m_idx];
-			} else
-			{
-				next_idx();
 			}
+			next_idx();
 		}
 	}
 
-	return 0;
+	return nullptr;
 }
 
 void litehtml::elements_iterator::next_idx()
 {
 	m_idx++;
-	while(m_idx >= (int) m_el->children().size() && m_stack.size())
+	while (m_idx >= static_cast<int>(m_el->children().size()) && m_stack.size())
 	{
 		stack_item si = m_stack.back();
 		m_stack.pop_back();
-		m_idx	= si.idx;
-		m_el	= si.el;
+		m_idx = si.idx;
+		m_el = si.el;
 		m_idx++;
-		continue;
 	}
 }
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-
-bool litehtml::go_inside_inline::select( element* el )
+bool litehtml::go_inside_inline::select(element* el)
 {
-	if(el->get_display() == display_inline || el->get_display() == display_inline_text)
+	if (el->get_display() == display_inline || el->get_display() == display_inline_text)
 	{
 		return true;
 	}
 	return false;
 }
 
-bool litehtml::go_inside_table::select( element* el )
+bool litehtml::go_inside_table::select(element* el)
 {
-	if(	el->get_display() == display_table_row_group ||
+	if (el->get_display() == display_table_row_group ||
 		el->get_display() == display_table_header_group ||
 		el->get_display() == display_table_footer_group)
 	{
@@ -75,18 +72,18 @@ bool litehtml::go_inside_table::select( element* el )
 	return false;
 }
 
-bool litehtml::table_rows_selector::select( element* el )
+bool litehtml::table_rows_selector::select(element* el)
 {
-	if(	el->get_display() == display_table_row)
+	if (el->get_display() == display_table_row)
 	{
 		return true;
 	}
 	return false;
 }
 
-bool litehtml::table_cells_selector::select( element* el )
+bool litehtml::table_cells_selector::select(element* el)
 {
-	if(	el->get_display() == display_table_cell)
+	if (el->get_display() == display_table_cell)
 	{
 		return true;
 	}

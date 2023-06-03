@@ -28,30 +28,32 @@
 /**
  * structure to store parser state of one AVStream
  */
-typedef struct AVParserStreamState {
-    // saved members of AVStream
-    AVCodecParserContext   *parser;
-    int64_t                 last_IP_pts;
-    int64_t                 cur_dts;
-    int64_t                 reference_dts;
-    int                     probe_packets;
+typedef struct AVParserStreamState
+{
+	// saved members of AVStream
+	AVCodecParserContext* parser;
+	int64_t last_IP_pts;
+	int64_t cur_dts;
+	int64_t reference_dts;
+	int probe_packets;
 } AVParserStreamState;
 
 /**
  * structure to store parser state of AVFormat
  */
-typedef struct AVParserState {
-    int64_t         fpos;                   ///< file position at the time of call
+typedef struct AVParserState
+{
+	int64_t fpos; ///< file position at the time of call
 
-    // saved members of AVFormatContext
-    AVPacketList   *packet_buffer;          ///< packet buffer of original state
-    AVPacketList   *parse_queue;            ///< parse queue of original state
-    AVPacketList   *raw_packet_buffer;      ///< raw packet buffer of original state
-    int raw_packet_buffer_remaining_size;   ///< remaining space in raw_packet_buffer
+	// saved members of AVFormatContext
+	AVPacketList* packet_buffer; ///< packet buffer of original state
+	AVPacketList* parse_queue; ///< parse queue of original state
+	AVPacketList* raw_packet_buffer; ///< raw packet buffer of original state
+	int raw_packet_buffer_remaining_size; ///< remaining space in raw_packet_buffer
 
-    // saved info for streams
-    int                  nb_streams;        ///< number of streams with stored state
-    AVParserStreamState *stream_states;     ///< states of individual streams (array)
+	// saved info for streams
+	int nb_streams; ///< number of streams with stored state
+	AVParserStreamState* stream_states; ///< states of individual streams (array)
 } AVParserState;
 
 /**
@@ -76,7 +78,7 @@ typedef struct AVParserState {
  * @return -1 if no such sync point could be found, otherwise stream position
  *                     (stream is repositioned to this position)
  */
-int64_t ff_gen_syncpoint_search(AVFormatContext *s,
+int64_t ff_gen_syncpoint_search(AVFormatContext* s,
                                 int stream_index,
                                 int64_t pos,
                                 int64_t min_ts,
@@ -98,7 +100,7 @@ int64_t ff_gen_syncpoint_search(AVFormatContext *s,
  * @param s context from which to save state
  * @return parser state object or NULL if memory could not be allocated
  */
-AVParserState *ff_store_parser_state(AVFormatContext *s);
+AVParserState* ff_store_parser_state(AVFormatContext* s);
 
 /**
  * Restore previously saved parser state and file position.
@@ -110,7 +112,7 @@ AVParserState *ff_store_parser_state(AVFormatContext *s);
  * @param s     context to which to restore state (same as used for storing state)
  * @param state state to restore
  */
-void ff_restore_parser_state(AVFormatContext *s, AVParserState *state);
+void ff_restore_parser_state(AVFormatContext* s, AVParserState* state);
 
 /**
  * Free previously saved parser state.
@@ -118,6 +120,6 @@ void ff_restore_parser_state(AVFormatContext *s, AVParserState *state);
  * @param s     context to which the state belongs (same as used for storing state)
  * @param state state to free
  */
-void ff_free_parser_state(AVFormatContext *s, AVParserState *state);
+void ff_free_parser_state(AVFormatContext* s, AVParserState* state);
 
 #endif /* AVFORMAT_SEEK_H */

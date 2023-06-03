@@ -28,7 +28,6 @@ extern float force_monitor_aspect;
 extern float monitor_pixel_aspect;
 extern float vo_panscanrange;
 
-
 void panscan_init(void);
 void panscan_calc(void);
 void panscan_calc_windowed(void);
@@ -43,7 +42,7 @@ void aspect_save_screenres(int scrw, int scrh);
 #define A_ZOOM 1
 #define A_NOZOOM 0
 
-void aspect(int *srcw, int *srch, int zoom);
-void aspect_fit(int *srcw, int *srch, int fitw, int fith);
+void aspect(int* srcw, int* srch, int zoom);
+void aspect_fit(int* srcw, int* srch, int fitw, int fith);
 
 #endif /* MPLAYER_ASPECT_H */

@@ -26,37 +26,40 @@
 
 #include <stdint.h>
 
-enum mp_csp_standard {
-  MP_CSP_DEFAULT,
-  MP_CSP_BT_601,
-  MP_CSP_BT_709,
-  MP_CSP_SMPTE_240M,
-  MP_CSP_EBU,
-  MP_CSP_XYZ,
-  MP_CSP_COUNT
+enum mp_csp_standard
+{
+	MP_CSP_DEFAULT,
+	MP_CSP_BT_601,
+	MP_CSP_BT_709,
+	MP_CSP_SMPTE_240M,
+	MP_CSP_EBU,
+	MP_CSP_XYZ,
+	MP_CSP_COUNT
 };
 
-enum mp_csp_levelconv {
-  MP_CSP_LEVELCONV_TV_TO_PC,
-  MP_CSP_LEVELCONV_PC_TO_TV,
-  MP_CSP_LEVELCONV_NONE,
-  MP_CSP_LEVELCONV_COUNT
+enum mp_csp_levelconv
+{
+	MP_CSP_LEVELCONV_TV_TO_PC,
+	MP_CSP_LEVELCONV_PC_TO_TV,
+	MP_CSP_LEVELCONV_NONE,
+	MP_CSP_LEVELCONV_COUNT
 };
 
-struct mp_csp_params {
-  enum mp_csp_standard format;
-  enum mp_csp_levelconv levelconv;
-  float brightness;
-  float contrast;
-  float hue;
-  float saturation;
-  float rgamma;
-  float ggamma;
-  float bgamma;
-  int input_shift;
+struct mp_csp_params
+{
+	enum mp_csp_standard format;
+	enum mp_csp_levelconv levelconv;
+	float brightness;
+	float contrast;
+	float hue;
+	float saturation;
+	float rgamma;
+	float ggamma;
+	float bgamma;
+	int input_shift;
 };
 
-void mp_gen_gamma_map(unsigned char *map, int size, float gamma);
+void mp_gen_gamma_map(unsigned char* map, int size, float gamma);
 #define ROW_R 0
 #define ROW_G 1
 #define ROW_B 2
@@ -64,7 +67,7 @@ void mp_gen_gamma_map(unsigned char *map, int size, float gamma);
 #define COL_U 1
 #define COL_V 2
 #define COL_C 3
-void mp_get_yuv2rgb_coeffs(struct mp_csp_params *params, float yuv2rgb[3][4]);
-void mp_gen_yuv2rgb_map(struct mp_csp_params *params, uint8_t *map, int size);
+void mp_get_yuv2rgb_coeffs(struct mp_csp_params* params, float yuv2rgb[3][4]);
+void mp_gen_yuv2rgb_map(struct mp_csp_params* params, uint8_t* map, int size);
 
 #endif /* MPLAYER_CSPUTILS_H */

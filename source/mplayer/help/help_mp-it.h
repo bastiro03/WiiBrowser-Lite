@@ -4,48 +4,47 @@
 
 // Updated to help_mp-en.h r32397
 
-
 // ========================= MPlayer help ===========================
 
-static const char help_text[]=
-"Uso:   mplayer [opzioni] [url|percorso/]nome_file\n"
-"\n"
-"Opzioni di base: (vedi la pagina man per la lista completa)\n"
-" -vo <drv[:dev]>  sceglie driver di uscita video ('-vo help' lista)\n"
-" -ao <drv[:dev]>  sceglie driver di uscita audio ('-ao help' lista)\n"
+static const char help_text[] =
+	"Uso:   mplayer [opzioni] [url|percorso/]nome_file\n"
+	"\n"
+	"Opzioni di base: (vedi la pagina man per la lista completa)\n"
+	" -vo <drv[:dev]>  sceglie driver di uscita video ('-vo help' lista)\n"
+	" -ao <drv[:dev]>  sceglie driver di uscita audio ('-ao help' lista)\n"
 #ifdef CONFIG_VCD
 " vcd://<trackno>  legge (S)VCD (Super Video CD) (dispositivo raw, non montato)\n"
 #endif
 #ifdef CONFIG_DVDREAD
 " dvd://<titleno>  legge titolo/traccia DVD dal dispositivo anziché da file\n"
 #endif
-" -alang/-slang    sceglie lingua audio/sottotitoli DVD (cod naz. 2 caratteri)\n"
-" -ss <posizione>  cerca una determinata posizione (in secondi o in hh:mm:ss) \n"
-" -nosound         non riproduce l'audio\n"
-" -fs              opzioni schermo intero (o -vm, -zoom, vedi pagina man)\n"
-" -x <x> -y <y>    imposta la risoluzione dello schermo (usare con -vm o -zoom)\n"
-" -sub <file>      file sottotitoli da usare (vedi anche -subfps, -subdelay)\n"
-" -playlist <file> specifica il file della playlist\n"
-" -vid x -aid y    seleziona il flusso video (x) ed audio (y) da riprodurre\n"
-" -fps x -srate y  cambia il rate del video (x fps) e dell'audio (y Hz)\n"
-" -pp <quality>    abilita filtro postelaborazione (vedi pagina man x dettagli)\n"
-" -framedrop       abilita lo scarto dei fotogrammi (per macchine lente)\n"
-"\n"
-"Tasti principali: (vedi pagina man per lista, controlla anche input.conf)\n"
-" <-  o  ->        va indietro/avanti di 10 secondi\n"
-" su o giù         va avanti/indietro di  1 minuto\n"
-" pagsu o paggiù   va avanti/indietro di 10 minuti\n"
-" < o >            va indietro/avanti nella playlist\n"
-" p o SPAZIO       pausa (premere un qualunque tasto per continuare)\n"
-" q o ESC          ferma la riproduzione ed esce dal programma\n"
-" + o -            regola il ritardo audio di +/- 0.1 secondi\n"
-" o                modalità OSD: niente / barra ricerca / barra ricerca + tempo\n"
-" * o /            incrementa o decrementa il volume PCM\n"
-" x o z            regola il ritardo dei sottotitoli di +/- 0.1 secondi\n"
-" r o t            posizione alto/basso dei sottotitoli, vedi anche -vf expand\n"
-"\n"
-" * * * VEDI PAGINA MAN PER DETTAGLI, ULTERIORI OPZIONI AVANZATE E TASTI! * * *\n"
-"\n";
+	" -alang/-slang    sceglie lingua audio/sottotitoli DVD (cod naz. 2 caratteri)\n"
+	" -ss <posizione>  cerca una determinata posizione (in secondi o in hh:mm:ss) \n"
+	" -nosound         non riproduce l'audio\n"
+	" -fs              opzioni schermo intero (o -vm, -zoom, vedi pagina man)\n"
+	" -x <x> -y <y>    imposta la risoluzione dello schermo (usare con -vm o -zoom)\n"
+	" -sub <file>      file sottotitoli da usare (vedi anche -subfps, -subdelay)\n"
+	" -playlist <file> specifica il file della playlist\n"
+	" -vid x -aid y    seleziona il flusso video (x) ed audio (y) da riprodurre\n"
+	" -fps x -srate y  cambia il rate del video (x fps) e dell'audio (y Hz)\n"
+	" -pp <quality>    abilita filtro postelaborazione (vedi pagina man x dettagli)\n"
+	" -framedrop       abilita lo scarto dei fotogrammi (per macchine lente)\n"
+	"\n"
+	"Tasti principali: (vedi pagina man per lista, controlla anche input.conf)\n"
+	" <-  o  ->        va indietro/avanti di 10 secondi\n"
+	" su o giù         va avanti/indietro di  1 minuto\n"
+	" pagsu o paggiù   va avanti/indietro di 10 minuti\n"
+	" < o >            va indietro/avanti nella playlist\n"
+	" p o SPAZIO       pausa (premere un qualunque tasto per continuare)\n"
+	" q o ESC          ferma la riproduzione ed esce dal programma\n"
+	" + o -            regola il ritardo audio di +/- 0.1 secondi\n"
+	" o                modalità OSD: niente / barra ricerca / barra ricerca + tempo\n"
+	" * o /            incrementa o decrementa il volume PCM\n"
+	" x o z            regola il ritardo dei sottotitoli di +/- 0.1 secondi\n"
+	" r o t            posizione alto/basso dei sottotitoli, vedi anche -vf expand\n"
+	"\n"
+	" * * * VEDI PAGINA MAN PER DETTAGLI, ULTERIORI OPZIONI AVANZATE E TASTI! * * *\n"
+	"\n";
 
 // ========================= MPlayer messages ===========================
 
@@ -519,7 +518,6 @@ static const char help_text[]=
 // loader/ldt_keeper.c
 #define MSGTR_LOADER_DYLD_Warning "ATTENZIONE: Tentativo di utilizzare codec DLL, senza la variabile d'ambiente\n           DYLD_BIND_AT_LAUNCH impostata. Ciò porterà probabilmente a un crash.\n"
 
-
 // ====================== GUI messages/buttons ========================
 
 // --- labels ---
@@ -806,7 +804,6 @@ static const char help_text[]=
 #define MSGTR_VO_ValueOutOfRange "Valore fuori gamma"
 #define MSGTR_VO_NoValueSpecified "Nessun valore specificato."
 #define MSGTR_VO_UnknownSuboptions "Sottoopzione/i sconosciuta/e"
-
 
 // aspect.c
 #define MSGTR_LIBVO_ASPECT_NoSuitableNewResFound "[ASPECT] Attenzione: Non ho trovato alcuna nuova risoluzione accettabile!\n"
@@ -1108,14 +1105,12 @@ static const char help_text[]=
 #define MSGTR_VO_PGM_HasBeenReplaced "Il driver di uscita video pgm è stato sostituito con -vo pnm:pgmyuv.\n"
 #define MSGTR_VO_MD5_HasBeenReplaced "Il driver di uscita video md5 è stato sostituito con -vo md5sum.\n"
 
-
 // ======================= audio output drivers ========================
 
 // audio_out.c
 #define MSGTR_AO_ALSA9_1x_Removed "audio_out: i moduli alsa9/alsa1x sono stati rimossi, ora usa -ao alsa.\n"
 #define MSGTR_AO_NoSuchDriver "driver audio '%.*s' non trovato\n"
 #define MSGTR_AO_FailedInit "Inizializzazione del driver audio '%s' non riuscita\n"
-
 
 // ao_oss.c
 #define MSGTR_AO_OSS_CantOpenMixer "[AO OSS] audio_setup: Non posso aprire il dispositivo mixer %s: %s\n"
@@ -1239,7 +1234,6 @@ static const char help_text[]=
 // ao_plugin.c
 #define MSGTR_AO_PLUGIN_InvalidPlugin "[AO PLUGIN] plugin non valido: %s\n"
 
-
 // ======================= audio filters ================================
 
 // af_scaletempo.c
@@ -1263,7 +1257,6 @@ static const char help_text[]=
 
 // format.c
 #define MSGTR_AF_FORMAT_UnknownFormat "formato sconosciuto "
-
 
 // ========================== INPUT =========================================
 
@@ -1307,7 +1300,6 @@ static const char help_text[]=
 // lirc.c
 #define MSGTR_LIRCopenfailed "Apertura del supporto per LIRC fallita. Non potrai usare il tuo telecomando.\n"
 #define MSGTR_LIRCcfgerr "Fallimento nella lettura del file di configurazione di LIRC %s.\n"
-
 
 // ========================== LIBMPDEMUX ===================================
 
@@ -1378,7 +1370,7 @@ static const char help_text[]=
 #define MSGTR_CacheFill "\rRiempio cache: %5.2f%% (%"PRId64" byte)   "
 #define MSGTR_NoBindFound "Nessun controllo legato al tasto '%s'.\n"
 #define MSGTR_FailedToOpen "Apertura di '%s' fallita.\n"
-                                                               //
+//
 #define MSGTR_VideoID "[%s] Trovato flusso video, -vid %d\n"
 #define MSGTR_AudioID "[%s] Trovato flusso audio, -aid %d\n"
 #define MSGTR_SubtitleID "[%s] Trovato flusso sottotitoli, -sid %d\n"
@@ -1444,7 +1436,6 @@ static const char help_text[]=
 #define MSGTR_MPDEMUX_XMMS_ClosingPlugin "Chiudo plugin: %s.\n"
 #define MSGTR_MPDEMUX_XMMS_WaitForStart "Attendo che il plugin XMMS inizi la riproduzione di '%s'...\n"
 
-
 // ========================== LIBMENU ===================================
 
 // common
@@ -1501,7 +1492,6 @@ static const char help_text[]=
 // libmenu/vf_menu.c
 #define MSGTR_LIBMENU_UnknownMenuCommand "[MENU] Comando sconosciuto: '%s'.\n"
 #define MSGTR_LIBMENU_FailedToOpenMenu "[MENU] Impossibile aprire il menu: '%s'.\n"
-
 
 // ========================== LIBMPCODECS ===================================
 
@@ -1607,7 +1597,6 @@ static const char help_text[]=
 // libmpcodecs/vf_test.c, vf_yuy2.c, vf_yvu9.c
 #define MSGTR_MPCODECS_WarnNextFilterDoesntSupport "%s non supportato dal filtro/vo successivo :(\n"
 
-
 // ================================== LIBASS ====================================
 
 // ass_bitmap.c
@@ -1673,7 +1662,6 @@ static const char help_text[]=
 #define MSGTR_LIBASS_ErrorOpeningMemoryFont "[ass] Errore aprendo il font in memoria: %s\n"
 #define MSGTR_LIBASS_NoCharmaps "[ass] font face senza alcuna mappa caratteri\n"
 #define MSGTR_LIBASS_NoCharmapAutodetected "[ass] nessuna mappa caratteri rilevata automaticamente, provo la prima\n"
-
 
 // ================================== stream ====================================
 
@@ -2004,4 +1992,3 @@ static const char help_text[]=
 
 // subtitles
 #define MSGTR_SUBTITLES_SubRip_UnknownFontColor "SubRip: colore sconosciuto del font nel sottotitolo: %s\n"
-

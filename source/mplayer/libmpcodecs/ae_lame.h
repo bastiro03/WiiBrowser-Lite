@@ -24,6 +24,6 @@
 
 extern const m_option_t lameopts_conf[];
 
-int mpae_init_lame(audio_encoder_t *encoder);
+int mpae_init_lame(audio_encoder_t* encoder);
 
 #endif /* MPLAYER_AE_LAME_H */

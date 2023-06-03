@@ -25,30 +25,33 @@
 #include "av_opts.h"
 #include "libavutil/opt.h"
 
-int parse_avopts(void *v, char *str){
-    char *start;
+int parse_avopts(void* v, char* str)
+{
+	char* start;
 
-    if (!v)
-        return -1;
+	if (!v)
+		return -1;
 
-    start= str= strdup(str);
+	start = str = strdup(str);
 
-    while(str && *str){
-        char *next_opt, *arg;
+	while (str && *str)
+	{
+		char *next_opt, *arg;
 
-        next_opt= strchr(str, ',');
-        if(next_opt) *next_opt++= 0;
+		next_opt = strchr(str, ',');
+		if (next_opt) *next_opt++ = 0;
 
-        arg     = strchr(str, '=');
-        if(arg)      *arg++= 0;
+		arg = strchr(str, '=');
+		if (arg) *arg++ = 0;
 
-        if(av_set_string3(v, str, arg, 0, NULL) < 0){
-            free(start);
-            return -1;
-        }
-        str= next_opt;
-    }
+		if (av_set_string3(v, str, arg, 0, NULL) < 0)
+		{
+			free(start);
+			return -1;
+		}
+		str = next_opt;
+	}
 
-    free(start);
-    return 0;
+	free(start);
+	return 0;
 }

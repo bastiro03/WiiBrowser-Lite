@@ -1,5 +1,5 @@
 /****************************************************************************
-*   gx_supp.h - Generic GX Scaler 
+*   gx_supp.h - Generic GX Scaler
 *   softdev 2007
 *   dhewg 2008
 *   sepp256 2008 - Coded YUV->RGB conversion in TEV.
@@ -31,7 +31,7 @@
 extern "C" {
 #endif
 
-extern GXRModeObj *vmode;
+extern GXRModeObj* vmode;
 
 void GX_InitVideo();
 void GX_SetScreenPos(int xshift, int yshift, float xzoom, float yzoom);
@@ -39,9 +39,9 @@ void DrawMPlayer();
 void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect);
 void GX_RenderTexture();
 void GX_AllocTextureMemory();
-void GX_FillTextureYUV(u8 *buffer[3], int stride[3]);
+void GX_FillTextureYUV(u8* buffer[3], int stride[3]);
 void GX_ConfigTextureYUV(u16 width, u16 height, u16 chroma_width, u16 chroma_height);
-void vo_draw_alpha_gekko(int x0, int y0, int w, int h, unsigned char *src, unsigned char *srca, int stride);
+void vo_draw_alpha_gekko(int x0, int y0, int w, int h, unsigned char* src, unsigned char* srca, int stride);
 
 #ifdef __cplusplus
 }

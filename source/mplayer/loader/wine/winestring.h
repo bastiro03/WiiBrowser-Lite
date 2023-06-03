@@ -3,10 +3,10 @@
 
 #include "windef.h"
 
-LPWSTR      WINAPI lstrcpyAtoW(LPWSTR,LPCSTR);
-LPSTR       WINAPI lstrcpyWtoA(LPSTR,LPCWSTR);
-LPWSTR      WINAPI lstrcpynAtoW(LPWSTR,LPCSTR,INT);
-LPSTR       WINAPI lstrcpynWtoA(LPSTR,LPCWSTR,INT);
+LPWSTR WINAPI lstrcpyAtoW(LPWSTR, LPCSTR);
+LPSTR WINAPI lstrcpyWtoA(LPSTR, LPCWSTR);
+LPWSTR WINAPI lstrcpynAtoW(LPWSTR, LPCSTR, INT);
+LPSTR WINAPI lstrcpynWtoA(LPSTR, LPCWSTR, INT);
 
 #define lstrncmpiA strncasecmp
 

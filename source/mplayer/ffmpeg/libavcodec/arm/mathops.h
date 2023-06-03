@@ -32,9 +32,9 @@
 #define MULH MULH
 static inline av_const int MULH(int a, int b)
 {
-    int r;
-    __asm__ ("smmul %0, %1, %2" : "=r"(r) : "r"(a), "r"(b));
-    return r;
+	int r;
+	__asm__("smmul %0, %1, %2" : "=r"(r) : "r"(a), "r"(b));
+	return r;
 }
 #endif
 
@@ -50,9 +50,9 @@ static inline av_const int MULH(int a, int b)
 #   define MUL16 MUL16
 static inline av_const int MUL16(int ra, int rb)
 {
-    int rt;
-    __asm__ ("smulbb %0, %1, %2" : "=r"(rt) : "r"(ra), "r"(rb));
-    return rt;
+	int rt;
+	__asm__("smulbb %0, %1, %2" : "=r"(rt) : "r"(ra), "r"(rb));
+	return rt;
 }
 
 #endif
@@ -60,23 +60,23 @@ static inline av_const int MUL16(int ra, int rb)
 #define mid_pred mid_pred
 static inline av_const int mid_pred(int a, int b, int c)
 {
-    int m;
-    __asm__ (
-        "mov   %0, %2  \n\t"
-        "cmp   %1, %2  \n\t"
-        "itt   gt      \n\t"
-        "movgt %0, %1  \n\t"
-        "movgt %1, %2  \n\t"
-        "cmp   %1, %3  \n\t"
-        "it    le      \n\t"
-        "movle %1, %3  \n\t"
-        "cmp   %0, %1  \n\t"
-        "it    gt      \n\t"
-        "movgt %0, %1  \n\t"
-        : "=&r"(m), "+r"(a)
-        : "r"(b), "r"(c)
-        : "cc");
-    return m;
+	int m;
+	__asm__(
+		"mov   %0, %2  \n\t"
+		"cmp   %1, %2  \n\t"
+		"itt   gt      \n\t"
+		"movgt %0, %1  \n\t"
+		"movgt %1, %2  \n\t"
+		"cmp   %1, %3  \n\t"
+		"it    le      \n\t"
+		"movle %1, %3  \n\t"
+		"cmp   %0, %1  \n\t"
+		"it    gt      \n\t"
+		"movgt %0, %1  \n\t"
+		: "=&r"(m), "+r"(a)
+		: "r"(b), "r"(c)
+		: "cc");
+	return m;
 }
 
 #endif /* HAVE_INLINE_ASM */

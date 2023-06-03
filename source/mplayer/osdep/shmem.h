@@ -22,6 +22,6 @@
 #include <stdint.h>
 
 void* shmem_alloc(int64_t size);
-void shmem_free(void* p,int64_t size);
+void shmem_free(void* p, int64_t size);
 
 #endif /* MPLAYER_SHMEM_H */

@@ -21,7 +21,7 @@
 
 #include "demuxer.h"
 
-int demux_ogg_open(demuxer_t *demuxer);
-demuxer_t *init_avi_with_ogg(demuxer_t *demuxer);
+int demux_ogg_open(demuxer_t* demuxer);
+demuxer_t* init_avi_with_ogg(demuxer_t* demuxer);
 
 #endif /* MPLAYER_DEMUX_OGG_H */

@@ -34,16 +34,16 @@
 
 static inline int enable_os_io(void)
 {
-    if (i386_iopl(1) < 0) {
-	perror("i386_iopl");
-	return errno;
-    }
-    return 0;
+	if (i386_iopl(1) < 0) {
+		perror("i386_iopl");
+		return errno;
+	}
+	return 0;
 }
 
 static inline int disable_os_io(void)
 {
- /* Nothing to do */
-    return 0;
+	/* Nothing to do */
+	return 0;
 }
 #endif

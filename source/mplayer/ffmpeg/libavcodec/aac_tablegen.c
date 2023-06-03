@@ -27,11 +27,11 @@
 
 int main(void)
 {
-    ff_aac_tableinit();
+	ff_aac_tableinit();
 
-    write_fileheader();
+	write_fileheader();
 
-    WRITE_ARRAY("const", float, ff_aac_pow2sf_tab);
+	WRITE_ARRAY("const", float, ff_aac_pow2sf_tab);
 
-    return 0;
+	return 0;
 }

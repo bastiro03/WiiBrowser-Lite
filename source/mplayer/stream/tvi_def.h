@@ -24,71 +24,75 @@
 #include "libmpcodecs/img_format.h"
 #include "tv.h"
 
-static int init(priv_t *priv);
-static int uninit(priv_t *priv);
-static int control(priv_t *priv, int cmd, void *arg);
-static int start(priv_t *priv);
-static double grab_video_frame(priv_t *priv, char *buffer, int len);
-static int get_video_framesize(priv_t *priv);
-static double grab_audio_frame(priv_t *priv, char *buffer, int len);
-static int get_audio_framesize(priv_t *priv);
+static int init(priv_t* priv);
+static int uninit(priv_t* priv);
+static int control(priv_t* priv, int cmd, void* arg);
+static int start(priv_t* priv);
+static double grab_video_frame(priv_t* priv, char* buffer, int len);
+static int get_video_framesize(priv_t* priv);
+static double grab_audio_frame(priv_t* priv, char* buffer, int len);
+static int get_audio_framesize(priv_t* priv);
 
 static const tvi_functions_t functions =
 {
-    init,
-    uninit,
-    control,
-    start,
-    grab_video_frame,
-    get_video_framesize,
-    grab_audio_frame,
-    get_audio_framesize
+	init,
+	uninit,
+	control,
+	start,
+	grab_video_frame,
+	get_video_framesize,
+	grab_audio_frame,
+	get_audio_framesize
 };
 
 /**
  Fills video frame in given buffer with blue color for yv12,i420,uyvy,yuy2.
  Other formats will be filled with 0xC0
 */
-static inline void fill_blank_frame(char* buffer,int len,int fmt){
-    int i;
-    // RGB(0,0,255) <-> YVU(41,110,240)
+static inline void fill_blank_frame(char* buffer, int len, int fmt)
+{
+	int i;
+	// RGB(0,0,255) <-> YVU(41,110,240)
 
-    switch(fmt){
-    case IMGFMT_YV12:
-        memset(buffer, 41,4*len/6);       //Y
-        memset(buffer+4*len/6, 110,len/6);//V
-        memset(buffer+5*len/6, 240,len/6);//U
-        break;
-    case IMGFMT_I420:
-        memset(buffer, 41,4*len/6);       //Y
-        memset(buffer+4*len/6, 240,len/6);//U
-        memset(buffer+5*len/6, 110,len/6);//V
-        break;
-    case IMGFMT_UYVY:
-        for(i=0;i<len;i+=4){
-            buffer[i]=0xFF;
-            buffer[i+1]=0;
-            buffer[i+2]=0;
-            buffer[i+3]=0;
-	}
-        break;
-    case IMGFMT_YUY2:
-        for(i=0;i<len;i+=4){
-            buffer[i]=0;
-            buffer[i+1]=0xFF;
-            buffer[i+2]=0;
-            buffer[i+3]=0;
-	}
-        break;
-    case IMGFMT_MJPEG:
-        /*
+	switch (fmt)
+	{
+	case IMGFMT_YV12:
+		memset(buffer, 41, 4 * len / 6); //Y
+		memset(buffer + 4 * len / 6, 110, len / 6); //V
+		memset(buffer + 5 * len / 6, 240, len / 6); //U
+		break;
+	case IMGFMT_I420:
+		memset(buffer, 41, 4 * len / 6); //Y
+		memset(buffer + 4 * len / 6, 240, len / 6); //U
+		memset(buffer + 5 * len / 6, 110, len / 6); //V
+		break;
+	case IMGFMT_UYVY:
+		for (i = 0; i < len; i += 4)
+		{
+			buffer[i] = 0xFF;
+			buffer[i + 1] = 0;
+			buffer[i + 2] = 0;
+			buffer[i + 3] = 0;
+		}
+		break;
+	case IMGFMT_YUY2:
+		for (i = 0; i < len; i += 4)
+		{
+			buffer[i] = 0;
+			buffer[i + 1] = 0xFF;
+			buffer[i + 2] = 0;
+			buffer[i + 3] = 0;
+		}
+		break;
+	case IMGFMT_MJPEG:
+		/*
 	This is compressed format. I don't know yet how to fill such frame with blue color.
 	Keeping frame unchanged.
 	*/
-        break;
-    default:
-        memset(buffer,0xC0,len);
-    }
+		break;
+	default:
+		memset(buffer, 0xC0, len);
+	}
 }
 
 #endif /* MPLAYER_TVI_DEF_H */

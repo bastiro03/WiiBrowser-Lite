@@ -102,11 +102,15 @@ GuiFileBrowser::GuiFileBrowser(int w, int h)
 	scrollbarBoxBtn->SetHoldable(true);
 	scrollbarBoxBtn->SetTrigger(trigHeldA);
 
-	for(int i=0; i<FILE_PAGESIZE; ++i)
+	for (int i = 0; i < FILE_PAGESIZE; ++i)
 	{
-		fileListText[i] = new GuiText("", 20, (GXColor){0, 0, 0, 0xff});
+		fileListText[i] = new GuiText("", 20, (GXColor)
+		{
+			0, 0, 0, 0xff
+		}
+		)
 		fileListText[i]->SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
-		fileListText[i]->SetPosition(5,0);
+		fileListText[i]->SetPosition(5, 0);
 		fileListText[i]->SetMaxWidth(512);
 
 		fileListBg[i] = new GuiImage(bgFileSelectionEntry);
@@ -116,7 +120,7 @@ GuiFileBrowser::GuiFileBrowser(int w, int h)
 		fileList[i]->SetParent(this);
 		fileList[i]->SetLabel(fileListText[i]);
 		fileList[i]->SetImageOver(fileListBg[i]);
-		fileList[i]->SetPosition(2,30*i+3);
+		fileList[i]->SetPosition(2, 30 * i + 3);
 		fileList[i]->SetTrigger(trigA);
 		fileList[i]->SetTrigger(trig2);
 		fileList[i]->SetSoundClick(btnSoundClick);
@@ -158,7 +162,7 @@ GuiFileBrowser::~GuiFileBrowser()
 	delete trigA;
 	delete trig2;
 
-	for(int i=0; i<FILE_PAGESIZE; i++)
+	for (int i = 0; i < FILE_PAGESIZE; i++)
 	{
 		delete fileListText[i];
 		delete fileList[i];
@@ -171,10 +175,10 @@ void GuiFileBrowser::SetFocus(int f)
 {
 	focus = f;
 
-	for(int i=0; i<FILE_PAGESIZE; i++)
+	for (int i = 0; i < FILE_PAGESIZE; i++)
 		fileList[i]->ResetState();
 
-	if(f == 1)
+	if (f == 1)
 		fileList[selectedItem]->SetState(STATE_SELECTED);
 }
 
@@ -184,7 +188,7 @@ void GuiFileBrowser::ResetState()
 	stateChan = -1;
 	selectedItem = 0;
 
-	for(int i=0; i<FILE_PAGESIZE; i++)
+	for (int i = 0; i < FILE_PAGESIZE; i++)
 	{
 		fileList[i]->ResetState();
 	}
@@ -200,12 +204,12 @@ void GuiFileBrowser::TriggerUpdate()
  */
 void GuiFileBrowser::Draw()
 {
-	if(!this->IsVisible())
+	if (!this->IsVisible())
 		return;
 
 	bgFileSelectionImg->Draw();
 
-	for(u32 i=0; i<FILE_PAGESIZE; ++i)
+	for (u32 i = 0; i < FILE_PAGESIZE; ++i)
 	{
 		fileList[i]->Draw();
 	}
@@ -222,9 +226,9 @@ void GuiFileBrowser::DrawTooltip()
 {
 }
 
-void GuiFileBrowser::Update(GuiTrigger * t)
+void GuiFileBrowser::Update(GuiTrigger* t)
 {
-	if(state == STATE_DISABLED || !t)
+	if (state == STATE_DISABLED || !t)
 		return;
 
 	int position = 0;
@@ -235,130 +239,130 @@ void GuiFileBrowser::Update(GuiTrigger * t)
 	scrollbarBoxBtn->Update(t);
 
 	// move the file listing to respond to wiimote cursor movement
-	if(scrollbarBoxBtn->GetState() == STATE_HELD &&
+	if (scrollbarBoxBtn->GetState() == STATE_HELD &&
 		scrollbarBoxBtn->GetStateChan() == t->chan &&
 		t->wpad->ir.valid &&
 		browser.numEntries > FILE_PAGESIZE
-		)
+	)
 	{
-		scrollbarBoxBtn->SetPosition(0,0);
+		scrollbarBoxBtn->SetPosition(0, 0);
 		positionWiimote = t->wpad->ir.y - 60 - scrollbarBoxBtn->GetTop();
 
-		if(positionWiimote < scrollbarBoxBtn->GetMinY())
+		if (positionWiimote < scrollbarBoxBtn->GetMinY())
 			positionWiimote = scrollbarBoxBtn->GetMinY();
-		else if(positionWiimote > scrollbarBoxBtn->GetMaxY())
+		else if (positionWiimote > scrollbarBoxBtn->GetMaxY())
 			positionWiimote = scrollbarBoxBtn->GetMaxY();
 
-		browser.pageIndex = (positionWiimote * browser.numEntries)/130.0 - selectedItem;
+		browser.pageIndex = (positionWiimote * browser.numEntries) / 130.0 - selectedItem;
 
-		if(browser.pageIndex <= 0)
+		if (browser.pageIndex <= 0)
 		{
 			browser.pageIndex = 0;
 		}
-		else if(browser.pageIndex+FILE_PAGESIZE >= browser.numEntries)
+		else if (browser.pageIndex + FILE_PAGESIZE >= browser.numEntries)
 		{
-			browser.pageIndex = browser.numEntries-FILE_PAGESIZE;
+			browser.pageIndex = browser.numEntries - FILE_PAGESIZE;
 		}
 		listChanged = true;
 		focus = false;
 	}
 
-	if(arrowDownBtn->GetState() == STATE_HELD && arrowDownBtn->GetStateChan() == t->chan)
+	if (arrowDownBtn->GetState() == STATE_HELD && arrowDownBtn->GetStateChan() == t->chan)
 	{
 		t->wpad->btns_d |= WPAD_BUTTON_DOWN;
-		if(!this->IsFocused())
-			((GuiWindow *)this->GetParent())->ChangeFocus(this);
+		if (!this->IsFocused())
+			static_cast<GuiWindow*>(this->GetParent())->ChangeFocus(this);
 	}
-	else if(arrowUpBtn->GetState() == STATE_HELD && arrowUpBtn->GetStateChan() == t->chan)
+	else if (arrowUpBtn->GetState() == STATE_HELD && arrowUpBtn->GetStateChan() == t->chan)
 	{
 		t->wpad->btns_d |= WPAD_BUTTON_UP;
-		if(!this->IsFocused())
-			((GuiWindow *)this->GetParent())->ChangeFocus(this);
+		if (!this->IsFocused())
+			static_cast<GuiWindow*>(this->GetParent())->ChangeFocus(this);
 	}
 
 	// pad/joystick navigation
-	if(!focus)
+	if (!focus)
 	{
 		goto endNavigation; // skip navigation
 		listChanged = false;
 	}
 
-	if(t->Right())
+	if (t->Right())
 	{
-		if(browser.pageIndex < browser.numEntries && browser.numEntries > FILE_PAGESIZE)
+		if (browser.pageIndex < browser.numEntries && browser.numEntries > FILE_PAGESIZE)
 		{
 			browser.pageIndex += FILE_PAGESIZE;
-			if(browser.pageIndex+FILE_PAGESIZE >= browser.numEntries)
-				browser.pageIndex = browser.numEntries-FILE_PAGESIZE;
+			if (browser.pageIndex + FILE_PAGESIZE >= browser.numEntries)
+				browser.pageIndex = browser.numEntries - FILE_PAGESIZE;
 			listChanged = true;
 		}
 	}
-	else if(t->Left())
+	else if (t->Left())
 	{
-		if(browser.pageIndex > 0)
+		if (browser.pageIndex > 0)
 		{
 			browser.pageIndex -= FILE_PAGESIZE;
-			if(browser.pageIndex < 0)
+			if (browser.pageIndex < 0)
 				browser.pageIndex = 0;
 			listChanged = true;
 		}
 	}
-	else if(t->Down())
+	else if (t->Down())
 	{
-		if(browser.pageIndex + selectedItem + 1 < browser.numEntries)
+		if (browser.pageIndex + selectedItem + 1 < browser.numEntries)
 		{
-			if(selectedItem == FILE_PAGESIZE-1)
+			if (selectedItem == FILE_PAGESIZE - 1)
 			{
 				// move list down by 1
 				++browser.pageIndex;
 				listChanged = true;
 			}
-			else if(fileList[selectedItem+1]->IsVisible())
+			else if (fileList[selectedItem + 1]->IsVisible())
 			{
 				fileList[selectedItem]->ResetState();
 				fileList[++selectedItem]->SetState(STATE_SELECTED, t->chan);
 			}
 		}
 	}
-	else if(t->Up())
+	else if (t->Up())
 	{
-		if(selectedItem == 0 &&	browser.pageIndex + selectedItem > 0)
+		if (selectedItem == 0 && browser.pageIndex + selectedItem > 0)
 		{
 			// move list up by 1
 			--browser.pageIndex;
 			listChanged = true;
 		}
-		else if(selectedItem > 0)
+		else if (selectedItem > 0)
 		{
 			fileList[selectedItem]->ResetState();
 			fileList[--selectedItem]->SetState(STATE_SELECTED, t->chan);
 		}
 	}
 
-	endNavigation:
+endNavigation:
 
-	for(int i=0; i<FILE_PAGESIZE; ++i)
+	for (int i = 0; i < FILE_PAGESIZE; ++i)
 	{
-		if(listChanged || numEntries != browser.numEntries)
+		if (listChanged || numEntries != browser.numEntries)
 		{
-			if(browser.pageIndex+i < browser.numEntries)
+			if (browser.pageIndex + i < browser.numEntries)
 			{
-				if(fileList[i]->GetState() == STATE_DISABLED)
+				if (fileList[i]->GetState() == STATE_DISABLED)
 					fileList[i]->SetState(STATE_DEFAULT);
 
 				fileList[i]->SetVisible(true);
 
-				fileListText[i]->SetText(browserList[browser.pageIndex+i].displayname);
+				fileListText[i]->SetText(browserList[browser.pageIndex + i].displayname);
 
-				if(browserList[browser.pageIndex+i].isdir) // directory
+				if (browserList[browser.pageIndex + i].isdir) // directory
 				{
 					fileList[i]->SetIcon(fileListFolder[i]);
-					fileListText[i]->SetPosition(30,0);
+					fileListText[i]->SetPosition(30, 0);
 				}
 				else
 				{
-					fileList[i]->SetIcon(NULL);
-					fileListText[i]->SetPosition(10,0);
+					fileList[i]->SetIcon(nullptr);
+					fileListText[i]->SetPosition(10, 0);
 				}
 			}
 			else
@@ -368,57 +372,57 @@ void GuiFileBrowser::Update(GuiTrigger * t)
 			}
 		}
 
-		if(i != selectedItem && fileList[i]->GetState() == STATE_SELECTED)
+		if (i != selectedItem && fileList[i]->GetState() == STATE_SELECTED)
 			fileList[i]->ResetState();
-		else if(focus && i == selectedItem && fileList[i]->GetState() == STATE_DEFAULT)
+		else if (focus && i == selectedItem && fileList[i]->GetState() == STATE_DEFAULT)
 			fileList[selectedItem]->SetState(STATE_SELECTED, t->chan);
 
 		int currChan = t->chan;
 
-		if(t->wpad->ir.valid && !fileList[i]->IsInside(t->wpad->ir.x, t->wpad->ir.y))
+		if (t->wpad->ir.valid && !fileList[i]->IsInside(t->wpad->ir.x, t->wpad->ir.y))
 			t->chan = -1;
 
 		fileList[i]->Update(t);
 		t->chan = currChan;
 
-		if(fileList[i]->GetState() == STATE_SELECTED)
+		if (fileList[i]->GetState() == STATE_SELECTED)
 		{
 			selectedItem = i;
 			browser.selIndex = browser.pageIndex + i;
 		}
 
-		if(selectedItem == i)
+		if (selectedItem == i)
 			fileListText[i]->SetScroll(SCROLL_HORIZONTAL);
 		else
 			fileListText[i]->SetScroll(SCROLL_NONE);
 	}
 
 	// update the location of the scroll box based on the position in the file list
-	if(positionWiimote > 0)
+	if (positionWiimote > 0)
 	{
 		position = positionWiimote; // follow wiimote cursor
-		scrollbarBoxBtn->SetPosition(0,position+36);
+		scrollbarBoxBtn->SetPosition(0, position + 36);
 	}
-	else if(listChanged || numEntries != browser.numEntries)
+	else if (listChanged || numEntries != browser.numEntries)
 	{
-		if(float((browser.pageIndex<<1))/(float(FILE_PAGESIZE)) < 1.0)
+		if (static_cast<float>(browser.pageIndex << 1) / static_cast<float>(FILE_PAGESIZE) < 1.0)
 		{
 			position = 0;
 		}
-		else if(browser.pageIndex+FILE_PAGESIZE >= browser.numEntries)
+		else if (browser.pageIndex + FILE_PAGESIZE >= browser.numEntries)
 		{
 			position = 130;
 		}
 		else
 		{
-			position = 130 * (browser.pageIndex + FILE_PAGESIZE/2) / (float)browser.numEntries;
+			position = 130 * (browser.pageIndex + FILE_PAGESIZE / 2) / static_cast<float>(browser.numEntries);
 		}
-		scrollbarBoxBtn->SetPosition(0,position+36);
+		scrollbarBoxBtn->SetPosition(0, position + 36);
 	}
 
 	listChanged = false;
 	numEntries = browser.numEntries;
 
-	if(updateCB)
+	if (updateCB)
 		updateCB(this);
 }

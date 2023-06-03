@@ -29,12 +29,12 @@
 #include "smjpeg.h"
 
 const AVCodecTag ff_codec_smjpeg_video_tags[] = {
-    { CODEC_ID_MJPEG,             MKTAG('J', 'F', 'I', 'F') },
-    { CODEC_ID_NONE, 0 },
+	{CODEC_ID_MJPEG, MKTAG('J', 'F', 'I', 'F')},
+	{CODEC_ID_NONE, 0},
 };
 
 const AVCodecTag ff_codec_smjpeg_audio_tags[] = {
-    { CODEC_ID_ADPCM_IMA_SMJPEG,  MKTAG('A', 'P', 'C', 'M') },
-    { CODEC_ID_PCM_S16LE,         MKTAG('N', 'O', 'N', 'E') },
-    { CODEC_ID_NONE, 0 },
+	{CODEC_ID_ADPCM_IMA_SMJPEG, MKTAG('A', 'P', 'C', 'M')},
+	{CODEC_ID_PCM_S16LE, MKTAG('N', 'O', 'N', 'E')},
+	{CODEC_ID_NONE, 0},
 };

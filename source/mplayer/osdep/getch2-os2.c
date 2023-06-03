@@ -39,162 +39,161 @@
 #include <langinfo.h>
 #endif
 
-int mp_input_slave_cmd_func( int fd, char *dest, int size )
+int mp_input_slave_cmd_func(int fd, char* dest, int size)
 {
-    PPIB    ppib;
-    CHAR    szPipeName[ 100 ];
-    HFILE   hpipe;
-    ULONG   ulAction;
-    ULONG   cbActual;
-    ULONG   rc;
+	PPIB ppib;
+	CHAR szPipeName[100];
+	HFILE hpipe;
+	ULONG ulAction;
+	ULONG cbActual;
+	ULONG rc;
 
-    DosGetInfoBlocks( NULL, &ppib );
+	DosGetInfoBlocks(NULL, &ppib);
 
-    sprintf( szPipeName, "\\PIPE\\MPLAYER\\%lx", ppib->pib_ulpid );
+	sprintf(szPipeName, "\\PIPE\\MPLAYER\\%lx", ppib->pib_ulpid);
 
-    rc = DosOpen( szPipeName, &hpipe, &ulAction, 0, FILE_NORMAL,
-                  OPEN_ACTION_OPEN_IF_EXISTS,
-                  OPEN_SHARE_DENYREADWRITE | OPEN_ACCESS_READWRITE,
-                  NULL );
-    if( rc )
-        return MP_INPUT_NOTHING;
+	rc = DosOpen(szPipeName, &hpipe, &ulAction, 0, FILE_NORMAL,
+	             OPEN_ACTION_OPEN_IF_EXISTS,
+	             OPEN_SHARE_DENYREADWRITE | OPEN_ACCESS_READWRITE,
+	             NULL);
+	if (rc)
+		return MP_INPUT_NOTHING;
 
-    rc = DosRead( hpipe, dest, size, &cbActual );
-    if( rc )
-        return MP_INPUT_NOTHING;
+	rc = DosRead(hpipe, dest, size, &cbActual);
+	if (rc)
+		return MP_INPUT_NOTHING;
 
-    rc = cbActual;
+	rc = cbActual;
 
-    // Send ACK
-    DosWrite( hpipe, &rc, sizeof( ULONG ), &cbActual );
+	// Send ACK
+	DosWrite(hpipe, &rc, sizeof(ULONG), &cbActual);
 
-    DosClose( hpipe );
+	DosClose(hpipe);
 
-    return rc;
+	return rc;
 }
-
 
 int screen_width = 80;
 int screen_height = 24;
-char *erase_to_end_of_line = NULL;
+char* erase_to_end_of_line = NULL;
 
-void get_screen_size( void )
+void get_screen_size(void)
 {
-    VIOMODEINFO vmi;
+	VIOMODEINFO vmi;
 
-    vmi.cb = sizeof( VIOMODEINFO );
+	vmi.cb = sizeof(VIOMODEINFO);
 
-    VioGetMode( &vmi, 0 );
+	VioGetMode(&vmi, 0);
 
-    screen_width = vmi.col;
-    screen_height = vmi.row;
+	screen_width = vmi.col;
+	screen_height = vmi.row;
 }
 
 static int getch2_status = 0;
 
-static int getch2_internal( void )
+static int getch2_internal(void)
 {
-    KBDKEYINFO kki;
+	KBDKEYINFO kki;
 
-    if( !getch2_status )
-        return -1;
+	if (!getch2_status)
+		return -1;
 
-    if( KbdCharIn( &kki, IO_NOWAIT, 0 ))
-        return -1;
+	if (KbdCharIn(&kki, IO_NOWAIT, 0))
+		return -1;
 
-    // key pressed ?
-    if( kki.fbStatus )
-    {
-        // extended key ?
-        if(( kki.chChar == 0x00 ) || ( kki.chChar == 0xE0 ))
-        {
-            switch( kki.chScan )
-            {
-                case 0x4B : // Left
-                    return KEY_LEFT;
+	// key pressed ?
+	if (kki.fbStatus)
+	{
+		// extended key ?
+		if ((kki.chChar == 0x00) || (kki.chChar == 0xE0))
+		{
+			switch (kki.chScan)
+			{
+			case 0x4B: // Left
+				return KEY_LEFT;
 
-                case 0x48 : // Up
-                    return KEY_UP;
+			case 0x48: // Up
+				return KEY_UP;
 
-                case 0x4D : // Right
-                    return KEY_RIGHT;
+			case 0x4D: // Right
+				return KEY_RIGHT;
 
-                case 0x50 : // Down
-                    return KEY_DOWN;
+			case 0x50: // Down
+				return KEY_DOWN;
 
-                case 0x53 : // Delete
-                    return KEY_DELETE;
+			case 0x53: // Delete
+				return KEY_DELETE;
 
-                case 0x52 : // Insert
-                    return KEY_INSERT;
+			case 0x52: // Insert
+				return KEY_INSERT;
 
-                case 0x47 : // Home
-                    return KEY_HOME;
+			case 0x47: // Home
+				return KEY_HOME;
 
-                case 0x4F : // End
-                    return KEY_END;
+			case 0x4F: // End
+				return KEY_END;
 
-                case 0x49 : // Page Up
-                    return KEY_PAGE_UP;
+			case 0x49: // Page Up
+				return KEY_PAGE_UP;
 
-                case 0x51 : // Page Down
-                    return KEY_PAGE_DOWN;
-            }
-        }
-        else
-        {
-            switch( kki.chChar )
-            {
-                case 0x08 : // Backspace
-                    return KEY_BS;
+			case 0x51: // Page Down
+				return KEY_PAGE_DOWN;
+			}
+		}
+		else
+		{
+			switch (kki.chChar)
+			{
+			case 0x08: // Backspace
+				return KEY_BS;
 
-                case 0x1B : // Esc
-                    return KEY_ESC;
+			case 0x1B: // Esc
+				return KEY_ESC;
 
-                case 0x0D : // Enter
-                    // Keypad Enter ?
-                    if( kki.chScan == 0xE0 )
-                        return KEY_KPENTER;
-                    break;
-            }
+			case 0x0D: // Enter
+				// Keypad Enter ?
+				if (kki.chScan == 0xE0)
+					return KEY_KPENTER;
+				break;
+			}
 
-            return kki.chChar;
-        }
-    }
+			return kki.chChar;
+		}
+	}
 
-    return -1;
+	return -1;
 }
 
-void getch2( void )
+void getch2(void)
 {
-    int key;
+	int key;
 
-    key = getch2_internal();
-    if( key != -1 )
-        mplayer_put_key( key );
+	key = getch2_internal();
+	if (key != -1)
+		mplayer_put_key(key);
 }
 
-void getch2_enable( void )
+void getch2_enable(void)
 {
-    getch2_status = 1;
+	getch2_status = 1;
 }
 
-void getch2_disable( void )
+void getch2_disable(void)
 {
-    getch2_status = 0;
+	getch2_status = 0;
 }
 
 #ifdef CONFIG_ICONV
-char *get_term_charset( void )
+char* get_term_charset(void)
 {
-    char *charset = NULL;
+	char* charset = NULL;
 
 #ifdef HAVE_LANGINFO
-    setlocale( LC_CTYPE, "");
-    charset = strdup( nl_langinfo( CODESET ));
-    setlocale( LC_CTYPE, "C");
+	setlocale(LC_CTYPE, "");
+	charset = strdup(nl_langinfo(CODESET));
+	setlocale(LC_CTYPE, "C");
 #endif
 
-    return charset;
+	return charset;
 }
 #endif

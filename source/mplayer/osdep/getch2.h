@@ -31,13 +31,13 @@ extern int screen_width;
 extern int screen_height;
 
 /* Termcap code to erase to end of line */
-extern char * erase_to_end_of_line;
+extern char* erase_to_end_of_line;
 
 /* Get screen-size using IOCTL call. */
 void get_screen_size(void);
 
 /* Load key definitions from the TERMCAP database. 'termtype' can be NULL */
-int load_termcap(char *termtype);
+int load_termcap(char* termtype);
 
 /* Enable and disable STDIN line-buffering */
 void getch2_enable(void);
@@ -54,12 +54,12 @@ void getch2(void);
  * Be warned that this function on many systems is in no way thread-safe
  * since it modifies global data
  */
-char *get_term_charset(void);
+char* get_term_charset(void);
 #endif
 
 #if defined(__MINGW32__) || defined(__OS2__)
 /* slave cmd function for Windows and OS/2 */
-int mp_input_slave_cmd_func(int fd,char* dest,int size);
+int mp_input_slave_cmd_func(int fd, char* dest, int size);
 #define USE_SELECT  0
 #define MP_INPUT_SLAVE_CMD_FUNC     mp_input_slave_cmd_func
 #else

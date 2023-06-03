@@ -24,9 +24,9 @@
 #include "dsputil_altivec.h"
 
 static const vec_s16 constants =
-    {0, 64277, 60547, 54491, 46341, 36410, 25080, 12785};
+	{0, 64277, 60547, 54491, 46341, 36410, 25080, 12785};
 static const vec_u8 interleave_high =
-    {0, 1, 16, 17, 4, 5, 20, 21, 8, 9, 24, 25, 12, 13, 28, 29};
+	{0, 1, 16, 17, 4, 5, 20, 21, 8, 9, 24, 25, 12, 13, 28, 29};
 
 #define IDCT_START \
     vec_s16 A, B, C, D, Ad, Bd, Cd, Dd, E, F, G, H;\
@@ -57,11 +57,14 @@ static const vec_u8 interleave_high =
 // M16 is used if C requires 16 bits unsigned
 static inline vec_s16 M15(vec_s16 a, vec_s16 C)
 {
-    return (vec_s16)vec_perm(vec_mule(a,C), vec_mulo(a,C), interleave_high);
+	return (vec_s16
+	)
+	vec_perm(vec_mule(a, C), vec_mulo(a, C), interleave_high);
 }
+
 static inline vec_s16 M16(vec_s16 a, vec_s16 C)
 {
-    return vec_add(a, M15(a, C));
+	return vec_add(a, M15(a, C));
 }
 
 #define IDCT_1D(ADD, SHIFT)\
@@ -109,62 +112,69 @@ static inline vec_s16 M16(vec_s16 a, vec_s16 C)
 
 void ff_vp3_idct_altivec(DCTELEM block[64])
 {
-    IDCT_START
+	IDCT_START
 
-    IDCT_1D(NOP, NOP)
-    TRANSPOSE8(b0, b1, b2, b3, b4, b5, b6, b7);
-    IDCT_1D(ADD8, SHIFT4)
+	IDCT_1D(NOP, NOP)
+	TRANSPOSE8(b0, b1, b2, b3, b4, b5, b6, b7);
+	IDCT_1D(ADD8, SHIFT4)
 
-    vec_st(b0, 0x00, block);
-    vec_st(b1, 0x10, block);
-    vec_st(b2, 0x20, block);
-    vec_st(b3, 0x30, block);
-    vec_st(b4, 0x40, block);
-    vec_st(b5, 0x50, block);
-    vec_st(b6, 0x60, block);
-    vec_st(b7, 0x70, block);
+	vec_st(b0, 0x00, block);
+	vec_st(b1, 0x10, block);
+	vec_st(b2, 0x20, block);
+	vec_st(b3, 0x30, block);
+	vec_st(b4, 0x40, block);
+	vec_st(b5, 0x50, block);
+	vec_st(b6, 0x60, block);
+	vec_st(b7, 0x70, block);
 }
 
-void ff_vp3_idct_put_altivec(uint8_t *dst, int stride, DCTELEM block[64])
+void ff_vp3_idct_put_altivec(uint8_t* dst, int stride, DCTELEM block[64])
 {
-    vec_u8 t;
-    IDCT_START
+	vec_u8 t;
+	IDCT_START
 
-    // pixels are signed; so add 128*16 in addition to the normal 8
-    vec_s16 v2048 = vec_sl(vec_splat_s16(1), vec_splat_u16(11));
-    eight = vec_add(eight, v2048);
+	// pixels are signed; so add 128*16 in addition to the normal 8
+	vec_s16 v2048 = vec_sl(vec_splat_s16(1), vec_splat_u16(11));
+	eight = vec_add(eight, v2048);
 
-    IDCT_1D(NOP, NOP)
-    TRANSPOSE8(b0, b1, b2, b3, b4, b5, b6, b7);
-    IDCT_1D(ADD8, SHIFT4)
+	IDCT_1D(NOP, NOP)
+	TRANSPOSE8(b0, b1, b2, b3, b4, b5, b6, b7);
+	IDCT_1D(ADD8, SHIFT4)
 
 #define PUT(a)\
     t = vec_packsu(a, a);\
     vec_ste((vec_u32)t, 0, (unsigned int *)dst);\
     vec_ste((vec_u32)t, 4, (unsigned int *)dst);
 
-    PUT(b0)     dst += stride;
-    PUT(b1)     dst += stride;
-    PUT(b2)     dst += stride;
-    PUT(b3)     dst += stride;
-    PUT(b4)     dst += stride;
-    PUT(b5)     dst += stride;
-    PUT(b6)     dst += stride;
-    PUT(b7)
+	PUT(b0)
+	dst += stride;
+	PUT(b1)
+	dst += stride;
+	PUT(b2)
+	dst += stride;
+	PUT(b3)
+	dst += stride;
+	PUT(b4)
+	dst += stride;
+	PUT(b5)
+	dst += stride;
+	PUT(b6)
+	dst += stride;
+	PUT(b7)
 }
 
-void ff_vp3_idct_add_altivec(uint8_t *dst, int stride, DCTELEM block[64])
+void ff_vp3_idct_add_altivec(uint8_t* dst, int stride, DCTELEM block[64])
 {
-    LOAD_ZERO;
-    vec_u8 t, vdst;
-    vec_s16 vdst_16;
-    vec_u8 vdst_mask = vec_mergeh(vec_splat_u8(-1), vec_lvsl(0, dst));
+	LOAD_ZERO;
+	vec_u8 t, vdst;
+	vec_s16 vdst_16;
+	vec_u8 vdst_mask = vec_mergeh(vec_splat_u8(-1), vec_lvsl(0, dst));
 
-    IDCT_START
+	IDCT_START
 
-    IDCT_1D(NOP, NOP)
-    TRANSPOSE8(b0, b1, b2, b3, b4, b5, b6, b7);
-    IDCT_1D(ADD8, SHIFT4)
+	IDCT_1D(NOP, NOP)
+	TRANSPOSE8(b0, b1, b2, b3, b4, b5, b6, b7);
+	IDCT_1D(ADD8, SHIFT4)
 
 #define ADD(a)\
     vdst = vec_ld(0, dst);\
@@ -174,12 +184,19 @@ void ff_vp3_idct_add_altivec(uint8_t *dst, int stride, DCTELEM block[64])
     vec_ste((vec_u32)t, 0, (unsigned int *)dst);\
     vec_ste((vec_u32)t, 4, (unsigned int *)dst);
 
-    ADD(b0)     dst += stride;
-    ADD(b1)     dst += stride;
-    ADD(b2)     dst += stride;
-    ADD(b3)     dst += stride;
-    ADD(b4)     dst += stride;
-    ADD(b5)     dst += stride;
-    ADD(b6)     dst += stride;
-    ADD(b7)
+	ADD(b0)
+	dst += stride;
+	ADD(b1)
+	dst += stride;
+	ADD(b2)
+	dst += stride;
+	ADD(b3)
+	dst += stride;
+	ADD(b4)
+	dst += stride;
+	ADD(b5)
+	dst += stride;
+	ADD(b6)
+	dst += stride;
+	ADD(b7)
 }

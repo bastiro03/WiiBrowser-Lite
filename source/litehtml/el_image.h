@@ -4,19 +4,19 @@
 
 namespace litehtml
 {
-
 	class el_image : public element
 	{
-		std::wstring	m_src;
-	public:
-		el_image(litehtml::document* doc);
-		virtual ~el_image(void);
+		std::wstring m_src;
 
-		virtual void	parse_styles(bool is_reparse = false);
-		virtual int		line_height() const;
+	public:
+		el_image(document* doc);
+		~el_image(void) override;
+
+		void parse_styles(bool is_reparse = false) override;
+		int line_height() const override;
 
 	protected:
-		virtual void	get_content_size(size& sz, int max_width);
-		virtual void	draw_content(uint_ptr hdc, const litehtml::position& pos);
+		void get_content_size(size& sz, int max_width) override;
+		void draw_content(uint_ptr hdc, const position& pos) override;
 	};
 }

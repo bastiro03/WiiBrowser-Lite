@@ -40,58 +40,63 @@
  * \brief skips whitespace and comments
  * \param f file to read from
  */
-static void ppm_skip(FILE *f) {
-  int c, comment = 0;
-  do {
-    c = fgetc(f);
-    if (c == '#')
-      comment = 1;
-    if (c == '\n')
-      comment = 0;
-  } while (c != EOF && (isspace(c) || comment));
-  if (c != EOF)
-    ungetc(c, f);
+static void ppm_skip(FILE* f)
+{
+	int c, comment = 0;
+	do
+	{
+		c = fgetc(f);
+		if (c == '#')
+			comment = 1;
+		if (c == '\n')
+			comment = 0;
+	}
+	while (c != EOF && (isspace(c) || comment));
+	if (c != EOF)
+		ungetc(c, f);
 }
 
 #define MAXDIM (16 * 1024)
 
-uint8_t *read_pnm(FILE *f, int *width, int *height,
-                  int *bytes_per_pixel, int *maxval) {
-  uint8_t *data;
-  int type;
-  unsigned w, h, m, val, bpp;
-  *width = *height = *bytes_per_pixel = *maxval = 0;
-  ppm_skip(f);
-  if (fgetc(f) != 'P')
-    return NULL;
-  type = fgetc(f);
-  if (type != '5' && type != '6')
-    return NULL;
-  ppm_skip(f);
-  if (fscanf(f, "%u", &w) != 1)
-    return NULL;
-  ppm_skip(f);
-  if (fscanf(f, "%u", &h) != 1)
-    return NULL;
-  ppm_skip(f);
-  if (fscanf(f, "%u", &m) != 1)
-    return NULL;
-  val = fgetc(f);
-  if (!isspace(val))
-    return NULL;
-  if (w > MAXDIM || h > MAXDIM)
-    return NULL;
-  bpp = (m > 255) ? 2 : 1;
-  if (type == '6')
-    bpp *= 3;
-  data = malloc(w * h * bpp);
-  if (fread(data, w * bpp, h, f) != h) {
-    free(data);
-    return NULL;
-  }
-  *width  = w;
-  *height = h;
-  *bytes_per_pixel = bpp;
-  *maxval = m;
-  return data;
+uint8_t* read_pnm(FILE* f, int* width, int* height,
+                  int* bytes_per_pixel, int* maxval)
+{
+	uint8_t* data;
+	int type;
+	unsigned w, h, m, val, bpp;
+	*width = *height = *bytes_per_pixel = *maxval = 0;
+	ppm_skip(f);
+	if (fgetc(f) != 'P')
+		return NULL;
+	type = fgetc(f);
+	if (type != '5' && type != '6')
+		return NULL;
+	ppm_skip(f);
+	if (fscanf(f, "%u", &w) != 1)
+		return NULL;
+	ppm_skip(f);
+	if (fscanf(f, "%u", &h) != 1)
+		return NULL;
+	ppm_skip(f);
+	if (fscanf(f, "%u", &m) != 1)
+		return NULL;
+	val = fgetc(f);
+	if (!isspace(val))
+		return NULL;
+	if (w > MAXDIM || h > MAXDIM)
+		return NULL;
+	bpp = (m > 255) ? 2 : 1;
+	if (type == '6')
+		bpp *= 3;
+	data = malloc(w * h * bpp);
+	if (fread(data, w * bpp, h, f) != h)
+	{
+		free(data);
+		return NULL;
+	}
+	*width = w;
+	*height = h;
+	*bytes_per_pixel = bpp;
+	*maxval = m;
+	return data;
 }

@@ -309,9 +309,7 @@ static inline void OPNAME ## _no_rnd_pixels16_l4_aligned0(uint8_t *dst, const ui
                 src4+=src_stride4;\
                 dst+=dst_stride;\
         } while(--h); \
-} \
-\
-
+}
 #define op_avg(a, b) a = rnd_avg32(a,b)
 #define op_put(a, b) a = b
 
@@ -323,97 +321,120 @@ PIXOP2(put, op_put)
 #define avg2(a,b) ((a+b+1)>>1)
 #define avg4(a,b,c,d) ((a+b+c+d+2)>>2)
 
-
-static void gmc1_c(uint8_t *dst, uint8_t *src, int stride, int h, int x16, int y16, int rounder)
+static void gmc1_c(uint8_t* dst, uint8_t* src, int stride, int h, int x16, int y16, int rounder)
 {
-    const int A=(16-x16)*(16-y16);
-    const int B=(   x16)*(16-y16);
-    const int C=(16-x16)*(   y16);
-    const int D=(   x16)*(   y16);
+	const int A = (16 - x16) * (16 - y16);
+	const int B = (x16) * (16 - y16);
+	const int C = (16 - x16) * (y16);
+	const int D = (x16) * (y16);
 
-    do {
-        int t0,t1,t2,t3;
-        uint8_t *s0 = src;
-        uint8_t *s1 = src+stride;
-        t0 = *s0++; t2 = *s1++;
-        t1 = *s0++; t3 = *s1++;
-        dst[0]= (A*t0 + B*t1 + C*t2 + D*t3 + rounder)>>8;
-        t0 = *s0++; t2 = *s1++;
-        dst[1]= (A*t1 + B*t0 + C*t3 + D*t2 + rounder)>>8;
-        t1 = *s0++; t3 = *s1++;
-        dst[2]= (A*t0 + B*t1 + C*t2 + D*t3 + rounder)>>8;
-        t0 = *s0++; t2 = *s1++;
-        dst[3]= (A*t1 + B*t0 + C*t3 + D*t2 + rounder)>>8;
-        t1 = *s0++; t3 = *s1++;
-        dst[4]= (A*t0 + B*t1 + C*t2 + D*t3 + rounder)>>8;
-        t0 = *s0++; t2 = *s1++;
-        dst[5]= (A*t1 + B*t0 + C*t3 + D*t2 + rounder)>>8;
-        t1 = *s0++; t3 = *s1++;
-        dst[6]= (A*t0 + B*t1 + C*t2 + D*t3 + rounder)>>8;
-        t0 = *s0++; t2 = *s1++;
-        dst[7]= (A*t1 + B*t0 + C*t3 + D*t2 + rounder)>>8;
-        dst+= stride;
-        src+= stride;
-    }while(--h);
+	do
+	{
+		int t0, t1, t2, t3;
+		uint8_t* s0 = src;
+		uint8_t* s1 = src + stride;
+		t0 = *s0++;
+		t2 = *s1++;
+		t1 = *s0++;
+		t3 = *s1++;
+		dst[0] = (A * t0 + B * t1 + C * t2 + D * t3 + rounder) >> 8;
+		t0 = *s0++;
+		t2 = *s1++;
+		dst[1] = (A * t1 + B * t0 + C * t3 + D * t2 + rounder) >> 8;
+		t1 = *s0++;
+		t3 = *s1++;
+		dst[2] = (A * t0 + B * t1 + C * t2 + D * t3 + rounder) >> 8;
+		t0 = *s0++;
+		t2 = *s1++;
+		dst[3] = (A * t1 + B * t0 + C * t3 + D * t2 + rounder) >> 8;
+		t1 = *s0++;
+		t3 = *s1++;
+		dst[4] = (A * t0 + B * t1 + C * t2 + D * t3 + rounder) >> 8;
+		t0 = *s0++;
+		t2 = *s1++;
+		dst[5] = (A * t1 + B * t0 + C * t3 + D * t2 + rounder) >> 8;
+		t1 = *s0++;
+		t3 = *s1++;
+		dst[6] = (A * t0 + B * t1 + C * t2 + D * t3 + rounder) >> 8;
+		t0 = *s0++;
+		t2 = *s1++;
+		dst[7] = (A * t1 + B * t0 + C * t3 + D * t2 + rounder) >> 8;
+		dst += stride;
+		src += stride;
+	}
+	while (--h);
 }
 
-static void gmc_c(uint8_t *dst, uint8_t *src, int stride, int h, int ox, int oy,
+static void gmc_c(uint8_t* dst, uint8_t* src, int stride, int h, int ox, int oy,
                   int dxx, int dxy, int dyx, int dyy, int shift, int r, int width, int height)
 {
-    int y, vx, vy;
-    const int s= 1<<shift;
+	int y, vx, vy;
+	const int s = 1 << shift;
 
-    width--;
-    height--;
+	width--;
+	height--;
 
-    for(y=0; y<h; y++){
-        int x;
+	for (y = 0; y < h; y++)
+	{
+		int x;
 
-        vx= ox;
-        vy= oy;
-        for(x=0; x<8; x++){ //XXX FIXME optimize
-            int src_x, src_y, frac_x, frac_y, index;
+		vx = ox;
+		vy = oy;
+		for (x = 0; x < 8; x++)
+		{
+			//XXX FIXME optimize
+			int src_x, src_y, frac_x, frac_y, index;
 
-            src_x= vx>>16;
-            src_y= vy>>16;
-            frac_x= src_x&(s-1);
-            frac_y= src_y&(s-1);
-            src_x>>=shift;
-            src_y>>=shift;
+			src_x = vx >> 16;
+			src_y = vy >> 16;
+			frac_x = src_x & (s - 1);
+			frac_y = src_y & (s - 1);
+			src_x >>= shift;
+			src_y >>= shift;
 
-            if((unsigned)src_x < width){
-                if((unsigned)src_y < height){
-                    index= src_x + src_y*stride;
-                    dst[y*stride + x]= (  (  src[index         ]*(s-frac_x)
-                                           + src[index       +1]*   frac_x )*(s-frac_y)
-                                        + (  src[index+stride  ]*(s-frac_x)
-                                           + src[index+stride+1]*   frac_x )*   frac_y
-                                        + r)>>(shift*2);
-                }else{
-                    index= src_x + av_clip(src_y, 0, height)*stride;
-                    dst[y*stride + x]= ( (  src[index         ]*(s-frac_x)
-                                          + src[index       +1]*   frac_x )*s
-                                        + r)>>(shift*2);
-                }
-            }else{
-                if((unsigned)src_y < height){
-                    index= av_clip(src_x, 0, width) + src_y*stride;
-                    dst[y*stride + x]= (  (  src[index         ]*(s-frac_y)
-                                           + src[index+stride  ]*   frac_y )*s
-                                        + r)>>(shift*2);
-                }else{
-                    index= av_clip(src_x, 0, width) + av_clip(src_y, 0, height)*stride;
-                    dst[y*stride + x]=    src[index         ];
-                }
-            }
+			if ((unsigned)src_x < width)
+			{
+				if ((unsigned)src_y < height)
+				{
+					index = src_x + src_y * stride;
+					dst[y * stride + x] = ((src[index] * (s - frac_x)
+							+ src[index + 1] * frac_x) * (s - frac_y)
+						+ (src[index + stride] * (s - frac_x)
+							+ src[index + stride + 1] * frac_x) * frac_y
+						+ r) >> (shift * 2);
+				}
+				else
+				{
+					index = src_x + av_clip(src_y, 0, height) * stride;
+					dst[y * stride + x] = ((src[index] * (s - frac_x)
+							+ src[index + 1] * frac_x) * s
+						+ r) >> (shift * 2);
+				}
+			}
+			else
+			{
+				if ((unsigned)src_y < height)
+				{
+					index = av_clip(src_x, 0, width) + src_y * stride;
+					dst[y * stride + x] = ((src[index] * (s - frac_y)
+							+ src[index + stride] * frac_y) * s
+						+ r) >> (shift * 2);
+				}
+				else
+				{
+					index = av_clip(src_x, 0, width) + av_clip(src_y, 0, height) * stride;
+					dst[y * stride + x] = src[index];
+				}
+			}
 
-            vx+= dxx;
-            vy+= dyx;
-        }
-        ox += dxy;
-        oy += dyy;
-    }
+			vx += dxx;
+			vy += dyx;
+		}
+		ox += dxy;
+		oy += dyy;
+	}
 }
+
 #define H264_CHROMA_MC(OPNAME, OP)\
 static void OPNAME ## h264_chroma_mc2_sh4(uint8_t *dst/*align 8*/, uint8_t *src/*align 1*/, int stride, int h, int x, int y){\
     const int A=(8-x)*(8-y);\
@@ -500,8 +521,8 @@ static void OPNAME ## h264_chroma_mc8_sh4(uint8_t *dst/*align 8*/, uint8_t *src/
 #define op_avg(a, b) a = (((a)+(((b) + 32)>>6)+1)>>1)
 #define op_put(a, b) a = (((b) + 32)>>6)
 
-H264_CHROMA_MC(put_       , op_put)
-H264_CHROMA_MC(avg_       , op_avg)
+H264_CHROMA_MC(put_, op_put)
+H264_CHROMA_MC(avg_, op_avg)
 #undef op_avg
 #undef op_put
 
@@ -888,9 +909,9 @@ static void OPNAME ## qpel16_mc22_sh4(uint8_t *dst, uint8_t *src, int stride){\
 #define op_put(a, b) a = cm[((b) + 16)>>5]
 #define op_put_no_rnd(a, b) a = cm[((b) + 15)>>5]
 
-QPEL_MC(0, put_       , _       , op_put)
+QPEL_MC(0, put_, _, op_put)
 QPEL_MC(1, put_no_rnd_, _no_rnd_, op_put_no_rnd)
-QPEL_MC(0, avg_       , _       , op_avg)
+QPEL_MC(0, avg_, _, op_avg)
 //QPEL_MC(1, avg_no_rnd , _       , op_avg)
 #undef op_avg
 #undef op_avg_no_rnd
@@ -1139,8 +1160,7 @@ static void OPNAME ## h264_qpel8_hv_lowpass(uint8_t *dst, int16_t *tmp, uint8_t 
 }\
 static void OPNAME ## h264_qpel16_hv_lowpass(uint8_t *dst, int16_t *tmp, uint8_t *src, int dstStride, int tmpStride, int srcStride){\
    OPNAME ## h264_qpel_hv_lowpass(dst,tmp,src,dstStride,tmpStride,srcStride,16,16); \
-}\
-
+}
 #define H264_MC(OPNAME, SIZE) \
 static void OPNAME ## h264_qpel ## SIZE ## _mc00_sh4 (uint8_t *dst, uint8_t *src, int stride){\
     OPNAME ## pixels ## SIZE ## _c(dst, src, stride, SIZE);\
@@ -1276,16 +1296,15 @@ static void OPNAME ## h264_qpel ## SIZE ## _mc32_sh4(uint8_t *dst, uint8_t *src,
     put_h264_qpel ## SIZE ## _v_lowpass(halfV, full_mid, SIZE, SIZE);\
     put_h264_qpel ## SIZE ## _hv_lowpass(halfHV, tmp, src, SIZE, SIZE, stride);\
     OPNAME ## pixels ## SIZE ## _l2_aligned(dst, halfV, halfHV, stride, SIZE, SIZE, SIZE);\
-}\
-
+}
 #define op_avg(a, b)  a = (((a)+cm[((b) + 16)>>5]+1)>>1)
 //#define op_avg2(a, b) a = (((a)*w1+cm[((b) + 16)>>5]*w2 + o + 64)>>7)
 #define op_put(a, b)  a = cm[((b) + 16)>>5]
 #define op2_avg(a, b)  a = (((a)+cm[((b) + 512)>>10]+1)>>1)
 #define op2_put(a, b)  a = cm[((b) + 512)>>10]
 
-H264_LOWPASS(put_       , op_put, op2_put)
-H264_LOWPASS(avg_       , op_avg, op2_avg)
+H264_LOWPASS(put_, op_put, op2_put)
+H264_LOWPASS(avg_, op_avg, op2_avg)
 H264_MC(put_, 4)
 H264_MC(put_, 8)
 H264_MC(put_, 16)
@@ -1298,110 +1317,143 @@ H264_MC(avg_, 16)
 #undef op2_avg
 #undef op2_put
 
-static void wmv2_mspel8_h_lowpass(uint8_t *dst, uint8_t *src, int dstStride, int srcStride, int h){
-    uint8_t *cm = ff_cropTbl + MAX_NEG_CROP;
+static void wmv2_mspel8_h_lowpass(uint8_t* dst, uint8_t* src, int dstStride, int srcStride, int h)
+{
+	uint8_t* cm = ff_cropTbl + MAX_NEG_CROP;
 
-    do{
-        int src_1,src0,src1,src2,src3,src4,src5,src6,src7,src8,src9;
-        uint8_t *s = src;
-        src_1 = s[-1];
-        src0 = *s++;
-        src1 = *s++;
-        src2 = *s++;
-        dst[0]= cm[(9*(src0 + src1) - (src_1 + src2) + 8)>>4];
-        src3 = *s++;
-        dst[1]= cm[(9*(src1 + src2) - (src0 + src3) + 8)>>4];
-        src4 = *s++;
-        dst[2]= cm[(9*(src2 + src3) - (src1 + src4) + 8)>>4];
-        src5 = *s++;
-        dst[3]= cm[(9*(src3 + src4) - (src2 + src5) + 8)>>4];
-        src6 = *s++;
-        dst[4]= cm[(9*(src4 + src5) - (src3 + src6) + 8)>>4];
-        src7 = *s++;
-        dst[5]= cm[(9*(src5 + src6) - (src4 + src7) + 8)>>4];
-        src8 = *s++;
-        dst[6]= cm[(9*(src6 + src7) - (src5 + src8) + 8)>>4];
-        src9 = *s++;
-        dst[7]= cm[(9*(src7 + src8) - (src6 + src9) + 8)>>4];
-        dst+=dstStride;
-        src+=srcStride;
-    }while(--h);
+	do
+	{
+		int src_1, src0, src1, src2, src3, src4, src5, src6, src7, src8, src9;
+		uint8_t* s = src;
+		src_1 = s[-1];
+		src0 = *s++;
+		src1 = *s++;
+		src2 = *s++;
+		dst[0] = cm[(9 * (src0 + src1) - (src_1 + src2) + 8) >> 4];
+		src3 = *s++;
+		dst[1] = cm[(9 * (src1 + src2) - (src0 + src3) + 8) >> 4];
+		src4 = *s++;
+		dst[2] = cm[(9 * (src2 + src3) - (src1 + src4) + 8) >> 4];
+		src5 = *s++;
+		dst[3] = cm[(9 * (src3 + src4) - (src2 + src5) + 8) >> 4];
+		src6 = *s++;
+		dst[4] = cm[(9 * (src4 + src5) - (src3 + src6) + 8) >> 4];
+		src7 = *s++;
+		dst[5] = cm[(9 * (src5 + src6) - (src4 + src7) + 8) >> 4];
+		src8 = *s++;
+		dst[6] = cm[(9 * (src6 + src7) - (src5 + src8) + 8) >> 4];
+		src9 = *s++;
+		dst[7] = cm[(9 * (src7 + src8) - (src6 + src9) + 8) >> 4];
+		dst += dstStride;
+		src += srcStride;
+	}
+	while (--h);
 }
 
-static void wmv2_mspel8_v_lowpass(uint8_t *dst, uint8_t *src, int dstStride, int srcStride, int w){
-    uint8_t *cm = ff_cropTbl + MAX_NEG_CROP;
+static void wmv2_mspel8_v_lowpass(uint8_t* dst, uint8_t* src, int dstStride, int srcStride, int w)
+{
+	uint8_t* cm = ff_cropTbl + MAX_NEG_CROP;
 
-    do{
-        int src_1,src0,src1,src2,src3,src4,src5,src6,src7,src8,src9;
-        uint8_t *s = src,*d = dst;
-        src_1 = *(s-srcStride);
-        src0 = *s; s+=srcStride;
-        src1 = *s; s+=srcStride;
-        src2 = *s; s+=srcStride;
-        *d= cm[(9*(src0 + src1) - (src_1 + src2) + 8)>>4]; d+=dstStride;
-        src3 = *s; s+=srcStride;
-        *d= cm[(9*(src1 + src2) - (src0  + src3) + 8)>>4]; d+=dstStride;
-        src4 = *s; s+=srcStride;
-        *d= cm[(9*(src2 + src3) - (src1  + src4) + 8)>>4]; d+=dstStride;
-        src5 = *s; s+=srcStride;
-        *d= cm[(9*(src3 + src4) - (src2  + src5) + 8)>>4]; d+=dstStride;
-        src6 = *s; s+=srcStride;
-        *d= cm[(9*(src4 + src5) - (src3  + src6) + 8)>>4]; d+=dstStride;
-        src7 = *s; s+=srcStride;
-        *d= cm[(9*(src5 + src6) - (src4  + src7) + 8)>>4]; d+=dstStride;
-        src8 = *s; s+=srcStride;
-        *d= cm[(9*(src6 + src7) - (src5  + src8) + 8)>>4]; d+=dstStride;
-        src9 = *s;
-        *d= cm[(9*(src7 + src8) - (src6  + src9) + 8)>>4]; d+=dstStride;
-        src++;
-        dst++;
-    }while(--w);
-}
-
-static void put_mspel8_mc00_sh4 (uint8_t *dst, uint8_t *src, int stride){
-    put_pixels8_c(dst, src, stride, 8);
-}
-
-static void put_mspel8_mc10_sh4(uint8_t *dst, uint8_t *src, int stride){
-    uint8_t half[64];
-    wmv2_mspel8_h_lowpass(half, src, 8, stride, 8);
-    put_pixels8_l2_aligned2(dst, src, half, stride, stride, 8, 8);
-}
-
-static void put_mspel8_mc20_sh4(uint8_t *dst, uint8_t *src, int stride){
-    wmv2_mspel8_h_lowpass(dst, src, stride, stride, 8);
-}
-
-static void put_mspel8_mc30_sh4(uint8_t *dst, uint8_t *src, int stride){
-    uint8_t half[64];
-    wmv2_mspel8_h_lowpass(half, src, 8, stride, 8);
-    put_pixels8_l2_aligned2(dst, src+1, half, stride, stride, 8, 8);
-}
-
-static void put_mspel8_mc02_sh4(uint8_t *dst, uint8_t *src, int stride){
-    wmv2_mspel8_v_lowpass(dst, src, stride, stride, 8);
+	do
+	{
+		int src_1, src0, src1, src2, src3, src4, src5, src6, src7, src8, src9;
+		uint8_t *s = src, *d = dst;
+		src_1 = *(s - srcStride);
+		src0 = *s;
+		s += srcStride;
+		src1 = *s;
+		s += srcStride;
+		src2 = *s;
+		s += srcStride;
+		*d = cm[(9 * (src0 + src1) - (src_1 + src2) + 8) >> 4];
+		d += dstStride;
+		src3 = *s;
+		s += srcStride;
+		*d = cm[(9 * (src1 + src2) - (src0 + src3) + 8) >> 4];
+		d += dstStride;
+		src4 = *s;
+		s += srcStride;
+		*d = cm[(9 * (src2 + src3) - (src1 + src4) + 8) >> 4];
+		d += dstStride;
+		src5 = *s;
+		s += srcStride;
+		*d = cm[(9 * (src3 + src4) - (src2 + src5) + 8) >> 4];
+		d += dstStride;
+		src6 = *s;
+		s += srcStride;
+		*d = cm[(9 * (src4 + src5) - (src3 + src6) + 8) >> 4];
+		d += dstStride;
+		src7 = *s;
+		s += srcStride;
+		*d = cm[(9 * (src5 + src6) - (src4 + src7) + 8) >> 4];
+		d += dstStride;
+		src8 = *s;
+		s += srcStride;
+		*d = cm[(9 * (src6 + src7) - (src5 + src8) + 8) >> 4];
+		d += dstStride;
+		src9 = *s;
+		*d = cm[(9 * (src7 + src8) - (src6 + src9) + 8) >> 4];
+		d += dstStride;
+		src++;
+		dst++;
+	}
+	while (--w);
 }
 
-static void put_mspel8_mc12_sh4(uint8_t *dst, uint8_t *src, int stride){
-    uint8_t halfH[88];
-    uint8_t halfV[64];
-    uint8_t halfHV[64];
-    wmv2_mspel8_h_lowpass(halfH, src-stride, 8, stride, 11);
-    wmv2_mspel8_v_lowpass(halfV, src, 8, stride, 8);
-    wmv2_mspel8_v_lowpass(halfHV, halfH+8, 8, 8, 8);
-    put_pixels8_l2_aligned(dst, halfV, halfHV, stride, 8, 8, 8);
+static void put_mspel8_mc00_sh4(uint8_t* dst, uint8_t* src, int stride)
+{
+	put_pixels8_c(dst, src, stride, 8);
 }
-static void put_mspel8_mc32_sh4(uint8_t *dst, uint8_t *src, int stride){
-    uint8_t halfH[88];
-    uint8_t halfV[64];
-    uint8_t halfHV[64];
-    wmv2_mspel8_h_lowpass(halfH, src-stride, 8, stride, 11);
-    wmv2_mspel8_v_lowpass(halfV, src+1, 8, stride, 8);
-    wmv2_mspel8_v_lowpass(halfHV, halfH+8, 8, 8, 8);
-    put_pixels8_l2_aligned(dst, halfV, halfHV, stride, 8, 8, 8);
+
+static void put_mspel8_mc10_sh4(uint8_t* dst, uint8_t* src, int stride)
+{
+	uint8_t half[64];
+	wmv2_mspel8_h_lowpass(half, src, 8, stride, 8);
+	put_pixels8_l2_aligned2(dst, src, half, stride, stride, 8, 8);
 }
-static void put_mspel8_mc22_sh4(uint8_t *dst, uint8_t *src, int stride){
-    uint8_t halfH[88];
-    wmv2_mspel8_h_lowpass(halfH, src-stride, 8, stride, 11);
-    wmv2_mspel8_v_lowpass(dst, halfH+8, stride, 8, 8);
+
+static void put_mspel8_mc20_sh4(uint8_t* dst, uint8_t* src, int stride)
+{
+	wmv2_mspel8_h_lowpass(dst, src, stride, stride, 8);
+}
+
+static void put_mspel8_mc30_sh4(uint8_t* dst, uint8_t* src, int stride)
+{
+	uint8_t half[64];
+	wmv2_mspel8_h_lowpass(half, src, 8, stride, 8);
+	put_pixels8_l2_aligned2(dst, src + 1, half, stride, stride, 8, 8);
+}
+
+static void put_mspel8_mc02_sh4(uint8_t* dst, uint8_t* src, int stride)
+{
+	wmv2_mspel8_v_lowpass(dst, src, stride, stride, 8);
+}
+
+static void put_mspel8_mc12_sh4(uint8_t* dst, uint8_t* src, int stride)
+{
+	uint8_t halfH[88];
+	uint8_t halfV[64];
+	uint8_t halfHV[64];
+	wmv2_mspel8_h_lowpass(halfH, src - stride, 8, stride, 11);
+	wmv2_mspel8_v_lowpass(halfV, src, 8, stride, 8);
+	wmv2_mspel8_v_lowpass(halfHV, halfH + 8, 8, 8, 8);
+	put_pixels8_l2_aligned(dst, halfV, halfHV, stride, 8, 8, 8);
+}
+
+static void put_mspel8_mc32_sh4(uint8_t* dst, uint8_t* src, int stride)
+{
+	uint8_t halfH[88];
+	uint8_t halfV[64];
+	uint8_t halfHV[64];
+	wmv2_mspel8_h_lowpass(halfH, src - stride, 8, stride, 11);
+	wmv2_mspel8_v_lowpass(halfV, src + 1, 8, stride, 8);
+	wmv2_mspel8_v_lowpass(halfHV, halfH + 8, 8, 8, 8);
+	put_pixels8_l2_aligned(dst, halfV, halfHV, stride, 8, 8, 8);
+}
+
+static void put_mspel8_mc22_sh4(uint8_t* dst, uint8_t* src, int stride)
+{
+	uint8_t halfH[88];
+	wmv2_mspel8_h_lowpass(halfH, src - stride, 8, stride, 11);
+	wmv2_mspel8_v_lowpass(dst, halfH + 8, stride, 8, 8);
 }

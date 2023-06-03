@@ -23,9 +23,7 @@
 
 #include "dsp.h"
 
-
 // Design and implementation of different types of digital filters
-
 
 // Flags used for filter design
 
@@ -71,8 +69,8 @@ int af_filter_design_pfir(unsigned int n, unsigned int k, const FLOAT_TYPE* w,
                           FLOAT_TYPE** pw, FLOAT_TYPE g, unsigned int flags);
 
 int af_filter_szxform(const FLOAT_TYPE* a, const FLOAT_TYPE* b, FLOAT_TYPE Q,
-                      FLOAT_TYPE fc, FLOAT_TYPE fs, FLOAT_TYPE *k,
-                      FLOAT_TYPE *coef);
+                      FLOAT_TYPE fc, FLOAT_TYPE fs, FLOAT_TYPE* k,
+                      FLOAT_TYPE* coef);
 
 /* Add new data to circular queue designed to be used with a FIR
    filter. xq is the circular queue, in pointing at the new sample, xi

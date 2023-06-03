@@ -31,104 +31,119 @@
 #include "internal.h"
 #include "video.h"
 
-static const char *const var_names[] = {
-    "AVTB",   /* default timebase 1/AV_TIME_BASE */
-    "intb",   /* input timebase */
-    NULL
+static const char* const var_names[] = {
+	"AVTB", /* default timebase 1/AV_TIME_BASE */
+	"intb", /* input timebase */
+	NULL
 };
 
-enum var_name {
-    VAR_AVTB,
-    VAR_INTB,
-    VAR_VARS_NB
+enum var_name
+{
+	VAR_AVTB,
+	VAR_INTB,
+	VAR_VARS_NB
 };
 
-typedef struct {
-    char tb_expr[256];
-    double var_values[VAR_VARS_NB];
+typedef struct
+{
+	char tb_expr[256];
+	double var_values[VAR_VARS_NB];
 } SetTBContext;
 
-static av_cold int init(AVFilterContext *ctx, const char *args, void *opaque)
+static av_cold
+
+int init(AVFilterContext* ctx, const char* args, void* opaque)
 {
-    SetTBContext *settb = ctx->priv;
-    av_strlcpy(settb->tb_expr, "intb", sizeof(settb->tb_expr));
+	SetTBContext* settb = ctx->priv;
+	av_strlcpy(settb->tb_expr, "intb", sizeof(settb->tb_expr));
 
-    if (args)
-        sscanf(args, "%255[^:]", settb->tb_expr);
+	if (args)
+		sscanf(args, "%255[^:]", settb->tb_expr);
 
-    return 0;
+	return 0;
 }
 
-static int config_output_props(AVFilterLink *outlink)
+static int config_output_props(AVFilterLink* outlink)
 {
-    AVFilterContext *ctx = outlink->src;
-    SetTBContext *settb = ctx->priv;
-    AVFilterLink *inlink = ctx->inputs[0];
-    AVRational time_base;
-    int ret;
-    double res;
+	AVFilterContext* ctx = outlink->src;
+	SetTBContext* settb = ctx->priv;
+	AVFilterLink* inlink = ctx->inputs[0];
+	AVRational time_base;
+	int ret;
+	double res;
 
-    settb->var_values[VAR_AVTB] = av_q2d(AV_TIME_BASE_Q);
-    settb->var_values[VAR_INTB] = av_q2d(inlink->time_base);
+	settb->var_values[VAR_AVTB] = av_q2d(AV_TIME_BASE_Q);
+	settb->var_values[VAR_INTB] = av_q2d(inlink->time_base);
 
-    outlink->w = inlink->w;
-    outlink->h = inlink->h;
+	outlink->w = inlink->w;
+	outlink->h = inlink->h;
 
-    if ((ret = av_expr_parse_and_eval(&res, settb->tb_expr, var_names, settb->var_values,
-                                      NULL, NULL, NULL, NULL, NULL, 0, NULL)) < 0) {
-        av_log(ctx, AV_LOG_ERROR, "Invalid expression '%s' for timebase.\n", settb->tb_expr);
-        return ret;
-    }
-    time_base = av_d2q(res, INT_MAX);
-    if (time_base.num <= 0 || time_base.den <= 0) {
-        av_log(ctx, AV_LOG_ERROR,
-               "Invalid non-positive values for the timebase num:%d or den:%d.\n",
-               time_base.num, time_base.den);
-        return AVERROR(EINVAL);
-    }
+	if ((ret = av_expr_parse_and_eval(&res, settb->tb_expr, var_names, settb->var_values,
+	                                  NULL, NULL, NULL, NULL, NULL, 0, NULL)) < 0)
+	{
+		av_log(ctx, AV_LOG_ERROR, "Invalid expression '%s' for timebase.\n", settb->tb_expr);
+		return ret;
+	}
+	time_base = av_d2q(res, INT_MAX);
+	if (time_base.num <= 0 || time_base.den <= 0)
+	{
+		av_log(ctx, AV_LOG_ERROR,
+		       "Invalid non-positive values for the timebase num:%d or den:%d.\n",
+		       time_base.num, time_base.den);
+		return AVERROR(EINVAL);
+	}
 
-    outlink->time_base = time_base;
-    av_log(outlink->src, AV_LOG_INFO, "tb:%d/%d -> tb:%d/%d\n",
-           inlink ->time_base.num, inlink ->time_base.den,
-           outlink->time_base.num, outlink->time_base.den);
+	outlink->time_base = time_base;
+	av_log(outlink->src, AV_LOG_INFO, "tb:%d/%d -> tb:%d/%d\n",
+	       inlink->time_base.num, inlink->time_base.den,
+	       outlink->time_base.num, outlink->time_base.den);
 
-    return 0;
+	return 0;
 }
 
-static void start_frame(AVFilterLink *inlink, AVFilterBufferRef *picref)
+static void start_frame(AVFilterLink* inlink, AVFilterBufferRef* picref)
 {
-    AVFilterContext *ctx = inlink->dst;
-    AVFilterLink *outlink = ctx->outputs[0];
-    AVFilterBufferRef *picref2 = picref;
+	AVFilterContext* ctx = inlink->dst;
+	AVFilterLink* outlink = ctx->outputs[0];
+	AVFilterBufferRef* picref2 = picref;
 
-    if (av_cmp_q(inlink->time_base, outlink->time_base)) {
-        picref2 = avfilter_ref_buffer(picref, ~0);
-        picref2->pts = av_rescale_q(picref->pts, inlink->time_base, outlink->time_base);
-        av_log(ctx, AV_LOG_DEBUG, "tb:%d/%d pts:%"PRId64" -> tb:%d/%d pts:%"PRId64"\n",
-               inlink ->time_base.num, inlink ->time_base.den, picref ->pts,
-               outlink->time_base.num, outlink->time_base.den, picref2->pts);
-        avfilter_unref_buffer(picref);
-    }
+	if (av_cmp_q(inlink->time_base, outlink->time_base))
+	{
+		picref2 = avfilter_ref_buffer(picref, ~0);
+		picref2->pts = av_rescale_q(picref->pts, inlink->time_base, outlink->time_base);
+		av_log(ctx, AV_LOG_DEBUG, "tb:%d/%d pts:%"PRId64" -> tb:%d/%d pts:%"PRId64"\n",
+		       inlink->time_base.num, inlink->time_base.den, picref->pts,
+		       outlink->time_base.num, outlink->time_base.den, picref2->pts);
+		avfilter_unref_buffer(picref);
+	}
 
-    avfilter_start_frame(outlink, picref2);
+	avfilter_start_frame(outlink, picref2);
 }
 
 AVFilter avfilter_vf_settb = {
-    .name      = "settb",
-    .description = NULL_IF_CONFIG_SMALL("Set timebase for the output link."),
-    .init      = init,
+	.name = "settb",
+	.description = NULL_IF_CONFIG_SMALL("Set timebase for the output link."),
+	.init = init,
 
-    .priv_size = sizeof(SetTBContext),
+	.priv_size = sizeof(SetTBContext),
 
-    .inputs    = (const AVFilterPad[]) {{ .name       = "default",
-                                    .type             = AVMEDIA_TYPE_VIDEO,
-                                    .get_video_buffer = ff_null_get_video_buffer,
-                                    .start_frame      = start_frame,
-                                    .end_frame        = ff_null_end_frame },
-                                  { .name = NULL }},
+	.inputs = (const AVFilterPad[]){
+		{
+			.name = "default",
+			.type = AVMEDIA_TYPE_VIDEO,
+			.get_video_buffer = ff_null_get_video_buffer,
+			.start_frame = start_frame,
+			.end_frame = ff_null_end_frame
+		},
+		{.name = NULL}
+	},
 
-    .outputs   = (const AVFilterPad[]) {{ .name      = "default",
-                                    .type            = AVMEDIA_TYPE_VIDEO,
-                                    .config_props    = config_output_props, },
-                                  { .name = NULL}},
+	.outputs = (const AVFilterPad[]){
+		{
+			.name = "default",
+			.type = AVMEDIA_TYPE_VIDEO,
+			.config_props = config_output_props,
+		},
+		{.name = NULL}
+	},
 };

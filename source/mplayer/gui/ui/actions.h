@@ -26,7 +26,7 @@
 extern int uiGotoTheNext;
 
 void uiAbsSeek(float sec);
-void uiChangeSkin(char *name);
+void uiChangeSkin(char* name);
 void uiCurr(void);
 void uiFullScreen(void);
 void uiNext(void);
@@ -34,7 +34,7 @@ void uiPause(void);
 void uiPlay(void);
 void uiPrev(void);
 void uiRelSeek(float percent);
-void uiSetFileName(char *dir, char *name, int type);
+void uiSetFileName(char* dir, char* name, int type);
 void uiState(void);
 
 #endif /* MPLAYER_GUI_ACTIONS_H */

@@ -6,10 +6,10 @@ namespace litehtml
 	class el_link : public element
 	{
 	public:
-		el_link(litehtml::document* doc);
-		virtual ~el_link();
+		el_link(document* doc);
+		~el_link() override;
 
 	protected:
-		virtual void	finish();
+		void finish() override;
 	};
 }

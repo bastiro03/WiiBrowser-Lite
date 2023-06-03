@@ -25,7 +25,7 @@
 
 #define AV_CPU_FLAG_FORCE    0x80000000 /* force usage of selected flags (OR) */
 
-    /* lower 16 bits - CPU features */
+/* lower 16 bits - CPU features */
 #define AV_CPU_FLAG_MMX          0x0001 ///< standard MMX
 #define AV_CPU_FLAG_MMX2         0x0002 ///< SSE integer functions or AMD MMX ext
 #define AV_CPU_FLAG_3DNOW        0x0004 ///< AMD 3DNOW
@@ -81,14 +81,14 @@ attribute_deprecated void av_set_cpu_flags_mask(int mask);
  * Please use av_parse_cpu_caps() when possible.
  * @return a combination of AV_CPU_* flags, negative on error.
  */
-int av_parse_cpu_flags(const char *s);
+int av_parse_cpu_flags(const char* s);
 
 /**
  * Parse CPU caps from a string and update the given AV_CPU_* flags based on that.
  *
  * @return negative on error.
  */
-int av_parse_cpu_caps(unsigned *flags, const char *s);
+int av_parse_cpu_caps(unsigned* flags, const char* s);
 
 /* The following CPU-specific functions shall not be called directly. */
 int ff_get_cpu_flags_arm(void);

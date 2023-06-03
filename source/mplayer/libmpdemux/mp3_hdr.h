@@ -21,16 +21,18 @@
 
 #include <stddef.h>
 
-int mp_get_mp3_header(unsigned char* hbuf,int* chans, int* freq, int* spf, int* mpa_layer, int* br);
+int mp_get_mp3_header(unsigned char* hbuf, int* chans, int* freq, int* spf, int* mpa_layer, int* br);
 
 #define mp_decode_mp3_header(hbuf)  mp_get_mp3_header(hbuf,NULL,NULL,NULL,NULL,NULL)
 
-static inline int mp_check_mp3_header(unsigned int head){
-    unsigned char tmp[4] = {head >> 24, head >> 16, head >> 8, head};
-    if( (head & 0xffe00000) != 0xffe00000 ||
-        (head & 0x00000c00) == 0x00000c00) return 0;
-    if(mp_decode_mp3_header(tmp)<=0) return 0;
-    return 1;
+static inline int mp_check_mp3_header(unsigned int head)
+{
+	unsigned char tmp[4] = {head >> 24, head >> 16, head >> 8, head};
+	if ((head & 0xffe00000) != 0xffe00000 ||
+		(head & 0x00000c00) == 0x00000c00)
+		return 0;
+	if (mp_decode_mp3_header(tmp) <= 0) return 0;
+	return 1;
 }
 
 #endif /* MPLAYER_MP3_HDR_H */

@@ -2,15 +2,17 @@
 # define BISON_CSS_SYNTAX_H
 
 #ifndef YYSTYPE
-typedef union {
-	char *lexeme;
+typedef union
+{
+	char* lexeme;
 	char letter;
-	struct property_t *property;
-	struct selector_t *selector;
-	struct selector_list_t *selector_list;
+	struct property_t* property;
+	struct selector_t* selector;
+	struct selector_list_t* selector_list;
 	int pseudo_class;
 	int pseudo_element;
 } yystype;
+
 # define YYSTYPE yystype
 # define YYSTYPE_IS_TRIVIAL 1
 #endif
@@ -42,6 +44,5 @@ typedef union {
 # define	CDO	282
 # define	CDC	283
 # define	CSL	284
-
 
 #endif /* not BISON_CSS_SYNTAX_H */

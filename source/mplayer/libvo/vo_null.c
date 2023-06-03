@@ -43,7 +43,7 @@ const LIBVO_EXTERN(null)
 static uint32_t image_width, image_height;
 
 //static uint32_t
-static int draw_slice(uint8_t *image[], int stride[], int w,int h,int x,int y)
+static int draw_slice(uint8_t* image[], int stride[], int w, int h, int x, int y)
 //draw_slice(uint8_t *src[], uint32_t slice_num)
 {
 	return 0;
@@ -59,7 +59,7 @@ flip_page(void)
 }
 
 static int
-draw_frame(uint8_t *src[])
+draw_frame(uint8_t* src[])
 {
 	return 0;
 }
@@ -67,13 +67,14 @@ draw_frame(uint8_t *src[])
 static int
 query_format(uint32_t format)
 {
-    if (IMGFMT_IS_HWACCEL(format))
-        return 0;
-    return VFCAP_CSP_SUPPORTED;
+	if (IMGFMT_IS_HWACCEL(format))
+		return 0;
+	return VFCAP_CSP_SUPPORTED;
 }
 
 static int
-config(uint32_t width, uint32_t height, uint32_t d_width, uint32_t d_height, uint32_t flags, char *title, uint32_t format)
+config(uint32_t width, uint32_t height, uint32_t d_width, uint32_t d_height, uint32_t flags, char* title,
+       uint32_t format)
 {
 	image_width = width;
 	image_height = height;
@@ -85,26 +86,26 @@ uninit(void)
 {
 }
 
-
 static void check_events(void)
 {
 }
 
-static int preinit(const char *arg)
+static int preinit(const char* arg)
 {
-    if(arg)
-    {
-	mp_msg(MSGT_VO,MSGL_WARN, MSGTR_LIBVO_NULL_UnknownSubdevice,arg);
-	return ENOSYS;
-    }
-    return 0;
+	if (arg)
+	{
+		mp_msg(MSGT_VO, MSGL_WARN, MSGTR_LIBVO_NULL_UnknownSubdevice, arg);
+		return ENOSYS;
+	}
+	return 0;
 }
 
-static int control(uint32_t request, void *data)
+static int control(uint32_t request, void* data)
 {
-  switch (request) {
-  case VOCTRL_QUERY_FORMAT:
-    return query_format(*((uint32_t*)data));
-  }
-  return VO_NOTIMPL;
+	switch (request)
+	{
+	case VOCTRL_QUERY_FORMAT:
+		return query_format(*((uint32_t*)data));
+	}
+	return VO_NOTIMPL;
 }

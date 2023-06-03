@@ -25,9 +25,9 @@
 
 #include "libavcodec/dsputil.h"
 
-void ff_mmi_idct_put(uint8_t *dest, int line_size, DCTELEM *block);
-void ff_mmi_idct_add(uint8_t *dest, int line_size, DCTELEM *block);
-void ff_mmi_idct(DCTELEM *block);
+void ff_mmi_idct_put(uint8_t* dest, int line_size, DCTELEM* block);
+void ff_mmi_idct_add(uint8_t* dest, int line_size, DCTELEM* block);
+void ff_mmi_idct(DCTELEM* block);
 
 #define align16 __attribute__ ((aligned (16)))
 
@@ -66,7 +66,6 @@ void ff_mmi_idct(DCTELEM *block);
 #define r31 $ra         //return addr
 */
 
-
 #define         lq(base, off, reg)        \
         __asm__ volatile ("lq " #reg ", %0("#base ")" : : "i" (off) )
 
@@ -78,7 +77,7 @@ void ff_mmi_idct(DCTELEM *block);
 
 /*
 #define         ld(base, off, reg)        \
-        __asm__ volatile ("ld " #reg ", " #off "("#base ")")
+		__asm__ volatile ("ld " #reg ", " #off "("#base ")")
 */
 
 #define         ld3(base, off, reg)        \
@@ -92,7 +91,7 @@ void ff_mmi_idct(DCTELEM *block);
 
 /*
 #define         sd(reg, off, base)        \
-        __asm__ volatile ("sd " #reg ", " #off "("#base ")")
+		__asm__ volatile ("sd " #reg ", " #off "("#base ")")
 */
 //seems assembler has bug encoding mnemonic 'sd', so DIY
 #define         sd3(reg, off, base)        \

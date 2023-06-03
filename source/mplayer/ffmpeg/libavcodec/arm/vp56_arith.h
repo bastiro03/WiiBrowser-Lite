@@ -32,80 +32,80 @@
 #if HAVE_ARMV6 && HAVE_INLINE_ASM
 
 #define vp56_rac_get_prob vp56_rac_get_prob_armv6
-static inline int vp56_rac_get_prob_armv6(VP56RangeCoder *c, int pr)
+static inline int vp56_rac_get_prob_armv6(VP56RangeCoder* c, int pr)
 {
-    unsigned shift     = ff_vp56_norm_shift[c->high];
-    unsigned code_word = c->code_word << shift;
-    unsigned high      = c->high << shift;
-    unsigned bit;
+	unsigned shift = ff_vp56_norm_shift[c->high];
+	unsigned code_word = c->code_word << shift;
+	unsigned high = c->high << shift;
+	unsigned bit;
 
-    __asm__ ("adds    %3,  %3,  %0           \n"
-             "itt     cs                     \n"
-             "cmpcs   %7,  %4                \n"
-           A("ldrcsh  %2,  [%4], #2          \n")
-           T("ldrhcs  %2,  [%4], #2          \n")
-             "rsb     %0,  %6,  #256         \n"
-             "smlabb  %0,  %5,  %6,  %0      \n"
-           T("itttt   cs                     \n")
-             "rev16cs %2,  %2                \n"
-           T("lslcs   %2,  %2,  %3           \n")
-           T("orrcs   %1,  %1,  %2           \n")
-           A("orrcs   %1,  %1,  %2,  lsl %3  \n")
-             "subcs   %3,  %3,  #16          \n"
-             "lsr     %0,  %0,  #8           \n"
-             "cmp     %1,  %0,  lsl #16      \n"
-             "ittte   ge                     \n"
-             "subge   %1,  %1,  %0,  lsl #16 \n"
-             "subge   %0,  %5,  %0           \n"
-             "movge   %2,  #1                \n"
-             "movlt   %2,  #0                \n"
-             : "=&r"(c->high), "=&r"(c->code_word), "=&r"(bit),
-               "+&r"(c->bits), "+&r"(c->buffer)
-             : "r"(high), "r"(pr), "r"(c->end - 1),
-               "0"(shift), "1"(code_word)
-             : "cc");
+	__asm__("adds    %3,  %3,  %0           \n"
+		"itt     cs                     \n"
+		"cmpcs   %7,  %4                \n"
+		A("ldrcsh  %2,  [%4], #2          \n")
+		T("ldrhcs  %2,  [%4], #2          \n")
+		"rsb     %0,  %6,  #256         \n"
+		"smlabb  %0,  %5,  %6,  %0      \n"
+		T("itttt   cs                     \n")
+		"rev16cs %2,  %2                \n"
+		T("lslcs   %2,  %2,  %3           \n")
+		T("orrcs   %1,  %1,  %2           \n")
+		A("orrcs   %1,  %1,  %2,  lsl %3  \n")
+		"subcs   %3,  %3,  #16          \n"
+		"lsr     %0,  %0,  #8           \n"
+		"cmp     %1,  %0,  lsl #16      \n"
+		"ittte   ge                     \n"
+		"subge   %1,  %1,  %0,  lsl #16 \n"
+		"subge   %0,  %5,  %0           \n"
+		"movge   %2,  #1                \n"
+		"movlt   %2,  #0                \n"
+		: "=&r"(c->high), "=&r"(c->code_word), "=&r"(bit),
+		"+&r"(c->bits), "+&r"(c->buffer)
+		: "r"(high), "r"(pr), "r"(c->end - 1),
+		"0"(shift), "1"(code_word)
+		: "cc");
 
-    return bit;
+	return bit;
 }
 
 #define vp56_rac_get_prob_branchy vp56_rac_get_prob_branchy_armv6
-static inline int vp56_rac_get_prob_branchy_armv6(VP56RangeCoder *c, int pr)
+static inline int vp56_rac_get_prob_branchy_armv6(VP56RangeCoder* c, int pr)
 {
-    unsigned shift     = ff_vp56_norm_shift[c->high];
-    unsigned code_word = c->code_word << shift;
-    unsigned high      = c->high << shift;
-    unsigned low;
-    unsigned tmp;
+	unsigned shift = ff_vp56_norm_shift[c->high];
+	unsigned code_word = c->code_word << shift;
+	unsigned high = c->high << shift;
+	unsigned low;
+	unsigned tmp;
 
-    __asm__ ("adds    %3,  %3,  %0           \n"
-             "itt     cs                     \n"
-             "cmpcs   %7,  %4                \n"
-           A("ldrcsh  %2,  [%4], #2          \n")
-           T("ldrhcs  %2,  [%4], #2          \n")
-             "rsb     %0,  %6,  #256         \n"
-             "smlabb  %0,  %5,  %6,  %0      \n"
-           T("itttt   cs                     \n")
-             "rev16cs %2,  %2                \n"
-           T("lslcs   %2,  %2,  %3           \n")
-           T("orrcs   %1,  %1,  %2           \n")
-           A("orrcs   %1,  %1,  %2,  lsl %3  \n")
-             "subcs   %3,  %3,  #16          \n"
-             "lsr     %0,  %0,  #8           \n"
-             "lsl     %2,  %0,  #16          \n"
-             : "=&r"(low), "+&r"(code_word), "=&r"(tmp),
-               "+&r"(c->bits), "+&r"(c->buffer)
-             : "r"(high), "r"(pr), "r"(c->end - 1), "0"(shift)
-             : "cc");
+	__asm__("adds    %3,  %3,  %0           \n"
+		"itt     cs                     \n"
+		"cmpcs   %7,  %4                \n"
+		A("ldrcsh  %2,  [%4], #2          \n")
+		T("ldrhcs  %2,  [%4], #2          \n")
+		"rsb     %0,  %6,  #256         \n"
+		"smlabb  %0,  %5,  %6,  %0      \n"
+		T("itttt   cs                     \n")
+		"rev16cs %2,  %2                \n"
+		T("lslcs   %2,  %2,  %3           \n")
+		T("orrcs   %1,  %1,  %2           \n")
+		A("orrcs   %1,  %1,  %2,  lsl %3  \n")
+		"subcs   %3,  %3,  #16          \n"
+		"lsr     %0,  %0,  #8           \n"
+		"lsl     %2,  %0,  #16          \n"
+		: "=&r"(low), "+&r"(code_word), "=&r"(tmp),
+		"+&r"(c->bits), "+&r"(c->buffer)
+		: "r"(high), "r"(pr), "r"(c->end - 1), "0"(shift)
+		: "cc");
 
-    if (code_word >= tmp) {
-        c->high      = high - low;
-        c->code_word = code_word - tmp;
-        return 1;
-    }
+	if (code_word >= tmp) {
+		c->high = high - low;
+		c->code_word = code_word - tmp;
+		return 1;
+	}
 
-    c->high      = low;
-    c->code_word = code_word;
-    return 0;
+	c->high = low;
+	c->code_word = code_word;
+	return 0;
 }
 
 #endif

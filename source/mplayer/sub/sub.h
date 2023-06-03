@@ -19,8 +19,9 @@
 #ifndef MPLAYER_SUB_H
 #define MPLAYER_SUB_H
 
-typedef struct mp_osd_bbox_s {
-    int x1,y1,x2,y2;
+typedef struct mp_osd_bbox_s
+{
+	int x1, y1, x2, y2;
 } mp_osd_bbox_t;
 
 #define OSDTYPE_OSD 1
@@ -39,33 +40,39 @@ typedef struct mp_osd_bbox_s {
 #define MAX_UCS 1600
 #define MAX_UCSLINES 16
 
-typedef struct mp_osd_obj_s {
-    struct mp_osd_obj_s* next;
-    unsigned char type;
-    unsigned char alignment; // 2 bits: x;y percentages, 2 bits: x;y relative to parent; 2 bits: alignment left/right/center
-    unsigned short flags;
-    int x,y;
-    int dxs,dys;
-    mp_osd_bbox_t bbox; // bounding box
-    mp_osd_bbox_t old_bbox; // the renderer will save bbox here
-    union {
-	struct {
-	    void* sub;			// value of vo_sub at last update
-	    int utbl[MAX_UCS+1];	// subtitle text
-	    int xtbl[MAX_UCSLINES];	// x positions
-	    int lines;			// no. of lines
-	} subtitle;
-	struct {
-	    int elems;
-	} progbar;
-    } params;
-    int stride;
+typedef struct mp_osd_obj_s
+{
+	struct mp_osd_obj_s* next;
+	unsigned char type;
+	unsigned char alignment;
+	// 2 bits: x;y percentages, 2 bits: x;y relative to parent; 2 bits: alignment left/right/center
+	unsigned short flags;
+	int x, y;
+	int dxs, dys;
+	mp_osd_bbox_t bbox; // bounding box
+	mp_osd_bbox_t old_bbox; // the renderer will save bbox here
+	union
+	{
+		struct
+		{
+			void* sub; // value of vo_sub at last update
+			int utbl[MAX_UCS + 1]; // subtitle text
+			int xtbl[MAX_UCSLINES]; // x positions
+			int lines; // no. of lines
+		} subtitle;
 
-    int allocated;
-    unsigned char *alpha_buffer;
-    unsigned char *bitmap_buffer;
+		struct
+		{
+			int elems;
+		} progbar;
+	} params;
+
+	int stride;
+
+	int allocated;
+	unsigned char* alpha_buffer;
+	unsigned char* bitmap_buffer;
 } mp_osd_obj_t;
-
 
 #include "subreader.h"
 
@@ -80,13 +87,13 @@ extern int vo_osd_teletext_mode;
 extern int vo_osd_teletext_format;
 
 extern int vo_osd_progbar_type;
-extern int vo_osd_progbar_value;   // 0..255
+extern int vo_osd_progbar_value; // 0..255
 
-extern mp_osd_obj_t *vo_osd_list;
+extern mp_osd_obj_t* vo_osd_list;
 
 extern void* vo_spudec;
 extern void* vo_vobsub;
-extern char *vobsub_name;
+extern char* vobsub_name;
 
 #define OSD_PLAY 0x01
 #define OSD_PAUSE 0x02
@@ -108,8 +115,8 @@ extern char *vobsub_name;
 #define OSD_PB_1 0x13
 
 /* now in textform */
-extern char * sub_osd_names[];
-extern char * sub_osd_names_short[];
+extern char* sub_osd_names[];
+extern char* sub_osd_names_short[];
 
 extern int sub_unicode;
 extern int sub_utf8;
@@ -125,25 +132,28 @@ extern int spu_alignment;
 extern int spu_aamode;
 extern float spu_gaussvar;
 
-void vo_draw_text(int dxs,int dys,void (*draw_alpha)(int x0,int y0, int w,int h, unsigned char* src, unsigned char *srca, int stride));
+void vo_draw_text(int dxs, int dys,
+                  void (*draw_alpha)(int x0, int y0, int w, int h, unsigned char* src, unsigned char* srca,
+                                     int stride));
 void vo_draw_text_ext(int dxs, int dys, int left_border, int top_border,
                       int right_border, int bottom_border, int orig_w, int orig_h,
-                      void (*draw_alpha)(int x0, int y0, int w,int h, unsigned char* src, unsigned char *srca, int stride));
-void vo_remove_text(int dxs,int dys,void (*remove)(int x0,int y0, int w,int h));
+                      void (*draw_alpha)(int x0, int y0, int w, int h, unsigned char* src, unsigned char* srca,
+                                         int stride));
+void vo_remove_text(int dxs, int dys, void (*remove)(int x0, int y0, int w, int h));
 
 void vo_init_osd(void);
-int vo_update_osd(int dxs,int dys);
+int vo_update_osd(int dxs, int dys);
 int vo_osd_changed(int new_value);
-int vo_osd_check_range_update(int,int,int,int);
+int vo_osd_check_range_update(int, int, int, int);
 void free_osd_list(void);
 
 extern int vo_osd_changed_flag;
 
-unsigned utf8_get_char(const char **str);
+unsigned utf8_get_char(const char** str);
 
 #ifdef CONFIG_DVDNAV
 #include <inttypes.h>
-void osd_set_nav_box (uint16_t sx, uint16_t sy, uint16_t ex, uint16_t ey);
+void osd_set_nav_box(uint16_t sx, uint16_t sy, uint16_t ex, uint16_t ey);
 #endif
 
 #endif /* MPLAYER_SUB_H */

@@ -14,7 +14,7 @@
 /**
  * Constructor for the GuiOptionBrowser class.
  */
-GuiOptionBrowser::GuiOptionBrowser(int w, int h, OptionList * l)
+GuiOptionBrowser::GuiOptionBrowser(int w, int h, OptionList* l)
 {
 	width = w;
 	height = h;
@@ -23,7 +23,7 @@ GuiOptionBrowser::GuiOptionBrowser(int w, int h, OptionList * l)
 	listOffset = this->FindMenuItem(-1, 1);
 	listChanged = true; // trigger an initial list update
 
-	pageSize = ROUND((float)height/32);
+	pageSize = ROUND((float)height / 32);
 	selectedItem = 0;
 	focus = 0; // allow focus
 
@@ -39,7 +39,7 @@ GuiOptionBrowser::GuiOptionBrowser(int w, int h, OptionList * l)
 	bgOptionsImg = new GuiImage(bgOptions);
 	bgOptionsImg->SetParent(this);
 	bgOptionsImg->SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
-	bgOptionsImg->SetScaleY((float)height/bgOptionsImg->GetHeight());
+	bgOptionsImg->SetScaleY(static_cast<float>(height) / bgOptionsImg->GetHeight());
 
 	bgOptionsEntry = new GuiImageData(bg_options_entry_png);
 
@@ -80,24 +80,32 @@ GuiOptionBrowser::GuiOptionBrowser(int w, int h, OptionList * l)
 	arrowDownBtn->SetSoundOver(btnSoundOver);
 	arrowDownBtn->SetSoundClick(btnSoundClick);
 
-	for(int i=0; i<pageSize; i++)
+	for (int i = 0; i < pageSize; i++)
 	{
-		optionTxt[i] = new GuiText("", 20, (GXColor){0, 0, 0, 0xff});
+		optionTxt[i] = new GuiText("", 20, (GXColor)
+		{
+			0, 0, 0, 0xff
+		}
+		)
 		optionTxt[i]->SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
-		optionTxt[i]->SetPosition(8,0);
+		optionTxt[i]->SetPosition(8, 0);
 
-		optionVal[i] = new GuiText("", 20, (GXColor){0, 0, 0, 0xff});
+		optionVal[i] = new GuiText("", 20, (GXColor)
+		{
+			0, 0, 0, 0xff
+		}
+		)
 		optionVal[i]->SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
-		optionVal[i]->SetPosition(250,0);
+		optionVal[i]->SetPosition(250, 0);
 
 		optionBg[i] = new GuiImage(bgOptionsEntry);
 
-		optionBtn[i] = new GuiButton(512,30);
+		optionBtn[i] = new GuiButton(512, 30);
 		optionBtn[i]->SetParent(this);
 		optionBtn[i]->SetLabel(optionTxt[i], 0);
 		optionBtn[i]->SetLabel(optionVal[i], 1);
 		optionBtn[i]->SetImageOver(optionBg[i]);
-		optionBtn[i]->SetPosition(2,30*i+3);
+		optionBtn[i]->SetPosition(2, 30 * i + 3);
 		optionBtn[i]->SetTrigger(trigA);
 		optionBtn[i]->SetTrigger(trig2);
 		optionBtn[i]->SetSoundClick(btnSoundClick);
@@ -132,7 +140,7 @@ GuiOptionBrowser::~GuiOptionBrowser()
 	delete btnSoundOver;
 	delete btnSoundClick;
 
-	for(int i=0; i<pageSize; i++)
+	for (int i = 0; i < pageSize; i++)
 	{
 		delete optionTxt[i];
 		delete optionVal[i];
@@ -143,36 +151,36 @@ GuiOptionBrowser::~GuiOptionBrowser()
 
 void GuiOptionBrowser::SetCol1Position(int x)
 {
-	for(int i=0; i<pageSize; i++)
-		optionTxt[i]->SetPosition(x,0);
+	for (int i = 0; i < pageSize; i++)
+		optionTxt[i]->SetPosition(x, 0);
 }
 
 void GuiOptionBrowser::SetCol2Position(int x)
 {
-	for(int i=0; i<pageSize; i++)
-		optionVal[i]->SetPosition(x,0);
+	for (int i = 0; i < pageSize; i++)
+		optionVal[i]->SetPosition(x, 0);
 }
 
 void GuiOptionBrowser::SetFocus(int f)
 {
 	focus = f;
 
-	for(int i=0; i<pageSize; i++)
+	for (int i = 0; i < pageSize; i++)
 		optionBtn[i]->ResetState();
 
-	if(f == 1)
+	if (f == 1)
 		optionBtn[selectedItem]->SetState(STATE_SELECTED);
 }
 
 void GuiOptionBrowser::ResetState()
 {
-	if(state != STATE_DISABLED)
+	if (state != STATE_DISABLED)
 	{
 		state = STATE_DEFAULT;
 		stateChan = -1;
 	}
 
-	for(int i=0; i<pageSize; i++)
+	for (int i = 0; i < pageSize; i++)
 	{
 		optionBtn[i]->ResetState();
 	}
@@ -181,9 +189,9 @@ void GuiOptionBrowser::ResetState()
 int GuiOptionBrowser::GetClickedOption()
 {
 	int found = -1;
-	for(int i=0; i<pageSize; i++)
+	for (int i = 0; i < pageSize; i++)
 	{
-		if(optionBtn[i]->GetState() == STATE_CLICKED)
+		if (optionBtn[i]->GetState() == STATE_CLICKED)
 		{
 			optionBtn[i]->SetState(STATE_SELECTED);
 			found = optionIndex[i];
@@ -203,13 +211,12 @@ int GuiOptionBrowser::FindMenuItem(int currentItem, int direction)
 {
 	int nextItem = currentItem + direction;
 
-	if(nextItem < 0 || nextItem >= options->length)
+	if (nextItem < 0 || nextItem >= options->length)
 		return -1;
 
-	if(strlen(options->name[nextItem]) > 0)
+	if (strlen(options->name[nextItem]) > 0)
 		return nextItem;
-	else
-		return FindMenuItem(nextItem, direction);
+	return FindMenuItem(nextItem, direction);
 }
 
 /**
@@ -217,16 +224,16 @@ int GuiOptionBrowser::FindMenuItem(int currentItem, int direction)
  */
 void GuiOptionBrowser::Draw()
 {
-	if(!this->IsVisible())
+	if (!this->IsVisible())
 		return;
 
 	bgOptionsImg->Draw();
 
 	int next = listOffset;
 
-	for(int i=0; i<pageSize; ++i)
+	for (int i = 0; i < pageSize; ++i)
 	{
-		if(next >= 0)
+		if (next >= 0)
 		{
 			optionBtn[i]->Draw();
 			next = this->FindMenuItem(next, 1);
@@ -251,9 +258,9 @@ void GuiOptionBrowser::ResetText()
 {
 	int next = listOffset;
 
-	for(int i=0; i<pageSize; i++)
+	for (int i = 0; i < pageSize; i++)
 	{
-		if(next >= 0)
+		if (next >= 0)
 		{
 			optionBtn[i]->ResetText();
 			next = this->FindMenuItem(next, 1);
@@ -263,9 +270,9 @@ void GuiOptionBrowser::ResetText()
 	}
 }
 
-void GuiOptionBrowser::Update(GuiTrigger * t)
+void GuiOptionBrowser::Update(GuiTrigger* t)
 {
-	if(state == STATE_DISABLED || !t)
+	if (state == STATE_DISABLED || !t)
 		return;
 
 	int next, prev;
@@ -275,14 +282,14 @@ void GuiOptionBrowser::Update(GuiTrigger * t)
 
 	next = listOffset;
 
-	if(listChanged)
+	if (listChanged)
 	{
 		listChanged = false;
-		for(int i=0; i<pageSize; ++i)
+		for (int i = 0; i < pageSize; ++i)
 		{
-			if(next >= 0)
+			if (next >= 0)
 			{
-				if(optionBtn[i]->GetState() == STATE_DISABLED)
+				if (optionBtn[i]->GetState() == STATE_DISABLED)
 				{
 					optionBtn[i]->SetVisible(true);
 					optionBtn[i]->SetState(STATE_DEFAULT);
@@ -301,57 +308,57 @@ void GuiOptionBrowser::Update(GuiTrigger * t)
 		}
 	}
 
-	for(int i=0; i<pageSize; ++i)
+	for (int i = 0; i < pageSize; ++i)
 	{
-		if(i != selectedItem && optionBtn[i]->GetState() == STATE_SELECTED)
+		if (i != selectedItem && optionBtn[i]->GetState() == STATE_SELECTED)
 			optionBtn[i]->ResetState();
-		else if(focus && i == selectedItem && optionBtn[i]->GetState() == STATE_DEFAULT)
+		else if (focus && i == selectedItem && optionBtn[i]->GetState() == STATE_DEFAULT)
 			optionBtn[selectedItem]->SetState(STATE_SELECTED, t->chan);
 
 		int currChan = t->chan;
 
-		if(t->wpad->ir.valid && !optionBtn[i]->IsInside(t->wpad->ir.x, t->wpad->ir.y))
+		if (t->wpad->ir.valid && !optionBtn[i]->IsInside(t->wpad->ir.x, t->wpad->ir.y))
 			t->chan = -1;
 
 		optionBtn[i]->Update(t);
 		t->chan = currChan;
 
-		if(optionBtn[i]->GetState() == STATE_SELECTED)
+		if (optionBtn[i]->GetState() == STATE_SELECTED)
 			selectedItem = i;
 	}
 
 	// pad/joystick navigation
 	// if(!focus)
-		// return; // skip navigation
+	// return; // skip navigation
 
-	if(t->Down() || arrowDownBtn->GetState() == STATE_CLICKED)
+	if (t->Down() || arrowDownBtn->GetState() == STATE_CLICKED)
 	{
 		next = this->FindMenuItem(optionIndex[selectedItem], 1);
 
-		if(next >= 0)
+		if (next >= 0)
 		{
-			if(selectedItem == pageSize-1)
+			if (selectedItem == pageSize - 1)
 			{
 				// move list down by 1
 				listOffset = this->FindMenuItem(listOffset, 1);
 				listChanged = true;
 			}
-			else if(optionBtn[selectedItem+1]->IsVisible())
+			else if (optionBtn[selectedItem + 1]->IsVisible())
 			{
 				optionBtn[selectedItem]->ResetState();
-				optionBtn[selectedItem+1]->SetState(STATE_SELECTED, t->chan);
+				optionBtn[selectedItem + 1]->SetState(STATE_SELECTED, t->chan);
 				++selectedItem;
 			}
 		}
 		arrowDownBtn->ResetState();
 	}
-	else if(t->Up() || arrowUpBtn->GetState() == STATE_CLICKED)
+	else if (t->Up() || arrowUpBtn->GetState() == STATE_CLICKED)
 	{
 		prev = this->FindMenuItem(optionIndex[selectedItem], -1);
 
-		if(prev >= 0)
+		if (prev >= 0)
 		{
-			if(selectedItem == 0)
+			if (selectedItem == 0)
 			{
 				// move list up by 1
 				listOffset = prev;
@@ -360,13 +367,13 @@ void GuiOptionBrowser::Update(GuiTrigger * t)
 			else
 			{
 				optionBtn[selectedItem]->ResetState();
-				optionBtn[selectedItem-1]->SetState(STATE_SELECTED, t->chan);
+				optionBtn[selectedItem - 1]->SetState(STATE_SELECTED, t->chan);
 				--selectedItem;
 			}
 		}
 		arrowUpBtn->ResetState();
 	}
 
-	if(updateCB)
+	if (updateCB)
 		updateCB(this);
 }

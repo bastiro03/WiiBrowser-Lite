@@ -5,12 +5,12 @@
 
 // ========================= MPlayer help ===========================
 
-static const char help_text[]=
-"Użycie:   mplayer [opcje] [url|ścieżka/]plik\n"
-"\n"
-"Podstawowe opcje: (pełna lista dostępna na stronie man)\n"
-" -vo <drv>        podaj wyjściowy sterownik video (lista: '-vo help')\n"
-" -ao <drv>        podaj wyjściowy sterownik audio (lista: '-ao help')\n"
+static const char help_text[] =
+	"Użycie:   mplayer [opcje] [url|ścieżka/]plik\n"
+	"\n"
+	"Podstawowe opcje: (pełna lista dostępna na stronie man)\n"
+	" -vo <drv>        podaj wyjściowy sterownik video (lista: '-vo help')\n"
+	" -ao <drv>        podaj wyjściowy sterownik audio (lista: '-ao help')\n"
 #ifdef CONFIG_VCD
 " vcd://<numer_ścieżki>  odtwórz ścieżkę (S)VCD (Super Video CD) (bezpośrednio, bez montowania)\n"
 #endif
@@ -18,32 +18,32 @@ static const char help_text[]=
 " dvd://<tytuł>    odtwórz tytuł DVD z urządzenia zamiast pliku\n"
 " -alang/-slang    wybierz język napisów/ścieżki dźwiękowej (dwuliterowy kod kraju)\n"
 #endif
-" -ss <position>   przejdź do pozycji (sekundy lub hh:mm:ss)\n"
-" -nosound         nie odtwarzaj dźwięku\n"
-" -fs              odtwarzaj pełnoekranowo (lub -vm, -zoom, szczegóły na stronie man)\n"
-" -x <x> -y <y>    ustaw rozdzielczość (użyj z -vm lub -zoom)\n"
-" -sub <plik>      podaj plik z napisami (zobacz też -subfps, -subdelay)\n"
-" -playlist <plik> podaj plik z listą odtwarzania\n"
-" -vid x -aid y    wybierz strumień video (x) oraz audio (y) do odtwarzania\n"
-" -fps x -srate y  zmień prędkość odtwarzania video (x fps) oraz audio (y Hz)\n"
-" -pp <quality>    włącz filtr 'postprocessing' (szczegóły na stronie man)\n"
-" -framedrop       włącz pomijanie ramek (dla słabszych komputerów)\n"
-"\n"
-"Podstawowe klawisze: (pełna lista na stronie man, zobacz też input.conf)\n"
-" <-  lub  ->       skocz o 10 sekund do tyłu/przodu\n"
-" dół lub góra      skocz o minutę do tyłu/przodu\n"
-" pgdown lub pgup   skocz o 10 minut do tyłu/przodu\n"
-" < lub >           skocz do tyłu/przodu w liście odtwarzania\n"
-" p lub SPACJA      pauza (wciśnij dowolny klawisz by kontynuować)\n"
-" q lub ESC         zatrzymaj odtwarzanie i zamknij program\n"
-" + lub -           dostosuj opóźnienie audio o +/- 0.1 sekundy\n"
-" o                 przełącz tryb OSD:  brak / belka / belka + czas\n"
-" * lub /           zwiększ lub zmniejsz głośność - PCM\n"
-" x lub z           dostosuj opóźnienie napisów o +/- 0.1 sekundy\n"
-" r lub t           dostosuj położenie napisów góra/dół, zobacz też -vf expand\n"
-"\n"
-" * * * WIĘCEJ OPCJI DOSTĘPNYCH NA STRONIE PODRĘCZNIKA MAN * * *\n"
-"\n";
+	" -ss <position>   przejdź do pozycji (sekundy lub hh:mm:ss)\n"
+	" -nosound         nie odtwarzaj dźwięku\n"
+	" -fs              odtwarzaj pełnoekranowo (lub -vm, -zoom, szczegóły na stronie man)\n"
+	" -x <x> -y <y>    ustaw rozdzielczość (użyj z -vm lub -zoom)\n"
+	" -sub <plik>      podaj plik z napisami (zobacz też -subfps, -subdelay)\n"
+	" -playlist <plik> podaj plik z listą odtwarzania\n"
+	" -vid x -aid y    wybierz strumień video (x) oraz audio (y) do odtwarzania\n"
+	" -fps x -srate y  zmień prędkość odtwarzania video (x fps) oraz audio (y Hz)\n"
+	" -pp <quality>    włącz filtr 'postprocessing' (szczegóły na stronie man)\n"
+	" -framedrop       włącz pomijanie ramek (dla słabszych komputerów)\n"
+	"\n"
+	"Podstawowe klawisze: (pełna lista na stronie man, zobacz też input.conf)\n"
+	" <-  lub  ->       skocz o 10 sekund do tyłu/przodu\n"
+	" dół lub góra      skocz o minutę do tyłu/przodu\n"
+	" pgdown lub pgup   skocz o 10 minut do tyłu/przodu\n"
+	" < lub >           skocz do tyłu/przodu w liście odtwarzania\n"
+	" p lub SPACJA      pauza (wciśnij dowolny klawisz by kontynuować)\n"
+	" q lub ESC         zatrzymaj odtwarzanie i zamknij program\n"
+	" + lub -           dostosuj opóźnienie audio o +/- 0.1 sekundy\n"
+	" o                 przełącz tryb OSD:  brak / belka / belka + czas\n"
+	" * lub /           zwiększ lub zmniejsz głośność - PCM\n"
+	" x lub z           dostosuj opóźnienie napisów o +/- 0.1 sekundy\n"
+	" r lub t           dostosuj położenie napisów góra/dół, zobacz też -vf expand\n"
+	"\n"
+	" * * * WIĘCEJ OPCJI DOSTĘPNYCH NA STRONIE PODRĘCZNIKA MAN * * *\n"
+	"\n";
 
 // libmpcodecs/ad_dvdpcm.c:
 #define MSGTR_SamplesWanted "By poprawić obsługę tego formatu potrzebne są próbki. Proszę skontaktować się z twórcami.\n"
@@ -585,13 +585,13 @@ static const char help_text[]=
 #define MSGTR_CantOpenCodec "Nie mogłem otworzyć kodeka.\n"
 #define MSGTR_CantCloseCodec "Nie mogłem zamknąć kodeka.\n"
 
-#define MSGTR_MissingDLLcodec "B�?ĄD: Nie mogę otworzyć wymaganego kodeka DirectShow %s.\n"
+#define MSGTR_MissingDLLcodec "B�?ĄD: Nie mogę otworzyć wymaganego kodeka DirectShow %s.\n"
 #define MSGTR_ACMiniterror "Nie mogę wczytać/zainicjować kodeka audio Win32/ACM (brak pliku DLL ?).\n"
 #define MSGTR_MissingLAVCcodec "Nie mogę odnaleźć kodeka '%s' w libavcodec...\n"
 
-#define MSGTR_MpegNoSequHdr "MPEG: B�?ĄD KRYTYCZNY: Wykryłem koniec pliku podczas poszukiwania nagłówka sekwencji.\n"
-#define MSGTR_CannotReadMpegSequHdr "B�?ĄD KRYTYCZNY: Nie mogę czytać nagłówka sekwencji.\n"
-#define MSGTR_CannotReadMpegSequHdrEx "B�?ĄD KRYTYCZNY: Nie mogę czytać rozszerzenia nagłówka sekwencji.\n"
+#define MSGTR_MpegNoSequHdr "MPEG: B�?ĄD KRYTYCZNY: Wykryłem koniec pliku podczas poszukiwania nagłówka sekwencji.\n"
+#define MSGTR_CannotReadMpegSequHdr "B�?ĄD KRYTYCZNY: Nie mogę czytać nagłówka sekwencji.\n"
+#define MSGTR_CannotReadMpegSequHdrEx "B�?ĄD KRYTYCZNY: Nie mogę czytać rozszerzenia nagłówka sekwencji.\n"
 #define MSGTR_BadMpegSequHdr "MPEG: zły nagłówek sekwencji\n"
 #define MSGTR_BadMpegSequHdrEx "MPEG: złe rozszerzenie nagłówka sekwencji\n"
 
@@ -1006,7 +1006,7 @@ static const char help_text[]=
 #define MSGTR_AO_OSS_CantSet "[AO OSS] Nie mogę ustawić urządzenia audio %s na wyjście %s, próbuję %s...\n"
 #define MSGTR_AO_OSS_CantSetChans "[AO OSS] audio_setup: Nie udało się ustawić urządzenia audio na %d kanałów.\n"
 #define MSGTR_AO_OSS_CantUseGetospace "[AO OSS] audio_setup: Sterownik nie obsługuje SNDCTL_DSP_GETOSPACE :-(\n"
-#define MSGTR_AO_OSS_CantUseSelect "[AO OSS]\n   ***  Twój sterownik dźwięku NIE OBS�?UGUJE select()  ***\n Przekompiluj MPlayera z opcją #undef HAVE_AUDIO_SELECT w config.h !\n\n"
+#define MSGTR_AO_OSS_CantUseSelect "[AO OSS]\n   ***  Twój sterownik dźwięku NIE OBS�?UGUJE select()  ***\n Przekompiluj MPlayera z opcją #undef HAVE_AUDIO_SELECT w config.h !\n\n"
 #define MSGTR_AO_OSS_CantReopen "[AO OSS]\nBłąd krytyczny: *** Nie mogę otworzyć ponownie/zresetowac urządzenia audio *** %s\n"
 #define MSGTR_AO_OSS_UnknownUnsupportedFormat "[AO OSS] Nieznany/nieobsługiwany format OSS: %x.\n"
 
@@ -1065,7 +1065,7 @@ static const char help_text[]=
 #define MSGTR_AO_SUN_RtscWriteFailed "[AO SUN] rtsc: zapis nie powiódł się.\n"
 #define MSGTR_AO_SUN_CantOpenAudioDev "[AO SUN] Nie mogę otworzyć urządzenia audio %s, %s  -> brak dźwięku.\n"
 #define MSGTR_AO_SUN_UnsupSampleRate "[AO SUN] audio_setup: Twoja karta nie obsługuje %d kanałów, %s, częstotliwości próbkowania %d Hz.\n"
-#define MSGTR_AO_SUN_CantUseSelect "[AO SUN]\n   ***  Twój sterownik dźwięku NIE OBS�?UGUJE select()  ***\nPrzekompiluj MPlayer z opcją #undef HAVE_AUDIO_SELECT w config.h !\n\n"
+#define MSGTR_AO_SUN_CantUseSelect "[AO SUN]\n   ***  Twój sterownik dźwięku NIE OBS�?UGUJE select()  ***\nPrzekompiluj MPlayer z opcją #undef HAVE_AUDIO_SELECT w config.h !\n\n"
 #define MSGTR_AO_SUN_CantReopenReset "[AO SUN]\nFatal error: *** Nie mogę otworzyć ponownie/zresetować urządzenia audio (%s) ***\n"
 
 // ao_plugin.c
@@ -1139,7 +1139,7 @@ static const char help_text[]=
 
 // url.c
 
-#define MSGTR_MPDEMUX_URL_StringAlreadyEscaped "�?ancuch wydaje się być już zakodowany w url_escape %c%c1%c2\n"
+#define MSGTR_MPDEMUX_URL_StringAlreadyEscaped "�?ancuch wydaje się być już zakodowany w url_escape %c%c1%c2\n"
 
 // ai_alsa.c
 
@@ -1176,7 +1176,7 @@ static const char help_text[]=
 
 // asfheader.c
 
-#define MSGTR_MPDEMUX_ASFHDR_HeaderSizeOver1MB "B�?ĄD KRYTYCZNY: rozmiar nagłowka jest większy niż 1 MB (%d)!\nProszę skontaktuj się z autorami MPlayera i wyślij ten plik.\n"
+#define MSGTR_MPDEMUX_ASFHDR_HeaderSizeOver1MB "B�?ĄD KRYTYCZNY: rozmiar nagłowka jest większy niż 1 MB (%d)!\nProszę skontaktuj się z autorami MPlayera i wyślij ten plik.\n"
 #define MSGTR_MPDEMUX_ASFHDR_HeaderMallocFailed "Nie moge zaalokować %d bajtów na nagłówek.\n"
 #define MSGTR_MPDEMUX_ASFHDR_EOFWhileReadingHeader "Koniec pliku podczas odczytywania nagłówka ASF, zepsuty/niepełny plik?\n"
 #define MSGTR_MPDEMUX_ASFHDR_DVRWantsLibavformat "DVR prawdopodobnie zadziała tylko z libavformat, spróbuj -demuxer 35 jeśli napotykasz problemy\n"
@@ -1317,7 +1317,7 @@ static const char help_text[]=
 #define MSGTR_MPDEMUX_NW_UnknownAF "Nieznana rodzina adresów %d\n"
 #define MSGTR_MPDEMUX_NW_ResolvingHostForAF "Zamieniam %s na %s...\n"
 #define MSGTR_MPDEMUX_NW_CantResolv "Nie mogłem zamienić nazwy dla  %s: %s\n"
-#define MSGTR_MPDEMUX_NW_ConnectingToServer "�?ączę z serwerem %s[%s]: %d...\n"
+#define MSGTR_MPDEMUX_NW_ConnectingToServer "�?ączę z serwerem %s[%s]: %d...\n"
 #define MSGTR_MPDEMUX_NW_CantConnect2Server "Błąd połączenia do serwera z %s\n"
 #define MSGTR_MPDEMUX_NW_SelectFailed "Wybieranie nie powiodło się.\n"
 #define MSGTR_MPDEMUX_NW_ConnTimeout "połączenie zerwane\n"
@@ -1407,7 +1407,6 @@ static const char help_text[]=
 #define MSGTR_LIBMENU_MenuTxtCantOpen "[MENU] Nie mogę otworzyć %s.\n"
 #define MSGTR_LIBMENU_WarningTooLongLineSplitting "[MENU] Uwaga, wiersz za długi. Dzielę go.\n"
 #define MSGTR_LIBMENU_ParsedLines "[MENU] Zinterpretowano %d wierszy.\n"
-
 
 // libmenu/vf_menu.c
 #define MSGTR_LIBMENU_UnknownMenuCommand "[MENU] Nieznane polecenie: '%s'.\n"

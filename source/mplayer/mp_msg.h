@@ -42,7 +42,9 @@ extern int verbose;
 #define MSGL_DBG5 10  // v=5
 
 #define MSGL_FIXME 1  // for conversions from printf where the appropriate MSGL is not known; set equal to ERR for obtrusiveness
+
 #define MSGT_FIXME 0  // for conversions from printf where the appropriate MSGT is not known; set equal to GLOBAL for obtrusiveness
+
 
 // code/module:
 
@@ -128,35 +130,33 @@ extern int verbose;
 
 #define MSGT_MAX 64
 
-
-extern char *mp_msg_charset;
+extern char* mp_msg_charset;
 extern int mp_msg_color;
 extern int mp_msg_module;
 
 extern int mp_msg_levels[MSGT_MAX];
 extern int mp_msg_level_all;
 
-
 void mp_msg_init(void);
 int mp_msg_test(int mod, int lev);
 
 #include "config.h"
 
-void mp_msg_va(int mod, int lev, const char *format, va_list va);
+void mp_msg_va(int mod, int lev, const char* format, va_list va);
 #ifdef __GNUC__
-void mp_msg(int mod, int lev, const char *format, ... ) __attribute__ ((format (printf, 3, 4)));
+void mp_msg(int mod, int lev, const char* format, ...) __attribute__((format(printf, 3, 4)));
 #   ifdef MP_DEBUG
 #      define mp_dbg(mod,lev, args... ) mp_msg(mod, lev, ## args )
 #   else
-       // only useful for developers, disable but check syntax
+// only useful for developers, disable but check syntax
 #      define mp_dbg(mod,lev, args... ) do { if (0) mp_msg(mod, lev, ## args ); } while (0)
 #   endif
 #else // not GNU C
-void mp_msg(int mod, int lev, const char *format, ... );
+void mp_msg(int mod, int lev, const char* format, ...);
 #   ifdef MP_DEBUG
 #      define mp_dbg(mod,lev, ... ) mp_msg(mod, lev, __VA_ARGS__)
 #   else
-       // only useful for developers, disable but check syntax
+// only useful for developers, disable but check syntax
 #      define mp_dbg(mod,lev, ... ) do { if (0) mp_msg(mod, lev, __VA_ARGS__); } while (0)
 #   endif
 #endif /* __GNUC__ */

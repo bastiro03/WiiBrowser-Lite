@@ -14,19 +14,19 @@
 
 void my_garbagecollection(void);
 
-typedef struct {
-    UINT             uDriverSignature;
-    HINSTANCE        hDriverModule;
-    DRIVERPROC       DriverProc;
-    DWORD            dwDriverID;
+typedef struct
+{
+	UINT uDriverSignature;
+	HINSTANCE hDriverModule;
+	DRIVERPROC DriverProc;
+	DWORD dwDriverID;
 } DRVR;
 
-typedef DRVR  *PDRVR;
-typedef DRVR  *NPDRVR;
-typedef DRVR  *LPDRVR;
+typedef DRVR* PDRVR;
+typedef DRVR* NPDRVR;
+typedef DRVR* LPDRVR;
 
 typedef struct tls_s tls_t;
-
 
 void* LookupExternal(const char* library, int ordinal);
 void* LookupExternalByName(const char* library, const char* name);

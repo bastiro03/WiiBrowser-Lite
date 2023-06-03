@@ -114,7 +114,6 @@
 #define TVMode 0xC1
 #define ClockControl 0xCF
 
-
 /* 3CE */
 #define MiscExtFunc 0x0F
 #define MiscIntContReg 0x2F

@@ -23,7 +23,7 @@
 
 #include "m_option.h"
 
-int  vo_zr_parseoption(const m_option_t *conf, const char *opt, const char *param);
-void vo_zr_revertoption(const m_option_t *opt, const char *param);
+int vo_zr_parseoption(const m_option_t* conf, const char* opt, const char* param);
+void vo_zr_revertoption(const m_option_t* opt, const char* param);
 
 #endif /* MPLAYER_VO_ZR_H */

@@ -42,95 +42,102 @@
 #include "os_support.h"
 #include "url.h"
 
-typedef struct Context {
-    int fd;
-    int64_t end;
-    int64_t pos;
-    URLContext *inner;
+typedef struct Context
+{
+	int fd;
+	int64_t end;
+	int64_t pos;
+	URLContext* inner;
 } Context;
 
-static int cache_open(URLContext *h, const char *arg, int flags)
+static int cache_open(URLContext* h, const char* arg, int flags)
 {
-    char *buffername;
-    Context *c= h->priv_data;
+	char* buffername;
+	Context* c = h->priv_data;
 
-    av_strstart(arg, "cache:", &arg);
+	av_strstart(arg, "cache:", &arg);
 
-    c->fd = av_tempfile("ffcache", &buffername, 0, h);
-    if (c->fd < 0){
-        av_log(h, AV_LOG_ERROR, "Failed to create tempfile\n");
-        return c->fd;
-    }
+	c->fd = av_tempfile("ffcache", &buffername, 0, h);
+	if (c->fd < 0)
+	{
+		av_log(h, AV_LOG_ERROR, "Failed to create tempfile\n");
+		return c->fd;
+	}
 
-    unlink(buffername);
-    av_freep(&buffername);
+	unlink(buffername);
+	av_freep(&buffername);
 
-    return ffurl_open(&c->inner, arg, flags, &h->interrupt_callback, NULL);
+	return ffurl_open(&c->inner, arg, flags, &h->interrupt_callback, NULL);
 }
 
-static int cache_read(URLContext *h, unsigned char *buf, int size)
+static int cache_read(URLContext* h, unsigned char* buf, int size)
 {
-    Context *c= h->priv_data;
-    int r;
+	Context* c = h->priv_data;
+	int r;
 
-    if(c->pos<c->end){
-        r = read(c->fd, buf, FFMIN(size, c->end - c->pos));
-        if(r>0)
-            c->pos += r;
-        return (-1 == r)?AVERROR(errno):r;
-    }else{
-        r = ffurl_read(c->inner, buf, size);
-        if(r > 0){
-            int r2= write(c->fd, buf, r);
-            av_assert0(r2==r); // FIXME handle cache failure
-            c->pos += r;
-            c->end += r;
-        }
-        return r;
-    }
+	if (c->pos < c->end)
+	{
+		r = read(c->fd, buf, FFMIN(size, c->end - c->pos));
+		if (r > 0)
+			c->pos += r;
+		return (-1 == r) ? AVERROR(errno) : r;
+	}
+	r = ffurl_read(c->inner, buf, size);
+	if (r > 0)
+	{
+		int r2 = write(c->fd, buf, r);
+		av_assert0(r2 == r); // FIXME handle cache failure
+		c->pos += r;
+		c->end += r;
+	}
+	return r;
 }
 
-static int64_t cache_seek(URLContext *h, int64_t pos, int whence)
+static int64_t cache_seek(URLContext* h, int64_t pos, int whence)
 {
-    Context *c= h->priv_data;
+	Context* c = h->priv_data;
 
-    if (whence == AVSEEK_SIZE) {
-        pos= ffurl_seek(c->inner, pos, whence);
-        if(pos <= 0){
-            pos= ffurl_seek(c->inner, -1, SEEK_END);
-            ffurl_seek(c->inner, c->end, SEEK_SET);
-            if(pos <= 0)
-                return c->end;
-        }
-        return pos;
-    }
+	if (whence == AVSEEK_SIZE)
+	{
+		pos = ffurl_seek(c->inner, pos, whence);
+		if (pos <= 0)
+		{
+			pos = ffurl_seek(c->inner, -1, SEEK_END);
+			ffurl_seek(c->inner, c->end, SEEK_SET);
+			if (pos <= 0)
+				return c->end;
+		}
+		return pos;
+	}
 
-    pos= lseek(c->fd, pos, whence);
-    if(pos<0){
-        return pos;
-    }else if(pos <= c->end){
-        c->pos= pos;
-        return pos;
-    }else{
-        lseek(c->fd, c->pos, SEEK_SET);
-        return AVERROR(EPIPE);
-    }
+	pos = lseek(c->fd, pos, whence);
+	if (pos < 0)
+	{
+		return pos;
+	}
+	if (pos <= c->end)
+	{
+		c->pos = pos;
+		return pos;
+	}
+	lseek(c->fd, c->pos, SEEK_SET);
+	return AVERROR(EPIPE);
 }
 
-static int cache_close(URLContext *h)
+static int cache_close(URLContext* h)
 {
-    Context *c= h->priv_data;
-    close(c->fd);
-    ffurl_close(c->inner);
+	Context* c = h->priv_data;
+	close(c->fd);
+	ffurl_close(c->inner);
 
-    return 0;
+	return 0;
 }
 
 URLProtocol ff_cache_protocol = {
-    .name                = "cache",
-    .url_open            = cache_open,
-    .url_read            = cache_read,
-    .url_seek            = cache_seek,
-    .url_close           = cache_close,
-    .priv_data_size      = sizeof(Context),
+	.name = "cache",
+	.url_open = cache_open,
+	.url_read = cache_read,
+	.url_seek = cache_seek,
+	.url_close = cache_close,
+	.priv_data_size = sizeof(Context),
 };

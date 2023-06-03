@@ -50,25 +50,25 @@
    and the butterfly must be multiplied by 0.5 * sqrt(2.0) */
 #define C_SHIFT (4+1+12)
 
-static inline void idct4col_put(uint8_t *dest, int line_size, const DCTELEM *col)
+static inline void idct4col_put(uint8_t* dest, int line_size, const DCTELEM* col)
 {
-    int c0, c1, c2, c3, a0, a1, a2, a3;
+	int c0, c1, c2, c3, a0, a1, a2, a3;
 
-    a0 = col[8*0];
-    a1 = col[8*2];
-    a2 = col[8*4];
-    a3 = col[8*6];
-    c0 = ((a0 + a2) << (CN_SHIFT - 1)) + (1 << (C_SHIFT - 1));
-    c2 = ((a0 - a2) << (CN_SHIFT - 1)) + (1 << (C_SHIFT - 1));
-    c1 = a1 * C1 + a3 * C2;
-    c3 = a1 * C2 - a3 * C1;
-    dest[0] = av_clip_uint8((c0 + c1) >> C_SHIFT);
-    dest += line_size;
-    dest[0] = av_clip_uint8((c2 + c3) >> C_SHIFT);
-    dest += line_size;
-    dest[0] = av_clip_uint8((c2 - c3) >> C_SHIFT);
-    dest += line_size;
-    dest[0] = av_clip_uint8((c0 - c1) >> C_SHIFT);
+	a0 = col[8 * 0];
+	a1 = col[8 * 2];
+	a2 = col[8 * 4];
+	a3 = col[8 * 6];
+	c0 = ((a0 + a2) << (CN_SHIFT - 1)) + (1 << (C_SHIFT - 1));
+	c2 = ((a0 - a2) << (CN_SHIFT - 1)) + (1 << (C_SHIFT - 1));
+	c1 = a1 * C1 + a3 * C2;
+	c3 = a1 * C2 - a3 * C1;
+	dest[0] = av_clip_uint8((c0 + c1) >> C_SHIFT);
+	dest += line_size;
+	dest[0] = av_clip_uint8((c2 + c3) >> C_SHIFT);
+	dest += line_size;
+	dest[0] = av_clip_uint8((c2 - c3) >> C_SHIFT);
+	dest += line_size;
+	dest[0] = av_clip_uint8((c0 - c1) >> C_SHIFT);
 }
 
 #define BF(k) \
@@ -86,35 +86,38 @@ static inline void idct4col_put(uint8_t *dest, int line_size, const DCTELEM *col
 /* XXX: I think a 1.0/sqrt(2) normalization should be needed to
    compensate the extra butterfly stage - I don't have the full DV
    specification */
-void ff_simple_idct248_put(uint8_t *dest, int line_size, DCTELEM *block)
+void ff_simple_idct248_put(uint8_t* dest, int line_size, DCTELEM* block)
 {
-    int i;
-    DCTELEM *ptr;
+	int i;
+	DCTELEM* ptr;
 
-    /* butterfly */
-    ptr = block;
-    for(i=0;i<4;i++) {
-        BF(0);
-        BF(1);
-        BF(2);
-        BF(3);
-        BF(4);
-        BF(5);
-        BF(6);
-        BF(7);
-        ptr += 2 * 8;
-    }
+	/* butterfly */
+	ptr = block;
+	for (i = 0; i < 4; i++)
+	{
+		BF(0);
+		BF(1);
+		BF(2);
+		BF(3);
+		BF(4);
+		BF(5);
+		BF(6);
+		BF(7);
+		ptr += 2 * 8;
+	}
 
-    /* IDCT8 on each line */
-    for(i=0; i<8; i++) {
-        idctRowCondDC_8(block + i*8, 0);
-    }
+	/* IDCT8 on each line */
+	for (i = 0; i < 8; i++)
+	{
+		idctRowCondDC_8(block + i * 8, 0);
+	}
 
-    /* IDCT4 and store */
-    for(i=0;i<8;i++) {
-        idct4col_put(dest + i, 2 * line_size, block + i);
-        idct4col_put(dest + line_size + i, 2 * line_size, block + 8 + i);
-    }
+	/* IDCT4 and store */
+	for (i = 0; i < 8; i++)
+	{
+		idct4col_put(dest + i, 2 * line_size, block + i);
+		idct4col_put(dest + line_size + i, 2 * line_size, block + 8 + i);
+	}
 }
 
 /* 8x4 & 4x8 WMV2 IDCT */
@@ -129,25 +132,26 @@ void ff_simple_idct248_put(uint8_t *dest, int line_size, DCTELEM *block)
 #define C2 C_FIX(0.2705980501)
 #define C3 C_FIX(0.5)
 #define C_SHIFT (4+1+12)
-static inline void idct4col_add(uint8_t *dest, int line_size, const DCTELEM *col)
-{
-    int c0, c1, c2, c3, a0, a1, a2, a3;
 
-    a0 = col[8*0];
-    a1 = col[8*1];
-    a2 = col[8*2];
-    a3 = col[8*3];
-    c0 = (a0 + a2)*C3 + (1 << (C_SHIFT - 1));
-    c2 = (a0 - a2)*C3 + (1 << (C_SHIFT - 1));
-    c1 = a1 * C1 + a3 * C2;
-    c3 = a1 * C2 - a3 * C1;
-    dest[0] = av_clip_uint8(dest[0] + ((c0 + c1) >> C_SHIFT));
-    dest += line_size;
-    dest[0] = av_clip_uint8(dest[0] + ((c2 + c3) >> C_SHIFT));
-    dest += line_size;
-    dest[0] = av_clip_uint8(dest[0] + ((c2 - c3) >> C_SHIFT));
-    dest += line_size;
-    dest[0] = av_clip_uint8(dest[0] + ((c0 - c1) >> C_SHIFT));
+static inline void idct4col_add(uint8_t* dest, int line_size, const DCTELEM* col)
+{
+	int c0, c1, c2, c3, a0, a1, a2, a3;
+
+	a0 = col[8 * 0];
+	a1 = col[8 * 1];
+	a2 = col[8 * 2];
+	a3 = col[8 * 3];
+	c0 = (a0 + a2) * C3 + (1 << (C_SHIFT - 1));
+	c2 = (a0 - a2) * C3 + (1 << (C_SHIFT - 1));
+	c1 = a1 * C1 + a3 * C2;
+	c3 = a1 * C2 - a3 * C1;
+	dest[0] = av_clip_uint8(dest[0] + ((c0 + c1) >> C_SHIFT));
+	dest += line_size;
+	dest[0] = av_clip_uint8(dest[0] + ((c2 + c3) >> C_SHIFT));
+	dest += line_size;
+	dest[0] = av_clip_uint8(dest[0] + ((c2 - c3) >> C_SHIFT));
+	dest += line_size;
+	dest[0] = av_clip_uint8(dest[0] + ((c0 - c1) >> C_SHIFT));
 }
 
 #define RN_SHIFT 15
@@ -156,79 +160,86 @@ static inline void idct4col_add(uint8_t *dest, int line_size, const DCTELEM *col
 #define R2 R_FIX(0.2705980501)
 #define R3 R_FIX(0.5)
 #define R_SHIFT 11
-static inline void idct4row(DCTELEM *row)
-{
-    int c0, c1, c2, c3, a0, a1, a2, a3;
 
-    a0 = row[0];
-    a1 = row[1];
-    a2 = row[2];
-    a3 = row[3];
-    c0 = (a0 + a2)*R3 + (1 << (R_SHIFT - 1));
-    c2 = (a0 - a2)*R3 + (1 << (R_SHIFT - 1));
-    c1 = a1 * R1 + a3 * R2;
-    c3 = a1 * R2 - a3 * R1;
-    row[0]= (c0 + c1) >> R_SHIFT;
-    row[1]= (c2 + c3) >> R_SHIFT;
-    row[2]= (c2 - c3) >> R_SHIFT;
-    row[3]= (c0 - c1) >> R_SHIFT;
+static inline void idct4row(DCTELEM* row)
+{
+	int c0, c1, c2, c3, a0, a1, a2, a3;
+
+	a0 = row[0];
+	a1 = row[1];
+	a2 = row[2];
+	a3 = row[3];
+	c0 = (a0 + a2) * R3 + (1 << (R_SHIFT - 1));
+	c2 = (a0 - a2) * R3 + (1 << (R_SHIFT - 1));
+	c1 = a1 * R1 + a3 * R2;
+	c3 = a1 * R2 - a3 * R1;
+	row[0] = (c0 + c1) >> R_SHIFT;
+	row[1] = (c2 + c3) >> R_SHIFT;
+	row[2] = (c2 - c3) >> R_SHIFT;
+	row[3] = (c0 - c1) >> R_SHIFT;
 }
 
-void ff_simple_idct84_add(uint8_t *dest, int line_size, DCTELEM *block)
+void ff_simple_idct84_add(uint8_t* dest, int line_size, DCTELEM* block)
 {
-    int i;
+	int i;
 
-    /* IDCT8 on each line */
-    for(i=0; i<4; i++) {
-        idctRowCondDC_8(block + i*8, 0);
-    }
+	/* IDCT8 on each line */
+	for (i = 0; i < 4; i++)
+	{
+		idctRowCondDC_8(block + i * 8, 0);
+	}
 
-    /* IDCT4 and store */
-    for(i=0;i<8;i++) {
-        idct4col_add(dest + i, line_size, block + i);
-    }
+	/* IDCT4 and store */
+	for (i = 0; i < 8; i++)
+	{
+		idct4col_add(dest + i, line_size, block + i);
+	}
 }
 
-void ff_simple_idct48_add(uint8_t *dest, int line_size, DCTELEM *block)
+void ff_simple_idct48_add(uint8_t* dest, int line_size, DCTELEM* block)
 {
-    int i;
+	int i;
 
-    /* IDCT4 on each line */
-    for(i=0; i<8; i++) {
-        idct4row(block + i*8);
-    }
+	/* IDCT4 on each line */
+	for (i = 0; i < 8; i++)
+	{
+		idct4row(block + i * 8);
+	}
 
-    /* IDCT8 and store */
-    for(i=0; i<4; i++){
-        idctSparseColAdd_8(dest + i, line_size, block + i);
-    }
+	/* IDCT8 and store */
+	for (i = 0; i < 4; i++)
+	{
+		idctSparseColAdd_8(dest + i, line_size, block + i);
+	}
 }
 
-void ff_simple_idct44_add(uint8_t *dest, int line_size, DCTELEM *block)
+void ff_simple_idct44_add(uint8_t* dest, int line_size, DCTELEM* block)
 {
-    int i;
+	int i;
 
-    /* IDCT4 on each line */
-    for(i=0; i<4; i++) {
-        idct4row(block + i*8);
-    }
+	/* IDCT4 on each line */
+	for (i = 0; i < 4; i++)
+	{
+		idct4row(block + i * 8);
+	}
 
-    /* IDCT4 and store */
-    for(i=0; i<4; i++){
-        idct4col_add(dest + i, line_size, block + i);
-    }
+	/* IDCT4 and store */
+	for (i = 0; i < 4; i++)
+	{
+		idct4col_add(dest + i, line_size, block + i);
+	}
 }
 
-void ff_prores_idct(DCTELEM *block, const int16_t *qmat)
+void ff_prores_idct(DCTELEM* block, const int16_t* qmat)
 {
-    int i;
+	int i;
 
-    for (i = 0; i < 64; i++)
-        block[i] *= qmat[i];
+	for (i = 0; i < 64; i++)
+		block[i] *= qmat[i];
 
-    for (i = 0; i < 8; i++)
-        idctRowCondDC_10(block + i*8, 2);
+	for (i = 0; i < 8; i++)
+		idctRowCondDC_10(block + i * 8, 2);
 
-    for (i = 0; i < 8; i++)
-        idctSparseCol_10(block + i);
+	for (i = 0; i < 8; i++)
+		idctSparseCol_10(block + i);
 }

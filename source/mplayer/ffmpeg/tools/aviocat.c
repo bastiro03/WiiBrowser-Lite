@@ -24,73 +24,85 @@
 
 #include "libavformat/avformat.h"
 
-static int usage(const char *argv0, int ret)
+static int usage(const char* argv0, int ret)
 {
-    fprintf(stderr, "%s [-b bytespersec] input_url output_url\n", argv0);
-    return ret;
+	fprintf(stderr, "%s [-b bytespersec] input_url output_url\n", argv0);
+	return ret;
 }
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
-    int bps = 0, ret, i;
-    const char *input_url = NULL, *output_url = NULL;
-    int64_t stream_pos = 0;
-    int64_t start_time;
-    char errbuf[50];
-    AVIOContext *input, *output;
+	int bps = 0, ret, i;
+	const char *input_url = NULL, *output_url = NULL;
+	int64_t stream_pos = 0;
+	int64_t start_time;
+	char errbuf[50];
+	AVIOContext *input, *output;
 
-    av_register_all();
-    avformat_network_init();
+	av_register_all();
+	avformat_network_init();
 
-    for (i = 1; i < argc; i++) {
-        if (!strcmp(argv[i], "-b")) {
-            bps = atoi(argv[i + 1]);
-            i++;
-        } else if (!input_url) {
-            input_url = argv[i];
-        } else if (!output_url) {
-            output_url = argv[i];
-        } else {
-            return usage(argv[0], 1);
-        }
-    }
-    if (!output_url)
-        return usage(argv[0], 1);
+	for (i = 1; i < argc; i++)
+	{
+		if (!strcmp(argv[i], "-b"))
+		{
+			bps = atoi(argv[i + 1]);
+			i++;
+		}
+		else if (!input_url)
+		{
+			input_url = argv[i];
+		}
+		else if (!output_url)
+		{
+			output_url = argv[i];
+		}
+		else
+		{
+			return usage(argv[0], 1);
+		}
+	}
+	if (!output_url)
+		return usage(argv[0], 1);
 
-    ret = avio_open2(&input, input_url, AVIO_FLAG_READ, NULL, NULL);
-    if (ret) {
-        av_strerror(ret, errbuf, sizeof(errbuf));
-        fprintf(stderr, "Unable to open %s: %s\n", input_url, errbuf);
-        return 1;
-    }
-    ret = avio_open2(&output, output_url, AVIO_FLAG_WRITE, NULL, NULL);
-    if (ret) {
-        av_strerror(ret, errbuf, sizeof(errbuf));
-        fprintf(stderr, "Unable to open %s: %s\n", output_url, errbuf);
-        goto fail;
-    }
+	ret = avio_open2(&input, input_url, AVIO_FLAG_READ, NULL, NULL);
+	if (ret)
+	{
+		av_strerror(ret, errbuf, sizeof(errbuf));
+		fprintf(stderr, "Unable to open %s: %s\n", input_url, errbuf);
+		return 1;
+	}
+	ret = avio_open2(&output, output_url, AVIO_FLAG_WRITE, NULL, NULL);
+	if (ret)
+	{
+		av_strerror(ret, errbuf, sizeof(errbuf));
+		fprintf(stderr, "Unable to open %s: %s\n", output_url, errbuf);
+		goto fail;
+	}
 
-    start_time = av_gettime();
-    while (1) {
-        uint8_t buf[1024];
-        int n;
-        n = avio_read(input, buf, sizeof(buf));
-        if (n <= 0)
-            break;
-        avio_write(output, buf, n);
-        stream_pos += n;
-        if (bps) {
-            avio_flush(output);
-            while ((av_gettime() - start_time) * bps / AV_TIME_BASE < stream_pos)
-                usleep(50 * 1000);
-        }
-    }
+	start_time = av_gettime();
+	while (1)
+	{
+		uint8_t buf[1024];
+		int n;
+		n = avio_read(input, buf, sizeof(buf));
+		if (n <= 0)
+			break;
+		avio_write(output, buf, n);
+		stream_pos += n;
+		if (bps)
+		{
+			avio_flush(output);
+			while ((av_gettime() - start_time) * bps / AV_TIME_BASE < stream_pos)
+				usleep(50 * 1000);
+		}
+	}
 
-    avio_flush(output);
-    avio_close(output);
+	avio_flush(output);
+	avio_close(output);
 
 fail:
-    avio_close(input);
-    avformat_network_deinit();
-    return ret ? 1 : 0;
+	avio_close(input);
+	avformat_network_deinit();
+	return ret ? 1 : 0;
 }

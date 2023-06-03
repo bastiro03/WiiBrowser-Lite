@@ -24,9 +24,9 @@
 #include <stdint.h>
 #include "libavcodec/dsputil.h"
 
-void ff_dsputil_h264_init_ppc(DSPContext *c, AVCodecContext *avctx);
+void ff_dsputil_h264_init_ppc(DSPContext* c, AVCodecContext* avctx);
 
-void ff_dsputil_init_paired(DSPContext *c, AVCodecContext *avctx);
-void ff_float_init_paired(DSPContext *c, AVCodecContext *avctx);
+void ff_dsputil_init_paired(DSPContext* c, AVCodecContext* avctx);
+void ff_float_init_paired(DSPContext* c, AVCodecContext* avctx);
 
 #endif /* AVCODEC_PPC_DSPUTIL_PAIRED_H */

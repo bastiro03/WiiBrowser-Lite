@@ -6,9 +6,9 @@ namespace litehtml
 	class el_anchor : public element
 	{
 	public:
-		el_anchor(litehtml::document* doc);
-		virtual ~el_anchor();
+		el_anchor(document* doc);
+		~el_anchor() override;
 
-		virtual void on_click(int x, int y);
+		void on_click(int x, int y) override;
 	};
 }

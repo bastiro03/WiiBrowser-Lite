@@ -29,7 +29,6 @@
 #include "video_out.h"
 #include "video_out_internal.h"
 
-
 #include <sys/ioctl.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -56,10 +55,10 @@ static unsigned int timerd = 0;
 #endif
 
 static const vo_info_t info = {
-    "Matrox G200/G4x0/G550 overlay in X11 window (using /dev/mga_vid)",
-    "xmga",
-    "Zoltan Ponekker <pontscho@makacs.poliod.hu>",
-    ""
+	"Matrox G200/G4x0/G550 overlay in X11 window (using /dev/mga_vid)",
+	"xmga",
+	"Zoltan Ponekker <pontscho@makacs.poliod.hu>",
+	""
 };
 
 const LIBVO_EXTERN(xmga)
@@ -81,116 +80,116 @@ static int initialized = 0;
 
 static void mDrawColorKey(void)
 {
-    XSetBackground(mDisplay, vo_gc, 0);
-    XClearWindow(mDisplay, vo_window);
-    XSetForeground(mDisplay, vo_gc, colorkey);
-    XFillRectangle(mDisplay, vo_window, vo_gc, drwX, drwY, drwWidth,
-                   (vo_fs ? drwHeight - 1 : drwHeight));
-    XFlush(mDisplay);
+	XSetBackground(mDisplay, vo_gc, 0);
+	XClearWindow(mDisplay, vo_window);
+	XSetForeground(mDisplay, vo_gc, colorkey);
+	XFillRectangle(mDisplay, vo_window, vo_gc, drwX, drwY, drwWidth,
+	               (vo_fs ? drwHeight - 1 : drwHeight));
+	XFlush(mDisplay);
 }
 
 static void check_events(void)
 {
-    int e = vo_x11_check_events(mDisplay);
+	int e = vo_x11_check_events(mDisplay);
 
-    if (e & (VO_EVENT_RESIZE | VO_EVENT_MOVE))
-        set_window();
-    if (e & (VO_EVENT_RESIZE | VO_EVENT_EXPOSE))
-        mDrawColorKey();
+	if (e & (VO_EVENT_RESIZE | VO_EVENT_MOVE))
+		set_window();
+	if (e & (VO_EVENT_RESIZE | VO_EVENT_EXPOSE))
+		mDrawColorKey();
 }
 
 static void flip_page(void)
 {
 #ifdef SHOW_TIME
-    unsigned int t;
+	unsigned int t;
 
-    t = GetTimer();
-    mp_msg(MSGT_VO, MSGL_STATUS,
-           "  [timer: %08X  diff: %6d  dd: %6d ]  \n", t, t - timer,
-           (t - timer) - timerd);
-    timerd = t - timer;
-    timer = t;
+	t = GetTimer();
+	mp_msg(MSGT_VO, MSGL_STATUS,
+		"  [timer: %08X  diff: %6d  dd: %6d ]  \n", t, t - timer,
+		(t - timer) - timerd);
+	timerd = t - timer;
+	timer = t;
 #endif
 
-    vo_mga_flip_page();
+	vo_mga_flip_page();
 }
 
 static int config(uint32_t width, uint32_t height, uint32_t d_width,
-                       uint32_t d_height, uint32_t flags, char *title,
-                       uint32_t format)
+                  uint32_t d_height, uint32_t flags, char* title,
+                  uint32_t format)
 {
-    XVisualInfo vinfo;
-    unsigned long xswamask;
-    int r, g, b;
+	XVisualInfo vinfo;
+	unsigned long xswamask;
+	int r, g, b;
 
-    if (mga_init(width, height, format))
-        return -1;              // ioctl errors?
+	if (mga_init(width, height, format))
+		return -1; // ioctl errors?
 
-    mvWidth = width;
-    mvHeight = height;
+	mvWidth = width;
+	mvHeight = height;
 
-    r = (vo_colorkey & 0x00ff0000) >> 16;
-    g = (vo_colorkey & 0x0000ff00) >> 8;
-    b = vo_colorkey & 0x000000ff;
-    switch (vo_depthonscreen)
-    {
-        case 32:
-            colorkey = vo_colorkey;
-            break;
-        case 24:
-            colorkey = vo_colorkey & 0x00ffffff;
-            break;
-        case 16:
-            colorkey = ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3);
-            break;
-        case 15:
-            colorkey = ((r >> 3) << 10) | ((g >> 3) << 5) | (b >> 3);
-            break;
-        default:
-            mp_msg(MSGT_VO, MSGL_ERR,
-                   "Sorry, this (%d) color depth not supported.\n",
-                   vo_depthonscreen);
-            return -1;
-    }
-    mp_msg(MSGT_VO, MSGL_V, "Using colorkey: %x\n", colorkey);
+	r = (vo_colorkey & 0x00ff0000) >> 16;
+	g = (vo_colorkey & 0x0000ff00) >> 8;
+	b = vo_colorkey & 0x000000ff;
+	switch (vo_depthonscreen)
+	{
+	case 32:
+		colorkey = vo_colorkey;
+		break;
+	case 24:
+		colorkey = vo_colorkey & 0x00ffffff;
+		break;
+	case 16:
+		colorkey = ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3);
+		break;
+	case 15:
+		colorkey = ((r >> 3) << 10) | ((g >> 3) << 5) | (b >> 3);
+		break;
+	default:
+		mp_msg(MSGT_VO, MSGL_ERR,
+		       "Sorry, this (%d) color depth not supported.\n",
+		       vo_depthonscreen);
+		return -1;
+	}
+	mp_msg(MSGT_VO, MSGL_V, "Using colorkey: %x\n", colorkey);
 
-    initialized = 1;
+	initialized = 1;
 
-        XGetWindowAttributes(mDisplay, mRootWin, &attribs);
-        mDepth = attribs.depth;
-        if (mDepth != 15 && mDepth != 16 && mDepth != 24 && mDepth != 32)
-            mDepth = 24;
-        XMatchVisualInfo(mDisplay, mScreen, mDepth, TrueColor, &vinfo);
-        xWAttribs.colormap =
-            XCreateColormap(mDisplay, mRootWin, vinfo.visual, AllocNone);
-        xWAttribs.background_pixel = 0;
-        xWAttribs.border_pixel = 0;
-        xswamask = CWBackPixel | CWBorderPixel | CWColormap;
+	XGetWindowAttributes(mDisplay, mRootWin, &attribs);
+	mDepth = attribs.depth;
+	if (mDepth != 15 && mDepth != 16 && mDepth != 24 && mDepth != 32)
+		mDepth = 24;
+	XMatchVisualInfo(mDisplay, mScreen, mDepth, TrueColor, &vinfo);
+	xWAttribs.colormap =
+		XCreateColormap(mDisplay, mRootWin, vinfo.visual, AllocNone);
+	xWAttribs.background_pixel = 0;
+	xWAttribs.border_pixel = 0;
+	xswamask = CWBackPixel | CWBorderPixel | CWColormap;
 
-            vo_x11_create_vo_window(&vinfo, vo_dx, vo_dy, d_width, d_height,
-                    flags, xWAttribs.colormap, "xmga", title);
-            XChangeWindowAttributes(mDisplay, vo_window, xswamask, &xWAttribs);
+	vo_x11_create_vo_window(&vinfo, vo_dx, vo_dy, d_width, d_height,
+	                        flags, xWAttribs.colormap, "xmga", title);
+	XChangeWindowAttributes(mDisplay, vo_window, xswamask, &xWAttribs);
 
-    mga_vid_config.colkey_on = 1;
-    mga_vid_config.colkey_red = r;
-    mga_vid_config.colkey_green = g;
-    mga_vid_config.colkey_blue = b;
+	mga_vid_config.colkey_on = 1;
+	mga_vid_config.colkey_red = r;
+	mga_vid_config.colkey_green = g;
+	mga_vid_config.colkey_blue = b;
 
-    set_window();               // set up mga_vid_config.dest_width etc
+	set_window(); // set up mga_vid_config.dest_width etc
 
-    XSync(mDisplay, False);
+	XSync(mDisplay, False);
 
-    ioctl(f, MGA_VID_ON, 0);
+	ioctl(f, MGA_VID_ON, 0);
 
-    return 0;
+	return 0;
 }
 
 static void uninit(void)
 {
-    mp_msg(MSGT_VO, MSGL_V, "vo: uninit!\n");
-    mga_uninit();
-    if (!initialized)
-        return;                 // no window?
-    initialized = 0;
-    vo_x11_uninit();            // destroy the window
+	mp_msg(MSGT_VO, MSGL_V, "vo: uninit!\n");
+	mga_uninit();
+	if (!initialized)
+		return; // no window?
+	initialized = 0;
+	vo_x11_uninit(); // destroy the window
 }

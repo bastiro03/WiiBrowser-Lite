@@ -21,71 +21,74 @@
 
 #include "avformat.h"
 
-typedef struct ASSContext{
-    unsigned int extra_index;
-}ASSContext;
-
-static int write_header(AVFormatContext *s)
+typedef struct ASSContext
 {
-    ASSContext *ass = s->priv_data;
-    AVCodecContext *avctx= s->streams[0]->codec;
-    uint8_t *last= NULL;
+	unsigned int extra_index;
+} ASSContext;
 
-    if(s->nb_streams != 1 || avctx->codec_id != CODEC_ID_SSA){
-        av_log(s, AV_LOG_ERROR, "Exactly one ASS/SSA stream is needed.\n");
-        return -1;
-    }
+static int write_header(AVFormatContext* s)
+{
+	ASSContext* ass = s->priv_data;
+	AVCodecContext* avctx = s->streams[0]->codec;
+	uint8_t* last = NULL;
 
-    while(ass->extra_index < avctx->extradata_size){
-        uint8_t *p  = avctx->extradata + ass->extra_index;
-        uint8_t *end= strchr(p, '\n');
-        if(!end) end= avctx->extradata + avctx->extradata_size;
-        else     end++;
+	if (s->nb_streams != 1 || avctx->codec_id != CODEC_ID_SSA)
+	{
+		av_log(s, AV_LOG_ERROR, "Exactly one ASS/SSA stream is needed.\n");
+		return -1;
+	}
 
-        avio_write(s->pb, p, end-p);
-        ass->extra_index += end-p;
+	while (ass->extra_index < avctx->extradata_size)
+	{
+		uint8_t* p = avctx->extradata + ass->extra_index;
+		uint8_t* end = strchr(p, '\n');
+		if (!end) end = avctx->extradata + avctx->extradata_size;
+		else end++;
 
-        if(last && !memcmp(last, "[Events]", 8))
-            break;
-        last=p;
-    }
+		avio_write(s->pb, p, end - p);
+		ass->extra_index += end - p;
 
-    avio_flush(s->pb);
+		if (last && !memcmp(last, "[Events]", 8))
+			break;
+		last = p;
+	}
 
-    return 0;
+	avio_flush(s->pb);
+
+	return 0;
 }
 
-static int write_packet(AVFormatContext *s, AVPacket *pkt)
+static int write_packet(AVFormatContext* s, AVPacket* pkt)
 {
-    avio_write(s->pb, pkt->data, pkt->size);
+	avio_write(s->pb, pkt->data, pkt->size);
 
-    avio_flush(s->pb);
+	avio_flush(s->pb);
 
-    return 0;
+	return 0;
 }
 
-static int write_trailer(AVFormatContext *s)
+static int write_trailer(AVFormatContext* s)
 {
-    ASSContext *ass = s->priv_data;
-    AVCodecContext *avctx= s->streams[0]->codec;
+	ASSContext* ass = s->priv_data;
+	AVCodecContext* avctx = s->streams[0]->codec;
 
-    avio_write(s->pb, avctx->extradata      + ass->extra_index,
-                      avctx->extradata_size - ass->extra_index);
+	avio_write(s->pb, avctx->extradata + ass->extra_index,
+	           avctx->extradata_size - ass->extra_index);
 
-    avio_flush(s->pb);
+	avio_flush(s->pb);
 
-    return 0;
+	return 0;
 }
 
 AVOutputFormat ff_ass_muxer = {
-    .name           = "ass",
-    .long_name      = NULL_IF_CONFIG_SMALL("Advanced SubStation Alpha subtitle format"),
-    .mime_type      = "text/x-ssa",
-    .extensions     = "ass,ssa",
-    .priv_data_size = sizeof(ASSContext),
-    .subtitle_codec = CODEC_ID_SSA,
-    .write_header   = write_header,
-    .write_packet   = write_packet,
-    .write_trailer  = write_trailer,
-    .flags          = AVFMT_GLOBALHEADER | AVFMT_NOTIMESTAMPS,
+	.name = "ass",
+	.long_name = NULL_IF_CONFIG_SMALL("Advanced SubStation Alpha subtitle format"),
+	.mime_type = "text/x-ssa",
+	.extensions = "ass,ssa",
+	.priv_data_size = sizeof(ASSContext),
+	.subtitle_codec = CODEC_ID_SSA,
+	.write_header = write_header,
+	.write_packet = write_packet,
+	.write_trailer = write_trailer,
+	.flags = AVFMT_GLOBALHEADER | AVFMT_NOTIMESTAMPS,
 };

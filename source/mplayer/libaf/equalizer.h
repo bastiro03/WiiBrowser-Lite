@@ -24,12 +24,12 @@
 /* Equalizer plugin header file defines struct used for setting or
    getting the gain of a specific channel and frequency */
 
-typedef struct equalizer_s
+using equalizer_t = struct equalizer_s
 {
-  float gain;   	// Gain in dB  -15 - 15
-  int	channel; 	// Channel number 0 - 5
-  int 	band;		// Frequency band 0 - 9
-}equalizer_t;
+	float gain; // Gain in dB  -15 - 15
+	int channel; // Channel number 0 - 5
+	int band; // Frequency band 0 - 9
+};
 
 /* The different frequency bands are:
 nr.    	center frequency

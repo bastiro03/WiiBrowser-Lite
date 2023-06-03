@@ -45,34 +45,36 @@
 #define SEQ_VIDEO_FORMAT_MAC 0x80
 #define SEQ_VIDEO_FORMAT_UNSPECIFIED 0xa0
 
-typedef struct mpeg2_sequence_s {
-    unsigned int width, height;
-    unsigned int chroma_width, chroma_height;
-    unsigned int byte_rate;
-    unsigned int vbv_buffer_size;
-    uint32_t flags;
+typedef struct mpeg2_sequence_s
+{
+	unsigned int width, height;
+	unsigned int chroma_width, chroma_height;
+	unsigned int byte_rate;
+	unsigned int vbv_buffer_size;
+	uint32_t flags;
 
-    unsigned int picture_width, picture_height;
-    unsigned int display_width, display_height;
-    unsigned int pixel_width, pixel_height;
-    unsigned int frame_period;
+	unsigned int picture_width, picture_height;
+	unsigned int display_width, display_height;
+	unsigned int pixel_width, pixel_height;
+	unsigned int frame_period;
 
-    uint8_t profile_level_id;
-    uint8_t colour_primaries;
-    uint8_t transfer_characteristics;
-    uint8_t matrix_coefficients;
+	uint8_t profile_level_id;
+	uint8_t colour_primaries;
+	uint8_t transfer_characteristics;
+	uint8_t matrix_coefficients;
 } mpeg2_sequence_t;
 
 #define GOP_FLAG_DROP_FRAME 1
 #define GOP_FLAG_BROKEN_LINK 2
 #define GOP_FLAG_CLOSED_GOP 4
 
-typedef struct mpeg2_gop_s {
-    uint8_t hours;
-    uint8_t minutes;
-    uint8_t seconds;
-    uint8_t pictures;
-    uint32_t flags;
+typedef struct mpeg2_gop_s
+{
+	uint8_t hours;
+	uint8_t minutes;
+	uint8_t seconds;
+	uint8_t pictures;
+	uint32_t flags;
 } mpeg2_gop_t;
 
 #define PIC_MASK_CODING_TYPE 7
@@ -89,73 +91,83 @@ typedef struct mpeg2_gop_s {
 #define PIC_FLAG_REPEAT_FIRST_FIELD 256
 #define PIC_MASK_COMPOSITE_DISPLAY 0xfffff000
 
-typedef struct mpeg2_picture_s {
-    unsigned int temporal_reference;
-    unsigned int nb_fields;
-    uint32_t tag, tag2;
-    uint32_t flags;
-    struct {
-	int x, y;
-    } display_offset[3];
+typedef struct mpeg2_picture_s
+{
+	unsigned int temporal_reference;
+	unsigned int nb_fields;
+	uint32_t tag, tag2;
+	uint32_t flags;
+
+	struct
+	{
+		int x, y;
+	} display_offset[3];
 } mpeg2_picture_t;
 
-typedef struct mpeg2_fbuf_s {
-    uint8_t * buf[3];
-    void * id;
+typedef struct mpeg2_fbuf_s
+{
+	uint8_t* buf[3];
+	void* id;
 } mpeg2_fbuf_t;
 
-typedef struct mpeg2_info_s {
-    const mpeg2_sequence_t * sequence;
-    const mpeg2_gop_t * gop;
-    const mpeg2_picture_t * current_picture;
-    const mpeg2_picture_t * current_picture_2nd;
-    const mpeg2_fbuf_t * current_fbuf;
-    const mpeg2_picture_t * display_picture;
-    const mpeg2_picture_t * display_picture_2nd;
-    const mpeg2_fbuf_t * display_fbuf;
-    const mpeg2_fbuf_t * discard_fbuf;
-    const uint8_t * user_data;
-    unsigned int user_data_len;
+typedef struct mpeg2_info_s
+{
+	const mpeg2_sequence_t* sequence;
+	const mpeg2_gop_t* gop;
+	const mpeg2_picture_t* current_picture;
+	const mpeg2_picture_t* current_picture_2nd;
+	const mpeg2_fbuf_t* current_fbuf;
+	const mpeg2_picture_t* display_picture;
+	const mpeg2_picture_t* display_picture_2nd;
+	const mpeg2_fbuf_t* display_fbuf;
+	const mpeg2_fbuf_t* discard_fbuf;
+	const uint8_t* user_data;
+	unsigned int user_data_len;
 } mpeg2_info_t;
 
 typedef struct mpeg2dec_s mpeg2dec_t;
 typedef struct mpeg2_decoder_s mpeg2_decoder_t;
 
-typedef enum {
-    STATE_BUFFER = 0,
-    STATE_SEQUENCE = 1,
-    STATE_SEQUENCE_REPEATED = 2,
-    STATE_GOP = 3,
-    STATE_PICTURE = 4,
-    STATE_SLICE_1ST = 5,
-    STATE_PICTURE_2ND = 6,
-    STATE_SLICE = 7,
-    STATE_END = 8,
-    STATE_INVALID = 9,
-    STATE_INVALID_END = 10,
-    STATE_SEQUENCE_MODIFIED = 11
+typedef enum
+{
+	STATE_BUFFER = 0,
+	STATE_SEQUENCE = 1,
+	STATE_SEQUENCE_REPEATED = 2,
+	STATE_GOP = 3,
+	STATE_PICTURE = 4,
+	STATE_SLICE_1ST = 5,
+	STATE_PICTURE_2ND = 6,
+	STATE_SLICE = 7,
+	STATE_END = 8,
+	STATE_INVALID = 9,
+	STATE_INVALID_END = 10,
+	STATE_SEQUENCE_MODIFIED = 11
 } mpeg2_state_t;
 
-typedef struct mpeg2_convert_init_s {
-    unsigned int id_size;
-    unsigned int buf_size[3];
-    void (* start) (void * id, const mpeg2_fbuf_t * fbuf,
-		    const mpeg2_picture_t * picture, const mpeg2_gop_t * gop);
-    void (* copy) (void * id, uint8_t * const * src, unsigned int v_offset);
+typedef struct mpeg2_convert_init_s
+{
+	unsigned int id_size;
+	unsigned int buf_size[3];
+	void (*start)(void* id, const mpeg2_fbuf_t* fbuf,
+	              const mpeg2_picture_t* picture, const mpeg2_gop_t* gop);
+	void (*copy)(void* id, uint8_t* const* src, unsigned int v_offset);
 } mpeg2_convert_init_t;
-typedef enum {
-    MPEG2_CONVERT_SET = 0,
-    MPEG2_CONVERT_STRIDE = 1,
-    MPEG2_CONVERT_START = 2
+
+typedef enum
+{
+	MPEG2_CONVERT_SET = 0,
+	MPEG2_CONVERT_STRIDE = 1,
+	MPEG2_CONVERT_START = 2
 } mpeg2_convert_stage_t;
-typedef int mpeg2_convert_t (int stage, void * id,
-			     const mpeg2_sequence_t * sequence, int stride,
-			     uint32_t accel, void * arg,
-			     mpeg2_convert_init_t * result);
-int mpeg2_convert (mpeg2dec_t * mpeg2dec, mpeg2_convert_t convert, void * arg);
-int mpeg2_stride (mpeg2dec_t * mpeg2dec, int stride);
-void mpeg2_set_buf (mpeg2dec_t * mpeg2dec, uint8_t * buf[3], void * id);
-void mpeg2_custom_fbuf (mpeg2dec_t * mpeg2dec, int custom_fbuf);
+
+typedef int mpeg2_convert_t(int stage, void* id,
+                            const mpeg2_sequence_t* sequence, int stride,
+                            uint32_t accel, void* arg,
+                            mpeg2_convert_init_t* result);
+int mpeg2_convert(mpeg2dec_t* mpeg2dec, mpeg2_convert_t convert, void* arg);
+int mpeg2_stride(mpeg2dec_t* mpeg2dec, int stride);
+void mpeg2_set_buf(mpeg2dec_t* mpeg2dec, uint8_t* buf[3], void* id);
+void mpeg2_custom_fbuf(mpeg2dec_t* mpeg2dec, int custom_fbuf);
 
 #define MPEG2_ACCEL_X86_MMX 1
 #define MPEG2_ACCEL_X86_3DNOW 2
@@ -170,39 +182,40 @@ void mpeg2_custom_fbuf (mpeg2dec_t * mpeg2dec, int custom_fbuf);
 #define MPEG2_ACCEL_ARM 1
 #define MPEG2_ACCEL_DETECT 0x80000000
 
-uint32_t mpeg2_accel (uint32_t accel);
-mpeg2dec_t * mpeg2_init (void);
-const mpeg2_info_t * mpeg2_info (mpeg2dec_t * mpeg2dec);
-void mpeg2_close (mpeg2dec_t * mpeg2dec);
+uint32_t mpeg2_accel(uint32_t accel);
+mpeg2dec_t* mpeg2_init(void);
+const mpeg2_info_t* mpeg2_info(mpeg2dec_t* mpeg2dec);
+void mpeg2_close(mpeg2dec_t* mpeg2dec);
 
-void mpeg2_buffer (mpeg2dec_t * mpeg2dec, uint8_t * start, uint8_t * end);
-int mpeg2_getpos (mpeg2dec_t * mpeg2dec);
-mpeg2_state_t mpeg2_parse (mpeg2dec_t * mpeg2dec);
+void mpeg2_buffer(mpeg2dec_t* mpeg2dec, uint8_t* start, uint8_t* end);
+int mpeg2_getpos(mpeg2dec_t* mpeg2dec);
+mpeg2_state_t mpeg2_parse(mpeg2dec_t* mpeg2dec);
 
-void mpeg2_reset (mpeg2dec_t * mpeg2dec, int full_reset);
-void mpeg2_skip (mpeg2dec_t * mpeg2dec, int skip);
-void mpeg2_slice_region (mpeg2dec_t * mpeg2dec, int start, int end);
+void mpeg2_reset(mpeg2dec_t* mpeg2dec, int full_reset);
+void mpeg2_skip(mpeg2dec_t* mpeg2dec, int skip);
+void mpeg2_slice_region(mpeg2dec_t* mpeg2dec, int start, int end);
 
-void mpeg2_tag_picture (mpeg2dec_t * mpeg2dec, uint32_t tag, uint32_t tag2);
+void mpeg2_tag_picture(mpeg2dec_t* mpeg2dec, uint32_t tag, uint32_t tag2);
 
-void mpeg2_init_fbuf (mpeg2_decoder_t * decoder, uint8_t * current_fbuf[3],
-		      uint8_t * forward_fbuf[3], uint8_t * backward_fbuf[3]);
-void mpeg2_slice (mpeg2_decoder_t * decoder, int code, const uint8_t * buffer);
-int mpeg2_guess_aspect (const mpeg2_sequence_t * sequence,
-			unsigned int * pixel_width,
-			unsigned int * pixel_height);
+void mpeg2_init_fbuf(mpeg2_decoder_t* decoder, uint8_t* current_fbuf[3],
+                     uint8_t* forward_fbuf[3], uint8_t* backward_fbuf[3]);
+void mpeg2_slice(mpeg2_decoder_t* decoder, int code, const uint8_t* buffer);
+int mpeg2_guess_aspect(const mpeg2_sequence_t* sequence,
+                       unsigned int* pixel_width,
+                       unsigned int* pixel_height);
 
-typedef enum {
-    MPEG2_ALLOC_MPEG2DEC = 0,
-    MPEG2_ALLOC_CHUNK = 1,
-    MPEG2_ALLOC_YUV = 2,
-    MPEG2_ALLOC_CONVERT_ID = 3,
-    MPEG2_ALLOC_CONVERTED = 4
+typedef enum
+{
+	MPEG2_ALLOC_MPEG2DEC = 0,
+	MPEG2_ALLOC_CHUNK = 1,
+	MPEG2_ALLOC_YUV = 2,
+	MPEG2_ALLOC_CONVERT_ID = 3,
+	MPEG2_ALLOC_CONVERTED = 4
 } mpeg2_alloc_t;
 
-void * mpeg2_malloc (unsigned size, mpeg2_alloc_t reason);
-void mpeg2_free (void * buf);
-void mpeg2_malloc_hooks (void * malloc (unsigned, mpeg2_alloc_t),
-			 int free (void *));
+void* mpeg2_malloc(unsigned size, mpeg2_alloc_t reason);
+void mpeg2_free(void* buf);
+void mpeg2_malloc_hooks(void* malloc(unsigned, mpeg2_alloc_t),
+                        int free(void*));
 
 #endif /* LIBMPEG2_MPEG2_H */

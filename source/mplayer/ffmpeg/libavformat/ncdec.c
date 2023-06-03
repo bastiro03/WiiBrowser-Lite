@@ -26,76 +26,79 @@
 
 #define NC_VIDEO_FLAG 0x1A5
 
-static int nc_probe(AVProbeData *probe_packet)
+static int nc_probe(AVProbeData* probe_packet)
 {
-    int size;
+	int size;
 
-    if (AV_RB32(probe_packet->buf) != NC_VIDEO_FLAG)
-        return 0;
+	if (AV_RB32(probe_packet->buf) != NC_VIDEO_FLAG)
+		return 0;
 
-    size = AV_RL16(probe_packet->buf + 5);
+	size = AV_RL16(probe_packet->buf + 5);
 
-    if (size + 20 > probe_packet->buf_size)
-        return AVPROBE_SCORE_MAX/4;
+	if (size + 20 > probe_packet->buf_size)
+		return AVPROBE_SCORE_MAX / 4;
 
-    if (AV_RB32(probe_packet->buf+16+size) == NC_VIDEO_FLAG)
-        return AVPROBE_SCORE_MAX;
+	if (AV_RB32(probe_packet->buf + 16 + size) == NC_VIDEO_FLAG)
+		return AVPROBE_SCORE_MAX;
 
-    return 0;
+	return 0;
 }
 
-static int nc_read_header(AVFormatContext *s)
+static int nc_read_header(AVFormatContext* s)
 {
-    AVStream *st = avformat_new_stream(s, NULL);
+	AVStream* st = avformat_new_stream(s, NULL);
 
-    if (!st)
-        return AVERROR(ENOMEM);
+	if (!st)
+		return AVERROR(ENOMEM);
 
-    st->codec->codec_type = AVMEDIA_TYPE_VIDEO;
-    st->codec->codec_id   = CODEC_ID_MPEG4;
-    st->need_parsing      = AVSTREAM_PARSE_FULL;
+	st->codec->codec_type = AVMEDIA_TYPE_VIDEO;
+	st->codec->codec_id = CODEC_ID_MPEG4;
+	st->need_parsing = AVSTREAM_PARSE_FULL;
 
-    avpriv_set_pts_info(st, 64, 1, 100);
+	avpriv_set_pts_info(st, 64, 1, 100);
 
-    return 0;
+	return 0;
 }
 
-static int nc_read_packet(AVFormatContext *s, AVPacket *pkt)
+static int nc_read_packet(AVFormatContext* s, AVPacket* pkt)
 {
-    int size;
-    int ret;
+	int size;
+	int ret;
 
-    uint32_t state=-1;
-    while (state != NC_VIDEO_FLAG) {
-        if (url_feof(s->pb))
-            return AVERROR(EIO);
-        state = (state<<8) + avio_r8(s->pb);
-    }
+	uint32_t state = -1;
+	while (state != NC_VIDEO_FLAG)
+	{
+		if (url_feof(s->pb))
+			return AVERROR(EIO);
+		state = (state << 8) + avio_r8(s->pb);
+	}
 
-    avio_r8(s->pb);
-    size = avio_rl16(s->pb);
-    avio_skip(s->pb, 9);
+	avio_r8(s->pb);
+	size = avio_rl16(s->pb);
+	avio_skip(s->pb, 9);
 
-    if (size == 0) {
-        av_log(s, AV_LOG_DEBUG, "Next packet size is zero\n");
-        return AVERROR(EAGAIN);
-    }
+	if (size == 0)
+	{
+		av_log(s, AV_LOG_DEBUG, "Next packet size is zero\n");
+		return AVERROR(EAGAIN);
+	}
 
-    ret = av_get_packet(s->pb, pkt, size);
-    if (ret != size) {
-        if (ret > 0) av_free_packet(pkt);
-        return AVERROR(EIO);
-    }
+	ret = av_get_packet(s->pb, pkt, size);
+	if (ret != size)
+	{
+		if (ret > 0) av_free_packet(pkt);
+		return AVERROR(EIO);
+	}
 
-    pkt->stream_index = 0;
-    return size;
+	pkt->stream_index = 0;
+	return size;
 }
 
 AVInputFormat ff_nc_demuxer = {
-    .name           = "nc",
-    .long_name      = NULL_IF_CONFIG_SMALL("NC camera feed format"),
-    .read_probe     = nc_probe,
-    .read_header    = nc_read_header,
-    .read_packet    = nc_read_packet,
-    .extensions     = "v",
+	.name = "nc",
+	.long_name = NULL_IF_CONFIG_SMALL("NC camera feed format"),
+	.read_probe = nc_probe,
+	.read_header = nc_read_header,
+	.read_packet = nc_read_packet,
+	.extensions = "v",
 };

@@ -38,11 +38,11 @@ typedef struct RDTDemuxContext RDTDemuxContext;
  * @param handler pointer to the parse_packet() payload parsing function
  * @return a newly allocated RDTDemuxContext. Free with ff_rdt_parse_close().
  */
-RDTDemuxContext *ff_rdt_parse_open(AVFormatContext *ic,
+RDTDemuxContext* ff_rdt_parse_open(AVFormatContext* ic,
                                    int first_stream_of_set_idx,
-                                   void *priv_data,
-                                   RTPDynamicProtocolHandler *handler);
-void ff_rdt_parse_close(RDTDemuxContext *s);
+                                   void* priv_data,
+                                   RTPDynamicProtocolHandler* handler);
+void ff_rdt_parse_close(RDTDemuxContext* s);
 
 /**
  * Calculate the response (RealChallenge2 in the RTSP header) to the
@@ -57,7 +57,7 @@ void ff_rdt_parse_close(RDTDemuxContext *s);
  *                  server.
  */
 void ff_rdt_calc_response_and_checksum(char response[41], char chksum[9],
-                                       const char *challenge);
+                                       const char* challenge);
 
 /**
  * Register RDT-related dynamic payload handlers with our cache.
@@ -72,7 +72,7 @@ void av_register_rdt_dynamic_payload_handlers(void);
  * @param stream_nr stream number.
  * @param rule_nr rule number to conform to.
  */
-void ff_rdt_subscribe_rule(char *cmd, int size,
+void ff_rdt_subscribe_rule(char* cmd, int size,
                            int stream_nr, int rule_nr);
 
 /**
@@ -87,16 +87,16 @@ void ff_rdt_subscribe_rule(char *cmd, int size,
  * @param ptimestamp will be set to the timestamp of the packet
  * @return the amount of bytes consumed, or negative on error
  */
-int ff_rdt_parse_header(const uint8_t *buf, int len,
-                        int *pset_id, int *pseq_no, int *pstream_id,
-                        int *pis_keyframe, uint32_t *ptimestamp);
+int ff_rdt_parse_header(const uint8_t* buf, int len,
+                        int* pset_id, int* pseq_no, int* pstream_id,
+                        int* pis_keyframe, uint32_t* ptimestamp);
 
 /**
  * Parse RDT-style packet data (header + media data).
  * Usage similar to rtp_parse_packet().
  */
-int ff_rdt_parse_packet(RDTDemuxContext *s, AVPacket *pkt,
-                        uint8_t **buf, int len);
+int ff_rdt_parse_packet(RDTDemuxContext* s, AVPacket* pkt,
+                        uint8_t** buf, int len);
 
 /**
  * Parse a server-related SDP line.
@@ -106,7 +106,7 @@ int ff_rdt_parse_packet(RDTDemuxContext *s, AVPacket *pkt,
  *               by the SDP m= line (in s->streams)
  * @param buf the SDP line
  */
-void ff_real_parse_sdp_a_line(AVFormatContext *s, int stream_index,
-                              const char *buf);
+void ff_real_parse_sdp_a_line(AVFormatContext* s, int stream_index,
+                              const char* buf);
 
 #endif /* AVFORMAT_RDT_H */

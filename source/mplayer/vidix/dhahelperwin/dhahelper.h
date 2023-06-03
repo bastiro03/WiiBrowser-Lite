@@ -55,16 +55,16 @@
                                                   METHOD_BUFFERED,           \
                                                   FILE_ANY_ACCESS)
 
-
 #if !defined(__MINGW32__) && !defined(__CYGWIN__)
 #pragma pack(1)
-typedef struct dhahelper_t {
+typedef struct dhahelper_t
+{
 #else
 struct __attribute__((__packed__)) dhahelper_t {
 #endif
-  unsigned int size;
-  void* base;
-  void* ptr;
+	unsigned int size;
+	void* base;
+	void* ptr;
 };
 
 typedef struct dhahelper_t dhahelper_t;

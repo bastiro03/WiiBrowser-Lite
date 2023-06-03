@@ -53,143 +53,147 @@
 #define MM_PALETTE_COUNT    128
 #define MM_PALETTE_SIZE     (MM_PALETTE_COUNT*3)
 
-typedef struct {
-  unsigned int audio_pts, video_pts;
+typedef struct
+{
+	unsigned int audio_pts, video_pts;
 } MmDemuxContext;
 
-static int probe(AVProbeData *p)
+static int probe(AVProbeData* p)
 {
-    int len, type, fps, w, h;
-    if (p->buf_size < MM_HEADER_LEN_AV + MM_PREAMBLE_SIZE)
-        return 0;
-    /* the first chunk is always the header */
-    if (AV_RL16(&p->buf[0]) != MM_TYPE_HEADER)
-        return 0;
-    len = AV_RL32(&p->buf[2]);
-    if (len != MM_HEADER_LEN_V && len != MM_HEADER_LEN_AV)
-        return 0;
-    fps = AV_RL16(&p->buf[8]);
-    w = AV_RL16(&p->buf[12]);
-    h = AV_RL16(&p->buf[14]);
-    if (!fps || fps > 60 || !w || w > 2048 || !h || h > 2048)
-        return 0;
-    type = AV_RL16(&p->buf[len]);
-    if (!type || type > 0x31)
-        return 0;
+	int len, type, fps, w, h;
+	if (p->buf_size < MM_HEADER_LEN_AV + MM_PREAMBLE_SIZE)
+		return 0;
+	/* the first chunk is always the header */
+	if (AV_RL16(&p->buf[0]) != MM_TYPE_HEADER)
+		return 0;
+	len = AV_RL32(&p->buf[2]);
+	if (len != MM_HEADER_LEN_V && len != MM_HEADER_LEN_AV)
+		return 0;
+	fps = AV_RL16(&p->buf[8]);
+	w = AV_RL16(&p->buf[12]);
+	h = AV_RL16(&p->buf[14]);
+	if (!fps || fps > 60 || !w || w > 2048 || !h || h > 2048)
+		return 0;
+	type = AV_RL16(&p->buf[len]);
+	if (!type || type > 0x31)
+		return 0;
 
-    /* only return half certainty since this check is a bit sketchy */
-    return AVPROBE_SCORE_MAX / 2;
+	/* only return half certainty since this check is a bit sketchy */
+	return AVPROBE_SCORE_MAX / 2;
 }
 
-static int read_header(AVFormatContext *s)
+static int read_header(AVFormatContext* s)
 {
-    MmDemuxContext *mm = s->priv_data;
-    AVIOContext *pb = s->pb;
-    AVStream *st;
+	MmDemuxContext* mm = s->priv_data;
+	AVIOContext* pb = s->pb;
+	AVStream* st;
 
-    unsigned int type, length;
-    unsigned int frame_rate, width, height;
+	unsigned int type, length;
+	unsigned int frame_rate, width, height;
 
-    type = avio_rl16(pb);
-    length = avio_rl32(pb);
+	type = avio_rl16(pb);
+	length = avio_rl32(pb);
 
-    if (type != MM_TYPE_HEADER)
-        return AVERROR_INVALIDDATA;
+	if (type != MM_TYPE_HEADER)
+		return AVERROR_INVALIDDATA;
 
-    /* read header */
-    avio_rl16(pb);   /* total number of chunks */
-    frame_rate = avio_rl16(pb);
-    avio_rl16(pb);   /* ibm-pc video bios mode */
-    width = avio_rl16(pb);
-    height = avio_rl16(pb);
-    avio_skip(pb, length - 10);  /* unknown data */
+	/* read header */
+	avio_rl16(pb); /* total number of chunks */
+	frame_rate = avio_rl16(pb);
+	avio_rl16(pb); /* ibm-pc video bios mode */
+	width = avio_rl16(pb);
+	height = avio_rl16(pb);
+	avio_skip(pb, length - 10); /* unknown data */
 
-    /* video stream */
-    st = avformat_new_stream(s, NULL);
-    if (!st)
-        return AVERROR(ENOMEM);
-    st->codec->codec_type = AVMEDIA_TYPE_VIDEO;
-    st->codec->codec_id = CODEC_ID_MMVIDEO;
-    st->codec->codec_tag = 0;  /* no fourcc */
-    st->codec->width = width;
-    st->codec->height = height;
-    avpriv_set_pts_info(st, 64, 1, frame_rate);
+	/* video stream */
+	st = avformat_new_stream(s, NULL);
+	if (!st)
+		return AVERROR(ENOMEM);
+	st->codec->codec_type = AVMEDIA_TYPE_VIDEO;
+	st->codec->codec_id = CODEC_ID_MMVIDEO;
+	st->codec->codec_tag = 0; /* no fourcc */
+	st->codec->width = width;
+	st->codec->height = height;
+	avpriv_set_pts_info(st, 64, 1, frame_rate);
 
-    /* audio stream */
-    if (length == MM_HEADER_LEN_AV) {
-        st = avformat_new_stream(s, NULL);
-        if (!st)
-            return AVERROR(ENOMEM);
-        st->codec->codec_type = AVMEDIA_TYPE_AUDIO;
-        st->codec->codec_tag = 0; /* no fourcc */
-        st->codec->codec_id = CODEC_ID_PCM_U8;
-        st->codec->channels = 1;
-        st->codec->sample_rate = 8000;
-        avpriv_set_pts_info(st, 64, 1, 8000); /* 8000 hz */
-    }
+	/* audio stream */
+	if (length == MM_HEADER_LEN_AV)
+	{
+		st = avformat_new_stream(s, NULL);
+		if (!st)
+			return AVERROR(ENOMEM);
+		st->codec->codec_type = AVMEDIA_TYPE_AUDIO;
+		st->codec->codec_tag = 0; /* no fourcc */
+		st->codec->codec_id = CODEC_ID_PCM_U8;
+		st->codec->channels = 1;
+		st->codec->sample_rate = 8000;
+		avpriv_set_pts_info(st, 64, 1, 8000); /* 8000 hz */
+	}
 
-    mm->audio_pts = 0;
-    mm->video_pts = 0;
-    return 0;
+	mm->audio_pts = 0;
+	mm->video_pts = 0;
+	return 0;
 }
 
-static int read_packet(AVFormatContext *s,
-                           AVPacket *pkt)
+static int read_packet(AVFormatContext* s,
+                       AVPacket* pkt)
 {
-    MmDemuxContext *mm = s->priv_data;
-    AVIOContext *pb = s->pb;
-    unsigned char preamble[MM_PREAMBLE_SIZE];
-    unsigned int type, length;
+	MmDemuxContext* mm = s->priv_data;
+	AVIOContext* pb = s->pb;
+	unsigned char preamble[MM_PREAMBLE_SIZE];
+	unsigned int type, length;
 
-    while(1) {
+	while (1)
+	{
+		if (avio_read(pb, preamble, MM_PREAMBLE_SIZE) != MM_PREAMBLE_SIZE)
+		{
+			return AVERROR(EIO);
+		}
 
-        if (avio_read(pb, preamble, MM_PREAMBLE_SIZE) != MM_PREAMBLE_SIZE) {
-            return AVERROR(EIO);
-        }
+		type = AV_RL16(&preamble[0]);
+		length = AV_RL16(&preamble[2]);
 
-        type = AV_RL16(&preamble[0]);
-        length = AV_RL16(&preamble[2]);
+		switch (type)
+		{
+		case MM_TYPE_PALETTE:
+		case MM_TYPE_INTER:
+		case MM_TYPE_INTRA:
+		case MM_TYPE_INTRA_HH:
+		case MM_TYPE_INTER_HH:
+		case MM_TYPE_INTRA_HHV:
+		case MM_TYPE_INTER_HHV:
+			/* output preamble + data */
+			if (av_new_packet(pkt, length + MM_PREAMBLE_SIZE))
+				return AVERROR(ENOMEM);
+			memcpy(pkt->data, preamble, MM_PREAMBLE_SIZE);
+			if (avio_read(pb, pkt->data + MM_PREAMBLE_SIZE, length) != length)
+				return AVERROR(EIO);
+			pkt->size = length + MM_PREAMBLE_SIZE;
+			pkt->stream_index = 0;
+			pkt->pts = mm->video_pts;
+			if (type != MM_TYPE_PALETTE)
+				mm->video_pts++;
+			return 0;
 
-        switch(type) {
-        case MM_TYPE_PALETTE :
-        case MM_TYPE_INTER :
-        case MM_TYPE_INTRA :
-        case MM_TYPE_INTRA_HH :
-        case MM_TYPE_INTER_HH :
-        case MM_TYPE_INTRA_HHV :
-        case MM_TYPE_INTER_HHV :
-            /* output preamble + data */
-            if (av_new_packet(pkt, length + MM_PREAMBLE_SIZE))
-                return AVERROR(ENOMEM);
-            memcpy(pkt->data, preamble, MM_PREAMBLE_SIZE);
-            if (avio_read(pb, pkt->data + MM_PREAMBLE_SIZE, length) != length)
-                return AVERROR(EIO);
-            pkt->size = length + MM_PREAMBLE_SIZE;
-            pkt->stream_index = 0;
-            pkt->pts = mm->video_pts;
-            if (type!=MM_TYPE_PALETTE)
-                mm->video_pts++;
-            return 0;
+		case MM_TYPE_AUDIO:
+			if (av_get_packet(s->pb, pkt, length) < 0)
+				return AVERROR(ENOMEM);
+			pkt->stream_index = 1;
+			pkt->pts = mm->audio_pts++;
+			return 0;
 
-        case MM_TYPE_AUDIO :
-            if (av_get_packet(s->pb, pkt, length)<0)
-                return AVERROR(ENOMEM);
-            pkt->stream_index = 1;
-            pkt->pts = mm->audio_pts++;
-            return 0;
-
-        default :
-            av_log(s, AV_LOG_INFO, "unknown chunk type 0x%x\n", type);
-            avio_skip(pb, length);
-        }
-    }
+		default:
+			av_log(s, AV_LOG_INFO, "unknown chunk type 0x%x\n", type);
+			avio_skip(pb, length);
+		}
+	}
 }
 
 AVInputFormat ff_mm_demuxer = {
-    .name           = "mm",
-    .long_name      = NULL_IF_CONFIG_SMALL("American Laser Games MM format"),
-    .priv_data_size = sizeof(MmDemuxContext),
-    .read_probe     = probe,
-    .read_header    = read_header,
-    .read_packet    = read_packet,
+	.name = "mm",
+	.long_name = NULL_IF_CONFIG_SMALL("American Laser Games MM format"),
+	.priv_data_size = sizeof(MmDemuxContext),
+	.read_probe = probe,
+	.read_header = read_header,
+	.read_packet = read_packet,
 };

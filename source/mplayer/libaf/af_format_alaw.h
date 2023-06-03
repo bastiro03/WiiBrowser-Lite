@@ -29,27 +29,29 @@
 #include "af.h"
 
 // Conversion tables (the function are below)
-static short alaw_decode [128] =
-{	 -5504,  -5248,  -6016,  -5760,  -4480,  -4224,  -4992,  -4736,
-	 -7552,  -7296,  -8064,  -7808,  -6528,  -6272,  -7040,  -6784,
-	 -2752,  -2624,  -3008,  -2880,  -2240,  -2112,  -2496,  -2368,
-	 -3776,  -3648,  -4032,  -3904,  -3264,  -3136,  -3520,  -3392,
+static short alaw_decode[128] =
+{
+	-5504, -5248, -6016, -5760, -4480, -4224, -4992, -4736,
+	-7552, -7296, -8064, -7808, -6528, -6272, -7040, -6784,
+	-2752, -2624, -3008, -2880, -2240, -2112, -2496, -2368,
+	-3776, -3648, -4032, -3904, -3264, -3136, -3520, -3392,
 	-22016, -20992, -24064, -23040, -17920, -16896, -19968, -18944,
 	-30208, -29184, -32256, -31232, -26112, -25088, -28160, -27136,
-	-11008, -10496, -12032, -11520,  -8960,  -8448,  -9984,  -9472,
+	-11008, -10496, -12032, -11520, -8960, -8448, -9984, -9472,
 	-15104, -14592, -16128, -15616, -13056, -12544, -14080, -13568,
-	  -344,   -328,   -376,   -360,   -280,   -264,   -312,   -296,
-	  -472,   -456,   -504,   -488,   -408,   -392,   -440,   -424,
-	   -88,    -72,   -120,   -104,    -24,     -8,    -56,    -40,
-	  -216,   -200,   -248,   -232,   -152,   -136,   -184,   -168,
-	 -1376,  -1312,  -1504,  -1440,  -1120,  -1056,  -1248,  -1184,
-	 -1888,  -1824,  -2016,  -1952,  -1632,  -1568,  -1760,  -1696,
-	  -688,   -656,   -752,   -720,   -560,   -528,   -624,   -592,
-	  -944,   -912,  -1008,   -976,   -816,   -784,   -880,   -848
-} ; /* alaw_decode */
+	-344, -328, -376, -360, -280, -264, -312, -296,
+	-472, -456, -504, -488, -408, -392, -440, -424,
+	-88, -72, -120, -104, -24, -8, -56, -40,
+	-216, -200, -248, -232, -152, -136, -184, -168,
+	-1376, -1312, -1504, -1440, -1120, -1056, -1248, -1184,
+	-1888, -1824, -2016, -1952, -1632, -1568, -1760, -1696,
+	-688, -656, -752, -720, -560, -528, -624, -592,
+	-944, -912, -1008, -976, -816, -784, -880, -848
+}; /* alaw_decode */
 
-static unsigned char alaw_encode [2049] =
-{	0xD5, 0xD4, 0xD7, 0xD6, 0xD1, 0xD0, 0xD3, 0xD2, 0xDD, 0xDC, 0xDF, 0xDE,
+static unsigned char alaw_encode[2049] =
+{
+	0xD5, 0xD4, 0xD7, 0xD6, 0xD1, 0xD0, 0xD3, 0xD2, 0xDD, 0xDC, 0xDF, 0xDE,
 	0xD9, 0xD8, 0xDB, 0xDA, 0xC5, 0xC4, 0xC7, 0xC6, 0xC1, 0xC0, 0xC3, 0xC2,
 	0xCD, 0xCC, 0xCF, 0xCE, 0xC9, 0xC8, 0xCB, 0xCA, 0xF5, 0xF5, 0xF4, 0xF4,
 	0xF7, 0xF7, 0xF6, 0xF6, 0xF1, 0xF1, 0xF0, 0xF0, 0xF3, 0xF3, 0xF2, 0xF2,
@@ -220,105 +222,119 @@ static unsigned char alaw_encode [2049] =
 	0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
 	0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
 	0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0x2A
-} ; /* alaw_encode */
+}; /* alaw_encode */
 
 /* Convert from alaw to signd int8 to signed int32 or float */
 static int from_alaw(void* in, void* out, int len, int bps, int format)
 {
-  register int i;
-  // Make sure the input parametrs are OK
-  if(format & (AF_FORMAT_SPECIAL_MASK | AF_FORMAT_US))
-      return AF_ERROR;
+	register int i;
+	// Make sure the input parametrs are OK
+	if (format & (AF_FORMAT_SPECIAL_MASK | AF_FORMAT_US))
+		return AF_ERROR;
 
-  // Convert to int or to float
-  if((format & AF_FORMAT_POINT_MASK) == AF_FORMAT_I){
-    switch(bps){
-    case(1):
-      for(i=0;i<len;i++){
-	if(((int8_t*)in)[i] & 0x80)
-	  ((int8_t*)out)[i] = (-1 * alaw_decode[(((int8_t*)in)[i]) & 0x7F]) >> 8;
+	// Convert to int or to float
+	if ((format & AF_FORMAT_POINT_MASK) == AF_FORMAT_I)
+	{
+		switch (bps)
+		{
+		case(1):
+			for (i = 0; i < len; i++)
+			{
+				if (((int8_t*)in)[i] & 0x80)
+					((int8_t*)out)[i] = (-1 * alaw_decode[(((int8_t*)in)[i]) & 0x7F]) >> 8;
+				else
+					((int8_t*)out)[i] = (alaw_decode[(((int8_t*)in)[i]) & 0x7F]) >> 8;
+			}
+			break;
+		case(2):
+			for (i = 0; i < len; i++)
+			{
+				if (((int8_t*)in)[i] & 0x80)
+					((int16_t*)out)[i] = -1 * alaw_decode[(((int8_t*)in)[i]) & 0x7F];
+				else
+					((int16_t*)out)[i] = alaw_decode[(((int8_t*)in)[i]) & 0x7F];
+			}
+			break;
+		case(4):
+			for (i = 0; i < len; i++)
+			{
+				if (((int8_t*)in)[i] & 0x80)
+					((int32_t*)out)[i] = (-1 * alaw_decode[(((int8_t*)in)[i]) & 0x7F]) << 16;
+				else
+					((int32_t*)out)[i] = (alaw_decode[(((int8_t*)in)[i]) & 0x7F]) << 16;
+			}
+			break;
+		default:
+			return AF_ERROR;
+		}
+	}
 	else
-	  ((int8_t*)out)[i] = (alaw_decode[(((int8_t*)in)[i]) & 0x7F]) >> 8;
-      }
-      break;
-    case(2):
-      for(i=0;i<len;i++){
-	if(((int8_t*)in)[i] & 0x80)
-	  ((int16_t*)out)[i] = -1 * alaw_decode[(((int8_t*)in)[i]) & 0x7F];
-	else
-	  ((int16_t*)out)[i] = alaw_decode[(((int8_t*)in)[i]) & 0x7F];
-      }
-      break;
-    case(4):
-      for(i=0;i<len;i++){
-	if(((int8_t*)in)[i] & 0x80)
-	  ((int32_t*)out)[i] = (-1 * alaw_decode[(((int8_t*)in)[i]) & 0x7F]) << 16;
-	else
-	  ((int32_t*)out)[i] = (alaw_decode[(((int8_t*)in)[i]) & 0x7F]) << 16;
-      }
-      break;
-    default:
-      return AF_ERROR;
-    }
-  }
-  else{
-    for(i=0;i<len;i++){
-      if(((int8_t*)in)[i] & 0x80)
-	((float*)out)[i] = -1.0/32768.0 * (float)alaw_decode[(((int8_t*)in)[i]) & 0x7F];
-      else
-	((float*)out)[i] = +1.0/32768.0 * (float)alaw_decode[(((int8_t*)in)[i]) & 0x7F];
-    }
-  }
-  return AF_OK;
+	{
+		for (i = 0; i < len; i++)
+		{
+			if (((int8_t*)in)[i] & 0x80)
+				((float*)out)[i] = -1.0 / 32768.0 * (float)alaw_decode[(((int8_t*)in)[i]) & 0x7F];
+			else
+				((float*)out)[i] = +1.0 / 32768.0 * (float)alaw_decode[(((int8_t*)in)[i]) & 0x7F];
+		}
+	}
+	return AF_OK;
 }
 
 /* Convert from signed int8 to signed int32 or float to alaw */
 static int to_alaw(void* in, void* out, int len, int bps, int format)
 {
-  register int i;
-  // Make sure the input parametrs are OK
-  if(format & (AF_FORMAT_SPECIAL_MASK | AF_FORMAT_US))
-      return AF_ERROR;
+	register int i;
+	// Make sure the input parametrs are OK
+	if (format & (AF_FORMAT_SPECIAL_MASK | AF_FORMAT_US))
+		return AF_ERROR;
 
-  // Convert from int or to float
-  if((format & AF_FORMAT_POINT_MASK) == AF_FORMAT_I){
-    switch(bps){
-    case(1):
-      for(i=0;i<len;i++){
-	if(((int8_t*)in)[i] >= 0)
-	  ((int8_t*)out)[i] = alaw_encode[((int8_t*)in)[i] << 4];
+	// Convert from int or to float
+	if ((format & AF_FORMAT_POINT_MASK) == AF_FORMAT_I)
+	{
+		switch (bps)
+		{
+		case(1):
+			for (i = 0; i < len; i++)
+			{
+				if (((int8_t*)in)[i] >= 0)
+					((int8_t*)out)[i] = alaw_encode[((int8_t*)in)[i] << 4];
+				else
+					((int8_t*)out)[i] = 0x7F & alaw_encode[-((int8_t*)in)[i] << 4];
+			}
+			break;
+		case(2):
+			for (i = 0; i < len; i++)
+			{
+				if (((int16_t*)in)[i] >= 0)
+					((int8_t*)out)[i] = alaw_encode[((int16_t*)in)[i] / 16];
+				else
+					((int8_t*)out)[i] = 0x7F & alaw_encode[((int16_t*)in)[i] / -16];
+			}
+			break;
+		case(4):
+			for (i = 0; i < len; i++)
+			{
+				if (((int32_t*)in)[i] >= 0)
+					((int8_t*)out)[i] = alaw_encode[((int32_t*)in)[i] >> (16 + 4)];
+				else
+					((int8_t*)out)[i] = 0x7F & alaw_encode[-((int32_t*)in)[i] >> (16 + 4)];
+			}
+			break;
+		default:
+			return AF_ERROR;
+		}
+	}
 	else
-	  ((int8_t*)out)[i] = 0x7F & alaw_encode[-((int8_t*)in)[i] << 4];
-      }
-      break;
-    case(2):
-      for(i=0;i<len;i++){
-	if(((int16_t*)in)[i] >= 0)
-	  ((int8_t*)out)[i] = alaw_encode[((int16_t*)in)[i] / 16];
-	else
-	  ((int8_t*)out)[i] = 0x7F & alaw_encode[((int16_t*)in)[i] / -16];
-      }
-      break;
-    case(4):
-      for(i=0;i<len;i++){
-	if(((int32_t*)in)[i] >= 0)
-	  ((int8_t*)out)[i] = alaw_encode[((int32_t*)in)[i] >> (16 + 4)];
-	else
-	  ((int8_t*)out)[i] = 0x7F & alaw_encode[-((int32_t*)in)[i] >> (16 + 4)];
-      }
-      break;
-    default:
-      return AF_ERROR;
-    }
-  }
-  else{
-    for(i=0;i<len;i++){
-      if(((float*)in)[i] >= 0)
-	((int8_t*)out)[i] = alaw_encode[(int)(32767.0/16.0 * ((float*)in)[i])];
-      else
-	((int8_t*)out)[i] = 0x7F & alaw_encode[(int)(-32767.0/16.0 * ((float*)in)[i])];
-    }
-  }
-  return AF_OK;
+	{
+		for (i = 0; i < len; i++)
+		{
+			if (((float*)in)[i] >= 0)
+				((int8_t*)out)[i] = alaw_encode[(int)(32767.0 / 16.0 * ((float*)in)[i])];
+			else
+				((int8_t*)out)[i] = 0x7F & alaw_encode[(int)(-32767.0 / 16.0 * ((float*)in)[i])];
+		}
+	}
+	return AF_OK;
 }
 #endif /* MPLAYER_AF_FORMAT_ALAW_H */

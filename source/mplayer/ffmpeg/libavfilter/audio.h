@@ -25,30 +25,30 @@
 #include "avfilter.h"
 
 static const enum AVSampleFormat ff_packed_sample_fmts[] = {
-    AV_SAMPLE_FMT_U8,
-    AV_SAMPLE_FMT_S16,
-    AV_SAMPLE_FMT_S32,
-    AV_SAMPLE_FMT_FLT,
-    AV_SAMPLE_FMT_DBL,
-    AV_SAMPLE_FMT_NONE
+	AV_SAMPLE_FMT_U8,
+	AV_SAMPLE_FMT_S16,
+	AV_SAMPLE_FMT_S32,
+	AV_SAMPLE_FMT_FLT,
+	AV_SAMPLE_FMT_DBL,
+	AV_SAMPLE_FMT_NONE
 };
 
 static const enum AVSampleFormat ff_planar_sample_fmts[] = {
-    AV_SAMPLE_FMT_U8P,
-    AV_SAMPLE_FMT_S16P,
-    AV_SAMPLE_FMT_S32P,
-    AV_SAMPLE_FMT_FLTP,
-    AV_SAMPLE_FMT_DBLP,
-    AV_SAMPLE_FMT_NONE
+	AV_SAMPLE_FMT_U8P,
+	AV_SAMPLE_FMT_S16P,
+	AV_SAMPLE_FMT_S32P,
+	AV_SAMPLE_FMT_FLTP,
+	AV_SAMPLE_FMT_DBLP,
+	AV_SAMPLE_FMT_NONE
 };
 
 /** default handler for get_audio_buffer() for audio inputs */
-AVFilterBufferRef *ff_default_get_audio_buffer(AVFilterLink *link, int perms,
-                                                     int nb_samples);
+AVFilterBufferRef* ff_default_get_audio_buffer(AVFilterLink* link, int perms,
+                                               int nb_samples);
 
 /** get_audio_buffer() handler for filters which simply pass audio along */
-AVFilterBufferRef *ff_null_get_audio_buffer(AVFilterLink *link, int perms,
-                                                  int nb_samples);
+AVFilterBufferRef* ff_null_get_audio_buffer(AVFilterLink* link, int perms,
+                                            int nb_samples);
 
 /**
  * Request an audio samples buffer with a specific set of permissions.
@@ -60,14 +60,14 @@ AVFilterBufferRef *ff_null_get_audio_buffer(AVFilterLink *link, int perms,
  * @return               A reference to the samples. This must be unreferenced with
  *                       avfilter_unref_buffer when you are finished with it.
  */
-AVFilterBufferRef *ff_get_audio_buffer(AVFilterLink *link, int perms,
-                                             int nb_samples);
+AVFilterBufferRef* ff_get_audio_buffer(AVFilterLink* link, int perms,
+                                       int nb_samples);
 
 /** default handler for filter_samples() for audio inputs */
-void ff_default_filter_samples(AVFilterLink *link, AVFilterBufferRef *samplesref);
+void ff_default_filter_samples(AVFilterLink* link, AVFilterBufferRef* samplesref);
 
 /** filter_samples() handler for filters which simply pass audio along */
-void ff_null_filter_samples(AVFilterLink *link, AVFilterBufferRef *samplesref);
+void ff_null_filter_samples(AVFilterLink* link, AVFilterBufferRef* samplesref);
 
 /**
  * Send a buffer of audio samples to the next filter.
@@ -77,6 +77,6 @@ void ff_null_filter_samples(AVFilterLink *link, AVFilterBufferRef *samplesref);
  *                   receiving filter will free this reference when it no longer
  *                   needs it or pass it on to the next filter.
  */
-void ff_filter_samples(AVFilterLink *link, AVFilterBufferRef *samplesref);
+void ff_filter_samples(AVFilterLink* link, AVFilterBufferRef* samplesref);
 
 #endif /* AVFILTER_AUDIO_H */

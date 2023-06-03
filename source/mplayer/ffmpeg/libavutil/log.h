@@ -25,85 +25,87 @@
 #include "avutil.h"
 #include "attributes.h"
 
-typedef enum {
-    AV_CLASS_CATEGORY_NA = 0,
-    AV_CLASS_CATEGORY_INPUT,
-    AV_CLASS_CATEGORY_OUTPUT,
-    AV_CLASS_CATEGORY_MUXER,
-    AV_CLASS_CATEGORY_DEMUXER,
-    AV_CLASS_CATEGORY_ENCODER,
-    AV_CLASS_CATEGORY_DECODER,
-    AV_CLASS_CATEGORY_FILTER,
-    AV_CLASS_CATEGORY_BITSTREAM_FILTER,
-}AVClassCategory;
+typedef enum
+{
+	AV_CLASS_CATEGORY_NA = 0,
+	AV_CLASS_CATEGORY_INPUT,
+	AV_CLASS_CATEGORY_OUTPUT,
+	AV_CLASS_CATEGORY_MUXER,
+	AV_CLASS_CATEGORY_DEMUXER,
+	AV_CLASS_CATEGORY_ENCODER,
+	AV_CLASS_CATEGORY_DECODER,
+	AV_CLASS_CATEGORY_FILTER,
+	AV_CLASS_CATEGORY_BITSTREAM_FILTER,
+} AVClassCategory;
 
 /**
  * Describe the class of an AVClass context structure. That is an
  * arbitrary struct of which the first field is a pointer to an
  * AVClass struct (e.g. AVCodecContext, AVFormatContext etc.).
  */
-typedef struct AVClass {
-    /**
-     * The name of the class; usually it is the same name as the
-     * context structure type to which the AVClass is associated.
-     */
-    const char* class_name;
+typedef struct AVClass
+{
+	/**
+	 * The name of the class; usually it is the same name as the
+	 * context structure type to which the AVClass is associated.
+	 */
+	const char* class_name;
 
-    /**
-     * A pointer to a function which returns the name of a context
-     * instance ctx associated with the class.
-     */
-    const char* (*item_name)(void* ctx);
+	/**
+	 * A pointer to a function which returns the name of a context
+	 * instance ctx associated with the class.
+	 */
+	const char* (*item_name)(void* ctx);
 
-    /**
-     * a pointer to the first option specified in the class if any or NULL
-     *
-     * @see av_set_default_options()
-     */
-    const struct AVOption *option;
+	/**
+	 * a pointer to the first option specified in the class if any or NULL
+	 *
+	 * @see av_set_default_options()
+	 */
+	const struct AVOption* option;
 
-    /**
-     * LIBAVUTIL_VERSION with which this structure was created.
-     * This is used to allow fields to be added without requiring major
-     * version bumps everywhere.
-     */
+	/**
+	 * LIBAVUTIL_VERSION with which this structure was created.
+	 * This is used to allow fields to be added without requiring major
+	 * version bumps everywhere.
+	 */
 
-    int version;
+	int version;
 
-    /**
-     * Offset in the structure where log_level_offset is stored.
-     * 0 means there is no such variable
-     */
-    int log_level_offset_offset;
+	/**
+	 * Offset in the structure where log_level_offset is stored.
+	 * 0 means there is no such variable
+	 */
+	int log_level_offset_offset;
 
-    /**
-     * Offset in the structure where a pointer to the parent context for loging is stored.
-     * for example a decoder that uses eval.c could pass its AVCodecContext to eval as such
-     * parent context. And a av_log() implementation could then display the parent context
-     * can be NULL of course
-     */
-    int parent_log_context_offset;
+	/**
+	 * Offset in the structure where a pointer to the parent context for loging is stored.
+	 * for example a decoder that uses eval.c could pass its AVCodecContext to eval as such
+	 * parent context. And a av_log() implementation could then display the parent context
+	 * can be NULL of course
+	 */
+	int parent_log_context_offset;
 
-    /**
-     * Return next AVOptions-enabled child or NULL
-     */
-    void* (*child_next)(void *obj, void *prev);
+	/**
+	 * Return next AVOptions-enabled child or NULL
+	 */
+	void* (*child_next)(void* obj, void* prev);
 
-    /**
-     * Return an AVClass corresponding to next potential
-     * AVOptions-enabled child.
-     *
-     * The difference between child_next and this is that
-     * child_next iterates over _already existing_ objects, while
-     * child_class_next iterates over _all possible_ children.
-     */
-    const struct AVClass* (*child_class_next)(const struct AVClass *prev);
+	/**
+	 * Return an AVClass corresponding to next potential
+	 * AVOptions-enabled child.
+	 *
+	 * The difference between child_next and this is that
+	 * child_next iterates over _already existing_ objects, while
+	 * child_class_next iterates over _all possible_ children.
+	 */
+	const struct AVClass* (*child_class_next)(const struct AVClass* prev);
 
-    /**
-     * Category used for visualization (like color)
-     * available since version (51 << 16 | 56 << 8 | 100)
-     */
-    AVClassCategory category;
+	/**
+	 * Category used for visualization (like color)
+	 * available since version (51 << 16 | 56 << 8 | 100)
+	 */
+	AVClassCategory category;
 } AVClass;
 
 /* av_log API */
@@ -158,9 +160,9 @@ typedef struct AVClass {
  * subsequent arguments are converted to output.
  * @see av_vlog
  */
-void av_log(void *avcl, int level, const char *fmt, ...) av_printf_format(3, 4);
+void av_log(void* avcl, int level, const char* fmt, ...) av_printf_format(3, 4);
 
-void av_vlog(void *avcl, int level, const char *fmt, va_list);
+void av_vlog(void* avcl, int level, const char* fmt, va_list);
 int av_log_get_level(void);
 void av_log_set_level(int);
 void av_log_set_callback(void (*)(void*, int, const char*, va_list));
@@ -174,8 +176,8 @@ const char* av_default_item_name(void* ctx);
  * @param print_prefix  used to store whether the prefix must be printed;
  *                      must point to a persistent integer initially set to 1
  */
-void av_log_format_line(void *ptr, int level, const char *fmt, va_list vl,
-                        char *line, int line_size, int *print_prefix);
+void av_log_format_line(void* ptr, int level, const char* fmt, va_list vl,
+                        char* line, int line_size, int* print_prefix);
 
 /**
  * av_dlog macros

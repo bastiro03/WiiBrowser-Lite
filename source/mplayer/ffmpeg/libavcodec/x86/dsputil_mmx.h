@@ -26,42 +26,45 @@
 #include "libavcodec/dsputil.h"
 #include "libavutil/x86_cpu.h"
 
-typedef struct { uint64_t a, b; } xmm_reg;
+typedef struct
+{
+	uint64_t a, b;
+} xmm_reg;
 
 extern const uint64_t ff_bone;
 extern const uint64_t ff_wtwo;
 
 extern const uint64_t ff_pdw_80000000[2];
 
-extern const xmm_reg  ff_pw_3;
-extern const xmm_reg  ff_pw_4;
-extern const xmm_reg  ff_pw_5;
-extern const xmm_reg  ff_pw_8;
+extern const xmm_reg ff_pw_3;
+extern const xmm_reg ff_pw_4;
+extern const xmm_reg ff_pw_5;
+extern const xmm_reg ff_pw_8;
 extern const uint64_t ff_pw_15;
-extern const xmm_reg  ff_pw_16;
-extern const xmm_reg  ff_pw_18;
+extern const xmm_reg ff_pw_16;
+extern const xmm_reg ff_pw_18;
 extern const uint64_t ff_pw_20;
-extern const xmm_reg  ff_pw_27;
-extern const xmm_reg  ff_pw_28;
-extern const xmm_reg  ff_pw_32;
+extern const xmm_reg ff_pw_27;
+extern const xmm_reg ff_pw_28;
+extern const xmm_reg ff_pw_32;
 extern const uint64_t ff_pw_42;
 extern const uint64_t ff_pw_53;
-extern const xmm_reg  ff_pw_63;
-extern const xmm_reg  ff_pw_64;
+extern const xmm_reg ff_pw_63;
+extern const xmm_reg ff_pw_64;
 extern const uint64_t ff_pw_96;
 extern const uint64_t ff_pw_128;
 extern const uint64_t ff_pw_255;
 
-extern const xmm_reg  ff_pb_1;
-extern const xmm_reg  ff_pb_3;
+extern const xmm_reg ff_pb_1;
+extern const xmm_reg ff_pb_3;
 extern const uint64_t ff_pb_7;
 extern const uint64_t ff_pb_1F;
 extern const uint64_t ff_pb_3F;
 extern const uint64_t ff_pb_81;
-extern const xmm_reg  ff_pb_A1;
-extern const xmm_reg  ff_pb_F8;
+extern const xmm_reg ff_pb_A1;
+extern const xmm_reg ff_pb_F8;
 extern const uint64_t ff_pb_FC;
-extern const xmm_reg  ff_pb_FE;
+extern const xmm_reg ff_pb_FE;
 
 extern const double ff_pd_1[2];
 extern const double ff_pd_2[2];
@@ -87,7 +90,7 @@ extern const double ff_pd_2[2];
 #define SBUTTERFLY(a,b,t,n,m)\
     "mov" #m " " #a ", " #t "         \n\t" /* abcd */\
     "punpckl" #n " " #b ", " #a "     \n\t" /* aebf */\
-    "punpckh" #n " " #b ", " #t "     \n\t" /* cgdh */\
+    "punpckh" #n " " #b ", " #t "     \n\t" /* cgdh */
 
 #define TRANSPOSE4(a,b,c,d,t)\
     SBUTTERFLY(a,b,t,wd,q) /* a=aebf t=cgdh */\
@@ -95,32 +98,37 @@ extern const double ff_pd_2[2];
     SBUTTERFLY(a,c,d,dq,q) /* a=aeim d=bfjn */\
     SBUTTERFLY(t,b,c,dq,q) /* t=cgko c=dhlp */
 
-static inline void transpose4x4(uint8_t *dst, uint8_t *src, x86_reg dst_stride, x86_reg src_stride){
-    __asm__ volatile( //FIXME could save 1 instruction if done as 8x4 ...
-        "movd  (%1), %%mm0              \n\t"
-        "add   %3, %1                   \n\t"
-        "movd  (%1), %%mm1              \n\t"
-        "movd  (%1,%3,1), %%mm2         \n\t"
-        "movd  (%1,%3,2), %%mm3         \n\t"
-        "punpcklbw %%mm1, %%mm0         \n\t"
-        "punpcklbw %%mm3, %%mm2         \n\t"
-        "movq %%mm0, %%mm1              \n\t"
-        "punpcklwd %%mm2, %%mm0         \n\t"
-        "punpckhwd %%mm2, %%mm1         \n\t"
-        "movd  %%mm0, (%0)              \n\t"
-        "add   %2, %0                   \n\t"
-        "punpckhdq %%mm0, %%mm0         \n\t"
-        "movd  %%mm0, (%0)              \n\t"
-        "movd  %%mm1, (%0,%2,1)         \n\t"
-        "punpckhdq %%mm1, %%mm1         \n\t"
-        "movd  %%mm1, (%0,%2,2)         \n\t"
+static inline void transpose4x4(uint8_t* dst, uint8_t* src, x86_reg dst_stride, x86_reg src_stride)
+{
+	volatile __asm__ ( //FIXME could save 1 instruction if done as 8x4 ...
+		
+	"movd  (%1), %%mm0              \n\t"
+		"add   %3, %1                   \n\t"
+		"movd  (%1), %%mm1              \n\t"
+		"movd  (%1,%3,1), %%mm2         \n\t"
+		"movd  (%1,%3,2), %%mm3         \n\t"
+		"punpcklbw %%mm1, %%mm0         \n\t"
+		"punpcklbw %%mm3, %%mm2         \n\t"
+		"movq %%mm0, %%mm1              \n\t"
+		"punpcklwd %%mm2, %%mm0         \n\t"
+		"punpckhwd %%mm2, %%mm1         \n\t"
+		"movd  %%mm0, (%0)              \n\t"
+		"add   %2, %0                   \n\t"
+		"punpckhdq %%mm0, %%mm0         \n\t"
+		"movd  %%mm0, (%0)              \n\t"
+		"movd  %%mm1, (%0,%2,1)         \n\t"
+		"punpckhdq %%mm1, %%mm1         \n\t"
+		"movd  %%mm1, (%0,%2,2)         \n\t"
 
-        :  "+&r" (dst),
-           "+&r" (src)
-        :  "r" (dst_stride),
-           "r" (src_stride)
-        :  "memory"
-    );
+	:
+	"+&r"(dst),
+		"+&r"(src)
+	:
+	"r"(dst_stride),
+		"r"(src_stride)
+	:
+	"memory"
+	)
 }
 
 // e,f,g,h can be memory
@@ -184,40 +192,39 @@ static inline void transpose4x4(uint8_t *dst, uint8_t *src, x86_reg dst_stride, 
     "pcmpeqd %%" #regd ", %%" #regd " \n\t" \
     "psrlw $15, %%" #regd ::)
 
-void ff_dsputilenc_init_mmx(DSPContext* c, AVCodecContext *avctx);
-void ff_dsputil_init_pix_mmx(DSPContext* c, AVCodecContext *avctx);
+void ff_dsputilenc_init_mmx(DSPContext* c, AVCodecContext* avctx);
+void ff_dsputil_init_pix_mmx(DSPContext* c, AVCodecContext* avctx);
 
-void ff_add_pixels_clamped_mmx(const DCTELEM *block, uint8_t *pixels, int line_size);
-void ff_put_pixels_clamped_mmx(const DCTELEM *block, uint8_t *pixels, int line_size);
-void ff_put_signed_pixels_clamped_mmx(const DCTELEM *block, uint8_t *pixels, int line_size);
+void ff_add_pixels_clamped_mmx(const DCTELEM* block, uint8_t* pixels, int line_size);
+void ff_put_pixels_clamped_mmx(const DCTELEM* block, uint8_t* pixels, int line_size);
+void ff_put_signed_pixels_clamped_mmx(const DCTELEM* block, uint8_t* pixels, int line_size);
 
-void ff_put_cavs_qpel8_mc00_mmx2(uint8_t *dst, uint8_t *src, int stride);
-void ff_avg_cavs_qpel8_mc00_mmx2(uint8_t *dst, uint8_t *src, int stride);
-void ff_put_cavs_qpel16_mc00_mmx2(uint8_t *dst, uint8_t *src, int stride);
-void ff_avg_cavs_qpel16_mc00_mmx2(uint8_t *dst, uint8_t *src, int stride);
+void ff_put_cavs_qpel8_mc00_mmx2(uint8_t* dst, uint8_t* src, int stride);
+void ff_avg_cavs_qpel8_mc00_mmx2(uint8_t* dst, uint8_t* src, int stride);
+void ff_put_cavs_qpel16_mc00_mmx2(uint8_t* dst, uint8_t* src, int stride);
+void ff_avg_cavs_qpel16_mc00_mmx2(uint8_t* dst, uint8_t* src, int stride);
 
-void ff_put_vc1_mspel_mc00_mmx(uint8_t *dst, const uint8_t *src, int stride, int rnd);
-void ff_avg_vc1_mspel_mc00_mmx2(uint8_t *dst, const uint8_t *src, int stride, int rnd);
+void ff_put_vc1_mspel_mc00_mmx(uint8_t* dst, const uint8_t* src, int stride, int rnd);
+void ff_avg_vc1_mspel_mc00_mmx2(uint8_t* dst, const uint8_t* src, int stride, int rnd);
 
-void ff_put_rv40_qpel8_mc33_mmx(uint8_t *block, uint8_t *pixels, int line_size);
-void ff_put_rv40_qpel16_mc33_mmx(uint8_t *block, uint8_t *pixels, int line_size);
-void ff_avg_rv40_qpel8_mc33_mmx(uint8_t *block, uint8_t *pixels, int line_size);
-void ff_avg_rv40_qpel16_mc33_mmx(uint8_t *block, uint8_t *pixels, int line_size);
+void ff_put_rv40_qpel8_mc33_mmx(uint8_t* block, uint8_t* pixels, int line_size);
+void ff_put_rv40_qpel16_mc33_mmx(uint8_t* block, uint8_t* pixels, int line_size);
+void ff_avg_rv40_qpel8_mc33_mmx(uint8_t* block, uint8_t* pixels, int line_size);
+void ff_avg_rv40_qpel16_mc33_mmx(uint8_t* block, uint8_t* pixels, int line_size);
 
-void ff_mmx_idct(DCTELEM *block);
-void ff_mmxext_idct(DCTELEM *block);
+void ff_mmx_idct(DCTELEM* block);
+void ff_mmxext_idct(DCTELEM* block);
 
-
-void ff_deinterlace_line_mmx(uint8_t *dst,
-                             const uint8_t *lum_m4, const uint8_t *lum_m3,
-                             const uint8_t *lum_m2, const uint8_t *lum_m1,
-                             const uint8_t *lum,
+void ff_deinterlace_line_mmx(uint8_t* dst,
+                             const uint8_t* lum_m4, const uint8_t* lum_m3,
+                             const uint8_t* lum_m2, const uint8_t* lum_m1,
+                             const uint8_t* lum,
                              int size);
 
-void ff_deinterlace_line_inplace_mmx(const uint8_t *lum_m4,
-                                     const uint8_t *lum_m3,
-                                     const uint8_t *lum_m2,
-                                     const uint8_t *lum_m1,
-                                     const uint8_t *lum, int size);
+void ff_deinterlace_line_inplace_mmx(const uint8_t* lum_m4,
+                                     const uint8_t* lum_m3,
+                                     const uint8_t* lum_m2,
+                                     const uint8_t* lum_m1,
+                                     const uint8_t* lum, int size);
 
 #endif /* AVCODEC_X86_DSPUTIL_MMX_H */

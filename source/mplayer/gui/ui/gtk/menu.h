@@ -21,11 +21,11 @@
 
 #include <gtk/gtk.h>
 
-extern GtkWidget * DVDSubMenu;
+extern GtkWidget* DVDSubMenu;
 
-GtkWidget * AddMenuItem( GtkWidget *window1, const char * immagine_xpm, GtkWidget * SubMenu, const char * label, int Number );
-GtkWidget * AddSubMenu( GtkWidget *window1, const char * immagine_xpm, GtkWidget * Menu, const char * label );
-GtkWidget * AddSeparator( GtkWidget * Menu );
-GtkWidget * create_PopUpMenu( void );
+GtkWidget* AddMenuItem(GtkWidget* window1, const char* immagine_xpm, GtkWidget* SubMenu, const char* label, int Number);
+GtkWidget* AddSubMenu(GtkWidget* window1, const char* immagine_xpm, GtkWidget* Menu, const char* label);
+GtkWidget* AddSeparator(GtkWidget* Menu);
+GtkWidget* create_PopUpMenu(void);
 
 #endif /* MPLAYER_GUI_MENU_H */

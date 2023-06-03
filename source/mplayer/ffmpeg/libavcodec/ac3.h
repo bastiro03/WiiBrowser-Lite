@@ -63,72 +63,77 @@
 #define LEVEL_ONE               1.0000000000000000
 
 /** Delta bit allocation strategy */
-typedef enum {
-    DBA_REUSE = 0,
-    DBA_NEW,
-    DBA_NONE,
-    DBA_RESERVED
+typedef enum
+{
+	DBA_REUSE = 0,
+	DBA_NEW,
+	DBA_NONE,
+	DBA_RESERVED
 } AC3DeltaStrategy;
 
 /** Channel mode (audio coding mode) */
-typedef enum {
-    AC3_CHMODE_DUALMONO = 0,
-    AC3_CHMODE_MONO,
-    AC3_CHMODE_STEREO,
-    AC3_CHMODE_3F,
-    AC3_CHMODE_2F1R,
-    AC3_CHMODE_3F1R,
-    AC3_CHMODE_2F2R,
-    AC3_CHMODE_3F2R
+typedef enum
+{
+	AC3_CHMODE_DUALMONO = 0,
+	AC3_CHMODE_MONO,
+	AC3_CHMODE_STEREO,
+	AC3_CHMODE_3F,
+	AC3_CHMODE_2F1R,
+	AC3_CHMODE_3F1R,
+	AC3_CHMODE_2F2R,
+	AC3_CHMODE_3F2R
 } AC3ChannelMode;
 
-typedef struct AC3BitAllocParameters {
-    int sr_code;
-    int sr_shift;
-    int slow_gain, slow_decay, fast_decay, db_per_bit, floor;
-    int cpl_fast_leak, cpl_slow_leak;
+typedef struct AC3BitAllocParameters
+{
+	int sr_code;
+	int sr_shift;
+	int slow_gain, slow_decay, fast_decay, db_per_bit, floor;
+	int cpl_fast_leak, cpl_slow_leak;
 } AC3BitAllocParameters;
 
 /**
  * @struct AC3HeaderInfo
  * Coded AC-3 header values up to the lfeon element, plus derived values.
  */
-typedef struct {
-    /** @name Coded elements
-     * @{
-     */
-    uint16_t sync_word;
-    uint16_t crc1;
-    uint8_t sr_code;
-    uint8_t bitstream_id;
-    uint8_t bitstream_mode;
-    uint8_t channel_mode;
-    uint8_t lfe_on;
-    uint8_t frame_type;
-    int substreamid;                        ///< substream identification
-    int center_mix_level;                   ///< Center mix level index
-    int surround_mix_level;                 ///< Surround mix level index
-    uint16_t channel_map;
-    int num_blocks;                         ///< number of audio blocks
-    /** @} */
+typedef struct
+{
+	/** @name Coded elements
+	 * @{
+	 */
+	uint16_t sync_word;
+	uint16_t crc1;
+	uint8_t sr_code;
+	uint8_t bitstream_id;
+	uint8_t bitstream_mode;
+	uint8_t channel_mode;
+	uint8_t lfe_on;
+	uint8_t frame_type;
+	int substreamid; ///< substream identification
+	int center_mix_level; ///< Center mix level index
+	int surround_mix_level; ///< Surround mix level index
+	uint16_t channel_map;
+	int num_blocks; ///< number of audio blocks
+	/** @} */
 
-    /** @name Derived values
-     * @{
-     */
-    uint8_t sr_shift;
-    uint16_t sample_rate;
-    uint32_t bit_rate;
-    uint8_t channels;
-    uint16_t frame_size;
-    uint64_t channel_layout;
-    /** @} */
+	/** @name Derived values
+	 * @{
+	 */
+	uint8_t sr_shift;
+	uint16_t sample_rate;
+	uint32_t bit_rate;
+	uint8_t channels;
+	uint16_t frame_size;
+	uint64_t channel_layout;
+	/** @} */
 } AC3HeaderInfo;
 
-typedef enum {
-    EAC3_FRAME_TYPE_INDEPENDENT = 0,
-    EAC3_FRAME_TYPE_DEPENDENT,
-    EAC3_FRAME_TYPE_AC3_CONVERT,
-    EAC3_FRAME_TYPE_RESERVED
+typedef enum
+{
+	EAC3_FRAME_TYPE_INDEPENDENT = 0,
+	EAC3_FRAME_TYPE_DEPENDENT,
+	EAC3_FRAME_TYPE_AC3_CONVERT,
+	EAC3_FRAME_TYPE_RESERVED
 } EAC3FrameType;
 
 void ff_ac3_common_init(void);
@@ -147,8 +152,8 @@ void ff_ac3_common_init(void);
  * @param[out] psd        signal power for each frequency bin
  * @param[out] band_psd   signal power for each critical band
  */
-void ff_ac3_bit_alloc_calc_psd(int8_t *exp, int start, int end, int16_t *psd,
-                               int16_t *band_psd);
+void ff_ac3_bit_alloc_calc_psd(int8_t* exp, int start, int end, int16_t* psd,
+                               int16_t* band_psd);
 
 /**
  * Calculate the masking curve.
@@ -172,10 +177,10 @@ void ff_ac3_bit_alloc_calc_psd(int8_t *exp, int start, int end, int16_t *psd,
  * @param[out] mask         calculated masking curve
  * @return returns 0 for success, non-zero for error
  */
-int ff_ac3_bit_alloc_calc_mask(AC3BitAllocParameters *s, int16_t *band_psd,
+int ff_ac3_bit_alloc_calc_mask(AC3BitAllocParameters* s, int16_t* band_psd,
                                int start, int end, int fast_gain, int is_lfe,
-                               int dba_mode, int dba_nsegs, uint8_t *dba_offsets,
-                               uint8_t *dba_lengths, uint8_t *dba_values,
-                               int16_t *mask);
+                               int dba_mode, int dba_nsegs, uint8_t* dba_offsets,
+                               uint8_t* dba_lengths, uint8_t* dba_values,
+                               int16_t* mask);
 
 #endif /* AVCODEC_AC3_H */

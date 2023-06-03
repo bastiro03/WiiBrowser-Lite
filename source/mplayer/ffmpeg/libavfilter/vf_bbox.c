@@ -29,87 +29,95 @@
 #include "bbox.h"
 #include "internal.h"
 
-typedef struct {
-    unsigned int frame;
-    int vsub, hsub;
+typedef struct
+{
+	unsigned int frame;
+	int vsub, hsub;
 } BBoxContext;
 
-static av_cold int init(AVFilterContext *ctx, const char *args, void *opaque)
+static av_cold
+
+int init(AVFilterContext* ctx, const char* args, void* opaque)
 {
-    BBoxContext *bbox = ctx->priv;
-    bbox->frame = 0;
-    return 0;
+	BBoxContext* bbox = ctx->priv;
+	bbox->frame = 0;
+	return 0;
 }
 
-static int query_formats(AVFilterContext *ctx)
+static int query_formats(AVFilterContext* ctx)
 {
-    static const enum PixelFormat pix_fmts[] = {
-        PIX_FMT_YUV420P,
-        PIX_FMT_YUV444P,
-        PIX_FMT_YUV440P,
-        PIX_FMT_YUV422P,
-        PIX_FMT_YUV411P,
-        PIX_FMT_NONE,
-    };
+	static const enum PixelFormat pix_fmts[] = {
+		PIX_FMT_YUV420P,
+		PIX_FMT_YUV444P,
+		PIX_FMT_YUV440P,
+		PIX_FMT_YUV422P,
+		PIX_FMT_YUV411P,
+		PIX_FMT_NONE,
+	};
 
-    avfilter_set_common_pixel_formats(ctx, avfilter_make_format_list(pix_fmts));
-    return 0;
+	avfilter_set_common_pixel_formats(ctx, avfilter_make_format_list(pix_fmts));
+	return 0;
 }
 
-static void end_frame(AVFilterLink *inlink)
+static void end_frame(AVFilterLink* inlink)
 {
-    AVFilterContext *ctx = inlink->dst;
-    BBoxContext *bbox = ctx->priv;
-    AVFilterBufferRef *picref = inlink->cur_buf;
-    FFBoundingBox box;
-    int has_bbox, w, h;
+	AVFilterContext* ctx = inlink->dst;
+	BBoxContext* bbox = ctx->priv;
+	AVFilterBufferRef* picref = inlink->cur_buf;
+	FFBoundingBox box;
+	int has_bbox, w, h;
 
-    has_bbox =
-        ff_calculate_bounding_box(&box,
-                                  picref->data[0], picref->linesize[0],
-                                  inlink->w, inlink->h, 16);
-    w = box.x2 - box.x1 + 1;
-    h = box.y2 - box.y1 + 1;
+	has_bbox =
+		ff_calculate_bounding_box(&box,
+		                          picref->data[0], picref->linesize[0],
+		                          inlink->w, inlink->h, 16);
+	w = box.x2 - box.x1 + 1;
+	h = box.y2 - box.y1 + 1;
 
-    av_log(ctx, AV_LOG_INFO,
-           "n:%d pts:%s pts_time:%s", bbox->frame,
-           av_ts2str(picref->pts), av_ts2timestr(picref->pts, &inlink->time_base));
+	av_log(ctx, AV_LOG_INFO,
+	       "n:%d pts:%s pts_time:%s", bbox->frame,
+	       av_ts2str(picref->pts), av_ts2timestr(picref->pts, &inlink->time_base));
 
-    if (has_bbox) {
-        av_log(ctx, AV_LOG_INFO,
-               " x1:%d x2:%d y1:%d y2:%d w:%d h:%d"
-               " crop=%d:%d:%d:%d drawbox=%d:%d:%d:%d",
-               box.x1, box.x2, box.y1, box.y2, w, h,
-               w, h, box.x1, box.y1,    /* crop params */
-               box.x1, box.y1, w, h);   /* drawbox params */
-    }
-    av_log(ctx, AV_LOG_INFO, "\n");
+	if (has_bbox)
+	{
+		av_log(ctx, AV_LOG_INFO,
+		       " x1:%d x2:%d y1:%d y2:%d w:%d h:%d"
+		       " crop=%d:%d:%d:%d drawbox=%d:%d:%d:%d",
+		       box.x1, box.x2, box.y1, box.y2, w, h,
+		       w, h, box.x1, box.y1, /* crop params */
+		       box.x1, box.y1, w, h); /* drawbox params */
+	}
+	av_log(ctx, AV_LOG_INFO, "\n");
 
-    bbox->frame++;
-    avfilter_unref_buffer(picref);
-    avfilter_end_frame(inlink->dst->outputs[0]);
+	bbox->frame++;
+	avfilter_unref_buffer(picref);
+	avfilter_end_frame(inlink->dst->outputs[0]);
 }
 
 AVFilter avfilter_vf_bbox = {
-    .name          = "bbox",
-    .description   = NULL_IF_CONFIG_SMALL("Compute bounding box for each frame."),
-    .priv_size     = sizeof(BBoxContext),
-    .query_formats = query_formats,
-    .init          = init,
+	.name = "bbox",
+	.description = NULL_IF_CONFIG_SMALL("Compute bounding box for each frame."),
+	.priv_size = sizeof(BBoxContext),
+	.query_formats = query_formats,
+	.init = init,
 
-    .inputs = (const AVFilterPad[]) {
-        { .name             = "default",
-          .type             = AVMEDIA_TYPE_VIDEO,
-          .get_video_buffer = avfilter_null_get_video_buffer,
-          .start_frame      = ff_null_start_frame_keep_ref,
-          .end_frame        = end_frame,
-          .min_perms        = AV_PERM_READ, },
-        { .name = NULL }
-    },
+	.inputs = (const AVFilterPad[]){
+		{
+			.name = "default",
+			.type = AVMEDIA_TYPE_VIDEO,
+			.get_video_buffer = avfilter_null_get_video_buffer,
+			.start_frame = ff_null_start_frame_keep_ref,
+			.end_frame = end_frame,
+			.min_perms = AV_PERM_READ,
+		},
+		{.name = NULL}
+	},
 
-    .outputs = (const AVFilterPad[]) {
-        { .name             = "default",
-          .type             = AVMEDIA_TYPE_VIDEO },
-        { .name = NULL }
-    },
+	.outputs = (const AVFilterPad[]){
+		{
+			.name = "default",
+			.type = AVMEDIA_TYPE_VIDEO
+		},
+		{.name = NULL}
+	},
 };

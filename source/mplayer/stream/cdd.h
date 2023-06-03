@@ -25,40 +25,44 @@
 
 extern const m_option_t cdda_opts[];
 
-typedef struct cd_track {
-	char *name;
+typedef struct cd_track
+{
+	char* name;
 	unsigned int track_nb;
 	unsigned int min;
 	unsigned int sec;
 	unsigned int msec;
 	unsigned long frame_begin;
 	unsigned long frame_length;
-	struct cd_track *prev;
-	struct cd_track *next;
+	struct cd_track* prev;
+	struct cd_track* next;
 } cd_track_t;
 
-typedef struct {
-	char *artist;
-	char *album;
-	char *genre;
+typedef struct
+{
+	char* artist;
+	char* album;
+	char* genre;
 	unsigned int nb_tracks;
 	unsigned int min;
 	unsigned int sec;
 	unsigned msec;
-	cd_track_t *first;
-	cd_track_t *last;
-	cd_track_t *current;
+	cd_track_t* first;
+	cd_track_t* last;
+	cd_track_t* current;
 } cd_info_t;
 
-cd_info_t* 	cd_info_new(void);
-void		cd_info_free(cd_info_t *cd_info);
-cd_track_t*	cd_info_add_track(cd_info_t *cd_info, char *track_name, unsigned int track_nb, unsigned int min, unsigned int sec, unsigned int msec, unsigned long frame_begin, unsigned long frame_length);
-cd_track_t*	cd_info_get_track(cd_info_t *cd_info, unsigned int track_nb);
+cd_info_t* cd_info_new(void);
+void cd_info_free(cd_info_t* cd_info);
+cd_track_t* cd_info_add_track(cd_info_t* cd_info, char* track_name, unsigned int track_nb, unsigned int min,
+                              unsigned int sec, unsigned int msec, unsigned long frame_begin,
+                              unsigned long frame_length);
+cd_track_t* cd_info_get_track(cd_info_t* cd_info, unsigned int track_nb);
 
-void 		cd_info_debug(cd_info_t *cd_info);
+void cd_info_debug(cd_info_t* cd_info);
 
-int             cdd_identify(const char *dev);
-int             cddb_resolve(const char *dev, char **xmcd_file);
-cd_info_t*      cddb_parse_xmcd(char *xmcd_file);
+int cdd_identify(const char* dev);
+int cddb_resolve(const char* dev, char** xmcd_file);
+cd_info_t* cddb_parse_xmcd(char* xmcd_file);
 
 #endif /* MPLAYER_CDD_H */

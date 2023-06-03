@@ -30,10 +30,10 @@
 
 // prototypes:
 //static vd_info_t info;
-static int control(sh_video_t *sh,int cmd,void* arg,...);
-static int init(sh_video_t *sh);
-static void uninit(sh_video_t *sh);
-static mp_image_t* decode(sh_video_t *sh,void* data,int len,int flags);
+static int control(sh_video_t* sh, int cmd, void* arg, ...);
+static int init(sh_video_t* sh);
+static void uninit(sh_video_t* sh);
+static mp_image_t* decode(sh_video_t* sh, void* data, int len, int flags);
 
 #define LIBVD_EXTERN(x) const vd_functions_t mpcodecs_vd_##x = {\
 	&info,\

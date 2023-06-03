@@ -54,7 +54,6 @@
 #define DEFAULT_XVID_DBG_FILE   "xvid.dbg"
 #define DEFAULT_XVID_STATS_FILE "xvid.stats"
 
-
 /******************************************************************************
  * Local prototypes
  *****************************************************************************/
@@ -96,42 +95,35 @@ static vbr_finish_function vbr_finish_2pass2;
  * Inline utility functions
  *****************************************************************************/
 
-static inline int util_frametype(vbr_control_t *state)
+static inline int util_frametype(vbr_control_t* state)
 {
-
-	if(state->credits_start) {
-
-		if(state->cur_frame >= state->credits_start_begin &&
-		   state->cur_frame < state->credits_start_end)
-			return(FRAME_TYPE_STARTING_CREDITS);
-
+	if (state->credits_start)
+	{
+		if (state->cur_frame >= state->credits_start_begin &&
+			state->cur_frame < state->credits_start_end)
+			return (FRAME_TYPE_STARTING_CREDITS);
 	}
 
-	if(state->credits_end) {
-
-		if(state->cur_frame >= state->credits_end_begin &&
-		   state->cur_frame < state->credits_end_end)
-			return(FRAME_TYPE_ENDING_CREDITS);
-
+	if (state->credits_end)
+	{
+		if (state->cur_frame >= state->credits_end_begin &&
+			state->cur_frame < state->credits_end_end)
+			return (FRAME_TYPE_ENDING_CREDITS);
 	}
 
-	return(FRAME_TYPE_NORMAL_MOVIE);
-
-
+	return (FRAME_TYPE_NORMAL_MOVIE);
 }
 
-static inline int util_creditsframes(vbr_control_t *state)
+static inline int util_creditsframes(vbr_control_t* state)
 {
-
 	int frames = 0;
 
-	if(state->credits_start)
+	if (state->credits_start)
 		frames += state->credits_start_end - state->credits_start_begin;
-	if(state->credits_end)
+	if (state->credits_end)
 		frames += state->credits_end_end - state->credits_end_begin;
 
-	return(frames);
-
+	return (frames);
 }
 
 /******************************************************************************
@@ -148,9 +140,8 @@ static inline int util_creditsframes(vbr_control_t *state)
  *   = 0
  ****************************************************************************/
 
-int vbrSetDefaults(vbr_control_t *state)
+int vbrSetDefaults(vbr_control_t* state)
 {
-
 	/* Set all the structure to zero */
 	memset(state, 0, sizeof(state));
 
@@ -164,9 +155,9 @@ int vbrSetDefaults(vbr_control_t *state)
 	 * Default is a 2hour movie on 700Mo CD-ROM + 128kbit sound track
 	 * This represents a target bitrate of 687kbit/s
 	 */
-	state->desired_size = DEFAULT_DESIRED_SIZE*1024*1024 -
-		DEFAULT_MOVIE_LENGTH*3600*DEFAULT_AUDIO_BITRATE*1000/8;
-	state->desired_bitrate = state->desired_size*8/(DEFAULT_MOVIE_LENGTH*3600);
+	state->desired_size = DEFAULT_DESIRED_SIZE * 1024 * 1024 -
+		DEFAULT_MOVIE_LENGTH * 3600 * DEFAULT_AUDIO_BITRATE * 1000 / 8;
+	state->desired_bitrate = state->desired_size * 8 / (DEFAULT_MOVIE_LENGTH * 3600);
 
 	/* Credits */
 	state->credits_mode = VBR_CREDITS_MODE_RATE;
@@ -180,15 +171,15 @@ int vbrSetDefaults(vbr_control_t *state)
 	state->credits_fixed_quant = 20;
 	state->credits_quant_i = 20;
 	state->credits_quant_p = 20;
-	state->credits_start_size = DEFAULT_CREDITS_SIZE*1024*1024;
-	state->credits_end_size = DEFAULT_CREDITS_SIZE*1024*1024;
+	state->credits_start_size = DEFAULT_CREDITS_SIZE * 1024 * 1024;
+	state->credits_end_size = DEFAULT_CREDITS_SIZE * 1024 * 1024;
 
 	/* Keyframe boost */
 	state->keyframe_boost = 0;
 	state->kftreshold = 10;
 	state->kfreduction = 30;
 	state->min_key_interval = 1;
-	state->max_key_interval = (int)DEFAULT_FPS*10;
+	state->max_key_interval = (int)DEFAULT_FPS * 10;
 
 	/* Normal curve treatment */
 	state->curve_compression_high = 25;
@@ -206,7 +197,7 @@ int vbrSetDefaults(vbr_control_t *state)
 	state->alt_curve_bonus_bias = 50;
 	state->bitrate_payback_method = VBR_PAYBACK_BIAS;
 	state->bitrate_payback_delay = 250;
-	state->twopass_max_bitrate = DEFAULT_TWOPASS_BOOST*state->desired_bitrate;
+	state->twopass_max_bitrate = DEFAULT_TWOPASS_BOOST * state->desired_bitrate;
 	state->twopass_max_overflow_improvement = 60;
 	state->twopass_max_overflow_degradation = 60;
 	state->max_iquant = 31;
@@ -215,12 +206,11 @@ int vbrSetDefaults(vbr_control_t *state)
 	state->min_pquant = 2;
 	state->fixed_quant = 3;
 
-	state->max_framesize = (1.0/(float)DEFAULT_FPS) * state->twopass_max_bitrate / 8;
+	state->max_framesize = (1.0 / DEFAULT_FPS) * state->twopass_max_bitrate / 8;
 
-	state->fps = (float)DEFAULT_FPS;
+	state->fps = DEFAULT_FPS;
 
-	return(0);
-
+	return (0);
 }
 
 /*****************************************************************************
@@ -237,68 +227,67 @@ int vbrSetDefaults(vbr_control_t *state)
  *    = -1 on error
  *****************************************************************************/
 
-int vbrInit(vbr_control_t *state)
+int vbrInit(vbr_control_t* state)
 {
-
-	if(state == NULL) return(-1);
+	if (state == NULL) return (-1);
 
 	/* Function pointers safe initialization */
-	state->init     = NULL;
+	state->init = NULL;
 	state->getquant = NULL;
 	state->getintra = NULL;
-	state->update   = NULL;
-	state->finish   = NULL;
+	state->update = NULL;
+	state->finish = NULL;
 
-	if(state->debug) {
-
+	if (state->debug)
+	{
 		state->debug_file = fopen(DEFAULT_XVID_DBG_FILE, "w+");
 
-		if(state->debug_file == NULL)
-			return(-1);
+		if (state->debug_file == NULL)
+			return (-1);
 
 		fprintf(state->debug_file, "# XviD Debug output\n");
 		fprintf(state->debug_file, "# quant | intra | header bytes"
-			"| total bytes | kblocks | mblocks | ublocks"
-			"| vbr overflow | vbr kf overflow"
-			"| vbr kf partial overflow\n\n");
+		        "| total bytes | kblocks | mblocks | ublocks"
+		        "| vbr overflow | vbr kf overflow"
+		        "| vbr kf partial overflow\n\n");
 	}
 
 	/* Function pointers sub case initialization */
-	switch(state->mode) {
+	switch (state->mode)
+	{
 	case VBR_MODE_1PASS:
-		state->init     = vbr_init_dummy;
+		state->init = vbr_init_dummy;
 		state->getquant = vbr_getquant_1pass;
 		state->getintra = vbr_getintra_1pass;
-		state->update   = vbr_update_dummy;
-		state->finish   = vbr_finish_dummy;
+		state->update = vbr_update_dummy;
+		state->finish = vbr_finish_dummy;
 		break;
 	case VBR_MODE_2PASS_1:
-		state->init     = vbr_init_2pass1;
+		state->init = vbr_init_2pass1;
 		state->getquant = vbr_getquant_2pass1;
 		state->getintra = vbr_getintra_2pass1;
-		state->update   = vbr_update_2pass1;
-		state->finish   = vbr_finish_2pass1;
+		state->update = vbr_update_2pass1;
+		state->finish = vbr_finish_2pass1;
 		break;
 	case VBR_MODE_FIXED_QUANT:
-		state->init     = vbr_init_fixedquant;
+		state->init = vbr_init_fixedquant;
 		state->getquant = vbr_getquant_fixedquant;
 		state->getintra = vbr_getintra_fixedquant;
-		state->update   = vbr_update_dummy;
-		state->finish   = vbr_finish_dummy;
+		state->update = vbr_update_dummy;
+		state->finish = vbr_finish_dummy;
 		break;
 	case VBR_MODE_2PASS_2:
-		state->init     = vbr_init_2pass2;
+		state->init = vbr_init_2pass2;
 		state->getintra = vbr_getintra_2pass2;
 		state->getquant = vbr_getquant_2pass2;
-		state->update   = vbr_update_2pass2;
-		state->finish   = vbr_finish_2pass2;
+		state->update = vbr_update_2pass2;
+		state->finish = vbr_finish_2pass2;
 		break;
 	default:
-		return(-1);
+		return (-1);
 	}
 
-	return(state->init(state));
-
+	return (state->init(state));
 }
 
 /******************************************************************************
@@ -313,14 +302,12 @@ int vbrInit(vbr_control_t *state)
  *
  *****************************************************************************/
 
-int vbrGetQuant(vbr_control_t *state)
+int vbrGetQuant(vbr_control_t* state)
 {
-
 	/* Returns Zero, so XviD decides alone */
-	if(state == NULL || state->getquant == NULL) return(0);
+	if (state == NULL || state->getquant == NULL) return (0);
 
-	return(state->getquant(state));
-
+	return (state->getquant(state));
 }
 
 /******************************************************************************
@@ -335,14 +322,12 @@ int vbrGetQuant(vbr_control_t *state)
  *
  *****************************************************************************/
 
-int vbrGetIntra(vbr_control_t *state)
+int vbrGetIntra(vbr_control_t* state)
 {
-
 	/* Returns -1, means let XviD decide */
-	if(state == NULL || state->getintra == NULL) return(-1);
+	if (state == NULL || state->getintra == NULL) return (-1);
 
-	return(state->getintra(state));
-
+	return (state->getintra(state));
 }
 
 /******************************************************************************
@@ -357,42 +342,40 @@ int vbrGetIntra(vbr_control_t *state)
  *    = -1 on error
  *****************************************************************************/
 
-int vbrUpdate(vbr_control_t *state,
-	      int quant,
-	      int intra,
-	      int header_bytes,
-	      int total_bytes,
-	      int kblocks,
-	      int mblocks,
-	      int ublocks)
+int vbrUpdate(vbr_control_t* state,
+              int quant,
+              int intra,
+              int header_bytes,
+              int total_bytes,
+              int kblocks,
+              int mblocks,
+              int ublocks)
 {
+	if (state == NULL || state->update == NULL) return (-1);
 
-	if(state == NULL || state->update == NULL) return(-1);
-
-	if(state->debug && state->debug_file != NULL) {
+	if (state->debug && state->debug_file != NULL)
+	{
 		int idx;
 
 		fprintf(state->debug_file, "%d %d %d %d %d %d %d %d %d %d\n",
-			quant, intra, header_bytes, total_bytes, kblocks,
-			mblocks, ublocks, state->overflow, state->KFoverflow,
-			state->KFoverflow_partial);
+		        quant, intra, header_bytes, total_bytes, kblocks,
+		        mblocks, ublocks, state->overflow, state->KFoverflow,
+		        state->KFoverflow_partial);
 
 		idx = quant;
 
-		if(quant < 1)
+		if (quant < 1)
 			idx = 1;
-		if(quant > 31)
+		if (quant > 31)
 			idx = 31;
 
 		idx--;
 
 		state->debug_quant_count[idx]++;
-
 	}
 
-	return(state->update(state, quant, intra, header_bytes, total_bytes,
-			     kblocks, mblocks, ublocks));
-
+	return (state->update(state, quant, intra, header_bytes, total_bytes,
+	                      kblocks, mblocks, ublocks));
 }
 
 /******************************************************************************
@@ -406,107 +389,92 @@ int vbrUpdate(vbr_control_t *state,
  *    = -1 on error
  *****************************************************************************/
 
-int vbrFinish(vbr_control_t *state)
+int vbrFinish(vbr_control_t* state)
 {
+	if (state == NULL || state->finish == NULL) return (-1);
 
-	if(state == NULL || state->finish == NULL) return(-1);
-
-	if(state->debug && state->debug_file != NULL) {
-
+	if (state->debug && state->debug_file != NULL)
+	{
 		int i;
 
 		fprintf(state->debug_file, "\n\n");
 
-		for(i=0; i<79; i++)
+		for (i = 0; i < 79; i++)
 			fprintf(state->debug_file, "#");
 
 		fprintf(state->debug_file, "\n# Quantizer distribution :\n\n");
 
-		for(i=0;i<32; i++) {
-
+		for (i = 0; i < 32; i++)
+		{
 			fprintf(state->debug_file, "# quant %d : %d\n",
-				i+1,
-				state->debug_quant_count[i]);
-
+			        i + 1,
+			        state->debug_quant_count[i]);
 		}
 
 		fclose(state->debug_file);
-
 	}
 
-	return(state->finish(state));
-
+	return (state->finish(state));
 }
 
 /******************************************************************************
  * Dummy functions - Used when a mode does not need such a function
  *****************************************************************************/
 
-static int vbr_init_dummy(void *sstate)
+static int vbr_init_dummy(void* sstate)
 {
-
-	vbr_control_t *state = sstate;
+	vbr_control_t* state = sstate;
 
 	state->cur_frame = 0;
 
-	return(0);
-
+	return (0);
 }
 
-static int vbr_update_dummy(void *state,
-			    int quant,
-			    int intra,
-			    int header_bytes,
-			    int total_bytes,
-			    int kblocks,
-			    int mblocks,
-			    int ublocks)
+static int vbr_update_dummy(void* state,
+                            int quant,
+                            int intra,
+                            int header_bytes,
+                            int total_bytes,
+                            int kblocks,
+                            int mblocks,
+                            int ublocks)
 {
-
 	((vbr_control_t*)state)->cur_frame++;
 
-	return(0);
-
+	return (0);
 }
 
-static int vbr_finish_dummy(void *state)
+static int vbr_finish_dummy(void* state)
 {
-
-	return(0);
-
+	return (0);
 }
 
 /******************************************************************************
  * 1 pass mode - XviD will do its job alone.
  *****************************************************************************/
 
-static int vbr_getquant_1pass(void *state)
+static int vbr_getquant_1pass(void* state)
 {
-
-	return(0);
-
+	return (0);
 }
 
-static int vbr_getintra_1pass(void *state)
+static int vbr_getintra_1pass(void* state)
 {
-
-	return(-1);
-
+	return (-1);
 }
 
 /******************************************************************************
  * 2 pass mode - first pass functions
  *****************************************************************************/
 
-static int vbr_init_2pass1(void *sstate)
+static int vbr_init_2pass1(void* sstate)
 {
-
-	FILE *f;
-	vbr_control_t *state = sstate;
+	FILE* f;
+	vbr_control_t* state = sstate;
 
 	/* Check the filename */
-	if(state->filename == NULL || state->filename[0] == '\0')
-		return(-1);
+	if (state->filename == NULL || state->filename[0] == '\0')
+		return (-1);
 
 	/* Initialize safe defaults for 2pass 1 */
 	state->pass1_file = NULL;
@@ -515,8 +483,8 @@ static int vbr_init_2pass1(void *sstate)
 	state->cur_frame = 0;
 
 	/* Open the 1st pass file */
-	if((f = fopen(state->filename, "w+")) == NULL)
-		return(-1);
+	if ((f = fopen(state->filename, "w+")) == NULL)
+		return (-1);
 
 	/*
 	 * The File Header
@@ -530,113 +498,103 @@ static int vbr_init_2pass1(void *sstate)
 	fprintf(f, "# frames    :           \n");
 	fprintf(f, "# keyframes :           \n");
 	fprintf(f, "#\n# quant | intra | header bytes | total bytes | kblocks |"
-		" mblocks | ublocks\n\n");
+	        " mblocks | ublocks\n\n");
 
 	/* Save file pointer */
-	state->pass1_file   = f;
+	state->pass1_file = f;
 
-	return(0);
-
+	return (0);
 }
 
-static int vbr_getquant_2pass1(void *state)
+static int vbr_getquant_2pass1(void* state)
 {
-
-	return(2);
-
+	return (2);
 }
 
-static int vbr_getintra_2pass1(void *state)
+static int vbr_getintra_2pass1(void* state)
 {
-
-	return(-1);
-
+	return (-1);
 }
 
-static int vbr_update_2pass1(void *sstate,
-			     int quant,
-			     int intra,
-			     int header_bytes,
-			     int total_bytes,
-			     int kblocks,
-			     int mblocks,
-			     int ublocks)
-
+static int vbr_update_2pass1(void* sstate,
+                             int quant,
+                             int intra,
+                             int header_bytes,
+                             int total_bytes,
+                             int kblocks,
+                             int mblocks,
+                             int ublocks)
 
 {
+	vbr_control_t* state = sstate;
 
-	vbr_control_t *state = sstate;
-
-	if(state->pass1_file == NULL)
-		return(-1);
+	if (state->pass1_file == NULL)
+		return (-1);
 
 	/* Writes the resulting statistics */
 	fprintf(state->pass1_file, "%d %d %d %d %d %d %d\n",
-		quant,
-		intra,
-		header_bytes,
-		total_bytes,
-		kblocks,
-		mblocks,
-		ublocks);
+	        quant,
+	        intra,
+	        header_bytes,
+	        total_bytes,
+	        kblocks,
+	        mblocks,
+	        ublocks);
 
 	/* Update vbr control state */
-	if(intra) state->nb_keyframes++;
+	if (intra) state->nb_keyframes++;
 	state->nb_frames++;
 	state->cur_frame++;
 
-	return(0);
-
+	return (0);
 }
 
-static int vbr_finish_2pass1(void *sstate)
+static int vbr_finish_2pass1(void* sstate)
 {
-
 	int c, i;
-	vbr_control_t *state = sstate;
+	vbr_control_t* state = sstate;
 
-	if(state->pass1_file == NULL)
-		return(-1);
+	if (state->pass1_file == NULL)
+		return (-1);
 
 	/* Goto to the file beginning */
 	fseek(state->pass1_file, 0, SEEK_SET);
 
 	/* Skip the version line and the empty line */
 	c = i = 0;
-	do {
+	do
+	{
 		c = fgetc(state->pass1_file);
 
-		if(c == EOF) return(-1);
-		if(c == '\n') i++;
-
-	}while(i < 2);
+		if (c == EOF) return (-1);
+		if (c == '\n') i++;
+	}
+	while (i < 2);
 
 	/* Prepare to write to the stream */
-	fseek( state->pass1_file, 0L, SEEK_CUR );
+	fseek(state->pass1_file, 0L, SEEK_CUR);
 
 	/* Overwrite the frame field - safe as we have written extra spaces */
 	fprintf(state->pass1_file, "# frames    : %.10d\n", state->nb_frames);
 
 	/* Overwrite the keyframe field */
 	fprintf(state->pass1_file, "# keyframes : %.10d\n",
-		state->nb_keyframes);
+	        state->nb_keyframes);
 
 	/* Close the file */
-	if(fclose(state->pass1_file) != 0)
-		return(-1);
+	if (fclose(state->pass1_file) != 0)
+		return (-1);
 
-	return(0);
-
+	return (0);
 }
 
 /******************************************************************************
  * 2 pass mode - 2nd pass functions (Need to be finished)
  *****************************************************************************/
 
-static int vbr_init_2pass2(void *sstate)
+static int vbr_init_2pass2(void* sstate)
 {
-
-	FILE *f;
+	FILE* f;
 	int c, n, pos_firstframe, credits_frames;
 	long long credits1_bytes;
 	long long credits2_bytes;
@@ -648,11 +606,11 @@ static int vbr_init_2pass2(void *sstate)
 	double total1;
 	double total2;
 
-	vbr_control_t *state = sstate;
+	vbr_control_t* state = sstate;
 
 	/* Check the filename */
-	if(state->filename == NULL || state->filename[0] == '\0')
-		return(-1);
+	if (state->filename == NULL || state->filename[0] == '\0')
+		return (-1);
 
 	/* Initialize safe defaults for 2pass 2 */
 	state->pass1_file = NULL;
@@ -660,71 +618,74 @@ static int vbr_init_2pass2(void *sstate)
 	state->nb_keyframes = 0;
 
 	/* Open the 1st pass file */
-	if((f = fopen(state->filename, "r")) == NULL)
-		return(-1);
+	if ((f = fopen(state->filename, "r")) == NULL)
+		return (-1);
 
 	state->pass1_file = f;
 
 	/* Get the file version and check against current version */
 	fscanf(state->pass1_file, "# ASCII XviD vbr stat file version %d\n", &n);
 
-	if(n != VBR_VERSION) {
+	if (n != VBR_VERSION)
+	{
 		fclose(state->pass1_file);
 		state->pass1_file = NULL;
-		return(-1);
+		return (-1);
 	}
 
 	/* Skip the blank commented line */
 	c = n = 0;
-	do {
-
+	do
+	{
 		c = fgetc(state->pass1_file);
 
-		if(c == EOF) {
+		if (c == EOF)
+		{
 			fclose(state->pass1_file);
 			state->pass1_file = NULL;
-			return(-1);
+			return (-1);
 		}
 
-		if(c == '\n') n++;
-
-	}while(n < 1);
-
+		if (c == '\n') n++;
+	}
+	while (n < 1);
 
 	/* Get the number of frames */
 	fscanf(state->pass1_file, "# frames : %d\n", &state->nb_frames);
 
 	/* Compute the desired size */
 	state->desired_size = (long long)
-		(((long long)state->nb_frames * (long long)state->desired_bitrate) /
-		 (state->fps * 8.0));
+	(((long long)state->nb_frames * (long long)state->desired_bitrate) /
+		(state->fps * 8.0));
 
 	/* Get the number of keyframes */
 	fscanf(state->pass1_file, "# keyframes : %d\n", &state->nb_keyframes);
 
 	/* Allocate memory space for the keyframe_location array */
-	if((state->keyframe_locations
-	    = malloc((state->nb_keyframes+1)*sizeof(int))) == NULL) {
+	if ((state->keyframe_locations
+		= malloc((state->nb_keyframes + 1) * sizeof(int))) == NULL)
+	{
 		fclose(state->pass1_file);
 		state->pass1_file = NULL;
-		return(-1);
+		return (-1);
 	}
 
 	/* Skip the blank commented line and the colum description */
 	c = n = 0;
-	do {
-
+	do
+	{
 		c = fgetc(state->pass1_file);
 
-		if(c == EOF) {
+		if (c == EOF)
+		{
 			fclose(state->pass1_file);
 			state->pass1_file = NULL;
-			return(-1);
+			return (-1);
 		}
 
-		if(c == '\n') n++;
-
-	}while(n < 2);
+		if (c == '\n') n++;
+	}
+	while (n < 2);
 
 	/* Save position for future use */
 	pos_firstframe = ftell(state->pass1_file);
@@ -735,8 +696,8 @@ static int vbr_init_2pass2(void *sstate)
 	start_curved = end_curved = 0;
 	credits_frames = 0;
 
-	for(state->cur_frame = c = 0; state->cur_frame<state->nb_frames; state->cur_frame++) {
-
+	for (state->cur_frame = c = 0; state->cur_frame < state->nb_frames; state->cur_frame++)
+	{
 		int quant, keyframe, frame_hbytes, frame_bytes;
 		int kblocks, mblocks, ublocks;
 
@@ -745,30 +706,32 @@ static int vbr_init_2pass2(void *sstate)
 		       &kblocks, &mblocks, &ublocks);
 
 		/* Is the frame in the beginning credits */
-		if(util_frametype(state) == FRAME_TYPE_STARTING_CREDITS) {
+		if (util_frametype(state) == FRAME_TYPE_STARTING_CREDITS)
+		{
 			credits1_bytes += frame_bytes;
 			credits_frames++;
 			continue;
 		}
 
 		/* Is the frame in the eding credits */
-		if(util_frametype(state) == FRAME_TYPE_ENDING_CREDITS) {
+		if (util_frametype(state) == FRAME_TYPE_ENDING_CREDITS)
+		{
 			credits2_bytes += frame_bytes;
 			credits_frames++;
 			continue;
 		}
 
 		/* We only care about Keyframes when not in credits */
-		if(keyframe) {
-			itotal_bytes +=	frame_bytes + frame_bytes *
+		if (keyframe)
+		{
+			itotal_bytes += frame_bytes + frame_bytes *
 				state->keyframe_boost / 100;
-			total_bytes  += frame_bytes *
+			total_bytes += frame_bytes *
 				state->keyframe_boost / 100;
 			state->keyframe_locations[c++] = state->cur_frame;
 		}
 
 		total_bytes += frame_bytes;
-
 	}
 
 	/*
@@ -779,15 +742,16 @@ static int vbr_init_2pass2(void *sstate)
 
 	desired = state->desired_size;
 
-	switch(state->credits_mode) {
-	case VBR_CREDITS_MODE_QUANT :
+	switch (state->credits_mode)
+	{
+	case VBR_CREDITS_MODE_QUANT:
 
 		state->movie_curve = (double)
 			(total_bytes - credits1_bytes - credits2_bytes) /
-			(desired  - credits1_bytes - credits2_bytes);
+			(desired - credits1_bytes - credits2_bytes);
 
 		start_curved = credits1_bytes;
-		end_curved   = credits2_bytes;
+		end_curved = credits2_bytes;
 
 		break;
 	case VBR_CREDITS_MODE_SIZE:
@@ -796,17 +760,17 @@ static int vbr_init_2pass2(void *sstate)
 		state->credits_start_curve = (double)
 			(credits1_bytes / state->credits_start_size);
 
-		/* end curve = (end / end desired size) */
+	/* end curve = (end / end desired size) */
 		state->credits_end_curve = (double)
 			(credits2_bytes / state->credits_end_size);
 
 		start_curved = (long long)
 			(credits1_bytes / state->credits_start_curve);
 
-		end_curved   = (long long)
+		end_curved = (long long)
 			(credits2_bytes / state->credits_end_curve);
 
-		/* movie curve=(total-credits)/(desired_size-curved credits) */
+	/* movie curve=(total-credits)/(desired_size-curved credits) */
 		state->movie_curve = (double)
 			(total_bytes - credits1_bytes - credits2_bytes) /
 			(desired - start_curved - end_curved);
@@ -821,10 +785,10 @@ static int vbr_init_2pass2(void *sstate)
 			((double)100 / state->credits_quant_ratio);
 
 		start_curved =
-			(long long)(credits1_bytes/state->credits_start_curve);
+			(long long)(credits1_bytes / state->credits_start_curve);
 
-		end_curved   =
-			(long long)(credits2_bytes/state->credits_end_curve);
+		end_curved =
+			(long long)(credits2_bytes / state->credits_end_curve);
 
 		state->movie_curve = (double)
 			(total_bytes - credits1_bytes - credits2_bytes) /
@@ -837,59 +801,59 @@ static int vbr_init_2pass2(void *sstate)
 	 * average frame size = (desired - curved credits - curved keyframes) /
 	 *                      (frames - credits frames - keyframes)
 	 */
-	state->average_frame = (double)
-		(desired - start_curved - end_curved -
-		 (itotal_bytes / state->movie_curve)) /
+	state->average_frame = (desired - start_curved - end_curved -
+			itotal_bytes / state->movie_curve) /
 		(state->nb_frames - util_creditsframes(state) -
-		 state->nb_keyframes);
+			state->nb_keyframes);
 
 	/* Initialize alt curve parameters */
-	if (state->use_alt_curve) {
-
+	if (state->use_alt_curve)
+	{
 		state->alt_curve_low =
 			state->average_frame - state->average_frame *
-			(double)(state->alt_curve_low_dist / 100.0);
+			(state->alt_curve_low_dist / 100.0);
 
 		state->alt_curve_low_diff =
 			state->average_frame - state->alt_curve_low;
 
 		state->alt_curve_high =
 			state->average_frame + state->average_frame *
-			(double)(state->alt_curve_high_dist / 100.0);
+			(state->alt_curve_high_dist / 100.0);
 
 		state->alt_curve_high_diff =
 			state->alt_curve_high - state->average_frame;
 
-		if (state->alt_curve_use_auto) {
-
-			if (state->movie_curve > 1.0)	{
-
+		if (state->alt_curve_use_auto)
+		{
+			if (state->movie_curve > 1.0)
+			{
 				state->alt_curve_min_rel_qual =
 					(int)(100.0 - (100.0 - 100.0 / state->movie_curve) *
-					      (double)state->alt_curve_auto_str / 100.0);
+						(double)state->alt_curve_auto_str / 100.0);
 
 				if (state->alt_curve_min_rel_qual < 20)
 					state->alt_curve_min_rel_qual = 20;
 			}
-			else {
+			else
+			{
 				state->alt_curve_min_rel_qual = 100;
 			}
-
 		}
 
 		state->alt_curve_mid_qual =
-		(1.0 + (double)state->alt_curve_min_rel_qual / 100.0) / 2.0;
+			(1.0 + (double)state->alt_curve_min_rel_qual / 100.0) / 2.0;
 
 		state->alt_curve_qual_dev = 1.0 - state->alt_curve_mid_qual;
 
-		if (state->alt_curve_low_dist > 100) {
-
-			switch(state->alt_curve_type) {
+		if (state->alt_curve_low_dist > 100)
+		{
+			switch (state->alt_curve_type)
+			{
 			case VBR_ALT_CURVE_AGGRESIVE:
 				/* Sine Curve (high aggressiveness) */
 				state->alt_curve_qual_dev *=
 					2.0 /
-					(1.0 +  sin(DEG2RAD * (state->average_frame * 90.0 / state->alt_curve_low_diff)));
+					(1.0 + sin(DEG2RAD * (state->average_frame * 90.0 / state->alt_curve_low_diff)));
 
 				state->alt_curve_mid_qual =
 					1.0 - state->alt_curve_qual_dev *
@@ -929,8 +893,8 @@ static int vbr_init_2pass2(void *sstate)
 
 	/* Perform prepass to compensate for over/undersizing */
 	total1 = total2 = 0.0;
-	for(state->cur_frame=0; state->cur_frame<state->nb_frames; state->cur_frame++) {
-
+	for (state->cur_frame = 0; state->cur_frame < state->nb_frames; state->cur_frame++)
+	{
 		int quant, keyframe, frame_hbytes, frame_bytes;
 		int kblocks, mblocks, ublocks;
 
@@ -938,30 +902,33 @@ static int vbr_init_2pass2(void *sstate)
 		       &quant, &keyframe, &frame_hbytes, &frame_bytes,
 		       &kblocks, &mblocks, &ublocks);
 
-		if(util_frametype(state) != FRAME_TYPE_NORMAL_MOVIE)
+		if (util_frametype(state) != FRAME_TYPE_NORMAL_MOVIE)
 			continue;
 
-		if(!keyframe) {
-
+		if (!keyframe)
+		{
 			double dbytes = frame_bytes / state->movie_curve;
 			total1 += dbytes;
 
-			if (state->use_alt_curve) {
-
-				if (dbytes > state->average_frame) {
-
-					if (dbytes >= state->alt_curve_high) {
+			if (state->use_alt_curve)
+			{
+				if (dbytes > state->average_frame)
+				{
+					if (dbytes >= state->alt_curve_high)
+					{
 						total2 += dbytes * (state->alt_curve_mid_qual - state->alt_curve_qual_dev);
 					}
-					else {
-
-						switch(state->alt_curve_type) {
+					else
+					{
+						switch (state->alt_curve_type)
+						{
 						case VBR_ALT_CURVE_AGGRESIVE:
 
 							total2 +=
 								dbytes *
 								(state->alt_curve_mid_qual - state->alt_curve_qual_dev *
-								 sin(DEG2RAD * ((dbytes - state->average_frame) * 90.0 / state->alt_curve_high_diff)));
+									sin(DEG2RAD * ((dbytes - state->average_frame) * 90.0 / state->
+										alt_curve_high_diff)));
 							break;
 						default:
 						case VBR_ALT_CURVE_LINEAR:
@@ -969,58 +936,68 @@ static int vbr_init_2pass2(void *sstate)
 							total2 +=
 								dbytes *
 								(state->alt_curve_mid_qual - state->alt_curve_qual_dev *
-								 (dbytes - state->average_frame) / state->alt_curve_high_diff);
+									(dbytes - state->average_frame) / state->alt_curve_high_diff);
 							break;
 						case VBR_ALT_CURVE_SOFT:
 							total2 +=
 								dbytes *
 								(state->alt_curve_mid_qual - state->alt_curve_qual_dev *
-								 (1.0 - cos(DEG2RAD * ((dbytes - state->average_frame) * 90.0 / state->alt_curve_high_diff))));
+									(1.0 - cos(
+										DEG2RAD * ((dbytes - state->average_frame) * 90.0 / state->
+											alt_curve_high_diff))));
 						}
 					}
 				}
-				else {
-
-					if (dbytes <= state->alt_curve_low) {
+				else
+				{
+					if (dbytes <= state->alt_curve_low)
+					{
 						total2 += dbytes;
 					}
-					else {
-
-						switch(state->alt_curve_type) {
+					else
+					{
+						switch (state->alt_curve_type)
+						{
 						case VBR_ALT_CURVE_AGGRESIVE:
 							total2 +=
 								dbytes *
 								(state->alt_curve_mid_qual - state->alt_curve_qual_dev *
-								 sin(DEG2RAD * ((dbytes - state->average_frame) * 90.0 / state->alt_curve_low_diff)));
+									sin(DEG2RAD * ((dbytes - state->average_frame) * 90.0 / state->
+										alt_curve_low_diff)));
 							break;
 						default:
 						case VBR_ALT_CURVE_LINEAR:
 							total2 +=
 								dbytes *
 								(state->alt_curve_mid_qual - state->alt_curve_qual_dev *
-								 (dbytes - state->average_frame) / state->alt_curve_low_diff);
+									(dbytes - state->average_frame) / state->alt_curve_low_diff);
 							break;
 						case VBR_ALT_CURVE_SOFT:
 							total2 +=
 								dbytes *
 								(state->alt_curve_mid_qual + state->alt_curve_qual_dev *
-								 (1.0 - cos(DEG2RAD * ((dbytes - state->average_frame) * 90.0 / state->alt_curve_low_diff))));
+									(1.0 - cos(
+										DEG2RAD * ((dbytes - state->average_frame) * 90.0 / state->
+											alt_curve_low_diff))));
 						}
 					}
 				}
 			}
-			else {
-				if (dbytes > state->average_frame) {
+			else
+			{
+				if (dbytes > state->average_frame)
+				{
 					total2 +=
-						((double)dbytes +
-						 (state->average_frame - dbytes) *
-						 state->curve_compression_high / 100.0);
+					(dbytes +
+						(state->average_frame - dbytes) *
+						state->curve_compression_high / 100.0);
 				}
-				else {
+				else
+				{
 					total2 +=
-						((double)dbytes +
-						 (state->average_frame - dbytes) *
-						 state->curve_compression_low / 100.0);
+					(dbytes +
+						(state->average_frame - dbytes) *
+						state->curve_compression_low / 100.0);
 				}
 			}
 		}
@@ -1028,8 +1005,8 @@ static int vbr_init_2pass2(void *sstate)
 
 	state->curve_comp_scale = total1 / total2;
 
-	if (state->use_alt_curve) {
-
+	if (state->use_alt_curve)
+	{
 		double curve_temp, dbytes;
 		int newquant, percent;
 		int oldquant = 1;
@@ -1044,49 +1021,58 @@ static int vbr_init_2pass2(void *sstate)
 			((total1 - total2) * (1.0 - (double)state->alt_curve_bonus_bias / 100.0) + total2) /
 			total2;
 
-
-		for (n=1; n <= (int)(state->alt_curve_high*2) + 1; n++) {
+		for (n = 1; n <= (int)(state->alt_curve_high * 2) + 1; n++)
+		{
 			dbytes = n;
 			if (dbytes > state->average_frame)
 			{
-				if (dbytes >= state->alt_curve_high) {
+				if (dbytes >= state->alt_curve_high)
+				{
 					curve_temp = dbytes * (state->alt_curve_mid_qual - state->alt_curve_qual_dev);
 				}
-				else {
-					switch(state->alt_curve_type) {
+				else
+				{
+					switch (state->alt_curve_type)
+					{
 					case VBR_ALT_CURVE_AGGRESIVE:
 						curve_temp = dbytes * (state->alt_curve_mid_qual - state->alt_curve_qual_dev *
-								       sin(DEG2RAD * ((dbytes - state->average_frame) * 90.0 / state->alt_curve_high_diff)));
+							sin(DEG2RAD * ((dbytes - state->average_frame) * 90.0 / state->alt_curve_high_diff)));
 						break;
 					default:
 					case VBR_ALT_CURVE_LINEAR:
 						curve_temp = dbytes * (state->alt_curve_mid_qual - state->alt_curve_qual_dev *
-								       (dbytes - state->average_frame) / state->alt_curve_high_diff);
+							(dbytes - state->average_frame) / state->alt_curve_high_diff);
 						break;
 					case VBR_ALT_CURVE_SOFT:
 						curve_temp = dbytes * (state->alt_curve_mid_qual - state->alt_curve_qual_dev *
-								       (1.0 - cos(DEG2RAD * ((dbytes - state->average_frame) * 90.0 / state->alt_curve_high_diff))));
+							(1.0 - cos(
+								DEG2RAD * ((dbytes - state->average_frame) * 90.0 / state->alt_curve_high_diff))));
 					}
 				}
 			}
-			else {
-				if (dbytes <= state->alt_curve_low) {
+			else
+			{
+				if (dbytes <= state->alt_curve_low)
+				{
 					curve_temp = dbytes;
 				}
-				else {
-					switch(state->alt_curve_type) {
+				else
+				{
+					switch (state->alt_curve_type)
+					{
 					case VBR_ALT_CURVE_AGGRESIVE:
 						curve_temp = dbytes * (state->alt_curve_mid_qual - state->alt_curve_qual_dev *
-								       sin(DEG2RAD * ((dbytes - state->average_frame) * 90.0 / state->alt_curve_low_diff)));
+							sin(DEG2RAD * ((dbytes - state->average_frame) * 90.0 / state->alt_curve_low_diff)));
 						break;
 					default:
 					case VBR_ALT_CURVE_LINEAR:
 						curve_temp = dbytes * (state->alt_curve_mid_qual - state->alt_curve_qual_dev *
-								       (dbytes - state->average_frame) / state->alt_curve_low_diff);
+							(dbytes - state->average_frame) / state->alt_curve_low_diff);
 						break;
 					case VBR_ALT_CURVE_SOFT:
 						curve_temp = dbytes * (state->alt_curve_mid_qual + state->alt_curve_qual_dev *
-								       (1.0 - cos(DEG2RAD * ((dbytes - state->average_frame) * 90.0 / state->alt_curve_low_diff))));
+							(1.0 - cos(
+								DEG2RAD * ((dbytes - state->average_frame) * 90.0 / state->alt_curve_low_diff))));
 					}
 				}
 			}
@@ -1102,11 +1088,8 @@ static int vbr_init_2pass2(void *sstate)
 					oldquant = newquant;
 					percent = (int)((n - state->average_frame) * 100.0 / state->average_frame);
 				}
-
 			}
-
 		}
-
 	}
 
 	state->overflow = 0;
@@ -1114,7 +1097,8 @@ static int vbr_init_2pass2(void *sstate)
 	state->KFoverflow_partial = 0;
 	state->KF_idx = 1;
 
-	for (n=0 ; n < 32 ; n++) {
+	for (n = 0; n < 32; n++)
+	{
 		state->quant_error[n] = 0.0;
 		state->quant_count[n] = 0;
 	}
@@ -1128,7 +1112,7 @@ static int vbr_init_2pass2(void *sstate)
 	 *      1 - Quant can de/increase more than -/+2 between 2 frames
 	 *      2 - Leads to artifacts because of 1
 	 */
-	state->max_framesize = state->twopass_max_bitrate/state->fps;
+	state->max_framesize = state->twopass_max_bitrate / state->fps;
 
 	/* Get back to the beginning of frame statistics */
 	fseek(state->pass1_file, pos_firstframe, SEEK_SET);
@@ -1141,7 +1125,6 @@ static int vbr_init_2pass2(void *sstate)
 	 * the overflow and so on...
 	 */
 	{
-
 		/* Fake vars */
 		int next_hbytes, next_kblocks, next_mblocks, next_ublocks;
 
@@ -1149,84 +1132,83 @@ static int vbr_init_2pass2(void *sstate)
 		       &state->pass1_quant, &state->pass1_intra, &next_hbytes,
 		       &state->pass1_bytes, &next_kblocks, &next_mblocks,
 		       &next_ublocks);
-
 	}
 
 	/* Initialize the frame counter */
 	state->cur_frame = 0;
 	state->last_keyframe = 0;
 
-	return(0);
-
+	return (0);
 }
 
-static int vbr_getquant_2pass2(void *sstate)
+static int vbr_getquant_2pass2(void* sstate)
 {
-
 	int quant;
 	int intra;
 	int bytes1, bytes2;
 	int overflow;
 	int capped_to_max_framesize = 0;
 	int KFdistance, KF_min_size;
-	vbr_control_t *state = sstate;
+	vbr_control_t* state = sstate;
 
 	bytes1 = state->pass1_bytes;
 	overflow = state->overflow / 8;
 	/* To shut up gcc warning */
 	bytes2 = bytes1;
 
-
 	if (state->pass1_intra)
 	{
 		overflow = 0;
 	}
 
-	if (util_frametype(state) != FRAME_TYPE_NORMAL_MOVIE) {
-
-
-		switch (state->credits_mode) {
-		case VBR_CREDITS_MODE_QUANT :
-			if (state->credits_quant_i != state->credits_quant_p) {
-				quant = state->pass1_intra ?
-					state->credits_quant_i:
-					state->credits_quant_p;
+	if (util_frametype(state) != FRAME_TYPE_NORMAL_MOVIE)
+	{
+		switch (state->credits_mode)
+		{
+		case VBR_CREDITS_MODE_QUANT:
+			if (state->credits_quant_i != state->credits_quant_p)
+			{
+				quant = state->pass1_intra ? state->credits_quant_i : state->credits_quant_p;
 			}
-			else {
+			else
+			{
 				quant = state->credits_quant_p;
 			}
 
 			state->bytes1 = bytes1;
 			state->bytes2 = bytes1;
 			state->desired_bytes2 = bytes1;
-			return(quant);
+			return (quant);
 		default:
-		case VBR_CREDITS_MODE_RATE :
-		case VBR_CREDITS_MODE_SIZE :
-			if(util_frametype(state) == FRAME_TYPE_STARTING_CREDITS)
+		case VBR_CREDITS_MODE_RATE:
+		case VBR_CREDITS_MODE_SIZE:
+			if (util_frametype(state) == FRAME_TYPE_STARTING_CREDITS)
 				bytes2 = (int)(bytes1 / state->credits_start_curve);
 			else
 				bytes2 = (int)(bytes1 / state->credits_end_curve);
 			break;
 		}
 	}
-	else {
+	else
+	{
 		/* Foxer: apply curve compression outside credits */
 		double dbytes, curve_temp;
 
 		bytes2 = bytes1;
 
 		if (state->pass1_intra)
-			dbytes = ((int)(bytes2 + bytes2 * state->keyframe_boost / 100)) /
+			dbytes = (bytes2 + bytes2 * state->keyframe_boost / 100) /
 				state->movie_curve;
 		else
 			dbytes = bytes2 / state->movie_curve;
 
 		/* spread the compression error accross payback_delay frames */
-		if (state->bitrate_payback_method == VBR_PAYBACK_BIAS)	{
+		if (state->bitrate_payback_method == VBR_PAYBACK_BIAS)
+		{
 			bytes2 = (int)(state->curve_comp_error / state->bitrate_payback_delay);
 		}
-		else {
+		else
+		{
 			bytes2 = (int)(state->curve_comp_error * dbytes /
 				state->average_frame / state->bitrate_payback_delay);
 
@@ -1236,47 +1218,55 @@ static int vbr_getquant_2pass2(void *sstate)
 
 		state->curve_comp_error -= bytes2;
 
-		if (state->use_alt_curve) {
-
-			if (!state->pass1_intra) {
-
-				if (dbytes > state->average_frame) {
+		if (state->use_alt_curve)
+		{
+			if (!state->pass1_intra)
+			{
+				if (dbytes > state->average_frame)
+				{
 					if (dbytes >= state->alt_curve_high)
 						curve_temp = dbytes * (state->alt_curve_mid_qual - state->alt_curve_qual_dev);
-					else {
-						switch(state->alt_curve_type) {
+					else
+					{
+						switch (state->alt_curve_type)
+						{
 						case VBR_ALT_CURVE_AGGRESIVE:
 							curve_temp = dbytes * (state->alt_curve_mid_qual - state->alt_curve_qual_dev *
-									       sin(DEG2RAD * ((dbytes - state->average_frame) * 90.0 / state->alt_curve_high_diff)));
+								sin(DEG2RAD * ((dbytes - state->average_frame) * 90.0 / state->alt_curve_high_diff)));
 							break;
 						default:
 						case VBR_ALT_CURVE_LINEAR:
 							curve_temp = dbytes * (state->alt_curve_mid_qual - state->alt_curve_qual_dev *
-									       (dbytes - state->average_frame) / state->alt_curve_high_diff);
+								(dbytes - state->average_frame) / state->alt_curve_high_diff);
 							break;
 						case VBR_ALT_CURVE_SOFT:
 							curve_temp = dbytes * (state->alt_curve_mid_qual - state->alt_curve_qual_dev *
-									       (1.0 - cos(DEG2RAD * ((dbytes - state->average_frame) * 90.0 / state->alt_curve_high_diff))));
+								(1.0 - cos(
+									DEG2RAD * ((dbytes - state->average_frame) * 90.0 / state->alt_curve_high_diff))));
 						}
 					}
 				}
-				else {
+				else
+				{
 					if (dbytes <= state->alt_curve_low)
 						curve_temp = dbytes;
-					else {
-						switch(state->alt_curve_type) {
+					else
+					{
+						switch (state->alt_curve_type)
+						{
 						case VBR_ALT_CURVE_AGGRESIVE:
 							curve_temp = dbytes * (state->alt_curve_mid_qual - state->alt_curve_qual_dev *
-									       sin(DEG2RAD * ((dbytes - state->average_frame) * 90.0 / state->alt_curve_low_diff)));
+								sin(DEG2RAD * ((dbytes - state->average_frame) * 90.0 / state->alt_curve_low_diff)));
 							break;
 						default:
 						case VBR_ALT_CURVE_LINEAR:
 							curve_temp = dbytes * (state->alt_curve_mid_qual - state->alt_curve_qual_dev *
-									       (dbytes - state->average_frame) / state->alt_curve_low_diff);
+								(dbytes - state->average_frame) / state->alt_curve_low_diff);
 							break;
 						case VBR_ALT_CURVE_SOFT:
 							curve_temp = dbytes * (state->alt_curve_mid_qual + state->alt_curve_qual_dev *
-									       (1.0 - cos(DEG2RAD * ((dbytes - state->average_frame) * 90.0 / state->alt_curve_low_diff))));
+								(1.0 - cos(
+									DEG2RAD * ((dbytes - state->average_frame) * 90.0 / state->alt_curve_low_diff))));
 						}
 					}
 				}
@@ -1285,41 +1275,46 @@ static int vbr_getquant_2pass2(void *sstate)
 
 				bytes2 += ((int)curve_temp);
 				state->curve_comp_error += curve_temp - ((int)curve_temp);
-
 			}
-			else {
+			else
+			{
 				state->curve_comp_error += dbytes - ((int)dbytes);
 				bytes2 += ((int)dbytes);
 			}
 		}
 		else if ((state->curve_compression_high + state->curve_compression_low) &&
-			!state->pass1_intra) {
-
-			if (dbytes > state->average_frame) {
+			!state->pass1_intra)
+		{
+			if (dbytes > state->average_frame)
+			{
 				curve_temp = state->curve_comp_scale *
-					((double)dbytes + (state->average_frame - dbytes) *
+				(dbytes + (state->average_frame - dbytes) *
 					state->curve_compression_high / 100.0);
 			}
-			else {
+			else
+			{
 				curve_temp = state->curve_comp_scale *
-					((double)dbytes + (state->average_frame - dbytes) *
+				(dbytes + (state->average_frame - dbytes) *
 					state->curve_compression_low / 100.0);
 			}
 
 			bytes2 += ((int)curve_temp);
 			state->curve_comp_error += curve_temp - ((int)curve_temp);
 		}
-		else {
+		else
+		{
 			state->curve_comp_error += dbytes - ((int)dbytes);
 			bytes2 += ((int)dbytes);
 		}
 
 		/* cap bytes2 to first pass size, lowers number of quant=1 frames */
-		if (bytes2 > bytes1) {
+		if (bytes2 > bytes1)
+		{
 			state->curve_comp_error += bytes2 - bytes1;
 			bytes2 = bytes1;
 		}
-		else if (bytes2 < 1) {
+		else if (bytes2 < 1)
+		{
 			state->curve_comp_error += --bytes2;
 			bytes2 = 1;
 		}
@@ -1330,16 +1325,17 @@ static int vbr_getquant_2pass2(void *sstate)
 	/* Ugly dependence between getquant and getintra */
 	intra = state->getintra(state);
 
-	if(intra) {
-
+	if (intra)
+	{
 		KFdistance = state->keyframe_locations[state->KF_idx] -
 			state->keyframe_locations[state->KF_idx - 1];
 
-		if (KFdistance < state->kftreshold) {
+		if (KFdistance < state->kftreshold)
+		{
 			KFdistance = KFdistance - state->min_key_interval;
 
-			if (KFdistance >= 0) {
-
+			if (KFdistance >= 0)
+			{
 				KF_min_size = bytes2 * (100 - state->kfreduction) / 100;
 				if (KF_min_size < 1)
 					KF_min_size = 1;
@@ -1360,28 +1356,35 @@ static int vbr_getquant_2pass2(void *sstate)
 	overflow = (int)((double)overflow * bytes2 / state->average_frame);
 
 	/* Foxer: reign in overflow with huge frames */
-	if (labs(overflow) > labs(state->overflow)) {
+	if (labs(overflow) > labs(state->overflow))
+	{
 		overflow = state->overflow;
 	}
 
 	/* Foxer: make sure overflow doesn't run away */
-	if(overflow > bytes2 * state->twopass_max_overflow_improvement / 100) {
-		bytes2 += (overflow <= bytes2) ? bytes2 * state->twopass_max_overflow_improvement / 100 :
-			overflow * state->twopass_max_overflow_improvement / 100;
+	if (overflow > bytes2 * state->twopass_max_overflow_improvement / 100)
+	{
+		bytes2 += (overflow <= bytes2)
+			          ? bytes2 * state->twopass_max_overflow_improvement / 100
+			          : overflow * state->twopass_max_overflow_improvement / 100;
 	}
-	else if(overflow < bytes2 * state->twopass_max_overflow_degradation / -100) {
+	else if (overflow < bytes2 * state->twopass_max_overflow_degradation / -100)
+	{
 		bytes2 += bytes2 * state->twopass_max_overflow_degradation / -100;
 	}
-	else {
+	else
+	{
 		bytes2 += overflow;
 	}
 
-	if(bytes2 > state->max_framesize) {
+	if (bytes2 > state->max_framesize)
+	{
 		capped_to_max_framesize = 1;
 		bytes2 = state->max_framesize;
 	}
 
-	if(bytes2 < 1) {
+	if (bytes2 < 1)
+	{
 		bytes2 = 1;
 	}
 
@@ -1391,42 +1394,45 @@ static int vbr_getquant_2pass2(void *sstate)
 	/* very 'simple' quant<->filesize relationship */
 	quant = state->pass1_quant * bytes1 / bytes2;
 
-	if(quant < 1)
+	if (quant < 1)
 		quant = 1;
-	else if(quant > 31)
+	else if (quant > 31)
 		quant = 31;
-	else if(!state->pass1_intra) {
-
+	else if (!state->pass1_intra)
+	{
 		/* Foxer: aid desired quantizer precision by accumulating decision error */
 		state->quant_error[quant] += ((double)(state->pass1_quant * bytes1) / bytes2) - quant;
 
-		if (state->quant_error[quant] >= 1.0) {
+		if (state->quant_error[quant] >= 1.0)
+		{
 			state->quant_error[quant] -= 1.0;
 			quant++;
 		}
 	}
 
 	/* we're done with credits */
-	if(util_frametype(state) != FRAME_TYPE_NORMAL_MOVIE) {
-		return(quant);
+	if (util_frametype(state) != FRAME_TYPE_NORMAL_MOVIE)
+	{
+		return (quant);
 	}
 
-	if(intra) {
-
+	if (intra)
+	{
 		if (quant < state->min_iquant)
 			quant = state->min_iquant;
 		if (quant > state->max_iquant)
 			quant = state->max_iquant;
 	}
-	else {
-
-		if(quant > state->max_pquant)
+	else
+	{
+		if (quant > state->max_pquant)
 			quant = state->max_pquant;
-		if(quant < state->min_pquant)
+		if (quant < state->min_pquant)
 			quant = state->min_pquant;
 
 		/* subsequent frame quants can only be +- 2 */
-		if(state->last_quant && capped_to_max_framesize == 0) {
+		if (state->last_quant && capped_to_max_framesize == 0)
+		{
 			if (quant > state->last_quant + 2)
 				quant = state->last_quant + 2;
 			if (quant < state->last_quant - 2)
@@ -1434,113 +1440,106 @@ static int vbr_getquant_2pass2(void *sstate)
 		}
 	}
 
-	return(quant);
-
+	return (quant);
 }
 
-static int vbr_getintra_2pass2(void *sstate)
+static int vbr_getintra_2pass2(void* sstate)
 {
-
 	int intra;
-	vbr_control_t *state = sstate;
-
+	vbr_control_t* state = sstate;
 
 	/* Get next intra state (fetched by update) */
 	intra = state->pass1_intra;
 
 	/* During credits, XviD will decide itself */
-	if(util_frametype(state) != FRAME_TYPE_NORMAL_MOVIE) {
-
-
-		switch(state->credits_mode) {
+	if (util_frametype(state) != FRAME_TYPE_NORMAL_MOVIE)
+	{
+		switch (state->credits_mode)
+		{
 		default:
-		case VBR_CREDITS_MODE_RATE :
-		case VBR_CREDITS_MODE_SIZE :
+		case VBR_CREDITS_MODE_RATE:
+		case VBR_CREDITS_MODE_SIZE:
 			intra = -1;
 			break;
-		case VBR_CREDITS_MODE_QUANT :
+		case VBR_CREDITS_MODE_QUANT:
 			/* Except in this case */
 			if (state->credits_quant_i == state->credits_quant_p)
 				intra = -1;
 			break;
 		}
-
 	}
 
 	/* Force I Frame when max_key_interval is reached */
-	if((state->cur_frame - state->last_keyframe) > state->max_key_interval)
+	if ((state->cur_frame - state->last_keyframe) > state->max_key_interval)
 		intra = 1;
 
 	/*
 	 * Force P or B Frames for frames whose distance is less than the
 	 * requested minimum
 	 */
-	if((state->cur_frame - state->last_keyframe) < state->min_key_interval)
+	if ((state->cur_frame - state->last_keyframe) < state->min_key_interval)
 		intra = 0;
 
-
 	/* Return the given intra mode except for first frame */
-	return((state->cur_frame==0)?1:intra);
-
+	return ((state->cur_frame == 0) ? 1 : intra);
 }
 
-static int vbr_update_2pass2(void *sstate,
-			     int quant,
-			     int intra,
-			     int header_bytes,
-			     int total_bytes,
-			     int kblocks,
-			     int mblocks,
-			     int ublocks)
-
+static int vbr_update_2pass2(void* sstate,
+                             int quant,
+                             int intra,
+                             int header_bytes,
+                             int total_bytes,
+                             int kblocks,
+                             int mblocks,
+                             int ublocks)
 
 {
-
-
 	int next_hbytes, next_kblocks, next_mblocks, next_ublocks;
 	int tempdiv;
 
-	vbr_control_t *state = sstate;
+	vbr_control_t* state = sstate;
 
 	/*
 	 * We do not depend on getintra/quant because we have the real results
 	 * from the xvid core
 	 */
 
-	if (util_frametype(state) == FRAME_TYPE_NORMAL_MOVIE) {
-
+	if (util_frametype(state) == FRAME_TYPE_NORMAL_MOVIE)
+	{
 		state->quant_count[quant]++;
 
-		if (state->pass1_intra) {
-
+		if (state->pass1_intra)
+		{
 			state->overflow += state->KFoverflow;
 			state->KFoverflow = state->desired_bytes2 - total_bytes;
 
 			tempdiv = (state->keyframe_locations[state->KF_idx] -
-				   state->keyframe_locations[state->KF_idx - 1]);
+				state->keyframe_locations[state->KF_idx - 1]);
 
 			/* redistribute correctly (by koepi) */
-			if (tempdiv > 1) {
+			if (tempdiv > 1)
+			{
 				/* non-consecutive keyframes */
 				state->KFoverflow_partial = state->KFoverflow /
 					(tempdiv - 1);
 			}
-			else {
-				state->overflow  += state->KFoverflow;
+			else
+			{
+				state->overflow += state->KFoverflow;
 				state->KFoverflow = 0;
 				state->KFoverflow_partial = 0;
 			}
 			state->KF_idx++;
-
 		}
-		else {
+		else
+		{
 			state->overflow += state->desired_bytes2 - total_bytes +
 				state->KFoverflow_partial;
 			state->KFoverflow -= state->KFoverflow_partial;
 		}
 	}
-	else {
-
+	else
+	{
 		state->overflow += state->desired_bytes2 - total_bytes;
 		state->overflow += state->KFoverflow;
 		state->KFoverflow = 0;
@@ -1557,68 +1556,62 @@ static int vbr_update_2pass2(void *sstate,
 	       &next_ublocks);
 
 	/* Save the last Keyframe pos */
-	if(intra)
+	if (intra)
 		state->last_keyframe = state->cur_frame;
 
 	/* Ok next frame */
 	state->cur_frame++;
 
-	return(0);
-
+	return (0);
 }
 
-static int vbr_finish_2pass2(void *sstate)
+static int vbr_finish_2pass2(void* sstate)
 {
+	vbr_control_t* state = sstate;
 
-	vbr_control_t *state = sstate;
-
-	if(state->pass1_file == NULL)
-		return(-1);
+	if (state->pass1_file == NULL)
+		return (-1);
 
 	/* Close the file */
-	if(fclose(state->pass1_file) != 0)
-		return(-1);
+	if (fclose(state->pass1_file) != 0)
+		return (-1);
 
 	/* Free the memory */
 	free(state->keyframe_locations);
 
-	return(0);
-
+	return (0);
 }
-
 
 /******************************************************************************
  * Fixed quant mode - Most of the functions will be dummy functions
  *****************************************************************************/
 
-static int vbr_init_fixedquant(void *sstate)
+static int vbr_init_fixedquant(void* sstate)
 {
+	vbr_control_t* state = sstate;
 
-	vbr_control_t *state = sstate;
-
-	if(state->fixed_quant < 1)
+	if (state->fixed_quant < 1)
 		state->fixed_quant = 1;
 
-	if(state->fixed_quant > 31)
+	if (state->fixed_quant > 31)
 		state->fixed_quant = 31;
 
 	state->cur_frame = 0;
 
-	return(0);
-
+	return (0);
 }
 
-static int vbr_getquant_fixedquant(void *sstate)
+static int vbr_getquant_fixedquant(void* sstate)
 {
-
-	vbr_control_t *state = sstate;
+	vbr_control_t* state = sstate;
 
 	/* Credits' frame ? */
-	if(util_frametype(state) != FRAME_TYPE_NORMAL_MOVIE) {
-
+	if (util_frametype(state) != FRAME_TYPE_NORMAL_MOVIE)
+	{
 		int quant;
 
-		switch(state->credits_mode) {
+		switch (state->credits_mode)
+		{
 		case VBR_CREDITS_MODE_RATE:
 			quant = state->fixed_quant * state->credits_quant_ratio;
 			break;
@@ -1627,21 +1620,16 @@ static int vbr_getquant_fixedquant(void *sstate)
 			break;
 		default:
 			quant = state->fixed_quant;
-
 		}
 
-		return(quant);
-
+		return (quant);
 	}
 
 	/* No credit frame - return fixed quant */
-	return(state->fixed_quant);
-
+	return (state->fixed_quant);
 }
 
-static int vbr_getintra_fixedquant(void *state)
+static int vbr_getintra_fixedquant(void* state)
 {
-
-	return(-1);
-
+	return (-1);
 }

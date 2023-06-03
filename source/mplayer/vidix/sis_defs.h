@@ -42,7 +42,6 @@
 #define DEVICE_SIS_650_VGA    0x6325
 #define DEVICE_SIS_730        0x0730
 
-
 /* TW: VBFlags */
 #define CRT2_DEFAULT            0x00000001
 #define CRT2_LCD                0x00000002	/* TW: Never change the order of the CRT2_XXX entries */

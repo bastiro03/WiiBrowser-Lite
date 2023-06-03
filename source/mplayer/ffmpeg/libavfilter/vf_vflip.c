@@ -27,81 +27,94 @@
 #include "avfilter.h"
 #include "video.h"
 
-typedef struct {
-    int vsub;   ///< vertical chroma subsampling
+typedef struct
+{
+	int vsub; ///< vertical chroma subsampling
 } FlipContext;
 
-static int config_input(AVFilterLink *link)
+static int config_input(AVFilterLink* link)
 {
-    FlipContext *flip = link->dst->priv;
+	FlipContext* flip = link->dst->priv;
 
-    flip->vsub = av_pix_fmt_descriptors[link->format].log2_chroma_h;
+	flip->vsub = av_pix_fmt_descriptors[link->format].log2_chroma_h;
 
-    return 0;
+	return 0;
 }
 
-static AVFilterBufferRef *get_video_buffer(AVFilterLink *link, int perms,
-                                        int w, int h)
+static AVFilterBufferRef* get_video_buffer(AVFilterLink* link, int perms,
+                                           int w, int h)
 {
-    FlipContext *flip = link->dst->priv;
-    AVFilterBufferRef *picref;
-    int i;
+	FlipContext* flip = link->dst->priv;
+	AVFilterBufferRef* picref;
+	int i;
 
-    if (!(perms & AV_PERM_NEG_LINESIZES))
-        return ff_default_get_video_buffer(link, perms, w, h);
+	if (!(perms & AV_PERM_NEG_LINESIZES))
+		return ff_default_get_video_buffer(link, perms, w, h);
 
-    picref = avfilter_get_video_buffer(link->dst->outputs[0], perms, w, h);
-    for (i = 0; i < 4; i ++) {
-        int vsub = i == 1 || i == 2 ? flip->vsub : 0;
+	picref = avfilter_get_video_buffer(link->dst->outputs[0], perms, w, h);
+	for (i = 0; i < 4; i++)
+	{
+		int vsub = i == 1 || i == 2 ? flip->vsub : 0;
 
-        if (picref->data[i]) {
-            picref->data[i] += ((h >> vsub)-1) * picref->linesize[i];
-            picref->linesize[i] = -picref->linesize[i];
-        }
-    }
+		if (picref->data[i])
+		{
+			picref->data[i] += ((h >> vsub) - 1) * picref->linesize[i];
+			picref->linesize[i] = -picref->linesize[i];
+		}
+	}
 
-    return picref;
+	return picref;
 }
 
-static void start_frame(AVFilterLink *link, AVFilterBufferRef *inpicref)
+static void start_frame(AVFilterLink* link, AVFilterBufferRef* inpicref)
 {
-    FlipContext *flip = link->dst->priv;
-    AVFilterBufferRef *outpicref = avfilter_ref_buffer(inpicref, ~0);
-    int i;
+	FlipContext* flip = link->dst->priv;
+	AVFilterBufferRef* outpicref = avfilter_ref_buffer(inpicref, ~0);
+	int i;
 
-    for (i = 0; i < 4; i ++) {
-        int vsub = i == 1 || i == 2 ? flip->vsub : 0;
+	for (i = 0; i < 4; i++)
+	{
+		int vsub = i == 1 || i == 2 ? flip->vsub : 0;
 
-        if (outpicref->data[i]) {
-            outpicref->data[i] += ((link->h >> vsub)-1) * outpicref->linesize[i];
-            outpicref->linesize[i] = -outpicref->linesize[i];
-        }
-    }
+		if (outpicref->data[i])
+		{
+			outpicref->data[i] += ((link->h >> vsub) - 1) * outpicref->linesize[i];
+			outpicref->linesize[i] = -outpicref->linesize[i];
+		}
+	}
 
-    avfilter_start_frame(link->dst->outputs[0], outpicref);
+	avfilter_start_frame(link->dst->outputs[0], outpicref);
 }
 
-static void draw_slice(AVFilterLink *link, int y, int h, int slice_dir)
+static void draw_slice(AVFilterLink* link, int y, int h, int slice_dir)
 {
-    AVFilterContext *ctx = link->dst;
+	AVFilterContext* ctx = link->dst;
 
-    avfilter_draw_slice(ctx->outputs[0], link->h - (y+h), h, -1 * slice_dir);
+	avfilter_draw_slice(ctx->outputs[0], link->h - (y + h), h, -1 * slice_dir);
 }
 
 AVFilter avfilter_vf_vflip = {
-    .name      = "vflip",
-    .description = NULL_IF_CONFIG_SMALL("Flip the input video vertically."),
+	.name = "vflip",
+	.description = NULL_IF_CONFIG_SMALL("Flip the input video vertically."),
 
-    .priv_size = sizeof(FlipContext),
+	.priv_size = sizeof(FlipContext),
 
-    .inputs    = (const AVFilterPad[]) {{ .name       = "default",
-                                    .type             = AVMEDIA_TYPE_VIDEO,
-                                    .get_video_buffer = get_video_buffer,
-                                    .start_frame      = start_frame,
-                                    .draw_slice       = draw_slice,
-                                    .config_props     = config_input, },
-                                  { .name = NULL}},
-    .outputs   = (const AVFilterPad[]) {{ .name       = "default",
-                                    .type             = AVMEDIA_TYPE_VIDEO, },
-                                  { .name = NULL}},
+	.inputs = (const AVFilterPad[]){
+		{
+			.name = "default",
+			.type = AVMEDIA_TYPE_VIDEO,
+			.get_video_buffer = get_video_buffer,
+			.start_frame = start_frame,
+			.draw_slice = draw_slice,
+			.config_props = config_input,
+		},
+		{.name = NULL}
+	},
+	.outputs = (const AVFilterPad[]){
+		{
+			.name = "default",
+			.type = AVMEDIA_TYPE_VIDEO,
+		},
+		{.name = NULL}
+	},
 };

@@ -21,6 +21,6 @@
 #ifndef MPLAYER_MP_STRINGS_H
 #define MPLAYER_MP_STRINGS_H
 
-char *mp_asprintf(const char *fmt, ...);
+char* mp_asprintf(const char* fmt, ...);
 
 #endif /* MPLAYER_MP_STRINGS_H */

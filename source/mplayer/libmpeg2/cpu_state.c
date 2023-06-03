@@ -33,13 +33,13 @@
 #include "mmx.h"
 #endif
 
-void (* mpeg2_cpu_state_save) (cpu_state_t * state) = NULL;
-void (* mpeg2_cpu_state_restore) (cpu_state_t * state) = NULL;
+void (*mpeg2_cpu_state_save)(cpu_state_t* state) = NULL;
+void (*mpeg2_cpu_state_restore)(cpu_state_t* state) = NULL;
 
 #if ARCH_X86 || ARCH_X86_64
-static void state_restore_mmx (cpu_state_t * state)
+static void state_restore_mmx(cpu_state_t* state)
 {
-    emms ();
+	emms();
 }
 #endif
 
@@ -58,72 +58,72 @@ static void state_restore_mmx (cpu_state_t * state)
 #define LVX(a,b,c) "lvx " #a "," #b "," #c "\n\t"
 #endif
 
-static void state_save_altivec (cpu_state_t * state)
+static void state_save_altivec(cpu_state_t* state)
 {
-    asm (LI (9, 16)
-	 STVX0 (20, 0, 3)
-	 LI (11, 32)
-	 STVX (21, 9, 3)
-	 LI (9, 48)
-	 STVX (22, 11, 3)
-	 LI (11, 64)
-	 STVX (23, 9, 3)
-	 LI (9, 80)
-	 STVX (24, 11, 3)
-	 LI (11, 96)
-	 STVX (25, 9, 3)
-	 LI (9, 112)
-	 STVX (26, 11, 3)
-	 LI (11, 128)
-	 STVX (27, 9, 3)
-	 LI (9, 144)
-	 STVX (28, 11, 3)
-	 LI (11, 160)
-	 STVX (29, 9, 3)
-	 LI (9, 176)
-	 STVX (30, 11, 3)
-	 STVX (31, 9, 3));
+	asm(LI(9, 16)
+		STVX0(20, 0, 3)
+		LI(11, 32)
+		STVX(21, 9, 3)
+		LI(9, 48)
+		STVX(22, 11, 3)
+		LI(11, 64)
+		STVX(23, 9, 3)
+		LI(9, 80)
+		STVX(24, 11, 3)
+		LI(11, 96)
+		STVX(25, 9, 3)
+		LI(9, 112)
+		STVX(26, 11, 3)
+		LI(11, 128)
+		STVX(27, 9, 3)
+		LI(9, 144)
+		STVX(28, 11, 3)
+		LI(11, 160)
+		STVX(29, 9, 3)
+		LI(9, 176)
+		STVX(30, 11, 3)
+		STVX(31, 9, 3));
 }
 
-static void state_restore_altivec (cpu_state_t * state)
+static void state_restore_altivec(cpu_state_t* state)
 {
-    asm (LI (9, 16)
-	 LVX0 (20, 0, 3)
-	 LI (11, 32)
-	 LVX (21, 9, 3)
-	 LI (9, 48)
-	 LVX (22, 11, 3)
-	 LI (11, 64)
-	 LVX (23, 9, 3)
-	 LI (9, 80)
-	 LVX (24, 11, 3)
-	 LI (11, 96)
-	 LVX (25, 9, 3)
-	 LI (9, 112)
-	 LVX (26, 11, 3)
-	 LI (11, 128)
-	 LVX (27, 9, 3)
-	 LI (9, 144)
-	 LVX (28, 11, 3)
-	 LI (11, 160)
-	 LVX (29, 9, 3)
-	 LI (9, 176)
-	 LVX (30, 11, 3)
-	 LVX (31, 9, 3));
+	asm(LI(9, 16)
+		LVX0(20, 0, 3)
+		LI(11, 32)
+		LVX(21, 9, 3)
+		LI(9, 48)
+		LVX(22, 11, 3)
+		LI(11, 64)
+		LVX(23, 9, 3)
+		LI(9, 80)
+		LVX(24, 11, 3)
+		LI(11, 96)
+		LVX(25, 9, 3)
+		LI(9, 112)
+		LVX(26, 11, 3)
+		LI(11, 128)
+		LVX(27, 9, 3)
+		LI(9, 144)
+		LVX(28, 11, 3)
+		LI(11, 160)
+		LVX(29, 9, 3)
+		LI(9, 176)
+		LVX(30, 11, 3)
+		LVX(31, 9, 3));
 }
 #endif
 
-void mpeg2_cpu_state_init (uint32_t accel)
+void mpeg2_cpu_state_init(uint32_t accel)
 {
 #if ARCH_X86 || ARCH_X86_64
-    if (accel & MPEG2_ACCEL_X86_MMX) {
-	mpeg2_cpu_state_restore = state_restore_mmx;
-    }
+	if (accel & MPEG2_ACCEL_X86_MMX) {
+		mpeg2_cpu_state_restore = state_restore_mmx;
+	}
 #endif
 #if ARCH_PPC
-    if (accel & MPEG2_ACCEL_PPC_ALTIVEC) {
-	mpeg2_cpu_state_save = state_save_altivec;
-	mpeg2_cpu_state_restore = state_restore_altivec;
-    }
+	if (accel & MPEG2_ACCEL_PPC_ALTIVEC) {
+		mpeg2_cpu_state_save = state_save_altivec;
+		mpeg2_cpu_state_restore = state_restore_altivec;
+	}
 #endif
 }

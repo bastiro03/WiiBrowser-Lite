@@ -10,31 +10,31 @@
 #define GUITH_STACK 	(16384)
 #define MAXD            5
 
-typedef struct file
+using file = struct file
 {
-    FILE *file;
-    char name[512];
-} file;
+	FILE* file;
+	char name[512];
+};
 
-typedef struct data
+using Private = struct data
 {
-    char *url;
-    int *bar;
-    file save;
-    int code;
-    double bytes;
-    bool keep;
-} Private;
+	char* url;
+	int* bar;
+	file save;
+	int code;
+	double bytes;
+	bool keep;
+};
 
-void *DownloadThread (void *arg);
+void* DownloadThread(void* arg);
 void StopDownload();
 
-Private *AddUpdate(CURLM *cm, char *url, FILE *file);
-Private *AddDownload(CURLM *cm, char *url, file *file);
+Private* AddUpdate(CURLM* cm, char* url, FILE* file);
+Private* AddDownload(CURLM* cm, char* url, file* file);
 
-extern GuiWindow *mainWindow;
-extern GuiDownloadManager *manager;
-extern GuiText *downloads[5];
+extern GuiWindow* mainWindow;
+extern GuiDownloadManager* manager;
+extern GuiText* downloads[5];
 
 extern lwp_t downloadthread;
 extern u8 downloadstack[GUITH_STACK];

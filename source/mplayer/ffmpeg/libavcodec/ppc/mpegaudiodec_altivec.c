@@ -39,18 +39,37 @@
     op(sum, (w)[7 * 64], (p)[7 * 64]);    \
 }
 
-static void apply_window(const float *buf, const float *win1,
-                         const float *win2, float *sum1, float *sum2, int len)
+static void apply_window(const float* buf, const float* win1,
+                         const float* win2, float* sum1, float* sum2, int len)
 {
-    const vector float *win1a = (const vector float *) win1;
-    const vector float *win2a = (const vector float *) win2;
-    const vector float *bufa  = (const vector float *) buf;
-    vector float *sum1a = (vector float *) sum1;
-    vector float *sum2a = (vector float *) sum2;
-    vector float av_uninit(v0), av_uninit(v4);
-    vector float v1, v2, v3;
+	const vector float* win1a = (const vector
+	float*
+	)
+	win1;
+	const vector float* win2a = (const vector
+	float*
+	)
+	win2;
+	const vector float* bufa = (const vector
+	float*
+	)
+	buf;
+	vector
+	float* sum1a = (vector
+	float*
+	)
+	sum1;
+	vector
+	float* sum2a = (vector
+	float*
+	)
+	sum2;
+	vector
+	float av_uninit(v0), av_uninit(v4);
+	vector
+	float v1, v2, v3;
 
-    len = len >> 2;
+	len = len >> 2;
 
 #define MULT(a, b)                         \
     {                                      \
@@ -61,69 +80,71 @@ static void apply_window(const float *buf, const float *win1,
         v4 = vec_madd(v2, v3, v4);         \
     }
 
-    while (len--) {
-        v0 = vec_xor(v0, v0);
-        v4 = vec_xor(v4, v4);
+	while (len--)
+	{
+		v0 = vec_xor(v0, v0);
+		v4 = vec_xor(v4, v4);
 
-        MULT(   0,   0);
-        MULT( 256,  64);
-        MULT( 512, 128);
-        MULT( 768, 192);
-        MULT(1024, 256);
-        MULT(1280, 320);
-        MULT(1536, 384);
-        MULT(1792, 448);
+		MULT(0, 0);
+		MULT(256, 64);
+		MULT(512, 128);
+		MULT(768, 192);
+		MULT(1024, 256);
+		MULT(1280, 320);
+		MULT(1536, 384);
+		MULT(1792, 448);
 
-        vec_st(v0, 0, sum1a);
-        vec_st(v4, 0, sum2a);
-        sum1a++;
-        sum2a++;
-        win1a++;
-        win2a++;
-        bufa++;
-    }
+		vec_st(v0, 0, sum1a);
+		vec_st(v4, 0, sum2a);
+		sum1a++;
+		sum2a++;
+		win1a++;
+		win2a++;
+		bufa++;
+	}
 }
 
-static void apply_window_mp3(float *in, float *win, int *unused, float *out,
+static void apply_window_mp3(float* in, float* win, int* unused, float* out,
                              int incr)
 {
-    LOCAL_ALIGNED_16(float, suma, [17]);
-    LOCAL_ALIGNED_16(float, sumb, [17]);
-    LOCAL_ALIGNED_16(float, sumc, [17]);
-    LOCAL_ALIGNED_16(float, sumd, [17]);
+	LOCAL_ALIGNED_16(float, suma, [17]);
+	LOCAL_ALIGNED_16(float, sumb, [17]);
+	LOCAL_ALIGNED_16(float, sumc, [17]);
+	LOCAL_ALIGNED_16(float, sumd, [17]);
 
-    float sum;
-    int j;
-    float *out2 = out + 32 * incr;
+	float sum;
+	int j;
+	float* out2 = out + 32 * incr;
 
-    /* copy to avoid wrap */
-    memcpy(in + 512, in, 32 * sizeof(*in));
+	/* copy to avoid wrap */
+	memcpy(in + 512, in, 32 * sizeof(*in));
 
-    apply_window(in + 16, win     , win + 512, suma, sumc, 16);
-    apply_window(in + 32, win + 48, win + 640, sumb, sumd, 16);
+	apply_window(in + 16, win, win + 512, suma, sumc, 16);
+	apply_window(in + 32, win + 48, win + 640, sumb, sumd, 16);
 
-    SUM8(MLSS, suma[0], win + 32, in + 48);
+	SUM8(MLSS, suma[0], win + 32, in + 48);
 
-    sumc[ 0] = 0;
-    sumb[16] = 0;
-    sumd[16] = 0;
+	sumc[0] = 0;
+	sumb[16] = 0;
+	sumd[16] = 0;
 
-    out[0  ]  = suma[   0];
-    out += incr;
-    out2 -= incr;
-    for(j=1;j<16;j++) {
-        *out  =  suma[   j] - sumd[16-j];
-        *out2 = -sumb[16-j] - sumc[   j];
-        out  += incr;
-        out2 -= incr;
-    }
+	out[0] = suma[0];
+	out += incr;
+	out2 -= incr;
+	for (j = 1; j < 16; j++)
+	{
+		*out = suma[j] - sumd[16 - j];
+		*out2 = -sumb[16 - j] - sumc[j];
+		out += incr;
+		out2 -= incr;
+	}
 
-    sum = 0;
-    SUM8(MLSS, sum, win + 16 + 32, in + 32);
-    *out = sum;
+	sum = 0;
+	SUM8(MLSS, sum, win + 16 + 32, in + 32);
+	*out = sum;
 }
 
-void ff_mpadsp_init_altivec(MPADSPContext *s)
+void ff_mpadsp_init_altivec(MPADSPContext* s)
 {
-    s->apply_window_float = apply_window_mp3;
+	s->apply_window_float = apply_window_mp3;
 }

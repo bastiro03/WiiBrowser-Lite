@@ -60,33 +60,35 @@
 
 typedef struct MpegTSContext MpegTSContext;
 
-MpegTSContext *ff_mpegts_parse_open(AVFormatContext *s);
-int ff_mpegts_parse_packet(MpegTSContext *ts, AVPacket *pkt,
-                           const uint8_t *buf, int len);
-void ff_mpegts_parse_close(MpegTSContext *ts);
+MpegTSContext* ff_mpegts_parse_open(AVFormatContext* s);
+int ff_mpegts_parse_packet(MpegTSContext* ts, AVPacket* pkt,
+                           const uint8_t* buf, int len);
+void ff_mpegts_parse_close(MpegTSContext* ts);
 
-typedef struct {
-    int use_au_start;
-    int use_au_end;
-    int use_rand_acc_pt;
-    int use_padding;
-    int use_timestamps;
-    int use_idle;
-    int timestamp_res;
-    int timestamp_len;
-    int ocr_len;
-    int au_len;
-    int inst_bitrate_len;
-    int degr_prior_len;
-    int au_seq_num_len;
-    int packet_seq_num_len;
+typedef struct
+{
+	int use_au_start;
+	int use_au_end;
+	int use_rand_acc_pt;
+	int use_padding;
+	int use_timestamps;
+	int use_idle;
+	int timestamp_res;
+	int timestamp_len;
+	int ocr_len;
+	int au_len;
+	int inst_bitrate_len;
+	int degr_prior_len;
+	int au_seq_num_len;
+	int packet_seq_num_len;
 } SLConfigDescr;
 
-typedef struct {
-    int es_id;
-    int dec_config_descr_len;
-    uint8_t *dec_config_descr;
-    SLConfigDescr sl;
+typedef struct
+{
+	int es_id;
+	int dec_config_descr_len;
+	uint8_t* dec_config_descr;
+	SLConfigDescr sl;
 } Mp4Descr;
 
 /**
@@ -98,9 +100,9 @@ typedef struct {
  * @param desc_list_end             End of buffer
  * @return <0 to stop processing
  */
-int ff_parse_mpeg2_descriptor(AVFormatContext *fc, AVStream *st, int stream_type,
-                              const uint8_t **pp, const uint8_t *desc_list_end,
-                              Mp4Descr *mp4_descr, int mp4_descr_count, int pid,
-                              MpegTSContext *ts);
+int ff_parse_mpeg2_descriptor(AVFormatContext* fc, AVStream* st, int stream_type,
+                              const uint8_t** pp, const uint8_t* desc_list_end,
+                              Mp4Descr* mp4_descr, int mp4_descr_count, int pid,
+                              MpegTSContext* ts);
 
 #endif /* AVFORMAT_MPEGTS_H */

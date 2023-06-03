@@ -29,78 +29,90 @@
 #include "audio.h"
 #include "avfilter.h"
 
-typedef struct {
-    unsigned int frame;
+typedef struct
+{
+	unsigned int frame;
 } ShowInfoContext;
 
-static av_cold int init(AVFilterContext *ctx, const char *args, void *opaque)
+static av_cold
+
+int init(AVFilterContext* ctx, const char* args, void* opaque)
 {
-    ShowInfoContext *showinfo = ctx->priv;
-    showinfo->frame = 0;
-    return 0;
+	ShowInfoContext* showinfo = ctx->priv;
+	showinfo->frame = 0;
+	return 0;
 }
 
-static void filter_samples(AVFilterLink *inlink, AVFilterBufferRef *samplesref)
+static void filter_samples(AVFilterLink* inlink, AVFilterBufferRef* samplesref)
 {
-    AVFilterContext *ctx = inlink->dst;
-    ShowInfoContext *showinfo = ctx->priv;
-    uint32_t plane_checksum[8] = {0}, checksum = 0;
-    char chlayout_str[128];
-    int plane;
-    int linesize =
-        samplesref->audio->nb_samples *
-        av_get_bytes_per_sample(samplesref->format);
-    if (!av_sample_fmt_is_planar(samplesref->format))
-        linesize *= av_get_channel_layout_nb_channels(samplesref->audio->channel_layout);
+	AVFilterContext* ctx = inlink->dst;
+	ShowInfoContext* showinfo = ctx->priv;
+	uint32_t plane_checksum[8] = {0}, checksum = 0;
+	char chlayout_str[128];
+	int plane;
+	int linesize =
+		samplesref->audio->nb_samples *
+		av_get_bytes_per_sample(samplesref->format);
+	if (!av_sample_fmt_is_planar(samplesref->format))
+		linesize *= av_get_channel_layout_nb_channels(samplesref->audio->channel_layout);
 
-    for (plane = 0; samplesref->data[plane] && plane < 8; plane++) {
-        uint8_t *data = samplesref->data[plane];
+	for (plane = 0; samplesref->data[plane] && plane < 8; plane++)
+	{
+		uint8_t* data = samplesref->data[plane];
 
-        plane_checksum[plane] = av_adler32_update(plane_checksum[plane],
-                                                  data, linesize);
-        checksum = av_adler32_update(checksum, data, linesize);
-    }
+		plane_checksum[plane] = av_adler32_update(plane_checksum[plane],
+		                                          data, linesize);
+		checksum = av_adler32_update(checksum, data, linesize);
+	}
 
-    av_get_channel_layout_string(chlayout_str, sizeof(chlayout_str), -1,
-                                 samplesref->audio->channel_layout);
+	av_get_channel_layout_string(chlayout_str, sizeof(chlayout_str), -1,
+	                             samplesref->audio->channel_layout);
 
-    av_log(ctx, AV_LOG_INFO,
-           "n:%d pts:%s pts_time:%s pos:%"PRId64" "
-           "fmt:%s chlayout:%s nb_samples:%d rate:%d "
-           "checksum:%08X plane_checksum[%08X",
-           showinfo->frame,
-           av_ts2str(samplesref->pts), av_ts2timestr(samplesref->pts, &inlink->time_base),
-           samplesref->pos,
-           av_get_sample_fmt_name(samplesref->format),
-           chlayout_str,
-           samplesref->audio->nb_samples,
-           samplesref->audio->sample_rate,
-           checksum,
-           plane_checksum[0]);
+	av_log(ctx, AV_LOG_INFO,
+	       "n:%d pts:%s pts_time:%s pos:%"PRId64" "
+	       "fmt:%s chlayout:%s nb_samples:%d rate:%d "
+	       "checksum:%08X plane_checksum[%08X",
+	       showinfo->frame,
+	       av_ts2str(samplesref->pts), av_ts2timestr(samplesref->pts, &inlink->time_base),
+	       samplesref->pos,
+	       av_get_sample_fmt_name(samplesref->format),
+	       chlayout_str,
+	       samplesref->audio->nb_samples,
+	       samplesref->audio->sample_rate,
+	       checksum,
+	       plane_checksum[0]);
 
-    for (plane = 1; samplesref->data[plane] && plane < 8; plane++)
-        av_log(ctx, AV_LOG_INFO, " %08X", plane_checksum[plane]);
-    av_log(ctx, AV_LOG_INFO, "]\n");
+	for (plane = 1; samplesref->data[plane] && plane < 8; plane++)
+		av_log(ctx, AV_LOG_INFO, " %08X", plane_checksum[plane]);
+	av_log(ctx, AV_LOG_INFO, "]\n");
 
-    showinfo->frame++;
-    ff_filter_samples(inlink->dst->outputs[0], samplesref);
+	showinfo->frame++;
+	ff_filter_samples(inlink->dst->outputs[0], samplesref);
 }
 
 AVFilter avfilter_af_ashowinfo = {
-    .name        = "ashowinfo",
-    .description = NULL_IF_CONFIG_SMALL("Show textual information for each audio frame."),
+	.name = "ashowinfo",
+	.description = NULL_IF_CONFIG_SMALL("Show textual information for each audio frame."),
 
-    .priv_size = sizeof(ShowInfoContext),
-    .init      = init,
+	.priv_size = sizeof(ShowInfoContext),
+	.init = init,
 
-    .inputs    = (const AVFilterPad[]) {{ .name       = "default",
-                                    .type             = AVMEDIA_TYPE_AUDIO,
-                                    .get_audio_buffer = ff_null_get_audio_buffer,
-                                    .filter_samples   = filter_samples,
-                                    .min_perms        = AV_PERM_READ, },
-                                  { .name = NULL}},
+	.inputs = (const AVFilterPad[]){
+		{
+			.name = "default",
+			.type = AVMEDIA_TYPE_AUDIO,
+			.get_audio_buffer = ff_null_get_audio_buffer,
+			.filter_samples = filter_samples,
+			.min_perms = AV_PERM_READ,
+		},
+		{.name = NULL}
+	},
 
-    .outputs   = (const AVFilterPad[]) {{ .name       = "default",
-                                    .type             = AVMEDIA_TYPE_AUDIO },
-                                  { .name = NULL}},
+	.outputs = (const AVFilterPad[]){
+		{
+			.name = "default",
+			.type = AVMEDIA_TYPE_AUDIO
+		},
+		{.name = NULL}
+	},
 };

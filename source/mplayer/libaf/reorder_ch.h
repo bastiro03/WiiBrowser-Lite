@@ -61,7 +61,6 @@
 #define AF_CHANNEL_LAYOUT_7_1_D ((122<<8)|8|AF_LFE)    // C L R Ls Rs Rls Rrs LFE
 #define AF_CHANNEL_LAYOUT_7_1_F ((123<<8)|8|AF_LFE)    // C L R LFE Ls Rs Rls Rrs
 
-
 #define AF_CHANNEL_LAYOUT_ALSA_5CH_DEFAULT AF_CHANNEL_LAYOUT_5_0_B
 #define AF_CHANNEL_LAYOUT_ALSA_6CH_DEFAULT AF_CHANNEL_LAYOUT_5_1_B
 #define AF_CHANNEL_LAYOUT_ALSA_8CH_DEFAULT AF_CHANNEL_LAYOUT_7_1_B
@@ -89,15 +88,15 @@
 #define AF_IS_LAYOUT_UNSPECIFIED(A) (!AF_IS_LAYOUT_SPECIFIED(A))
 
 /// Optimized channel reorder between channel layouts with same channel number.
-void reorder_channel_copy(void *src,
+void reorder_channel_copy(void* src,
                           int src_layout,
-                          void *dest,
+                          void* dest,
                           int dest_layout,
                           int samples,
                           int samplesize);
 
 /// Same with reorder_channel_copy, but works on single buffer.
-void reorder_channel(void *buf,
+void reorder_channel(void* buf,
                      int src_layout,
                      int dest_layout,
                      int samples,
@@ -114,16 +113,16 @@ void reorder_channel(void *buf,
 #define AF_CHANNEL_LAYOUT_MPLAYER_DEFAULT AF_CHANNEL_LAYOUT_ALSA_DEFAULT
 
 /// Optimized channel reorder between different audio sources and targets.
-void reorder_channel_copy_nch(void *src,
+void reorder_channel_copy_nch(void* src,
                               int src_layout,
-                              void *dest,
+                              void* dest,
                               int dest_layout,
                               int chnum,
                               int samples,
                               int samplesize);
 
 /// Same with reorder_channel_copy_nch, but works on single buffer.
-void reorder_channel_nch(void *buf,
+void reorder_channel_nch(void* buf,
                          int src_layout,
                          int dest_layout,
                          int chnum,

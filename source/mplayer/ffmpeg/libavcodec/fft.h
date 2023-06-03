@@ -43,50 +43,53 @@ typedef float FFTDouble;
 #define FFT_NAME(x) x ## _fixed
 
 typedef int16_t FFTSample;
-typedef int     FFTDouble;
+typedef int FFTDouble;
 
-typedef struct FFTComplex {
-    int16_t re, im;
+typedef struct FFTComplex
+{
+	int16_t re, im;
 } FFTComplex;
 
 typedef struct FFTContext FFTContext;
 
 #endif /* CONFIG_FFT_FLOAT */
 
-typedef struct FFTDComplex {
-    FFTDouble re, im;
+typedef struct FFTDComplex
+{
+	FFTDouble re, im;
 } FFTDComplex;
 
 /* FFT computation */
 
-struct FFTContext {
-    int nbits;
-    int inverse;
-    uint16_t *revtab;
-    FFTComplex *tmp_buf;
-    int mdct_size; /* size of MDCT (i.e. number of input data * 2) */
-    int mdct_bits; /* n = 2^nbits */
-    /* pre/post rotation tables */
-    FFTSample *tcos;
-    FFTSample *tsin;
-    /**
-     * Do the permutation needed BEFORE calling fft_calc().
-     */
-    void (*fft_permute)(struct FFTContext *s, FFTComplex *z);
-    /**
-     * Do a complex FFT with the parameters defined in ff_fft_init(). The
-     * input data must be permuted before. No 1.0/sqrt(n) normalization is done.
-     */
-    void (*fft_calc)(struct FFTContext *s, FFTComplex *z);
-    void (*imdct_calc)(struct FFTContext *s, FFTSample *output, const FFTSample *input);
-    void (*imdct_half)(struct FFTContext *s, FFTSample *output, const FFTSample *input);
-    void (*mdct_calc)(struct FFTContext *s, FFTSample *output, const FFTSample *input);
-    void (*mdct_calcw)(struct FFTContext *s, FFTDouble *output, const FFTSample *input);
-    int fft_permutation;
+struct FFTContext
+{
+	int nbits;
+	int inverse;
+	uint16_t* revtab;
+	FFTComplex* tmp_buf;
+	int mdct_size; /* size of MDCT (i.e. number of input data * 2) */
+	int mdct_bits; /* n = 2^nbits */
+	/* pre/post rotation tables */
+	FFTSample* tcos;
+	FFTSample* tsin;
+	/**
+	 * Do the permutation needed BEFORE calling fft_calc().
+	 */
+	void (*fft_permute)(struct FFTContext* s, FFTComplex* z);
+	/**
+	 * Do a complex FFT with the parameters defined in ff_fft_init(). The
+	 * input data must be permuted before. No 1.0/sqrt(n) normalization is done.
+	 */
+	void (*fft_calc)(struct FFTContext* s, FFTComplex* z);
+	void (*imdct_calc)(struct FFTContext* s, FFTSample* output, const FFTSample* input);
+	void (*imdct_half)(struct FFTContext* s, FFTSample* output, const FFTSample* input);
+	void (*mdct_calc)(struct FFTContext* s, FFTSample* output, const FFTSample* input);
+	void (*mdct_calcw)(struct FFTContext* s, FFTDouble* output, const FFTSample* input);
+	int fft_permutation;
 #define FF_FFT_PERM_DEFAULT   0
 #define FF_FFT_PERM_SWAP_LSBS 1
 #define FF_FFT_PERM_AVX       2
-    int mdct_permutation;
+	int mdct_permutation;
 #define FF_MDCT_PERM_NONE       0
 #define FF_MDCT_PERM_INTERLEAVE 1
 };
@@ -131,22 +134,22 @@ void ff_init_ff_cos_tabs(int index);
  * @param nbits           log2 of the length of the input array
  * @param inverse         if 0 perform the forward transform, if 1 perform the inverse
  */
-int ff_fft_init(FFTContext *s, int nbits, int inverse);
+int ff_fft_init(FFTContext* s, int nbits, int inverse);
 
 #if CONFIG_FFT_FLOAT
-void ff_fft_init_altivec(FFTContext *s);
-void ff_fft_init_mmx(FFTContext *s);
-void ff_fft_init_arm(FFTContext *s);
+void ff_fft_init_altivec(FFTContext* s);
+void ff_fft_init_mmx(FFTContext* s);
+void ff_fft_init_arm(FFTContext* s);
 #else
-void ff_fft_fixed_init_arm(FFTContext *s);
+void ff_fft_fixed_init_arm(FFTContext* s);
 #endif
 
-void ff_fft_end(FFTContext *s);
+void ff_fft_end(FFTContext* s);
 
 #define ff_mdct_init FFT_NAME(ff_mdct_init)
 #define ff_mdct_end  FFT_NAME(ff_mdct_end)
 
-int ff_mdct_init(FFTContext *s, int nbits, int inverse, double scale);
-void ff_mdct_end(FFTContext *s);
+int ff_mdct_init(FFTContext* s, int nbits, int inverse, double scale);
+void ff_mdct_end(FFTContext* s);
 
 #endif /* AVCODEC_FFT_H */

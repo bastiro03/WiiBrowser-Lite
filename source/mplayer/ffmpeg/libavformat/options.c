@@ -30,80 +30,80 @@
 
 static const char* format_to_name(void* ptr)
 {
-    AVFormatContext* fc = (AVFormatContext*) ptr;
-    if(fc->iformat) return fc->iformat->name;
-    else if(fc->oformat) return fc->oformat->name;
-    else return "NULL";
+	AVFormatContext* fc = ptr;
+	if (fc->iformat) return fc->iformat->name;
+	if (fc->oformat) return fc->oformat->name;
+	return "NULL";
 }
 
-static void *format_child_next(void *obj, void *prev)
+static void* format_child_next(void* obj, void* prev)
 {
-    AVFormatContext *s = obj;
-    if (!prev && s->priv_data &&
-        ((s->iformat && s->iformat->priv_class) ||
-          s->oformat && s->oformat->priv_class))
-        return s->priv_data;
-    if (s->pb && s->pb->av_class && prev != s->pb)
-        return s->pb;
-    return NULL;
+	AVFormatContext* s = obj;
+	if (!prev && s->priv_data &&
+		((s->iformat && s->iformat->priv_class) ||
+			s->oformat && s->oformat->priv_class))
+		return s->priv_data;
+	if (s->pb && s->pb->av_class && prev != s->pb)
+		return s->pb;
+	return NULL;
 }
 
-static const AVClass *format_child_class_next(const AVClass *prev)
+static const AVClass* format_child_class_next(const AVClass* prev)
 {
-    AVInputFormat  *ifmt = NULL;
-    AVOutputFormat *ofmt = NULL;
+	AVInputFormat* ifmt = NULL;
+	AVOutputFormat* ofmt = NULL;
 
-    if (!prev)
-        return &ffio_url_class;
+	if (!prev)
+		return &ffio_url_class;
 
-    while ((ifmt = av_iformat_next(ifmt)))
-        if (ifmt->priv_class == prev)
-            break;
+	while ((ifmt = av_iformat_next(ifmt)))
+		if (ifmt->priv_class == prev)
+			break;
 
-    if (!ifmt)
-        while ((ofmt = av_oformat_next(ofmt)))
-            if (ofmt->priv_class == prev)
-                break;
-    if (!ofmt)
-        while (ifmt = av_iformat_next(ifmt))
-            if (ifmt->priv_class)
-                return ifmt->priv_class;
+	if (!ifmt)
+		while ((ofmt = av_oformat_next(ofmt)))
+			if (ofmt->priv_class == prev)
+				break;
+	if (!ofmt)
+		while (ifmt = av_iformat_next(ifmt))
+			if (ifmt->priv_class)
+				return ifmt->priv_class;
 
-    while (ofmt = av_oformat_next(ofmt))
-        if (ofmt->priv_class)
-            return ofmt->priv_class;
+	while (ofmt = av_oformat_next(ofmt))
+		if (ofmt->priv_class)
+			return ofmt->priv_class;
 
-    return NULL;
+	return NULL;
 }
 
 static const AVClass av_format_context_class = {
-    .class_name     = "AVFormatContext",
-    .item_name      = format_to_name,
-    .option         = options,
-    .version        = LIBAVUTIL_VERSION_INT,
-    .child_next     = format_child_next,
-    .child_class_next = format_child_class_next,
+	.class_name = "AVFormatContext",
+	.item_name = format_to_name,
+	.option = options,
+	.version = LIBAVUTIL_VERSION_INT,
+	.child_next = format_child_next,
+	.child_class_next = format_child_class_next,
 };
 
-static void avformat_get_context_defaults(AVFormatContext *s)
+static void avformat_get_context_defaults(AVFormatContext* s)
 {
-    memset(s, 0, sizeof(AVFormatContext));
+	memset(s, 0, sizeof(AVFormatContext));
 
-    s->av_class = &av_format_context_class;
+	s->av_class = &av_format_context_class;
 
-    av_opt_set_defaults(s);
+	av_opt_set_defaults(s);
 }
 
-AVFormatContext *avformat_alloc_context(void)
+AVFormatContext* avformat_alloc_context(void)
 {
-    AVFormatContext *ic;
-    ic = av_malloc(sizeof(AVFormatContext));
-    if (!ic) return ic;
-    avformat_get_context_defaults(ic);
-    return ic;
+	AVFormatContext* ic;
+	ic = av_malloc(sizeof(AVFormatContext));
+	if (!ic) return ic;
+	avformat_get_context_defaults(ic);
+	return ic;
 }
 
-const AVClass *avformat_get_class(void)
+const AVClass* avformat_get_class(void)
 {
-    return &av_format_context_class;
+	return &av_format_context_class;
 }

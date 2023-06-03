@@ -82,44 +82,46 @@
 
 typedef struct
 {
-    uint32_t		dwMicroSecPerFrame;	// frame display rate (or 0L)
-    uint32_t		dwMaxBytesPerSec;	// max. transfer rate
-    uint32_t		dwPaddingGranularity;	// pad to multiples of this
-                                                // size; normally 2K.
-    uint32_t		dwFlags;		// the ever-present flags
-    uint32_t		dwTotalFrames;		// # frames in file
-    uint32_t		dwInitialFrames;
-    uint32_t		dwStreams;
-    uint32_t		dwSuggestedBufferSize;
+	uint32_t dwMicroSecPerFrame; // frame display rate (or 0L)
+	uint32_t dwMaxBytesPerSec; // max. transfer rate
+	uint32_t dwPaddingGranularity; // pad to multiples of this
+	// size; normally 2K.
+	uint32_t dwFlags; // the ever-present flags
+	uint32_t dwTotalFrames; // # frames in file
+	uint32_t dwInitialFrames;
+	uint32_t dwStreams;
+	uint32_t dwSuggestedBufferSize;
 
-    uint32_t		dwWidth;
-    uint32_t		dwHeight;
+	uint32_t dwWidth;
+	uint32_t dwHeight;
 
-    uint32_t		dwReserved[4];
+	uint32_t dwReserved[4];
 } MainAVIHeader;
 
-typedef struct rectangle_t {
-    short  left;
-    short  top;
-    short  right;
-    short  bottom;
+typedef struct rectangle_t
+{
+	short left;
+	short top;
+	short right;
+	short bottom;
 } rectangle_t;
 
-typedef struct {
-    uint32_t		fccType;
-    uint32_t		fccHandler;
-    uint32_t		dwFlags;	/* Contains AVITF_* flags */
-    uint16_t		wPriority;
-    uint16_t		wLanguage;
-    uint32_t		dwInitialFrames;
-    uint32_t		dwScale;
-    uint32_t		dwRate;	/* dwRate / dwScale == samples/second */
-    uint32_t		dwStart;
-    uint32_t		dwLength; /* In units above... */
-    uint32_t		dwSuggestedBufferSize;
-    uint32_t		dwQuality;
-    uint32_t		dwSampleSize;
-    rectangle_t		rcFrame;
+typedef struct
+{
+	uint32_t fccType;
+	uint32_t fccHandler;
+	uint32_t dwFlags; /* Contains AVITF_* flags */
+	uint16_t wPriority;
+	uint16_t wLanguage;
+	uint32_t dwInitialFrames;
+	uint32_t dwScale;
+	uint32_t dwRate; /* dwRate / dwScale == samples/second */
+	uint32_t dwStart;
+	uint32_t dwLength; /* In units above... */
+	uint32_t dwSuggestedBufferSize;
+	uint32_t dwQuality;
+	uint32_t dwSampleSize;
+	rectangle_t rcFrame;
 } AVIStreamHeader;
 
 /* Flags for index */
@@ -134,55 +136,60 @@ typedef struct {
 
 typedef struct
 {
-    uint32_t		ckid;
-    uint32_t		dwFlags;
-    uint32_t		dwChunkOffset;		// Position of chunk
-    uint32_t		dwChunkLength;		// Length of chunk
+	uint32_t ckid;
+	uint32_t dwFlags;
+	uint32_t dwChunkOffset; // Position of chunk
+	uint32_t dwChunkLength; // Length of chunk
 } AVIINDEXENTRY;
 
-
-typedef struct avisuperindex_entry {
-    uint64_t qwOffset;           // absolute file offset
-    uint32_t dwSize;             // size of index chunk at this offset
-    uint32_t dwDuration;         // time span in stream ticks
+typedef struct avisuperindex_entry
+{
+	uint64_t qwOffset; // absolute file offset
+	uint32_t dwSize; // size of index chunk at this offset
+	uint32_t dwDuration; // time span in stream ticks
 } avisuperindex_entry;
 
-typedef struct avistdindex_entry {
-    uint32_t dwOffset;           // qwBaseOffset + this is absolute file offset
-    uint32_t dwSize;             // bit 31 is set if this is NOT a keyframe
+typedef struct avistdindex_entry
+{
+	uint32_t dwOffset; // qwBaseOffset + this is absolute file offset
+	uint32_t dwSize; // bit 31 is set if this is NOT a keyframe
 } avistdindex_entry;
 
 // Standard index
-typedef struct __attribute__((packed)) avistdindex_chunk {
-    char           fcc[4];       // ix##
-    uint32_t  dwSize;            // size of this chunk
-    uint16_t wLongsPerEntry;     // must be sizeof(aIndex[0])/sizeof(DWORD)
-    uint8_t  bIndexSubType;      // must be 0
-    uint8_t  bIndexType;         // must be AVI_INDEX_OF_CHUNKS
-    uint32_t  nEntriesInUse;     // first unused entry
-    char           dwChunkId[4]; // '##dc' or '##db' or '##wb' etc..
-    uint64_t qwBaseOffset;       // all dwOffsets in aIndex array are relative to this
-    uint32_t  dwReserved3;       // must be 0
-    avistdindex_entry *aIndex;   // the actual frames
-} avistdindex_chunk;
+typedef struct __attribute__ ((packed)) avistdindex_chunk
+{
+	char fcc[4]; // ix##
+	uint32_t dwSize; // size of this chunk
+	uint16_t wLongsPerEntry; // must be sizeof(aIndex[0])/sizeof(DWORD)
+	uint8_t bIndexSubType; // must be 0
+	uint8_t bIndexType; // must be AVI_INDEX_OF_CHUNKS
+	uint32_t nEntriesInUse; // first unused entry
+	char dwChunkId[4]; // '##dc' or '##db' or '##wb' etc..
+	uint64_t qwBaseOffset; // all dwOffsets in aIndex array are relative to this
+	uint32_t dwReserved3; // must be 0
+	avistdindex_entry* aIndex; // the actual frames
+}
 
+avistdindex_chunk;
 
 // Base Index Form 'indx'
-typedef struct avisuperindex_chunk {
-    char           fcc[4];
-    uint32_t  dwSize;                // size of this chunk
-    uint16_t wLongsPerEntry;         // size of each entry in aIndex array (must be 4*4 for us)
-    uint8_t  bIndexSubType;          // future use. must be 0
-    uint8_t  bIndexType;             // one of AVI_INDEX_* codes
-    uint32_t  nEntriesInUse;         // index of first unused member in aIndex array
-    char       dwChunkId[4];         // fcc of what is indexed
-    uint32_t  dwReserved[3];         // meaning differs for each index type/subtype.
-                                     // 0 if unused
-    avisuperindex_entry *aIndex;     // position of ix## chunks
-    avistdindex_chunk *stdidx;       // the actual std indices
+typedef struct avisuperindex_chunk
+{
+	char fcc[4];
+	uint32_t dwSize; // size of this chunk
+	uint16_t wLongsPerEntry; // size of each entry in aIndex array (must be 4*4 for us)
+	uint8_t bIndexSubType; // future use. must be 0
+	uint8_t bIndexType; // one of AVI_INDEX_* codes
+	uint32_t nEntriesInUse; // index of first unused member in aIndex array
+	char dwChunkId[4]; // fcc of what is indexed
+	uint32_t dwReserved[3]; // meaning differs for each index type/subtype.
+	// 0 if unused
+	avisuperindex_entry* aIndex; // position of ix## chunks
+	avistdindex_chunk* stdidx; // the actual std indices
 } avisuperindex_chunk;
 
-typedef struct {
+typedef struct
+{
 	uint32_t CompressedBMHeight;
 	uint32_t CompressedBMWidth;
 	uint32_t ValidBMHeight;
@@ -193,7 +200,8 @@ typedef struct {
 	uint32_t VideoYValidStartLine;
 } VIDEO_FIELD_DESC;
 
-typedef struct {
+typedef struct
+{
 	uint32_t VideoFormatToken;
 	uint32_t VideoStandard;
 	uint32_t dwVerticalRefreshRate;
@@ -206,7 +214,8 @@ typedef struct {
 	VIDEO_FIELD_DESC FieldInfo[2];
 } VideoPropHeader;
 
-typedef enum {
+typedef enum
+{
 	FORMAT_UNKNOWN,
 	FORMAT_PAL_SQUARE,
 	FORMAT_PAL_CCIR_601,
@@ -214,7 +223,8 @@ typedef enum {
 	FORMAT_NTSC_CCIR_601,
 } VIDEO_FORMAT;
 
-typedef enum {
+typedef enum
+{
 	STANDARD_UNKNOWN,
 	STANDARD_PAL,
 	STANDARD_NTSC,
@@ -343,38 +353,39 @@ typedef enum {
 #define le2me_VIDEO_FIELD_DESC(h)   /**/
 #endif
 
-typedef struct {
-  // index stuff:
-  void* idx;
-  int idx_size;
-  off_t idx_pos;
-  off_t idx_pos_a;
-  off_t idx_pos_v;
-  off_t idx_offset;  // ennyit kell hozzaadni az index offset ertekekhez
-  // bps-based PTS stuff:
-  int video_pack_no;
-  int audio_block_size;
-  off_t audio_block_no;
-  // interleaved PTS stuff:
-  int skip_video_frames;
-  int audio_streams;
-  float avi_audio_pts;
-  float avi_video_pts;
-  float pts_correction;
-  unsigned int pts_corr_bytes;
-  unsigned char pts_corrected;
-  unsigned char pts_has_video;
-  unsigned int numberofframes;
-  avisuperindex_chunk *suidx;
-  int suidx_size;
-  int isodml;
-  int warned_unaligned;
+typedef struct
+{
+	// index stuff:
+	void* idx;
+	int idx_size;
+	off_t idx_pos;
+	off_t idx_pos_a;
+	off_t idx_pos_v;
+	off_t idx_offset; // ennyit kell hozzaadni az index offset ertekekhez
+	// bps-based PTS stuff:
+	int video_pack_no;
+	int audio_block_size;
+	off_t audio_block_no;
+	// interleaved PTS stuff:
+	int skip_video_frames;
+	int audio_streams;
+	float avi_audio_pts;
+	float avi_video_pts;
+	float pts_correction;
+	unsigned int pts_corr_bytes;
+	unsigned char pts_corrected;
+	unsigned char pts_has_video;
+	unsigned int numberofframes;
+	avisuperindex_chunk* suidx;
+	int suidx_size;
+	int isodml;
+	int warned_unaligned;
 } avi_priv_t;
 
 #define AVI_PRIV ((avi_priv_t*)(demuxer->priv))
 
 #define AVI_IDX_OFFSET(x) ((((uint64_t)(x)->dwFlags&0xffff0000)<<16)+(x)->dwChunkOffset)
 
-void read_avi_header(demuxer_t *demuxer, int index_mode);
+void read_avi_header(demuxer_t* demuxer, int index_mode);
 
 #endif /* MPLAYER_AVIHEADER_H */

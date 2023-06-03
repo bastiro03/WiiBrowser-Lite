@@ -28,13 +28,14 @@
 //!Display, manage, and manipulate text in the GUI
 class Document
 {
-	public:
-		//!Constructor
-		Document();
-		//!Destructor
-		~Document();
-		void SetOffset(int *offset);
-		int GetOffset();
-	protected:
-		int *document;
+public:
+	//!Constructor
+	Document();
+	//!Destructor
+	~Document();
+	void SetOffset(int* offset);
+	int GetOffset();
+
+protected:
+	int* document;
 };

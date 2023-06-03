@@ -66,109 +66,116 @@
 #define MUNGE_ROW(x) (((x) + 0x7F)>>8)
 #define IDCT_ROW(dest,src) IDCT_TRANSFORM(dest,0,1,2,3,4,5,6,7,0,1,2,3,4,5,6,7,MUNGE_ROW,src)
 
-static inline void bink_idct_col(int *dest, const int32_t *src)
+static inline void bink_idct_col(int* dest, const int32_t* src)
 {
-    if ((src[8]|src[16]|src[24]|src[32]|src[40]|src[48]|src[56])==0) {
-        dest[0]  =
-        dest[8]  =
-        dest[16] =
-        dest[24] =
-        dest[32] =
-        dest[40] =
-        dest[48] =
-        dest[56] = src[0];
-    } else {
-        IDCT_COL(dest, src);
-    }
+	if ((src[8] | src[16] | src[24] | src[32] | src[40] | src[48] | src[56]) == 0)
+	{
+		dest[0] =
+			dest[8] =
+			dest[16] =
+			dest[24] =
+			dest[32] =
+			dest[40] =
+			dest[48] =
+			dest[56] = src[0];
+	}
+	else
+	{
+		IDCT_COL(dest, src);
+	}
 }
 
-static void bink_idct_c(int32_t *block)
+static void bink_idct_c(int32_t* block)
 {
-    int i;
-    int temp[64];
+	int i;
+	int temp[64];
 
-    for (i = 0; i < 8; i++)
-        bink_idct_col(&temp[i], &block[i]);
-    for (i = 0; i < 8; i++) {
-        IDCT_ROW( (&block[8*i]), (&temp[8*i]) );
-    }
+	for (i = 0; i < 8; i++)
+		bink_idct_col(&temp[i], &block[i]);
+	for (i = 0; i < 8; i++)
+	{
+		IDCT_ROW((&block[8 * i]), (&temp[8 * i]));
+	}
 }
 
-static void bink_idct_add_c(uint8_t *dest, int linesize, int32_t *block)
+static void bink_idct_add_c(uint8_t* dest, int linesize, int32_t* block)
 {
-    int i, j;
+	int i, j;
 
-    bink_idct_c(block);
-    for (i = 0; i < 8; i++, dest += linesize, block += 8)
-        for (j = 0; j < 8; j++)
-             dest[j] += block[j];
+	bink_idct_c(block);
+	for (i = 0; i < 8; i++, dest += linesize, block += 8)
+		for (j = 0; j < 8; j++)
+			dest[j] += block[j];
 }
 
-static void bink_idct_put_c(uint8_t *dest, int linesize, int32_t *block)
+static void bink_idct_put_c(uint8_t* dest, int linesize, int32_t* block)
 {
-    int i;
-    int temp[64];
-    for (i = 0; i < 8; i++)
-        bink_idct_col(&temp[i], &block[i]);
-    for (i = 0; i < 8; i++) {
-        IDCT_ROW( (&dest[i*linesize]), (&temp[8*i]) );
-    }
+	int i;
+	int temp[64];
+	for (i = 0; i < 8; i++)
+		bink_idct_col(&temp[i], &block[i]);
+	for (i = 0; i < 8; i++)
+	{
+		IDCT_ROW((&dest[i * linesize]), (&temp[8 * i]));
+	}
 }
 
-static void scale_block_c(const uint8_t src[64]/*align 8*/, uint8_t *dst/*align 8*/, int linesize)
+static void scale_block_c(const uint8_t src[64]/*align 8*/, uint8_t* dst/*align 8*/, int linesize)
 {
-    int i, j;
-    uint16_t *dst1 = (uint16_t *) dst;
-    uint16_t *dst2 = (uint16_t *)(dst + linesize);
+	int i, j;
+	uint16_t* dst1 = (uint16_t*)dst;
+	uint16_t* dst2 = (uint16_t*)(dst + linesize);
 
-    for (j = 0; j < 8; j++) {
-        for (i = 0; i < 8; i++) {
-            dst1[i] = dst2[i] = src[i] * 0x0101;
-        }
-        src  += 8;
-        dst1 += linesize;
-        dst2 += linesize;
-    }
+	for (j = 0; j < 8; j++)
+	{
+		for (i = 0; i < 8; i++)
+		{
+			dst1[i] = dst2[i] = src[i] * 0x0101;
+		}
+		src += 8;
+		dst1 += linesize;
+		dst2 += linesize;
+	}
 }
 
 #ifdef HAVE_PAIRED
-static void scale_block_paired(const uint8_t src[64], uint8_t *dst, int linesize)
+static void scale_block_paired(const uint8_t src[64], uint8_t* dst, int linesize)
 {
 	const float scalar = 257.0;
 	vector float pair;
-	
-	uint16_t *dst1 = (uint16_t *)(dst - linesize*2);
-	uint16_t *dst2 = (uint16_t *)(dst - linesize);
+
+	uint16_t* dst1 = (uint16_t*)(dst - linesize * 2);
+	uint16_t* dst2 = (uint16_t*)(dst - linesize);
 	src -= 8;
-	
+
 	for (int i = 0; i < 8; i++) {
-		pair = psq_lu(8,src,0,4);
+		pair = psq_lu(8, src, 0, 4);
 		pair = ps_mul(pair, scalar);
-		psq_stux(pair,dst1,linesize*2,0,5);
-		psq_stux(pair,dst2,linesize*2,0,5);
-		
-		pair = psq_l(2,src,0,4);
+		psq_stux(pair, dst1, linesize * 2, 0, 5);
+		psq_stux(pair, dst2, linesize * 2, 0, 5);
+
+		pair = psq_l(2, src, 0, 4);
 		pair = ps_mul(pair, scalar);
-		psq_st(pair,4,dst1,0,5);
-		psq_st(pair,4,dst2,0,5);
-		
-		pair = psq_l(4,src,0,4);
+		psq_st(pair, 4, dst1, 0, 5);
+		psq_st(pair, 4, dst2, 0, 5);
+
+		pair = psq_l(4, src, 0, 4);
 		pair = ps_mul(pair, scalar);
-		psq_st(pair,8,dst1,0,5);
-		psq_st(pair,8,dst2,0,5);
-		
-		pair = psq_l(6,src,0,4);
+		psq_st(pair, 8, dst1, 0, 5);
+		psq_st(pair, 8, dst2, 0, 5);
+
+		pair = psq_l(6, src, 0, 4);
 		pair = ps_mul(pair, scalar);
-		psq_st(pair,12,dst1,0,5);
-		psq_st(pair,12,dst2,0,5);
+		psq_st(pair, 12, dst1, 0, 5);
+		psq_st(pair, 12, dst2, 0, 5);
 	}
 }
 #endif
 
-void ff_binkdsp_init(BinkDSPContext *c)
+void ff_binkdsp_init(BinkDSPContext* c)
 {
-    c->idct_add    = bink_idct_add_c;
-    c->idct_put    = bink_idct_put_c;    
-    c->scale_block = scale_block_c;
-    if (HAVE_PAIRED) c->scale_block = scale_block_paired;
+	c->idct_add = bink_idct_add_c;
+	c->idct_put = bink_idct_put_c;
+	c->scale_block = scale_block_c;
+	if (HAVE_PAIRED) c->scale_block = scale_block_paired;
 }

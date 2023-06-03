@@ -25,19 +25,26 @@
 #include <stdint.h>
 #include "dsputil.h"
 
-typedef struct {
-    int w, h;
-    DSPContext *dsp;
-    uint8_t scan[64];
-    uint32_t lquant[64];
-    uint32_t cquant[64];
-    DECLARE_ALIGNED(16, DCTELEM, block)[64];
+typedef struct
+{
+	int w, h;
+	DSPContext* dsp;
+	uint8_t scan[64];
+	uint32_t lquant[64];
+	uint32_t cquant[64];
+	DECLARE_ALIGNED (
+	16
+	,
+	DCTELEM
+	,
+	block
+	)[64];
 } RTJpegContext;
 
-void ff_rtjpeg_decode_init(RTJpegContext *c, DSPContext *dsp,
-                        int width, int height,
-                        const uint32_t *lquant, const uint32_t *cquant);
+void ff_rtjpeg_decode_init(RTJpegContext* c, DSPContext* dsp,
+                           int width, int height,
+                           const uint32_t* lquant, const uint32_t* cquant);
 
-int ff_rtjpeg_decode_frame_yuv420(RTJpegContext *c, AVFrame *f,
-                               const uint8_t *buf, int buf_size);
+int ff_rtjpeg_decode_frame_yuv420(RTJpegContext* c, AVFrame* f,
+                                  const uint8_t* buf, int buf_size);
 #endif /* AVCODEC_RTJPEG_H */

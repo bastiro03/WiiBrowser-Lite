@@ -23,7 +23,7 @@
 
 #include <sys/types.h>
 
-void subassconvert_subrip(const char *orig, char *dest, size_t dest_buffer_size);
-void subassconvert_microdvd(const char *orig, char *dest, size_t dest_buffer_size);
+void subassconvert_subrip(const char* orig, char* dest, size_t dest_buffer_size);
+void subassconvert_microdvd(const char* orig, char* dest, size_t dest_buffer_size);
 
 #endif

@@ -41,7 +41,7 @@
 #define fntAlignCenter 1
 #define fntAlignRight  2
 
-static bmpFont *Fonts[MAX_FONTS];
+static bmpFont* Fonts[MAX_FONTS];
 
 /**
  * @brief Add a font to #Fonts.
@@ -50,32 +50,33 @@ static bmpFont *Fonts[MAX_FONTS];
  *
  * @return an identification >= 0 (ok), -1 (out of memory) or -2 (#MAX_FONTS exceeded)
  */
-static int fntAddNewFont(char *name)
+static int fntAddNewFont(char* name)
 {
-    int id, i;
+	int id, i;
 
-    for (id = 0; id < MAX_FONTS; id++)
-        if (!Fonts[id])
-            break;
+	for (id = 0; id < MAX_FONTS; id++)
+		if (!Fonts[id])
+			break;
 
-    if (id == MAX_FONTS)
-        return -2;
+	if (id == MAX_FONTS)
+		return -2;
 
-    Fonts[id] = calloc(1, sizeof(*Fonts[id]));
+	Fonts[id] = calloc(1, sizeof(*Fonts[id]));
 
-    if (!Fonts[id])
-        return -1;
+	if (!Fonts[id])
+		return -1;
 
-    av_strlcpy(Fonts[id]->name, name, MAX_FONT_NAME);
+	av_strlcpy(Fonts[id]->name, name, MAX_FONT_NAME);
 
-    for (i = 0; i < ASCII_CHRS + EXTRA_CHRS; i++) {
-        Fonts[id]->Fnt[i].x  = -1;
-        Fonts[id]->Fnt[i].y  = -1;
-        Fonts[id]->Fnt[i].sx = -1;
-        Fonts[id]->Fnt[i].sy = -1;
-    }
+	for (i = 0; i < ASCII_CHRS + EXTRA_CHRS; i++)
+	{
+		Fonts[id]->Fnt[i].x = -1;
+		Fonts[id]->Fnt[i].y = -1;
+		Fonts[id]->Fnt[i].sx = -1;
+		Fonts[id]->Fnt[i].sy = -1;
+	}
 
-    return id;
+	return id;
 }
 
 /**
@@ -83,14 +84,16 @@ static int fntAddNewFont(char *name)
  */
 void fntFreeFont(void)
 {
-    int i;
+	int i;
 
-    for (i = 0; i < MAX_FONTS; i++) {
-        if (Fonts[i]) {
-            bpFree(&Fonts[i]->Bitmap);
-            nfree(Fonts[i]);
-        }
-    }
+	for (i = 0; i < MAX_FONTS; i++)
+	{
+		if (Fonts[i])
+		{
+			bpFree(&Fonts[i]->Bitmap);
+			nfree(Fonts[i]);
+		}
+	}
 }
 
 /**
@@ -102,95 +105,106 @@ void fntFreeFont(void)
  * @return 0 (ok), -1 or -2 (return code of #fntAddNewFont()),
  *                 -3 (file error) or -4 (#skinImageRead() error)
  */
-int fntRead(char *path, char *fname)
+int fntRead(char* path, char* fname)
 {
-    FILE *file;
-    unsigned char buf[512];
-    unsigned char item[32];
-    unsigned char param[256];
-    int id, n, i;
+	FILE* file;
+	unsigned char buf[512];
+	unsigned char item[32];
+	unsigned char param[256];
+	int id, n, i;
 
-    id = fntAddNewFont(fname);
+	id = fntAddNewFont(fname);
 
-    if (id < 0)
-        return id;
+	if (id < 0)
+		return id;
 
-    av_strlcpy(buf, path, sizeof(buf));
-    av_strlcat(buf, fname, sizeof(buf));
-    av_strlcat(buf, ".fnt", sizeof(buf));
-    file = fopen(buf, "rt");
+	av_strlcpy(buf, path, sizeof(buf));
+	av_strlcat(buf, fname, sizeof(buf));
+	av_strlcat(buf, ".fnt", sizeof(buf));
+	file = fopen(buf, "rt");
 
-    if (!file) {
-        nfree(Fonts[id]);
-        return -3;
-    }
+	if (!file)
+	{
+		nfree(Fonts[id]);
+		return -3;
+	}
 
-    while (fgetstr(buf, sizeof(buf), file)) {
-        strswap(buf, '\t', ' ');
-        trim(buf);
-        decomment(buf);
+	while (fgetstr(buf, sizeof(buf), file))
+	{
+		strswap(buf, '\t', ' ');
+		trim(buf);
+		decomment(buf);
 
-        if (!*buf)
-            continue;
+		if (!*buf)
+			continue;
 
-        n = (strncmp(buf, "\"=", 2) == 0 ? 1 : 0);
-        cutItem(buf, item, '=', n);
-        cutItem(buf, param, '=', n + 1);
+		n = (strncmp(buf, "\"=", 2) == 0 ? 1 : 0);
+		cutItem(buf, item, '=', n);
+		cutItem(buf, param, '=', n + 1);
 
-        if (item[0] == '"') {
-            if (!item[1])
-                item[0] = '=';
-            else if (item[1] == '"')
-                item[1] = 0;
-            else
-                cutItem(item, item, '"', 1);
+		if (item[0] == '"')
+		{
+			if (!item[1])
+				item[0] = '=';
+			else if (item[1] == '"')
+				item[1] = 0;
+			else
+				cutItem(item, item, '"', 1);
 
-            if (item[0] & 0x80) {
-                for (i = 0; i < EXTRA_CHRS; i++) {
-                    if (!Fonts[id]->nonASCIIidx[i][0]) {
-                        strncpy(Fonts[id]->nonASCIIidx[i], item, UTF8LENGTH);
-                        break;
-                    }
-                }
+			if (item[0] & 0x80)
+			{
+				for (i = 0; i < EXTRA_CHRS; i++)
+				{
+					if (!Fonts[id]->nonASCIIidx[i][0])
+					{
+						strncpy(Fonts[id]->nonASCIIidx[i], item, UTF8LENGTH);
+						break;
+					}
+				}
 
-                if (i == EXTRA_CHRS)
-                    continue;
+				if (i == EXTRA_CHRS)
+					continue;
 
-                i += ASCII_CHRS;
-            } else
-                i = item[0];
+				i += ASCII_CHRS;
+			}
+			else
+				i = item[0];
 
-            cutItem(param, buf, ',', 0);
-            Fonts[id]->Fnt[i].x = atoi(buf);
+			cutItem(param, buf, ',', 0);
+			Fonts[id]->Fnt[i].x = atoi(buf);
 
-            cutItem(param, buf, ',', 1);
-            Fonts[id]->Fnt[i].y = atoi(buf);
+			cutItem(param, buf, ',', 1);
+			Fonts[id]->Fnt[i].y = atoi(buf);
 
-            cutItem(param, buf, ',', 2);
-            Fonts[id]->Fnt[i].sx = atoi(buf);
+			cutItem(param, buf, ',', 2);
+			Fonts[id]->Fnt[i].sx = atoi(buf);
 
-            cutItem(param, buf, ',', 3);
-            Fonts[id]->Fnt[i].sy = atoi(buf);
+			cutItem(param, buf, ',', 3);
+			Fonts[id]->Fnt[i].sy = atoi(buf);
 
-            mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[font]  char: '%s' params: %d,%d %dx%d\n", item, Fonts[id]->Fnt[i].x, Fonts[id]->Fnt[i].y, Fonts[id]->Fnt[i].sx, Fonts[id]->Fnt[i].sy);
-        } else if (!strcmp(item, "image")) {
-            av_strlcpy(buf, path, sizeof(buf));
-            av_strlcat(buf, param, sizeof(buf));
+			mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[font]  char: '%s' params: %d,%d %dx%d\n", item, Fonts[id]->Fnt[i].x,
+			       Fonts[id]->Fnt[i].y, Fonts[id]->Fnt[i].sx, Fonts[id]->Fnt[i].sy);
+		}
+		else if (!strcmp(item, "image"))
+		{
+			av_strlcpy(buf, path, sizeof(buf));
+			av_strlcat(buf, param, sizeof(buf));
 
-            mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[font] image file: %s\n", buf);
+			mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[font] image file: %s\n", buf);
 
-            if (skinImageRead(buf, &Fonts[id]->Bitmap) != 0) {
-                bpFree(&Fonts[id]->Bitmap);
-                nfree(Fonts[id]);
-                fclose(file);
-                return -4;
-            }
-        }
-    }
+			if (skinImageRead(buf, &Fonts[id]->Bitmap) != 0)
+			{
+				bpFree(&Fonts[id]->Bitmap);
+				nfree(Fonts[id]);
+				fclose(file);
+				return -4;
+			}
+		}
+	}
 
-    fclose(file);
+	fclose(file);
 
-    return 0;
+	return 0;
 }
 
 /**
@@ -200,16 +214,16 @@ int fntRead(char *path, char *fname)
  *
  * @return an identification >= 0 (ok) or -1 (not found)
  */
-int fntFindID(char *name)
+int fntFindID(char* name)
 {
-    int i;
+	int i;
 
-    for (i = 0; i < MAX_FONTS; i++)
-        if (Fonts[i])
-            if (!strcmp(name, Fonts[i]->name))
-                return i;
+	for (i = 0; i < MAX_FONTS; i++)
+		if (Fonts[i])
+			if (!strcmp(name, Fonts[i]->name))
+				return i;
 
-    return -1;
+	return -1;
 }
 
 /**
@@ -225,44 +239,51 @@ int fntFindID(char *name)
  *
  * @return index >= 0 (ok) or -1 (not found)
  */
-static int fntGetCharIndex(int id, unsigned char **str, gboolean utf8, int direction)
+static int fntGetCharIndex(int id, unsigned char** str, gboolean utf8, int direction)
 {
-    unsigned char *p, uchar[6] = "";   // glib implements 31-bit UTF-8
-    int i, c = -1;
+	unsigned char *p, uchar[6] = ""; // glib implements 31-bit UTF-8
+	int i, c = -1;
 
-    if (**str & 0x80) {
-        if (utf8) {
-            p    = *str;
-            *str = g_utf8_next_char(*str);
-            strncpy(uchar, p, *str - p);
+	if (**str & 0x80)
+	{
+		if (utf8)
+		{
+			p = *str;
+			*str = g_utf8_next_char(*str);
+			strncpy(uchar, p, *str - p);
 
-            if (direction < 0)
-                *str = g_utf8_prev_char(p);
-        } else {
-            uchar[0] = **str;
-            *str    += direction;
-        }
+			if (direction < 0)
+				*str = g_utf8_prev_char(p);
+		}
+		else
+		{
+			uchar[0] = **str;
+			*str += direction;
+		}
 
-        for (i = 0; (i < EXTRA_CHRS) && Fonts[id]->nonASCIIidx[i][0]; i++) {
-            if (strncmp(Fonts[id]->nonASCIIidx[i], uchar, UTF8LENGTH) == 0)
-                return i + ASCII_CHRS;
+		for (i = 0; (i < EXTRA_CHRS) && Fonts[id]->nonASCIIidx[i][0]; i++)
+		{
+			if (strncmp(Fonts[id]->nonASCIIidx[i], uchar, UTF8LENGTH) == 0)
+				return i + ASCII_CHRS;
 
-            if (!utf8 &&
-                (Fonts[id]->nonASCIIidx[i][0] == (*uchar >> 6 | 0xc0) &&
-                 Fonts[id]->nonASCIIidx[i][1] == ((*uchar & 0x3f) | 0x80) &&
-                 Fonts[id]->nonASCIIidx[i][2] == 0))
-                c = i + ASCII_CHRS;
-        }
-    } else {
-        c = **str;
+			if (!utf8 &&
+				(Fonts[id]->nonASCIIidx[i][0] == (*uchar >> 6 | 0xc0) &&
+					Fonts[id]->nonASCIIidx[i][1] == ((*uchar & 0x3f) | 0x80) &&
+					Fonts[id]->nonASCIIidx[i][2] == 0))
+				c = i + ASCII_CHRS;
+		}
+	}
+	else
+	{
+		c = **str;
 
-        if (utf8 && (direction < 0))
-            *str = g_utf8_prev_char(*str);
-        else
-            *str += direction;
-    }
+		if (utf8 && (direction < 0))
+			*str = g_utf8_prev_char(*str);
+		else
+			*str += direction;
+	}
 
-    return c;
+	return c;
 }
 
 /**
@@ -273,26 +294,27 @@ static int fntGetCharIndex(int id, unsigned char **str, gboolean utf8, int direc
  *
  * @return width of the rendered string (in pixels)
  */
-int fntTextWidth(int id, char *str)
+int fntTextWidth(int id, char* str)
 {
-    int size = 0, c;
-    gboolean utf8;
-    unsigned char *p;
+	int size = 0, c;
+	gboolean utf8;
+	unsigned char* p;
 
-    utf8 = g_utf8_validate(str, -1, NULL);
-    p    = str;
+	utf8 = g_utf8_validate(str, -1, NULL);
+	p = str;
 
-    while (*p) {
-        c = fntGetCharIndex(id, &p, utf8, 1);
+	while (*p)
+	{
+		c = fntGetCharIndex(id, &p, utf8, 1);
 
-        if (c == -1 || Fonts[id]->Fnt[c].sx == -1)
-            c = ' ';
+		if (c == -1 || Fonts[id]->Fnt[c].sx == -1)
+			c = ' ';
 
-        if (Fonts[id]->Fnt[c].sx != -1)
-            size += Fonts[id]->Fnt[c].sx;
-    }
+		if (Fonts[id]->Fnt[c].sx != -1)
+			size += Fonts[id]->Fnt[c].sx;
+	}
 
-    return size;
+	return size;
 }
 
 /**
@@ -303,28 +325,29 @@ int fntTextWidth(int id, char *str)
  *
  * @return height of the rendered string (in pixels)
  */
-static int fntTextHeight(int id, char *str)
+static int fntTextHeight(int id, char* str)
 {
-    int max = 0, c, h;
-    gboolean utf8;
-    unsigned char *p;
+	int max = 0, c, h;
+	gboolean utf8;
+	unsigned char* p;
 
-    utf8 = g_utf8_validate(str, -1, NULL);
-    p    = str;
+	utf8 = g_utf8_validate(str, -1, NULL);
+	p = str;
 
-    while (*p) {
-        c = fntGetCharIndex(id, &p, utf8, 1);
+	while (*p)
+	{
+		c = fntGetCharIndex(id, &p, utf8, 1);
 
-        if (c == -1 || Fonts[id]->Fnt[c].sx == -1)
-            c = ' ';
+		if (c == -1 || Fonts[id]->Fnt[c].sx == -1)
+			c = ' ';
 
-        h = Fonts[id]->Fnt[c].sy;
+		h = Fonts[id]->Fnt[c].sy;
 
-        if (h > max)
-            max = h;
-    }
+		if (h > max)
+			max = h;
+	}
 
-    return max;
+	return max;
 }
 
 /**
@@ -336,141 +359,154 @@ static int fntTextHeight(int id, char *str)
  *
  * @return image containing the rendered text
  */
-guiImage *fntTextRender(wItem *item, int px, char *txt)
+guiImage* fntTextRender(wItem* item, int px, char* txt)
 {
-    unsigned char *u;
-    unsigned int i;
-    int c, dx, tw, th, fbw, iw, id, ofs;
-    int x, y, fh, fw, fyc, yc;
-    uint32_t *ibuf;
-    uint32_t *obuf;
-    gboolean utf8;
+	unsigned char* u;
+	unsigned int i;
+	int c, dx, tw, th, fbw, iw, id, ofs;
+	int x, y, fh, fw, fyc, yc;
+	uint32_t* ibuf;
+	uint32_t* obuf;
+	gboolean utf8;
 
-    id = item->fontid;
-    tw = fntTextWidth(id, txt);
+	id = item->fontid;
+	tw = fntTextWidth(id, txt);
 
-    if (!tw)
-        return NULL;
+	if (!tw)
+		return NULL;
 
-    iw  = item->width;
-    fbw = Fonts[id]->Bitmap.Width;
-    th  = fntTextHeight(id, txt);
+	iw = item->width;
+	fbw = Fonts[id]->Bitmap.Width;
+	th = fntTextHeight(id, txt);
 
-    if (item->height != th)
-        bpFree(&item->Bitmap);
+	if (item->height != th)
+		bpFree(&item->Bitmap);
 
-    if (!item->Bitmap.Image) {
-        item->Bitmap.Height    = item->height = th;
-        item->Bitmap.Width     = item->width = iw;
-        item->Bitmap.ImageSize = item->height * iw * 4;
+	if (!item->Bitmap.Image)
+	{
+		item->Bitmap.Height = item->height = th;
+		item->Bitmap.Width = item->width = iw;
+		item->Bitmap.ImageSize = item->height * iw * 4;
 
-        if (!item->Bitmap.ImageSize)
-            return NULL;
+		if (!item->Bitmap.ImageSize)
+			return NULL;
 
-        item->Bitmap.Bpp   = 32;
-        item->Bitmap.Image = malloc(item->Bitmap.ImageSize);
+		item->Bitmap.Bpp = 32;
+		item->Bitmap.Image = malloc(item->Bitmap.ImageSize);
 
-        if (!item->Bitmap.Image)
-            return NULL;
-    }
+		if (!item->Bitmap.Image)
+			return NULL;
+	}
 
-    obuf = (uint32_t *)item->Bitmap.Image;
-    ibuf = (uint32_t *)Fonts[id]->Bitmap.Image;
+	obuf = (uint32_t*)item->Bitmap.Image;
+	ibuf = (uint32_t*)Fonts[id]->Bitmap.Image;
 
-    for (i = 0; i < item->Bitmap.ImageSize / 4; i++)
-        obuf[i] = GUI_TRANSPARENT;
+	for (i = 0; i < item->Bitmap.ImageSize / 4; i++)
+		obuf[i] = GUI_TRANSPARENT;
 
-    if (tw <= iw) {
-        switch (item->align) {
-        default:
-        case fntAlignLeft:
-            dx = 0;
-            break;
+	if (tw <= iw)
+	{
+		switch (item->align)
+		{
+		default:
+		case fntAlignLeft:
+			dx = 0;
+			break;
 
-        case fntAlignCenter:
-            dx = (iw - tw) / 2;
-            break;
+		case fntAlignCenter:
+			dx = (iw - tw) / 2;
+			break;
 
-        case fntAlignRight:
-            dx = iw - tw;
-            break;
-        }
-    } else
-        dx = px;
+		case fntAlignRight:
+			dx = iw - tw;
+			break;
+		}
+	}
+	else
+		dx = px;
 
-    ofs = dx;
+	ofs = dx;
 
-    utf8 = g_utf8_validate(txt, -1, NULL);
-    u    = txt;
+	utf8 = g_utf8_validate(txt, -1, NULL);
+	u = txt;
 
-    while (*u) {
-        c = fntGetCharIndex(id, &u, utf8, 1);
+	while (*u)
+	{
+		c = fntGetCharIndex(id, &u, utf8, 1);
 
-        if (c != -1)
-            fw = Fonts[id]->Fnt[c].sx;
+		if (c != -1)
+			fw = Fonts[id]->Fnt[c].sx;
 
-        if (c == -1 || fw == -1) {
-            c  = ' ';
-            fw = Fonts[id]->Fnt[c].sx;
-        }
+		if (c == -1 || fw == -1)
+		{
+			c = ' ';
+			fw = Fonts[id]->Fnt[c].sx;
+		}
 
-        if (fw == -1)
-            continue;
+		if (fw == -1)
+			continue;
 
-        fh  = Fonts[id]->Fnt[c].sy;
-        fyc = Fonts[id]->Fnt[c].y * fbw + Fonts[id]->Fnt[c].x;
-        yc  = dx;
+		fh = Fonts[id]->Fnt[c].sy;
+		fyc = Fonts[id]->Fnt[c].y * fbw + Fonts[id]->Fnt[c].x;
+		yc = dx;
 
-        if (dx >= 0) {
-            for (y = 0; y < fh; y++) {
-                for (x = 0; x < fw; x++)
-                    if (dx + x >= 0 && dx + x < iw)
-                        obuf[yc + x] = ibuf[fyc + x];
+		if (dx >= 0)
+		{
+			for (y = 0; y < fh; y++)
+			{
+				for (x = 0; x < fw; x++)
+					if (dx + x >= 0 && dx + x < iw)
+						obuf[yc + x] = ibuf[fyc + x];
 
-                fyc += fbw;
-                yc  += iw;
-            }
-        }
+				fyc += fbw;
+				yc += iw;
+			}
+		}
 
-        dx += fw;
-    }
+		dx += fw;
+	}
 
-    if (ofs > 0 && tw > item->width) {
-        dx = ofs;
-        u  = txt + strlen(txt);
+	if (ofs > 0 && tw > item->width)
+	{
+		dx = ofs;
+		u = txt + strlen(txt);
 
-        while (u > (unsigned char *)txt) {
-            c = fntGetCharIndex(id, &u, utf8, -1);
+		while (u > (unsigned char*)txt)
+		{
+			c = fntGetCharIndex(id, &u, utf8, -1);
 
-            if (c != -1)
-                fw = Fonts[id]->Fnt[c].sx;
+			if (c != -1)
+				fw = Fonts[id]->Fnt[c].sx;
 
-            if (c == -1 || fw == -1) {
-                c  = ' ';
-                fw = Fonts[id]->Fnt[c].sx;
-            }
+			if (c == -1 || fw == -1)
+			{
+				c = ' ';
+				fw = Fonts[id]->Fnt[c].sx;
+			}
 
-            if (fw == -1)
-                continue;
+			if (fw == -1)
+				continue;
 
-            fh  = Fonts[id]->Fnt[c].sy;
-            fyc = Fonts[id]->Fnt[c].y * fbw + Fonts[id]->Fnt[c].x;
+			fh = Fonts[id]->Fnt[c].sy;
+			fyc = Fonts[id]->Fnt[c].y * fbw + Fonts[id]->Fnt[c].x;
 
-            dx -= fw;
-            yc  = dx;
+			dx -= fw;
+			yc = dx;
 
-            if (dx >= 0) {
-                for (y = 0; y < fh; y++) {
-                    for (x = fw - 1; x >= 0; x--)
-                        if (dx + x >= 0 && dx + x < iw)
-                            obuf[yc + x] = ibuf[fyc + x];
+			if (dx >= 0)
+			{
+				for (y = 0; y < fh; y++)
+				{
+					for (x = fw - 1; x >= 0; x--)
+						if (dx + x >= 0 && dx + x < iw)
+							obuf[yc + x] = ibuf[fyc + x];
 
-                    fyc += fbw;
-                    yc  += iw;
-                }
-            }
-        }
-    }
+					fyc += fbw;
+					yc += iw;
+				}
+			}
+		}
+	}
 
-    return &item->Bitmap;
+	return &item->Bitmap;
 }

@@ -35,7 +35,7 @@
             __FILE__, __LINE__, # arg );                                \
   }
 
-int UDFReadBlocksRaw(dvd_reader_t *device, uint32_t lb_number,
-                     size_t block_count, unsigned char *data, int encrypted);
+int UDFReadBlocksRaw(dvd_reader_t* device, uint32_t lb_number,
+                     size_t block_count, unsigned char* data, int encrypted);
 
 #endif /* LIBDVDREAD_DVDREAD_INTERNAL_H */

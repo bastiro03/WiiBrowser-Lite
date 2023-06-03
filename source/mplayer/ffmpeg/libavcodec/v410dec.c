@@ -23,95 +23,105 @@
 #include "libavutil/intreadwrite.h"
 #include "avcodec.h"
 
-static av_cold int v410_decode_init(AVCodecContext *avctx)
+static av_cold
+
+int v410_decode_init(AVCodecContext* avctx)
 {
-    avctx->pix_fmt             = PIX_FMT_YUV444P10;
-    avctx->bits_per_raw_sample = 10;
+	avctx->pix_fmt = PIX_FMT_YUV444P10;
+	avctx->bits_per_raw_sample = 10;
 
-    if (avctx->width & 1) {
-        av_log(avctx, AV_LOG_WARNING, "v410 requires width to be even.\n");
-    }
+	if (avctx->width & 1)
+	{
+		av_log(avctx, AV_LOG_WARNING, "v410 requires width to be even.\n");
+	}
 
-    avctx->coded_frame = avcodec_alloc_frame();
+	avctx->coded_frame = avcodec_alloc_frame();
 
-    if (!avctx->coded_frame) {
-        av_log(avctx, AV_LOG_ERROR, "Could not allocate frame.\n");
-        return AVERROR(ENOMEM);
-    }
+	if (!avctx->coded_frame)
+	{
+		av_log(avctx, AV_LOG_ERROR, "Could not allocate frame.\n");
+		return AVERROR(ENOMEM);
+	}
 
-    return 0;
+	return 0;
 }
 
-static int v410_decode_frame(AVCodecContext *avctx, void *data,
-                             int *data_size, AVPacket *avpkt)
+static int v410_decode_frame(AVCodecContext* avctx, void* data,
+                             int* data_size, AVPacket* avpkt)
 {
-    AVFrame *pic = avctx->coded_frame;
-    uint8_t *src = avpkt->data;
-    uint16_t *y, *u, *v;
-    uint32_t val;
-    int i, j;
+	AVFrame* pic = avctx->coded_frame;
+	uint8_t* src = avpkt->data;
+	uint16_t *y, *u, *v;
+	uint32_t val;
+	int i, j;
 
-    if (pic->data[0])
-        avctx->release_buffer(avctx, pic);
+	if (pic->data[0])
+		avctx->release_buffer(avctx, pic);
 
-    if (avpkt->size < 4 * avctx->height * avctx->width) {
-        av_log(avctx, AV_LOG_ERROR, "Insufficient input data.\n");
-        return AVERROR(EINVAL);
-    }
+	if (avpkt->size < 4 * avctx->height * avctx->width)
+	{
+		av_log(avctx, AV_LOG_ERROR, "Insufficient input data.\n");
+		return AVERROR(EINVAL);
+	}
 
-    pic->reference = 0;
+	pic->reference = 0;
 
-    if (avctx->get_buffer(avctx, pic) < 0) {
-        av_log(avctx, AV_LOG_ERROR, "Could not allocate buffer.\n");
-        return AVERROR(ENOMEM);
-    }
+	if (avctx->get_buffer(avctx, pic) < 0)
+	{
+		av_log(avctx, AV_LOG_ERROR, "Could not allocate buffer.\n");
+		return AVERROR(ENOMEM);
+	}
 
-    pic->key_frame = 1;
-    pic->pict_type = AV_PICTURE_TYPE_I;
+	pic->key_frame = 1;
+	pic->pict_type = AV_PICTURE_TYPE_I;
 
-    y = (uint16_t *)pic->data[0];
-    u = (uint16_t *)pic->data[1];
-    v = (uint16_t *)pic->data[2];
+	y = (uint16_t*)pic->data[0];
+	u = (uint16_t*)pic->data[1];
+	v = (uint16_t*)pic->data[2];
 
-    for (i = 0; i < avctx->height; i++) {
-        for (j = 0; j < avctx->width; j++) {
-            val = AV_RL32(src);
+	for (i = 0; i < avctx->height; i++)
+	{
+		for (j = 0; j < avctx->width; j++)
+		{
+			val = AV_RL32(src);
 
-            u[j] = (val >>  2) & 0x3FF;
-            y[j] = (val >> 12) & 0x3FF;
-            v[j] = (val >> 22);
+			u[j] = (val >> 2) & 0x3FF;
+			y[j] = (val >> 12) & 0x3FF;
+			v[j] = (val >> 22);
 
-            src += 4;
-        }
+			src += 4;
+		}
 
-        y += pic->linesize[0] >> 1;
-        u += pic->linesize[1] >> 1;
-        v += pic->linesize[2] >> 1;
-    }
+		y += pic->linesize[0] >> 1;
+		u += pic->linesize[1] >> 1;
+		v += pic->linesize[2] >> 1;
+	}
 
-    *data_size = sizeof(AVFrame);
-    *(AVFrame *)data = *pic;
+	*data_size = sizeof(AVFrame);
+	*(AVFrame*)data = *pic;
 
-    return avpkt->size;
+	return avpkt->size;
 }
 
-static av_cold int v410_decode_close(AVCodecContext *avctx)
+static av_cold
+
+int v410_decode_close(AVCodecContext* avctx)
 {
-    if (avctx->coded_frame->data[0])
-        avctx->release_buffer(avctx, avctx->coded_frame);
+	if (avctx->coded_frame->data[0])
+		avctx->release_buffer(avctx, avctx->coded_frame);
 
-    av_freep(&avctx->coded_frame);
+	av_freep(&avctx->coded_frame);
 
-    return 0;
+	return 0;
 }
 
 AVCodec ff_v410_decoder = {
-    .name         = "v410",
-    .type         = AVMEDIA_TYPE_VIDEO,
-    .id           = CODEC_ID_V410,
-    .init         = v410_decode_init,
-    .decode       = v410_decode_frame,
-    .close        = v410_decode_close,
-    .capabilities = CODEC_CAP_DR1,
-    .long_name    = NULL_IF_CONFIG_SMALL("Uncompressed 4:4:4 10-bit"),
+	.name = "v410",
+	.type = AVMEDIA_TYPE_VIDEO,
+	.id = CODEC_ID_V410,
+	.init = v410_decode_init,
+	.decode = v410_decode_frame,
+	.close = v410_decode_close,
+	.capabilities = CODEC_CAP_DR1,
+	.long_name = NULL_IF_CONFIG_SMALL("Uncompressed 4:4:4 10-bit"),
 };

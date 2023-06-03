@@ -37,41 +37,42 @@
 
 #include "tcp.h"
 
-char *rtsp_destination = NULL;
+char* rtsp_destination = NULL;
 
 static int rtsp_streaming_seek(int fd, off_t pos,
-                               streaming_ctrl_t* streaming_ctrl) {
-    return -1;
+                               streaming_ctrl_t* streaming_ctrl)
+{
+	return -1;
 }
 
-static int rtsp_streaming_open (stream_t *stream, int mode, void *opts,
-                                int *file_format)
+static int rtsp_streaming_open(stream_t* stream, int mode, void* opts,
+                               int* file_format)
 {
-    URL_t *url;
-    stream->fd = -1;
+	URL_t* url;
+	stream->fd = -1;
 
-    mp_msg (MSGT_OPEN, MSGL_V, "STREAM_RTSP, URL: %s\n", stream->url);
-    stream->streaming_ctrl = streaming_ctrl_new ();
-    if (!stream->streaming_ctrl)
-    return STREAM_ERROR;
+	mp_msg(MSGT_OPEN, MSGL_V, "STREAM_RTSP, URL: %s\n", stream->url);
+	stream->streaming_ctrl = streaming_ctrl_new();
+	if (!stream->streaming_ctrl)
+		return STREAM_ERROR;
 
-    stream->streaming_ctrl->bandwidth = network_bandwidth;
-    url = url_new(stream->url);
-    stream->streaming_ctrl->url = check4proxies(url);
-    stream->streaming_ctrl->streaming_seek = rtsp_streaming_seek;
+	stream->streaming_ctrl->bandwidth = network_bandwidth;
+	url = url_new(stream->url);
+	stream->streaming_ctrl->url = check4proxies(url);
+	stream->streaming_ctrl->streaming_seek = rtsp_streaming_seek;
 
-    *file_format = DEMUXER_TYPE_RTP_NEMESI;
-    stream->type = STREAMTYPE_STREAM;
-    return STREAM_OK;
+	*file_format = DEMUXER_TYPE_RTP_NEMESI;
+	stream->type = STREAMTYPE_STREAM;
+	return STREAM_OK;
 }
 
 const stream_info_t stream_info_rtsp = {
-  "RTSP streaming",
-  "rtsp",
-  "Alessandro Molina",
-  "implemented over libnemesi",
-  rtsp_streaming_open,
-  {"rtsp", NULL},
-  NULL,
-  0 /* Urls are an option string */
+	"RTSP streaming",
+	"rtsp",
+	"Alessandro Molina",
+	"implemented over libnemesi",
+	rtsp_streaming_open,
+	{"rtsp", NULL},
+	NULL,
+	0 /* Urls are an option string */
 };

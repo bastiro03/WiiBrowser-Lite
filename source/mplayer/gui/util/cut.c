@@ -35,22 +35,23 @@
  * @param num number of separator characters to be skipped before extraction starts
  * @param maxout maximum length of extracted part (including the trailing null byte)
  */
-void cutItemString(char *in, char *out, char sep, int num, size_t maxout)
+void cutItemString(char* in, char* out, char sep, int num, size_t maxout)
 {
-    int n;
-    unsigned int i, c;
+	int n;
+	unsigned int i, c;
 
-    for (c = 0, n = 0, i = 0; in[i]; i++) {
-        if (in[i] == sep)
-            n++;
-        if (n >= num && in[i] != sep && c + 1 < maxout)
-            out[c++] = in[i];
-        if (n >= num && in[i + 1] == sep)
-            break;
-    }
+	for (c = 0, n = 0, i = 0; in[i]; i++)
+	{
+		if (in[i] == sep)
+			n++;
+		if (n >= num && in[i] != sep && c + 1 < maxout)
+			out[c++] = in[i];
+		if (n >= num && in[i + 1] == sep)
+			break;
+	}
 
-    if (c < maxout)
-        out[c] = 0;
+	if (c < maxout)
+		out[c] = 0;
 }
 
 /**
@@ -62,11 +63,11 @@ void cutItemString(char *in, char *out, char sep, int num, size_t maxout)
  *
  * @return extracted number (numeric part)
  */
-int cutItemToInt(char *in, char sep, int num)
+int cutItemToInt(char* in, char sep, int num)
 {
-    char tmp[64];
+	char tmp[64];
 
-    cutItem(in, tmp, sep, num);
+	cutItem(in, tmp, sep, num);
 
-    return atoi(tmp);
+	return atoi(tmp);
 }

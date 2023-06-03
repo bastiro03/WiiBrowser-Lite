@@ -35,8 +35,8 @@
  * @param count Pointer to store the number of tags in m because m->count is "not allowed"
  * @return The length in bytes.
  */
-int ff_vorbiscomment_length(AVDictionary *m, const char *vendor_string,
-                            unsigned *count);
+int ff_vorbiscomment_length(AVDictionary* m, const char* vendor_string,
+                            unsigned* count);
 
 /**
  * Write a VorbisComment into a buffer. The buffer, p, must have enough
@@ -49,8 +49,8 @@ int ff_vorbiscomment_length(AVDictionary *m, const char *vendor_string,
  * @param vendor_string The vendor string to write.
  * @param count The number of tags in m because m->count is "not allowed"
  */
-int ff_vorbiscomment_write(uint8_t **p, AVDictionary **m,
-                           const char *vendor_string, const unsigned count);
+int ff_vorbiscomment_write(uint8_t** p, AVDictionary** m,
+                           const char* vendor_string, unsigned count);
 
 extern const AVMetadataConv ff_vorbiscomment_metadata_conv[];
 

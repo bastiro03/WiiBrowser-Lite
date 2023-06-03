@@ -13,15 +13,14 @@
 // In sync with r27967
 // FIXME: Necesita una revisión a fondo hay muchas faltas de ortografía
 
-
 // ========================= MPlayer help ===========================
 
-static const char help_text[]=
-"Uso:   mplayer [opciones] [url o ruta del archivo]\n"
-"\n"
-"Opciones básicas: ('man mplayer' para una lista completa)\n"
-" -vo <driver[:disp]>  Seleccionar driver y dispositivo de salida de video ('-vo help' para obtener una lista).\n"
-" -ao <driver[:disp]>  Seleccionar driver y dispositivo de salida de audio ('-ao help' para obtener una lista).\n"
+static const char help_text[] =
+	"Uso:   mplayer [opciones] [url o ruta del archivo]\n"
+	"\n"
+	"Opciones básicas: ('man mplayer' para una lista completa)\n"
+	" -vo <driver[:disp]>  Seleccionar driver y dispositivo de salida de video ('-vo help' para obtener una lista).\n"
+	" -ao <driver[:disp]>  Seleccionar driver y dispositivo de salida de audio ('-ao help' para obtener una lista).\n"
 #ifdef CONFIG_VCD
 " vcd://<numpista>      Reproducir pista de (S)VCD (Super Video CD) (acceso directo al dispositivo, no montado)\n"
 #endif
@@ -30,32 +29,32 @@ static const char help_text[]=
 " -alang <idioma>      Seleccionar idioma para el audio del DVD (con código de país de dos caracteres. p. ej. 'es').\n"
 " -alang <idioma>      Seleccionar idioma para los subtítulos del DVD.\n"
 #endif
-" -ss <tiempo>         Saltar a una posición determindada (en segundos o hh:mm:ss).\n"
-" -nosound             No reproducir sonido.\n"
-" -fs, -vm, -zoom      Opciones de pantalla completa (pantalla completa, cambio de modo de video, escalado por software).\n"
-" -x <x> -y <y>        Escalar imagen a resolución dada (para usar con -vm o -zoom).\n"
-" -sub <archivo>       Indicar que archivo de subtítulos debe utilizarse (revise también -subfps, -subdelay).\n"
-" -playlist <archivo>  Especificar archivo con la lista de reproducción.\n"
-" -vid <x> -aid <y>    Opciones para seleccionar los stream de video (x) y audio (y) a reproducir.\n"
-" -fps <x> -srate <y>  Opciones para cambiar las tasas de refresco/muestreo de video (x fps) y audio (y Hz) respectivamente.\n"
-" -pp <calidad>        Activar filtro de postproceso (revise el manual para para obtener más información).\n"
-" -framedrop           Activar el descarte de cuadros/frames (para máquinas lentas).\n\n"
+	" -ss <tiempo>         Saltar a una posición determindada (en segundos o hh:mm:ss).\n"
+	" -nosound             No reproducir sonido.\n"
+	" -fs, -vm, -zoom      Opciones de pantalla completa (pantalla completa, cambio de modo de video, escalado por software).\n"
+	" -x <x> -y <y>        Escalar imagen a resolución dada (para usar con -vm o -zoom).\n"
+	" -sub <archivo>       Indicar que archivo de subtítulos debe utilizarse (revise también -subfps, -subdelay).\n"
+	" -playlist <archivo>  Especificar archivo con la lista de reproducción.\n"
+	" -vid <x> -aid <y>    Opciones para seleccionar los stream de video (x) y audio (y) a reproducir.\n"
+	" -fps <x> -srate <y>  Opciones para cambiar las tasas de refresco/muestreo de video (x fps) y audio (y Hz) respectivamente.\n"
+	" -pp <calidad>        Activar filtro de postproceso (revise el manual para para obtener más información).\n"
+	" -framedrop           Activar el descarte de cuadros/frames (para máquinas lentas).\n\n"
 
-"Teclas básicas ('man mplayer' para una lista completa, revise también input.conf):\n"
-" <-  ó  ->       Avanzar o retroceder diez segundos.\n"
-" arriba ó abajo  Avanzar o retroceder un minuto.\n"
-" pgup ó pgdown   Avanzar o retroceder diez minutos.\n"
-" < ó >           Avanzar o retroceder en la lista de reproducción.\n"
-" p ó ESPACIO     Pausar (presione cualquier tecla para continuar).\n"
-" q ó ESC         Detener la reproducción y salir del programa.\n"
-" + ó -           Ajustar el retardo de audio en más o menos 0.1 segundos.\n"
-" o               Cambiar modo OSD: nada / búsqueda / búsqueda + tiempo.\n"
-" * ó /           Aumentar o disminuir el volumen (presione 'm' para elegir entre master/pcm).\n"
-" z ó x           Ajustar el retardo de la subtítulación en más o menos 0.1 segundos.\n"
-" r ó t           Ajustar posición de la subtítulación (mira también -vf expand).\n"
-"\n"
-" *** REVISE EL MANUAL PARA OTROS DETALLES, OPCIONES (AVANZADAS) Y TECLAS DE CONTROL ***\n"
-"\n";
+	"Teclas básicas ('man mplayer' para una lista completa, revise también input.conf):\n"
+	" <-  ó  ->       Avanzar o retroceder diez segundos.\n"
+	" arriba ó abajo  Avanzar o retroceder un minuto.\n"
+	" pgup ó pgdown   Avanzar o retroceder diez minutos.\n"
+	" < ó >           Avanzar o retroceder en la lista de reproducción.\n"
+	" p ó ESPACIO     Pausar (presione cualquier tecla para continuar).\n"
+	" q ó ESC         Detener la reproducción y salir del programa.\n"
+	" + ó -           Ajustar el retardo de audio en más o menos 0.1 segundos.\n"
+	" o               Cambiar modo OSD: nada / búsqueda / búsqueda + tiempo.\n"
+	" * ó /           Aumentar o disminuir el volumen (presione 'm' para elegir entre master/pcm).\n"
+	" z ó x           Ajustar el retardo de la subtítulación en más o menos 0.1 segundos.\n"
+	" r ó t           Ajustar posición de la subtítulación (mira también -vf expand).\n"
+	"\n"
+	" *** REVISE EL MANUAL PARA OTROS DETALLES, OPCIONES (AVANZADAS) Y TECLAS DE CONTROL ***\n"
+	"\n";
 
 // ========================= MPlayer messages ===========================
 
@@ -1114,7 +1113,6 @@ static const char help_text[]=
 #define MSGTR_VO_PGM_HasBeenReplaced "El controlador de salida pgm ha sido reemplazado por -vo pnm:pgmyuv.\n"
 #define MSGTR_VO_MD5_HasBeenReplaced "El controlador de salida md5 ha sido reemplazado por -vo md5sum.\n"
 
-
 // ======================= audio output drivers ========================
 
 // audio_out.c
@@ -1243,7 +1241,6 @@ static const char help_text[]=
 // ao_plugin.c
 #define MSGTR_AO_PLUGIN_InvalidPlugin "[AO PLUGIN] Plugin inválido: %s\n"
 
-
 // ======================= audio filters ================================
 
 // af_scaletempo.c
@@ -1267,7 +1264,6 @@ static const char help_text[]=
 
 // format.c
 #define MSGTR_AF_FORMAT_UnknownFormat "formato desconocido "
-
 
 // ========================== INPUT =========================================
 
@@ -1311,7 +1307,6 @@ static const char help_text[]=
 // lirc.c
 #define MSGTR_LIRCopenfailed "Fallo al abrir el soporte para LIRC.\n"
 #define MSGTR_LIRCcfgerr "Fallo al leer archivo de configuración de LIRC %s.\n"
-
 
 // ========================== LIBMPDEMUX ===================================
 
@@ -1484,7 +1479,6 @@ static const char help_text[]=
 #define MSGTR_DVDsubtitleLanguage "subtítulo ( sid ): %d idioma: %s\n"
 #define MSGTR_DVDnumSubtitles "Número de subtítulos en el disco: %d\n"
 
-
 // dec_video.c & dec_audio.c
 #define MSGTR_CantOpenCodec "No se pudo abrir codec.\n"
 #define MSGTR_CantCloseCodec "No se pudo cerrar codec.\n"
@@ -1502,7 +1496,6 @@ static const char help_text[]=
 #define MSGTR_ShMemAllocFail "No se puede alocar memoria compartida.\n"
 #define MSGTR_CantAllocAudioBuf "No se puede alocar buffer de la salida de audio.\n"
 #define MSGTR_UnknownAudio "Formato de audio desconocido/faltante, no se reproducirá sonido.\n"
-
 
 #define MSGTR_UsingExternalPP "[PP] Usando filtro de postprocesado externo, max q = %d.\n"
 #define MSGTR_UsingCodecPP "[PP] Usando postprocesado del codec, max q = %d.\n"
@@ -1530,7 +1523,6 @@ static const char help_text[]=
 
 // vd_dshow.c, vd_dmo.c
 #define MSGTR_DownloadCodecPackage "Necesita actualizar/instalar el paquete binario con codecs.\n Dirijase a http://www.mplayerhq.hu/dload.html\n"
-
 
 // url.c
 #define MSGTR_MPDEMUX_URL_StringAlreadyEscaped "Al parecer el string ya ha sido escapado en url_scape %c%c1%c2\n"
@@ -1702,7 +1694,6 @@ static const char help_text[]=
 #define MSGTR_MPDEMUX_NW_ErrServerReturned "El servidor retornó %d: %s\n"
 #define MSGTR_MPDEMUX_NW_CacheSizeSetTo "Se seteo el tamaño del caché a %d KBytes.\n"
 
-
 // ========================== LIBMENU ===================================
 
 // common
@@ -1814,7 +1805,6 @@ static const char help_text[]=
 #define MSGTR_MPCODECS_FullDRNotPossible "DR completo imposible, tratando con SLICES en su lugar!\n"
 #define MSGTR_MPCODECS_WarnNextFilterDoesntSupportSlices  "Advertencia! El próximo filtro no soporta SLICES, preparate para el sig11 (SEGV)...\n"
 #define MSGTR_MPCODECS_FunWhydowegetNULL "Por qué obtenemos NULL??\n"
-
 
 // libmpcodecs/vf_test.c, vf_yuy2.c, vf_yvu9.c
 #define MSGTR_MPCODECS_WarnNextFilterDoesntSupport "%s No soportado por el próximo filtro/vo :(\n"
@@ -1940,14 +1930,12 @@ static const char help_text[]=
 #define MSGTR_TVI_DS_NoAudioCaptureDevice "tvi_dshow: No se pudo encontrar un dispositivo de captura de audio\n"
 #define MSGTR_TVI_DS_GetActualMediatypeFailed "tvi_dshow: Imposible obtener el tipo de medios actual (Error:0x%x). Se asumirá que es igual al requerido.\n"
 
-
 // ================================== LIBASS ====================================
 
 // ass_bitmap.c
 #define MSGTR_LIBASS_FT_Glyph_To_BitmapError "[ass] FT_Glyph_To_Bitmap error %d \n"
 #define MSGTR_LIBASS_UnsupportedPixelMode "[ass] Modo píxel no soportado: %d\n"
 #define MSGTR_LIBASS_GlyphBBoxTooLarge "[ass] Glyph bounding box muy grande: %dx%dpx\n"
-
 
 // ass.c
 #define MSGTR_LIBASS_NoStyleNamedXFoundUsingY "[ass] [%p] Aviso: no se ha encontrado ningun estilo llamado '%s', usando '%s'\n"

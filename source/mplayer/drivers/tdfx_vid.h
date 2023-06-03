@@ -55,66 +55,70 @@
 #define TDFX_VID_YUV_STRIDE        (1024)
 #define TDFX_VID_YUV_PLANE_SIZE    (0x0100000)
 
+typedef struct tdfx_vid_blit_s
+{
+	uint32_t src;
+	uint32_t src_stride;
+	uint16_t src_x, src_y;
+	uint16_t src_w, src_h;
+	uint32_t src_format;
 
-typedef struct tdfx_vid_blit_s {
-  uint32_t src;
-  uint32_t src_stride;
-  uint16_t src_x,src_y;
-  uint16_t src_w,src_h;
-  uint32_t src_format;
+	uint32_t dst;
+	uint32_t dst_stride;
+	uint16_t dst_x, dst_y;
+	uint16_t dst_w, dst_h;
+	uint32_t dst_format;
 
-  uint32_t  dst;
-  uint32_t dst_stride;
-  uint16_t dst_x,dst_y;
-  uint16_t dst_w,dst_h;
-  uint32_t dst_format;
+	uint32_t src_colorkey[2];
+	uint32_t dst_colorkey[2];
 
-  uint32_t src_colorkey[2];
-  uint32_t dst_colorkey[2];
-
-  uint8_t colorkey;
-  uint8_t rop[4];
+	uint8_t colorkey;
+	uint8_t rop[4];
 } tdfx_vid_blit_t;
 
-typedef struct tdfx_vid_config_s {
-  uint16_t version;
-  uint16_t card_type;
-  uint32_t ram_size;
-  uint16_t screen_width;
-  uint16_t screen_height;
-  uint16_t screen_stride;
-  uint32_t screen_format;
-  uint32_t screen_start;
+typedef struct tdfx_vid_config_s
+{
+	uint16_t version;
+	uint16_t card_type;
+	uint32_t ram_size;
+	uint16_t screen_width;
+	uint16_t screen_height;
+	uint16_t screen_stride;
+	uint32_t screen_format;
+	uint32_t screen_start;
 } tdfx_vid_config_t;
 
-typedef struct tdfx_vid_agp_move_s {
-  uint16_t move2;
-  uint16_t width,height;
+typedef struct tdfx_vid_agp_move_s
+{
+	uint16_t move2;
+	uint16_t width, height;
 
-  uint32_t src;
-  uint32_t src_stride;
+	uint32_t src;
+	uint32_t src_stride;
 
-  uint32_t dst;
-  uint32_t dst_stride;
+	uint32_t dst;
+	uint32_t dst_stride;
 } tdfx_vid_agp_move_t;
 
-typedef struct tdfx_vid_yuv_s {
-  uint32_t base;
-  uint16_t stride;
+typedef struct tdfx_vid_yuv_s
+{
+	uint32_t base;
+	uint16_t stride;
 } tdfx_vid_yuv_t;
 
-typedef struct tdfx_vid_overlay_s {
-  uint32_t src[2]; // left and right buffer (2 buffer may be NULL)
-  uint16_t src_width,src_height;
-  uint16_t src_stride;
-  uint32_t format;
+typedef struct tdfx_vid_overlay_s
+{
+	uint32_t src[2]; // left and right buffer (2 buffer may be NULL)
+	uint16_t src_width, src_height;
+	uint16_t src_stride;
+	uint32_t format;
 
-  uint16_t dst_width,dst_height;
-  int16_t dst_x,dst_y;
+	uint16_t dst_width, dst_height;
+	int16_t dst_x, dst_y;
 
-  uint8_t use_colorkey;
-  uint32_t colorkey[2]; // min/max
-  uint8_t invert_colorkey;
+	uint8_t use_colorkey;
+	uint32_t colorkey[2]; // min/max
+	uint8_t invert_colorkey;
 } tdfx_vid_overlay_t;
 
 #define TDFX_VID_GET_CONFIG _IOR('J', 1, tdfx_vid_config_t)

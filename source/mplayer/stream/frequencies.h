@@ -108,26 +108,28 @@
 
 /* --------------------------------------------------------------------- */
 
-struct CHANLIST {
-    char  name[8];
-    int   freq;
+struct CHANLIST
+{
+	char name[8];
+	int freq;
 };
 
-struct CHANLISTS {
-    const char             *name;
-    const struct CHANLIST  *list;
-    int                    count;
+struct CHANLISTS
+{
+	const char* name;
+	const struct CHANLIST* list;
+	int count;
 };
 
 #define CHAN_COUNT(x) (sizeof(x)/sizeof(struct CHANLIST))
 
 /* --------------------------------------------------------------------- */
 
-extern const struct CHANLISTS   chanlists[];
+extern const struct CHANLISTS chanlists[];
 //extern struct STRTAB chanlist_names[];
 
-extern int                chantab;
-extern const struct CHANLIST *chanlist;
-extern int                chancount;
+extern int chantab;
+extern const struct CHANLIST* chanlist;
+extern int chancount;
 
 #endif /* MPLAYER_FREQUENCIES_H */

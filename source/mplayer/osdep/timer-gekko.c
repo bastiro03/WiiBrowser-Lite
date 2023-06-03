@@ -19,7 +19,6 @@
    Boston, MA 02110-1301 USA.
 */
 
-
 #include <unistd.h>
 
 #include <ogc/lwp_watchdog.h>
@@ -27,7 +26,6 @@
 #include "timer.h"
 
 const char timer_name[] = "gekko";
-
 
 /*
 int usec_sleep(unsigned int usec_delay) {
@@ -44,7 +42,7 @@ u64 GetTimerMS(void) {
 }
 */
 
-static u64 RelativeTime=0;
+static u64 RelativeTime = 0;
 /*
 double GetRelativeTime(void){
   u64 t,r;
@@ -55,14 +53,16 @@ double GetRelativeTime(void){
   return (double)(r * (double)0.000001);
 }
 */
-u64 GetRelativeTime(void){
-  u64 t,r;
-  t=GetTimer();
+u64 GetRelativeTime(void)
+{
+	u64 t, r;
+	t = GetTimer();
 
-  r=t-RelativeTime;
-  RelativeTime=t;
-  return r;
+	r = t - RelativeTime;
+	RelativeTime = t;
+	return r;
 }
+
 /*
 double GetRelativeTime(void) {
 	u64 t;
@@ -77,6 +77,7 @@ double GetRelativeTime(void) {
 }
 */
 
-void InitTimer(void) {
+void InitTimer(void)
+{
 	GetRelativeTime();
 }

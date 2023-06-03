@@ -33,37 +33,40 @@
 
 #include "priority.h"
 
-char *proc_priority = NULL;
+char* proc_priority = NULL;
 
 void set_priority(void)
 {
-    struct {
-        char* name;
-        int prio;
-    } priority_presets_defs[] = {
-        { "realtime", REALTIME_PRIORITY_CLASS},
-        { "high", HIGH_PRIORITY_CLASS},
+	struct
+	{
+		char* name;
+		int prio;
+	} priority_presets_defs[] = {
+			{"realtime", REALTIME_PRIORITY_CLASS},
+			{"high", HIGH_PRIORITY_CLASS},
 #ifdef ABOVE_NORMAL_PRIORITY_CLASS
-        { "abovenormal", ABOVE_NORMAL_PRIORITY_CLASS},
+			{"abovenormal", ABOVE_NORMAL_PRIORITY_CLASS},
 #endif
-        { "normal", NORMAL_PRIORITY_CLASS},
+			{"normal", NORMAL_PRIORITY_CLASS},
 #ifdef BELOW_NORMAL_PRIORITY_CLASS
-        { "belownormal", BELOW_NORMAL_PRIORITY_CLASS},
+			{"belownormal", BELOW_NORMAL_PRIORITY_CLASS},
 #endif
-        { "idle", IDLE_PRIORITY_CLASS},
-        { NULL, NORMAL_PRIORITY_CLASS} /* default */
-    };
+			{"idle", IDLE_PRIORITY_CLASS},
+			{NULL, NORMAL_PRIORITY_CLASS} /* default */
+		};
 
-    if (proc_priority) {
-        int i;
+	if (proc_priority)
+	{
+		int i;
 
-        for (i = 0; priority_presets_defs[i].name; i++) {
-            if (strcasecmp(priority_presets_defs[i].name, proc_priority) == 0)
-                break;
-        }
-        mp_msg(MSGT_CPLAYER, MSGL_STATUS, MSGTR_SettingProcessPriority,
-               priority_presets_defs[i].name);
+		for (i = 0; priority_presets_defs[i].name; i++)
+		{
+			if (strcasecmp(priority_presets_defs[i].name, proc_priority) == 0)
+				break;
+		}
+		mp_msg(MSGT_CPLAYER, MSGL_STATUS, MSGTR_SettingProcessPriority,
+		       priority_presets_defs[i].name);
 
-        SetPriorityClass(GetCurrentProcess(), priority_presets_defs[i].prio);
-    }
+		SetPriorityClass(GetCurrentProcess(), priority_presets_defs[i].prio);
+	}
 }

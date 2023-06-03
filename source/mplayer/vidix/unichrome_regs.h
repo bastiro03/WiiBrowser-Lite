@@ -202,7 +202,6 @@
 #define HQV_DST_STRIDE          0x1F4
 #define HQV_SRC_STRIDE          0x1F8
 
-
 /*
  *  Video command definition
  */
@@ -355,7 +354,9 @@
 /* V_COMPOSE_MODE               0x298 */
 #define SELECT_VIDEO_IF_COLOR_KEY               0x00000001  /* select video if (color key),otherwise select graphics */
 #define SELECT_VIDEO3_IF_COLOR_KEY              0x00000020  /* For 3123C0, select video3 if (color key),otherwise select graphics */
+
 #define SELECT_VIDEO_IF_CHROMA_KEY              0x00000002  /* 0x0000000a  //select video if (chroma key ),otherwise select graphics */
+
 #define ALWAYS_SELECT_VIDEO                     0x00000000  /* always select video,Chroma key and Color key disable */
 #define COMPOSE_V1_V3           0x00000000  /* V1 on top of V3 */
 #define COMPOSE_V3_V1           0x00100000  /* V3 on top of V1 */
@@ -367,6 +368,7 @@
 #define V_COMMAND_LOAD_VBI      0x10000000  /* Video register always loaded at vbi without waiting source flip */
 #define V3_COMMAND_LOAD         0x08000000  /* CLE_C0 Video3 register always loaded */
 #define V3_COMMAND_LOAD_VBI     0x00000100  /* CLE_C0 Video3 register always loaded at vbi without waiting source flip */
+
 #define SECOND_DISPLAY_COLOR_KEY_ENABLE         0x00010000
 
 /* V3_ZOOM_CONTROL              0x2bc */
@@ -533,15 +535,11 @@
 #define HQV_V_FILTER_DEFAULT    0x00420000
 #define HQV_H_FILTER_DEFAULT    0x00000040
 
-
-
-
 /* HQV_MINI_CONTROL        0x3E8 */
 #define HQV_H_MINIFY_ENABLE 0x00000800
 #define HQV_V_MINIFY_ENABLE 0x08000000
 #define HQV_VDEBLOCK_FILTER 0x80000000
 #define HQV_HDEBLOCK_FILTER 0x00008000
-
 
 #define CHROMA_KEY_LOW          0x00FFFFFF
 #define CHROMA_KEY_HIGH         0x00FFFFFF
@@ -584,7 +582,7 @@
 #define			MPG_CONTROL_STRUCT_TOP		0x01
 #define			MPG_CONTROL_STRUCT_BOTTOM	0x02
 #define			MPG_CONTROL_STRUCT_FRAME	0x03
-		/* Use TOP if interlaced */
+/* Use TOP if interlaced */
 #define		MPG_CONTROL_TYPE	0x3C
 #define			MPG_CONTROL_TYPE_I	(0x01 << 2)
 #define			MPG_CONTROL_TYPE_B	(0x02 << 2)
@@ -629,7 +627,5 @@
 #define		MPG_SLICE_RESET			0x0400000
 #define MPG_SLICE_LENGTH	0x9C
 #define	MPG_SLICE_DATA		0xA0
-
-
 
 #endif /* MPLAYER_UNICHROME_REGS_H */

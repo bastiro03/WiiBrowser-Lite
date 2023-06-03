@@ -1,35 +1,33 @@
 #include "html_lt.h"
 #include "el_comment.h"
 
-
-litehtml::el_comment::el_comment( litehtml::document* doc ) : element(doc)
+litehtml::el_comment::el_comment(document* doc) : element(doc)
 {
 	m_skip = true;
 }
+
 litehtml::el_comment::~el_comment()
 {
-
 }
 
-void litehtml::el_comment::get_text( std::wstring& text )
+void litehtml::el_comment::get_text(std::wstring& text)
 {
 	text += m_text;
 }
 
-void litehtml::el_comment::set_data( const wchar_t* data )
+void litehtml::el_comment::set_data(const wchar_t* data)
 {
-	if(data)
+	if (data)
 	{
 		m_text = data;
 	}
 }
 
-void litehtml::el_comment::apply_stylesheet( const litehtml::css& stylesheet )
+void litehtml::el_comment::apply_stylesheet(const css& stylesheet)
 {
-
 }
 
-void litehtml::el_comment::parse_styles( bool is_reparse )
+void litehtml::el_comment::parse_styles(bool is_reparse)
 {
 	m_display = display_none;
 }

@@ -45,66 +45,75 @@
 
 #define SUBFRAME_COUNT_16k   2
 
-typedef enum {
-    MODE_16k,
-    MODE_8k5,
-    MODE_6k5,
-    MODE_5k0,
-    MODE_COUNT
+typedef enum
+{
+	MODE_16k,
+	MODE_8k5,
+	MODE_6k5,
+	MODE_5k0,
+	MODE_COUNT
 } SiprMode;
 
-typedef struct SiprParameters {
-    int ma_pred_switch;        ///< switched moving average predictor
-    int vq_indexes[5];
-    int pitch_delay[5];        ///< pitch delay
-    int gp_index[5];           ///< adaptive-codebook gain indexes
-    int16_t fc_indexes[5][10]; ///< fixed-codebook indexes
-    int gc_index[5];           ///< fixed-codebook gain indexes
+typedef struct SiprParameters
+{
+	int ma_pred_switch; ///< switched moving average predictor
+	int vq_indexes[5];
+	int pitch_delay[5]; ///< pitch delay
+	int gp_index[5]; ///< adaptive-codebook gain indexes
+	int16_t fc_indexes[5][10]; ///< fixed-codebook indexes
+	int gc_index[5]; ///< fixed-codebook gain indexes
 } SiprParameters;
 
-typedef struct SiprContext {
-    AVCodecContext *avctx;
-    AVFrame frame;
+typedef struct SiprContext
+{
+	AVCodecContext* avctx;
+	AVFrame frame;
 
-    SiprMode mode;
+	SiprMode mode;
 
-    float past_pitch_gain;
-    float lsf_history[LP_FILTER_ORDER_16k];
+	float past_pitch_gain;
+	float lsf_history[LP_FILTER_ORDER_16k];
 
-    float excitation[L_INTERPOL + PITCH_MAX + 2 * L_SUBFR_16k];
+	float excitation[L_INTERPOL + PITCH_MAX + 2 * L_SUBFR_16k];
 
-    DECLARE_ALIGNED(16, float, synth_buf)[LP_FILTER_ORDER + 5*SUBFR_SIZE + 6];
+	DECLARE_ALIGNED (
+	16
+	,
+	float
+	,
+	synth_buf
+	)[LP_FILTER_ORDER + 5 * SUBFR_SIZE + 6];
 
-    float lsp_history[LP_FILTER_ORDER];
-    float gain_mem;
-    float energy_history[4];
-    float highpass_filt_mem[2];
-    float postfilter_mem[PITCH_DELAY_MAX + LP_FILTER_ORDER];
+	float lsp_history[LP_FILTER_ORDER];
+	float gain_mem;
+	float energy_history[4];
+	float highpass_filt_mem[2];
+	float postfilter_mem[PITCH_DELAY_MAX + LP_FILTER_ORDER];
 
-    /* 5k0 */
-    float tilt_mem;
-    float postfilter_agc;
-    float postfilter_mem5k0[PITCH_DELAY_MAX + LP_FILTER_ORDER];
-    float postfilter_syn5k0[LP_FILTER_ORDER + SUBFR_SIZE*5];
+	/* 5k0 */
+	float tilt_mem;
+	float postfilter_agc;
+	float postfilter_mem5k0[PITCH_DELAY_MAX + LP_FILTER_ORDER];
+	float postfilter_syn5k0[LP_FILTER_ORDER + SUBFR_SIZE * 5];
 
-    /* 16k */
-    int pitch_lag_prev;
-    float iir_mem[LP_FILTER_ORDER_16k+1];
-    float filt_buf[2][LP_FILTER_ORDER_16k+1];
-    float *filt_mem[2];
-    float mem_preemph[LP_FILTER_ORDER_16k];
-    float synth[LP_FILTER_ORDER_16k];
-    double lsp_history_16k[16];
+	/* 16k */
+	int pitch_lag_prev;
+	float iir_mem[LP_FILTER_ORDER_16k + 1];
+	float filt_buf[2][LP_FILTER_ORDER_16k + 1];
+	float* filt_mem[2];
+	float mem_preemph[LP_FILTER_ORDER_16k];
+	float synth[LP_FILTER_ORDER_16k];
+	double lsp_history_16k[16];
 
-    void (*decode_frame)(struct SiprContext *ctx, SiprParameters *params,
-                         float *out_data);
+	void (*decode_frame)(struct SiprContext* ctx, SiprParameters* params,
+	                     float* out_data);
 } SiprContext;
 
 extern const float ff_pow_0_5[16];
 
-void ff_sipr_init_16k(SiprContext *ctx);
+void ff_sipr_init_16k(SiprContext* ctx);
 
-void ff_sipr_decode_frame_16k(SiprContext *ctx, SiprParameters *params,
-                              float *out_data);
+void ff_sipr_decode_frame_16k(SiprContext* ctx, SiprParameters* params,
+                              float* out_data);
 
 #endif /* AVCODEC_SIPR_H */

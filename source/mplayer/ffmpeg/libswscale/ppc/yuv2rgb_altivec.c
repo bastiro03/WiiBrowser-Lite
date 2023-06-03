@@ -103,7 +103,7 @@
 #undef INC_SCALING
 
 typedef unsigned char ubyte;
-typedef signed char   sbyte;
+typedef signed char sbyte;
 
 /* RGB interleaver, 16 planar pels 8-bit samples per channel in
  * homogeneous vector registers x0,x1,x2 are interleaved with the
@@ -141,15 +141,24 @@ typedef signed char   sbyte;
  *           a67b 89cA BdCD eEFf
  *
  */
-static const vector unsigned char
-    perm_rgb_0 = { 0x00, 0x01, 0x10, 0x02, 0x03, 0x11, 0x04, 0x05,
-                   0x12, 0x06, 0x07, 0x13, 0x08, 0x09, 0x14, 0x0a },
-    perm_rgb_1 = { 0x0b, 0x15, 0x0c, 0x0d, 0x16, 0x0e, 0x0f, 0x17,
-                   0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f },
-    perm_rgb_2 = { 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
-                   0x00, 0x01, 0x18, 0x02, 0x03, 0x19, 0x04, 0x05 },
-    perm_rgb_3 = { 0x1a, 0x06, 0x07, 0x1b, 0x08, 0x09, 0x1c, 0x0a,
-                   0x0b, 0x1d, 0x0c, 0x0d, 0x1e, 0x0e, 0x0f, 0x1f };
+static const vector
+unsigned char
+	perm_rgb_0 = {
+		0x00, 0x01, 0x10, 0x02, 0x03, 0x11, 0x04, 0x05,
+		0x12, 0x06, 0x07, 0x13, 0x08, 0x09, 0x14, 0x0a
+	},
+	perm_rgb_1 = {
+		0x0b, 0x15, 0x0c, 0x0d, 0x16, 0x0e, 0x0f, 0x17,
+		0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f
+	},
+	perm_rgb_2 = {
+		0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+		0x00, 0x01, 0x18, 0x02, 0x03, 0x19, 0x04, 0x05
+	},
+	perm_rgb_3 = {
+		0x1a, 0x06, 0x07, 0x1b, 0x08, 0x09, 0x1c, 0x0a,
+		0x0b, 0x1d, 0x0c, 0x0d, 0x1e, 0x0e, 0x0f, 0x1f
+	};
 
 #define vec_merge3(x2, x1, x0, y0, y1, y2)     \
     do {                                       \
@@ -247,30 +256,45 @@ static const vector unsigned char
 
 //#define out_pixels(a, b, c, ptr) vec_mstrgb32(__typeof__(a), ((__typeof__(a)) { 255 }), a, a, a, ptr)
 
-static inline void cvtyuvtoRGB(SwsContext *c, vector signed short Y,
+static inline void cvtyuvtoRGB(SwsContext* c, vector signed short Y,
                                vector signed short U, vector signed short V,
-                               vector signed short *R, vector signed short *G,
-                               vector signed short *B)
+                               vector signed short* R, vector signed short* G,
+                               vector signed short* B)
 {
-    vector signed short vx, ux, uvx;
+	vector
+	signed short vx, ux, uvx;
 
-    Y = vec_mradds(Y, c->CY, c->OY);
-    U = vec_sub(U, (vector signed short)
-                       vec_splat((vector signed short) { 128 }, 0));
-    V = vec_sub(V, (vector signed short)
-                       vec_splat((vector signed short) { 128 }, 0));
+	Y = vec_mradds(Y, c->CY, c->OY);
+	U = vec_sub(U, (vector signed short)
+	vec_splat((vector signed short)
+	{
+		128
+	}
+	,
+	0
+	)
+	)
+	V = vec_sub(V, (vector signed short)
+	vec_splat((vector signed short)
+	{
+		128
+	}
+	,
+	0
+	)
+	)
 
-    // ux  = (CBU * (u << c->CSHIFT) + 0x4000) >> 15;
-    ux = vec_sl(U, c->CSHIFT);
-    *B = vec_mradds(ux, c->CBU, Y);
+	// ux  = (CBU * (u << c->CSHIFT) + 0x4000) >> 15;
+	ux = vec_sl(U, c->CSHIFT);
+	*B = vec_mradds(ux, c->CBU, Y);
 
-    // vx  = (CRV * (v << c->CSHIFT) + 0x4000) >> 15;
-    vx = vec_sl(V, c->CSHIFT);
-    *R = vec_mradds(vx, c->CRV, Y);
+	// vx  = (CRV * (v << c->CSHIFT) + 0x4000) >> 15;
+	vx = vec_sl(V, c->CSHIFT);
+	*R = vec_mradds(vx, c->CRV, Y);
 
-    // uvx = ((CGU * u) + (CGV * v)) >> 15;
-    uvx = vec_mradds(U, c->CGU, Y);
-    *G  = vec_mradds(V, c->CGV, uvx);
+	// uvx = ((CGU * u) + (CGV * v)) >> 15;
+	uvx = vec_mradds(U, c->CGU, Y);
+	*G = vec_mradds(V, c->CGV, uvx);
 }
 
 /*
@@ -451,83 +475,150 @@ static int altivec_ ## name(SwsContext *c, const unsigned char **in,          \
 #define out_rgb24(a, b, c, ptr) vec_mstrgb24(a, b, c, ptr)
 #define out_bgr24(a, b, c, ptr) vec_mstbgr24(a, b, c, ptr)
 
-DEFCSP420_CVT(yuv2_abgr,  out_abgr)
-DEFCSP420_CVT(yuv2_bgra,  out_bgra)
-DEFCSP420_CVT(yuv2_rgba,  out_rgba)
-DEFCSP420_CVT(yuv2_argb,  out_argb)
+DEFCSP420_CVT(yuv2_abgr, out_abgr)
+DEFCSP420_CVT(yuv2_bgra, out_bgra)
+DEFCSP420_CVT(yuv2_rgba, out_rgba)
+DEFCSP420_CVT(yuv2_argb, out_argb)
 DEFCSP420_CVT(yuv2_rgb24, out_rgb24)
 DEFCSP420_CVT(yuv2_bgr24, out_bgr24)
 
 // uyvy|uyvy|uyvy|uyvy
 // 0123 4567 89ab cdef
-static const vector unsigned char
-    demux_u = { 0x10, 0x00, 0x10, 0x00,
-                0x10, 0x04, 0x10, 0x04,
-                0x10, 0x08, 0x10, 0x08,
-                0x10, 0x0c, 0x10, 0x0c },
-    demux_v = { 0x10, 0x02, 0x10, 0x02,
-                0x10, 0x06, 0x10, 0x06,
-                0x10, 0x0A, 0x10, 0x0A,
-                0x10, 0x0E, 0x10, 0x0E },
-    demux_y = { 0x10, 0x01, 0x10, 0x03,
-                0x10, 0x05, 0x10, 0x07,
-                0x10, 0x09, 0x10, 0x0B,
-                0x10, 0x0D, 0x10, 0x0F };
+static const vector
+unsigned char
+	demux_u = {
+		0x10, 0x00, 0x10, 0x00,
+		0x10, 0x04, 0x10, 0x04,
+		0x10, 0x08, 0x10, 0x08,
+		0x10, 0x0c, 0x10, 0x0c
+	},
+	demux_v = {
+		0x10, 0x02, 0x10, 0x02,
+		0x10, 0x06, 0x10, 0x06,
+		0x10, 0x0A, 0x10, 0x0A,
+		0x10, 0x0E, 0x10, 0x0E
+	},
+	demux_y = {
+		0x10, 0x01, 0x10, 0x03,
+		0x10, 0x05, 0x10, 0x07,
+		0x10, 0x09, 0x10, 0x0B,
+		0x10, 0x0D, 0x10, 0x0F
+	};
 
 /*
  * this is so I can play live CCIR raw video
  */
-static int altivec_uyvy_rgb32(SwsContext *c, const unsigned char **in,
-                              int *instrides, int srcSliceY, int srcSliceH,
-                              unsigned char **oplanes, int *outstrides)
+static int altivec_uyvy_rgb32(SwsContext* c, const unsigned char** in,
+                              int* instrides, int srcSliceY, int srcSliceH,
+                              unsigned char** oplanes, int* outstrides)
 {
-    int w = c->srcW;
-    int h = srcSliceH;
-    int i, j;
-    vector unsigned char uyvy;
-    vector signed short Y, U, V;
-    vector signed short R0, G0, B0, R1, G1, B1;
-    vector unsigned char R, G, B;
-    vector unsigned char *out;
-    const ubyte *img;
+	int w = c->srcW;
+	int h = srcSliceH;
+	int i, j;
+	vector
+	unsigned char uyvy;
+	vector
+	signed short Y, U, V;
+	vector
+	signed short R0, G0, B0, R1, G1, B1;
+	vector
+	unsigned char R, G, B;
+	vector
+	unsigned char* out;
+	const ubyte* img;
 
-    img = in[0];
-    out = (vector unsigned char *) (oplanes[0] + srcSliceY * outstrides[0]);
+	img = in[0];
+	out = (vector
+	unsigned char*
+	)
+	(oplanes[0] + srcSliceY * outstrides[0]);
 
-    for (i = 0; i < h; i++)
-        for (j = 0; j < w / 16; j++) {
-            uyvy = vec_ld(0, img);
+	for (i = 0; i < h; i++)
+		for (j = 0; j < w / 16; j++)
+		{
+			uyvy = vec_ld(0, img);
 
-            U = (vector signed short)
-                    vec_perm(uyvy, (vector unsigned char) { 0 }, demux_u);
-            V = (vector signed short)
-                    vec_perm(uyvy, (vector unsigned char) { 0 }, demux_v);
-            Y = (vector signed short)
-                    vec_perm(uyvy, (vector unsigned char) { 0 }, demux_y);
+			U = (vector
+ signed short
+			)
+			vec_perm(uyvy, (vector unsigned char)
+			{
+				0
+			}
+			,
+			demux_u
+			)
+			V = (vector
+ signed short
+			)
+			vec_perm(uyvy, (vector unsigned char)
+			{
+				0
+			}
+			,
+			demux_v
+			)
+			Y = (vector
+ signed short
+			)
+			vec_perm(uyvy, (vector unsigned char)
+			{
+				0
+			}
+			,
+			demux_y
+			)
 
-            cvtyuvtoRGB(c, Y, U, V, &R0, &G0, &B0);
+			cvtyuvtoRGB(c, Y, U, V, &R0, &G0, &B0);
 
-            uyvy = vec_ld(16, img);
+			uyvy = vec_ld(16, img);
 
-            U = (vector signed short)
-                    vec_perm(uyvy, (vector unsigned char) { 0 }, demux_u);
-            V = (vector signed short)
-                    vec_perm(uyvy, (vector unsigned char) { 0 }, demux_v);
-            Y = (vector signed short)
-                    vec_perm(uyvy, (vector unsigned char) { 0 }, demux_y);
+			U = (vector
+ signed short
+			)
+			vec_perm(uyvy, (vector unsigned char)
+			{
+				0
+			}
+			,
+			demux_u
+			)
+			V = (vector
+ signed short
+			)
+			vec_perm(uyvy, (vector unsigned char)
+			{
+				0
+			}
+			,
+			demux_v
+			)
+			Y = (vector
+ signed short
+			)
+			vec_perm(uyvy, (vector unsigned char)
+			{
+				0
+			}
+			,
+			demux_y
+			)
 
-            cvtyuvtoRGB(c, Y, U, V, &R1, &G1, &B1);
+			cvtyuvtoRGB(c, Y, U, V, &R1, &G1, &B1);
 
-            R = vec_packclp(R0, R1);
-            G = vec_packclp(G0, G1);
-            B = vec_packclp(B0, B1);
+			R = vec_packclp(R0, R1)
+			;
+			G = vec_packclp(G0, G1)
+			;
+			B = vec_packclp(B0, B1)
+			;
 
-            // vec_mstbgr24 (R,G,B, out);
-            out_rgba(R, G, B, out);
+			// vec_mstbgr24 (R,G,B, out);
+			out_rgba(R, G, B, out);
 
-            img += 32;
-        }
-    return srcSliceH;
+			img += 32;
+		}
+	return srcSliceH;
 }
 
 /* Ok currently the acceleration routine only supports
@@ -536,298 +627,360 @@ static int altivec_uyvy_rgb32(SwsContext *c, const unsigned char **in,
  *
  * So we just fall back to the C codes for this.
  */
-SwsFunc ff_yuv2rgb_init_altivec(SwsContext *c)
+SwsFunc ff_yuv2rgb_init_altivec(SwsContext* c)
 {
-    if (!(av_get_cpu_flags() & AV_CPU_FLAG_ALTIVEC))
-        return NULL;
+	if (!(av_get_cpu_flags() & AV_CPU_FLAG_ALTIVEC))
+		return NULL;
 
-    /*
-     * and this seems not to matter too much I tried a bunch of
-     * videos with abnormal widths and MPlayer crashes elsewhere.
-     * mplayer -vo x11 -rawvideo on:w=350:h=240 raw-350x240.eyuv
-     * boom with X11 bad match.
-     *
-     */
-    if ((c->srcW & 0xf) != 0)
-        return NULL;
+	/*
+	 * and this seems not to matter too much I tried a bunch of
+	 * videos with abnormal widths and MPlayer crashes elsewhere.
+	 * mplayer -vo x11 -rawvideo on:w=350:h=240 raw-350x240.eyuv
+	 * boom with X11 bad match.
+	 *
+	 */
+	if ((c->srcW & 0xf) != 0)
+		return NULL;
 
-    switch (c->srcFormat) {
-    case PIX_FMT_YUV410P:
-    case PIX_FMT_YUV420P:
-    /*case IMGFMT_CLPL:        ??? */
-    case PIX_FMT_GRAY8:
-    case PIX_FMT_NV12:
-    case PIX_FMT_NV21:
-        if ((c->srcH & 0x1) != 0)
-            return NULL;
+	switch (c->srcFormat)
+	{
+	case PIX_FMT_YUV410P:
+	case PIX_FMT_YUV420P:
+	/*case IMGFMT_CLPL:        ??? */
+	case PIX_FMT_GRAY8:
+	case PIX_FMT_NV12:
+	case PIX_FMT_NV21:
+		if ((c->srcH & 0x1) != 0)
+			return NULL;
 
-        switch (c->dstFormat) {
-        case PIX_FMT_RGB24:
-            av_log(c, AV_LOG_WARNING, "ALTIVEC: Color Space RGB24\n");
-            return altivec_yuv2_rgb24;
-        case PIX_FMT_BGR24:
-            av_log(c, AV_LOG_WARNING, "ALTIVEC: Color Space BGR24\n");
-            return altivec_yuv2_bgr24;
-        case PIX_FMT_ARGB:
-            av_log(c, AV_LOG_WARNING, "ALTIVEC: Color Space ARGB\n");
-            return altivec_yuv2_argb;
-        case PIX_FMT_ABGR:
-            av_log(c, AV_LOG_WARNING, "ALTIVEC: Color Space ABGR\n");
-            return altivec_yuv2_abgr;
-        case PIX_FMT_RGBA:
-            av_log(c, AV_LOG_WARNING, "ALTIVEC: Color Space RGBA\n");
-            return altivec_yuv2_rgba;
-        case PIX_FMT_BGRA:
-            av_log(c, AV_LOG_WARNING, "ALTIVEC: Color Space BGRA\n");
-            return altivec_yuv2_bgra;
-        default: return NULL;
-        }
-        break;
+		switch (c->dstFormat)
+		{
+		case PIX_FMT_RGB24:
+			av_log(c, AV_LOG_WARNING, "ALTIVEC: Color Space RGB24\n");
+			return altivec_yuv2_rgb24;
+		case PIX_FMT_BGR24:
+			av_log(c, AV_LOG_WARNING, "ALTIVEC: Color Space BGR24\n");
+			return altivec_yuv2_bgr24;
+		case PIX_FMT_ARGB:
+			av_log(c, AV_LOG_WARNING, "ALTIVEC: Color Space ARGB\n");
+			return altivec_yuv2_argb;
+		case PIX_FMT_ABGR:
+			av_log(c, AV_LOG_WARNING, "ALTIVEC: Color Space ABGR\n");
+			return altivec_yuv2_abgr;
+		case PIX_FMT_RGBA:
+			av_log(c, AV_LOG_WARNING, "ALTIVEC: Color Space RGBA\n");
+			return altivec_yuv2_rgba;
+		case PIX_FMT_BGRA:
+			av_log(c, AV_LOG_WARNING, "ALTIVEC: Color Space BGRA\n");
+			return altivec_yuv2_bgra;
+		default: return NULL;
+		}
+		break;
 
-    case PIX_FMT_UYVY422:
-        switch (c->dstFormat) {
-        case PIX_FMT_BGR32:
-            av_log(c, AV_LOG_WARNING, "ALTIVEC: Color Space UYVY -> RGB32\n");
-            return altivec_uyvy_rgb32;
-        default: return NULL;
-        }
-        break;
-    }
-    return NULL;
+	case PIX_FMT_UYVY422:
+		switch (c->dstFormat)
+		{
+		case PIX_FMT_BGR32:
+			av_log(c, AV_LOG_WARNING, "ALTIVEC: Color Space UYVY -> RGB32\n");
+			return altivec_uyvy_rgb32;
+		default: return NULL;
+		}
+		break;
+	}
+	return NULL;
 }
 
-void ff_yuv2rgb_init_tables_altivec(SwsContext *c, const int inv_table[4],
+void ff_yuv2rgb_init_tables_altivec(SwsContext* c, const int inv_table[4],
                                     int brightness, int contrast,
                                     int saturation)
 {
-    union {
-        DECLARE_ALIGNED(16, signed short, tmp)[8];
-        vector signed short vec;
-    } buf;
+	union
+	{
+		DECLARE_ALIGNED (
+		16
+		,
+		signed short
+		,
+		tmp
+		)[8];
+		vector signed short vec;
+	} buf;
 
-    buf.tmp[0] = ((0xffffLL) * contrast >> 8) >> 9;                               // cy
-    buf.tmp[1] = -256 * brightness;                                               // oy
-    buf.tmp[2] =   (inv_table[0] >> 3) * (contrast >> 16) * (saturation >> 16);   // crv
-    buf.tmp[3] =   (inv_table[1] >> 3) * (contrast >> 16) * (saturation >> 16);   // cbu
-    buf.tmp[4] = -((inv_table[2] >> 1) * (contrast >> 16) * (saturation >> 16));  // cgu
-    buf.tmp[5] = -((inv_table[3] >> 1) * (contrast >> 16) * (saturation >> 16));  // cgv
+	buf.tmp[0] = ((0xffffLL) * contrast >> 8) >> 9; // cy
+	buf.tmp[1] = -256 * brightness; // oy
+	buf.tmp[2] = (inv_table[0] >> 3) * (contrast >> 16) * (saturation >> 16); // crv
+	buf.tmp[3] = (inv_table[1] >> 3) * (contrast >> 16) * (saturation >> 16); // cbu
+	buf.tmp[4] = -((inv_table[2] >> 1) * (contrast >> 16) * (saturation >> 16)); // cgu
+	buf.tmp[5] = -((inv_table[3] >> 1) * (contrast >> 16) * (saturation >> 16)); // cgv
 
-    c->CSHIFT = (vector unsigned short) vec_splat_u16(2);
-    c->CY     = vec_splat((vector signed short) buf.vec, 0);
-    c->OY     = vec_splat((vector signed short) buf.vec, 1);
-    c->CRV    = vec_splat((vector signed short) buf.vec, 2);
-    c->CBU    = vec_splat((vector signed short) buf.vec, 3);
-    c->CGU    = vec_splat((vector signed short) buf.vec, 4);
-    c->CGV    = vec_splat((vector signed short) buf.vec, 5);
-    return;
+	c->CSHIFT = (vector
+ unsigned short
+	)
+	vec_splat_u16(2);
+	c->CY = vec_splat((vector signed short)
+	buf.vec, 0
+	)
+	c->OY = vec_splat((vector signed short)
+	buf.vec, 1
+	)
+	c->CRV = vec_splat((vector signed short)
+	buf.vec, 2
+	)
+	c->CBU = vec_splat((vector signed short)
+	buf.vec, 3
+	)
+	c->CGU = vec_splat((vector signed short)
+	buf.vec, 4
+	)
+	c->CGV = vec_splat((vector signed short)
+	buf.vec, 5
+	)
 }
 
-static av_always_inline void ff_yuv2packedX_altivec(SwsContext *c,
-                                                    const int16_t *lumFilter,
-                                                    const int16_t **lumSrc,
-                                                    int lumFilterSize,
-                                                    const int16_t *chrFilter,
-                                                    const int16_t **chrUSrc,
-                                                    const int16_t **chrVSrc,
-                                                    int chrFilterSize,
-                                                    const int16_t **alpSrc,
-                                                    uint8_t *dest,
-                                                    int dstW, int dstY,
-                                                    enum PixelFormat target)
+static av_always_inline
+
+void ff_yuv2packedX_altivec(SwsContext* c,
+                            const int16_t* lumFilter,
+                            const int16_t** lumSrc,
+                            int lumFilterSize,
+                            const int16_t* chrFilter,
+                            const int16_t** chrUSrc,
+                            const int16_t** chrVSrc,
+                            int chrFilterSize,
+                            const int16_t** alpSrc,
+                            uint8_t* dest,
+                            int dstW, int dstY,
+                            enum PixelFormat target)
 {
-    int i, j;
-    vector signed short X, X0, X1, Y0, U0, V0, Y1, U1, V1, U, V;
-    vector signed short R0, G0, B0, R1, G1, B1;
+	int i, j;
+	vector
+	signed short X, X0, X1, Y0, U0, V0, Y1, U1, V1, U, V;
+	vector
+	signed short R0, G0, B0, R1, G1, B1;
 
-    vector unsigned char R, G, B;
-    vector unsigned char *out, *nout;
+	vector
+	unsigned char R, G, B;
+	vector
+	unsigned char *out, *nout;
 
-    vector signed short RND   = vec_splat_s16(1 << 3);
-    vector unsigned short SCL = vec_splat_u16(4);
-    DECLARE_ALIGNED(16, unsigned int, scratch)[16];
+	vector
+	signed short RND = vec_splat_s16(1 << 3);
+	vector
+	unsigned short SCL = vec_splat_u16(4);
+	DECLARE_ALIGNED(16, unsigned int, scratch)[16];
 
-    vector signed short *YCoeffs, *CCoeffs;
+	vector
+	signed short *YCoeffs, *CCoeffs;
 
-    YCoeffs = c->vYCoeffsBank + dstY * lumFilterSize;
-    CCoeffs = c->vCCoeffsBank + dstY * chrFilterSize;
+	YCoeffs = c->vYCoeffsBank + dstY * lumFilterSize;
+	CCoeffs = c->vCCoeffsBank + dstY * chrFilterSize;
 
-    out = (vector unsigned char *) dest;
+	out = (vector
+	unsigned char*
+	)
+	dest;
 
-    for (i = 0; i < dstW; i += 16) {
-        Y0 = RND;
-        Y1 = RND;
-        /* extract 16 coeffs from lumSrc */
-        for (j = 0; j < lumFilterSize; j++) {
-            X0 = vec_ld(0, &lumSrc[j][i]);
-            X1 = vec_ld(16, &lumSrc[j][i]);
-            Y0 = vec_mradds(X0, YCoeffs[j], Y0);
-            Y1 = vec_mradds(X1, YCoeffs[j], Y1);
-        }
+	for (i = 0; i < dstW; i += 16)
+	{
+		Y0 = RND;
+		Y1 = RND;
+		/* extract 16 coeffs from lumSrc */
+		for (j = 0; j < lumFilterSize; j++)
+		{
+			X0 = vec_ld(0, &lumSrc[j][i]);
+			X1 = vec_ld(16, &lumSrc[j][i]);
+			Y0 = vec_mradds(X0, YCoeffs[j], Y0);
+			Y1 = vec_mradds(X1, YCoeffs[j], Y1);
+		}
 
-        U = RND;
-        V = RND;
-        /* extract 8 coeffs from U,V */
-        for (j = 0; j < chrFilterSize; j++) {
-            X = vec_ld(0, &chrUSrc[j][i / 2]);
-            U = vec_mradds(X, CCoeffs[j], U);
-            X = vec_ld(0, &chrVSrc[j][i / 2]);
-            V = vec_mradds(X, CCoeffs[j], V);
-        }
+		U = RND;
+		V = RND;
+		/* extract 8 coeffs from U,V */
+		for (j = 0; j < chrFilterSize; j++)
+		{
+			X = vec_ld(0, &chrUSrc[j][i / 2]);
+			U = vec_mradds(X, CCoeffs[j], U);
+			X = vec_ld(0, &chrVSrc[j][i / 2]);
+			V = vec_mradds(X, CCoeffs[j], V);
+		}
 
-        /* scale and clip signals */
-        Y0 = vec_sra(Y0, SCL);
-        Y1 = vec_sra(Y1, SCL);
-        U  = vec_sra(U, SCL);
-        V  = vec_sra(V, SCL);
+		/* scale and clip signals */
+		Y0 = vec_sra(Y0, SCL);
+		Y1 = vec_sra(Y1, SCL);
+		U = vec_sra(U, SCL);
+		V = vec_sra(V, SCL);
 
-        Y0 = vec_clip_s16(Y0);
-        Y1 = vec_clip_s16(Y1);
-        U  = vec_clip_s16(U);
-        V  = vec_clip_s16(V);
+		Y0 = vec_clip_s16(Y0)
+		;
+		Y1 = vec_clip_s16(Y1)
+		;
+		U = vec_clip_s16(U)
+		;
+		V = vec_clip_s16(V)
+		;
 
-        /* now we have
-         * Y0 = y0 y1 y2 y3 y4 y5 y6 y7    Y1 = y8 y9 y10 y11 y12 y13 y14 y15
-         * U  = u0 u1 u2 u3 u4 u5 u6 u7    V  = v0 v1 v2 v3 v4 v5 v6 v7
-         *
-         * Y0 = y0 y1 y2 y3 y4 y5 y6 y7    Y1 = y8 y9 y10 y11 y12 y13 y14 y15
-         * U0 = u0 u0 u1 u1 u2 u2 u3 u3    U1 = u4 u4 u5 u5 u6 u6 u7 u7
-         * V0 = v0 v0 v1 v1 v2 v2 v3 v3    V1 = v4 v4 v5 v5 v6 v6 v7 v7
-         */
+		/* now we have
+		 * Y0 = y0 y1 y2 y3 y4 y5 y6 y7    Y1 = y8 y9 y10 y11 y12 y13 y14 y15
+		 * U  = u0 u1 u2 u3 u4 u5 u6 u7    V  = v0 v1 v2 v3 v4 v5 v6 v7
+		 *
+		 * Y0 = y0 y1 y2 y3 y4 y5 y6 y7    Y1 = y8 y9 y10 y11 y12 y13 y14 y15
+		 * U0 = u0 u0 u1 u1 u2 u2 u3 u3    U1 = u4 u4 u5 u5 u6 u6 u7 u7
+		 * V0 = v0 v0 v1 v1 v2 v2 v3 v3    V1 = v4 v4 v5 v5 v6 v6 v7 v7
+		 */
 
-        U0 = vec_mergeh(U, U);
-        V0 = vec_mergeh(V, V);
+		U0 = vec_mergeh(U, U);
+		V0 = vec_mergeh(V, V);
 
-        U1 = vec_mergel(U, U);
-        V1 = vec_mergel(V, V);
+		U1 = vec_mergel(U, U);
+		V1 = vec_mergel(V, V);
 
-        cvtyuvtoRGB(c, Y0, U0, V0, &R0, &G0, &B0);
-        cvtyuvtoRGB(c, Y1, U1, V1, &R1, &G1, &B1);
+		cvtyuvtoRGB(c, Y0, U0, V0, &R0, &G0, &B0);
+		cvtyuvtoRGB(c, Y1, U1, V1, &R1, &G1, &B1);
 
-        R = vec_packclp(R0, R1);
-        G = vec_packclp(G0, G1);
-        B = vec_packclp(B0, B1);
+		R = vec_packclp(R0, R1)
+		;
+		G = vec_packclp(G0, G1)
+		;
+		B = vec_packclp(B0, B1)
+		;
 
-        switch (target) {
-        case PIX_FMT_ABGR:
-            out_abgr(R, G, B, out);
-            break;
-        case PIX_FMT_BGRA:
-            out_bgra(R, G, B, out);
-            break;
-        case PIX_FMT_RGBA:
-            out_rgba(R, G, B, out);
-            break;
-        case PIX_FMT_ARGB:
-            out_argb(R, G, B, out);
-            break;
-        case PIX_FMT_RGB24:
-            out_rgb24(R, G, B, out);
-            break;
-        case PIX_FMT_BGR24:
-            out_bgr24(R, G, B, out);
-            break;
-        default:
-        {
-            /* If this is reached, the caller should have called yuv2packedXinC
-             * instead. */
-            static int printed_error_message;
-            if (!printed_error_message) {
-                av_log(c, AV_LOG_ERROR,
-                       "altivec_yuv2packedX doesn't support %s output\n",
-                       av_get_pix_fmt_name(c->dstFormat));
-                printed_error_message = 1;
-            }
-            return;
-        }
-        }
-    }
+		switch (target)
+		{
+		case PIX_FMT_ABGR:
+			out_abgr(R, G, B, out);
+			break;
+		case PIX_FMT_BGRA:
+			out_bgra(R, G, B, out);
+			break;
+		case PIX_FMT_RGBA:
+			out_rgba(R, G, B, out);
+			break;
+		case PIX_FMT_ARGB:
+			out_argb(R, G, B, out);
+			break;
+		case PIX_FMT_RGB24:
+			out_rgb24(R, G, B, out);
+			break;
+		case PIX_FMT_BGR24:
+			out_bgr24(R, G, B, out);
+			break;
+		default:
+			{
+				/* If this is reached, the caller should have called yuv2packedXinC
+				 * instead. */
+				static int printed_error_message;
+				if (!printed_error_message)
+				{
+					av_log(c, AV_LOG_ERROR,
+					       "altivec_yuv2packedX doesn't support %s output\n",
+					       av_get_pix_fmt_name(c->dstFormat));
+					printed_error_message = 1;
+				}
+				return;
+			}
+		}
+	}
 
-    if (i < dstW) {
-        i -= 16;
+	if (i < dstW)
+	{
+		i -= 16;
 
-        Y0 = RND;
-        Y1 = RND;
-        /* extract 16 coeffs from lumSrc */
-        for (j = 0; j < lumFilterSize; j++) {
-            X0 = vec_ld(0, &lumSrc[j][i]);
-            X1 = vec_ld(16, &lumSrc[j][i]);
-            Y0 = vec_mradds(X0, YCoeffs[j], Y0);
-            Y1 = vec_mradds(X1, YCoeffs[j], Y1);
-        }
+		Y0 = RND;
+		Y1 = RND;
+		/* extract 16 coeffs from lumSrc */
+		for (j = 0; j < lumFilterSize; j++)
+		{
+			X0 = vec_ld(0, &lumSrc[j][i]);
+			X1 = vec_ld(16, &lumSrc[j][i]);
+			Y0 = vec_mradds(X0, YCoeffs[j], Y0);
+			Y1 = vec_mradds(X1, YCoeffs[j], Y1);
+		}
 
-        U = RND;
-        V = RND;
-        /* extract 8 coeffs from U,V */
-        for (j = 0; j < chrFilterSize; j++) {
-            X = vec_ld(0, &chrUSrc[j][i / 2]);
-            U = vec_mradds(X, CCoeffs[j], U);
-            X = vec_ld(0, &chrVSrc[j][i / 2]);
-            V = vec_mradds(X, CCoeffs[j], V);
-        }
+		U = RND;
+		V = RND;
+		/* extract 8 coeffs from U,V */
+		for (j = 0; j < chrFilterSize; j++)
+		{
+			X = vec_ld(0, &chrUSrc[j][i / 2]);
+			U = vec_mradds(X, CCoeffs[j], U);
+			X = vec_ld(0, &chrVSrc[j][i / 2]);
+			V = vec_mradds(X, CCoeffs[j], V);
+		}
 
-        /* scale and clip signals */
-        Y0 = vec_sra(Y0, SCL);
-        Y1 = vec_sra(Y1, SCL);
-        U  = vec_sra(U, SCL);
-        V  = vec_sra(V, SCL);
+		/* scale and clip signals */
+		Y0 = vec_sra(Y0, SCL);
+		Y1 = vec_sra(Y1, SCL);
+		U = vec_sra(U, SCL);
+		V = vec_sra(V, SCL);
 
-        Y0 = vec_clip_s16(Y0);
-        Y1 = vec_clip_s16(Y1);
-        U  = vec_clip_s16(U);
-        V  = vec_clip_s16(V);
+		Y0 = vec_clip_s16(Y0)
+		;
+		Y1 = vec_clip_s16(Y1)
+		;
+		U = vec_clip_s16(U)
+		;
+		V = vec_clip_s16(V)
+		;
 
-        /* now we have
-         * Y0 = y0 y1 y2 y3 y4 y5 y6 y7    Y1 = y8 y9 y10 y11 y12 y13 y14 y15
-         * U  = u0 u1 u2 u3 u4 u5 u6 u7    V  = v0 v1 v2 v3 v4 v5 v6 v7
-         *
-         * Y0 = y0 y1 y2 y3 y4 y5 y6 y7    Y1 = y8 y9 y10 y11 y12 y13 y14 y15
-         * U0 = u0 u0 u1 u1 u2 u2 u3 u3    U1 = u4 u4 u5 u5 u6 u6 u7 u7
-         * V0 = v0 v0 v1 v1 v2 v2 v3 v3    V1 = v4 v4 v5 v5 v6 v6 v7 v7
-         */
+		/* now we have
+		 * Y0 = y0 y1 y2 y3 y4 y5 y6 y7    Y1 = y8 y9 y10 y11 y12 y13 y14 y15
+		 * U  = u0 u1 u2 u3 u4 u5 u6 u7    V  = v0 v1 v2 v3 v4 v5 v6 v7
+		 *
+		 * Y0 = y0 y1 y2 y3 y4 y5 y6 y7    Y1 = y8 y9 y10 y11 y12 y13 y14 y15
+		 * U0 = u0 u0 u1 u1 u2 u2 u3 u3    U1 = u4 u4 u5 u5 u6 u6 u7 u7
+		 * V0 = v0 v0 v1 v1 v2 v2 v3 v3    V1 = v4 v4 v5 v5 v6 v6 v7 v7
+		 */
 
-        U0 = vec_mergeh(U, U);
-        V0 = vec_mergeh(V, V);
+		U0 = vec_mergeh(U, U);
+		V0 = vec_mergeh(V, V);
 
-        U1 = vec_mergel(U, U);
-        V1 = vec_mergel(V, V);
+		U1 = vec_mergel(U, U);
+		V1 = vec_mergel(V, V);
 
-        cvtyuvtoRGB(c, Y0, U0, V0, &R0, &G0, &B0);
-        cvtyuvtoRGB(c, Y1, U1, V1, &R1, &G1, &B1);
+		cvtyuvtoRGB(c, Y0, U0, V0, &R0, &G0, &B0);
+		cvtyuvtoRGB(c, Y1, U1, V1, &R1, &G1, &B1);
 
-        R = vec_packclp(R0, R1);
-        G = vec_packclp(G0, G1);
-        B = vec_packclp(B0, B1);
+		R = vec_packclp(R0, R1)
+		;
+		G = vec_packclp(G0, G1)
+		;
+		B = vec_packclp(B0, B1)
+		;
 
-        nout = (vector unsigned char *) scratch;
-        switch (target) {
-        case PIX_FMT_ABGR:
-            out_abgr(R, G, B, nout);
-            break;
-        case PIX_FMT_BGRA:
-            out_bgra(R, G, B, nout);
-            break;
-        case PIX_FMT_RGBA:
-            out_rgba(R, G, B, nout);
-            break;
-        case PIX_FMT_ARGB:
-            out_argb(R, G, B, nout);
-            break;
-        case PIX_FMT_RGB24:
-            out_rgb24(R, G, B, nout);
-            break;
-        case PIX_FMT_BGR24:
-            out_bgr24(R, G, B, nout);
-            break;
-        default:
-            /* Unreachable, I think. */
-            av_log(c, AV_LOG_ERROR,
-                   "altivec_yuv2packedX doesn't support %s output\n",
-                   av_get_pix_fmt_name(c->dstFormat));
-            return;
-        }
+		nout = (vector
+		unsigned char*
+		)
+		scratch;
+		switch (target)
+		{
+		case PIX_FMT_ABGR:
+			out_abgr(R, G, B, nout);
+			break;
+		case PIX_FMT_BGRA:
+			out_bgra(R, G, B, nout);
+			break;
+		case PIX_FMT_RGBA:
+			out_rgba(R, G, B, nout);
+			break;
+		case PIX_FMT_ARGB:
+			out_argb(R, G, B, nout);
+			break;
+		case PIX_FMT_RGB24:
+			out_rgb24(R, G, B, nout);
+			break;
+		case PIX_FMT_BGR24:
+			out_bgr24(R, G, B, nout);
+			break;
+		default:
+			/* Unreachable, I think. */
+			av_log(c, AV_LOG_ERROR,
+			       "altivec_yuv2packedX doesn't support %s output\n",
+			       av_get_pix_fmt_name(c->dstFormat));
+			return;
+		}
 
-        memcpy(&((uint32_t *) dest)[i], scratch, (dstW - i) / 4);
-    }
+		memcpy(&((uint32_t*)dest)[i], scratch, (dstW - i) / 4);
+	}
 }
 
 #define YUV2PACKEDX_WRAPPER(suffix, pixfmt)                             \
@@ -848,9 +1001,9 @@ void ff_yuv2 ## suffix ## _X_altivec(SwsContext *c,                     \
                            dest, dstW, dstY, pixfmt);                   \
 }
 
-YUV2PACKEDX_WRAPPER(abgr,  PIX_FMT_ABGR);
-YUV2PACKEDX_WRAPPER(bgra,  PIX_FMT_BGRA);
-YUV2PACKEDX_WRAPPER(argb,  PIX_FMT_ARGB);
-YUV2PACKEDX_WRAPPER(rgba,  PIX_FMT_RGBA);
+YUV2PACKEDX_WRAPPER(abgr, PIX_FMT_ABGR);
+YUV2PACKEDX_WRAPPER(bgra, PIX_FMT_BGRA);
+YUV2PACKEDX_WRAPPER(argb, PIX_FMT_ARGB);
+YUV2PACKEDX_WRAPPER(rgba, PIX_FMT_RGBA);
 YUV2PACKEDX_WRAPPER(rgb24, PIX_FMT_RGB24);
 YUV2PACKEDX_WRAPPER(bgr24, PIX_FMT_BGR24);

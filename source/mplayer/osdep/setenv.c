@@ -23,24 +23,24 @@
 #include <stdlib.h>
 #include <string.h>
 #ifndef MP_DEBUG
-  #define NDEBUG
+#define NDEBUG
 #endif
 #include <assert.h>
 
 #include "setenv.h"
 
-int setenv(const char *name, const char *val, int overwrite)
+int setenv(const char* name, const char* val, int overwrite)
 {
-  int len  = strlen(name) + strlen(val) + 2;
-  char *env = malloc(len);
-  if (!env) { return -1; }
+	int len = strlen(name) + strlen(val) + 2;
+	char* env = malloc(len);
+	if (!env) { return -1; }
 
-  assert(overwrite != 0);
+	assert(overwrite != 0);
 
-  strcpy(env, name);
-  strcat(env, "=");
-  strcat(env, val);
-  putenv(env);
+	strcpy(env, name);
+	strcat(env, "=");
+	strcat(env, val);
+	putenv(env);
 
-  return 0;
+	return 0;
 }

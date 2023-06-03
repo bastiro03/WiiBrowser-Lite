@@ -19,6 +19,6 @@
 #ifndef MPLAYER_AD_MP3LIB_H
 #define MPLAYER_AD_MP3LIB_H
 
-int mplayer_audio_read(char *buf, int size);
+int mplayer_audio_read(char* buf, int size);
 
 #endif /* MPLAYER_AD_MP3LIB_H */

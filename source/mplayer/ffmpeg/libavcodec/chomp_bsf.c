@@ -22,26 +22,26 @@
 #include "avcodec.h"
 #include "internal.h"
 
-static int chomp_filter(AVBitStreamFilterContext *bsfc,
-                        AVCodecContext *avctx, const char *args,
-                        uint8_t  **poutbuf, int *poutbuf_size,
-                        const uint8_t *buf, int      buf_size,
+static int chomp_filter(AVBitStreamFilterContext* bsfc,
+                        AVCodecContext* avctx, const char* args,
+                        uint8_t** poutbuf, int* poutbuf_size,
+                        const uint8_t* buf, int buf_size,
                         int keyframe)
 {
-    while (buf_size > 0 && !buf[buf_size-1])
-        buf_size--;
+	while (buf_size > 0 && !buf[buf_size - 1])
+		buf_size--;
 
-    *poutbuf = (uint8_t*) buf;
-    *poutbuf_size = buf_size;
+	*poutbuf = (uint8_t*)buf;
+	*poutbuf_size = buf_size;
 
-    return 0;
+	return 0;
 }
 
 /**
  * This filter removes a string of NULL bytes from the end of a packet.
  */
 AVBitStreamFilter ff_chomp_bsf = {
-    "chomp",
-    0,
-    chomp_filter,
+	"chomp",
+	0,
+	chomp_filter,
 };

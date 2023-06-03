@@ -34,30 +34,30 @@
 #define bmp_free(x) free(x)
 #define bmp_memalign(x,y) memalign(x,y)
 
-typedef unsigned char ebmpBYTE;
-typedef unsigned short ebmpWORD;
-typedef unsigned int ebmpDWORD;
+using ebmpBYTE = unsigned char;
+using ebmpWORD = unsigned short;
+using ebmpDWORD = unsigned int;
 
 // it's easier to use a struct than a class
 // because we can read/write all four of the bytes
 // at once (as we can count on them being continuous
 // in memory
 
-typedef struct RGBApixel
+using RGBApixel = struct RGBApixel
 {
 	ebmpBYTE Blue;
 	ebmpBYTE Green;
 	ebmpBYTE Red;
 	ebmpBYTE Alpha;
-} RGBApixel;
+};
 
-typedef struct BMPFile
+using BMPFile = struct BMPFile
 {
-	const unsigned char *imgData;
+	const unsigned char* imgData;
 	int imgSize;
 	int currentPosition;
-	FILE *fp;
-} BMPFile;
+	FILE* fp;
+};
 
 static inline double Square(double number)
 {
@@ -72,7 +72,7 @@ static inline int IntSquare(int number)
 static inline bool IsBigEndian()
 {
 	short word = 0x0001;
-	if ((*(char *) &word) != 0x01)
+	if ((*(char*)&word) != 0x01)
 	{
 		return true;
 	}
@@ -87,7 +87,7 @@ static inline ebmpWORD FlipWORD(ebmpWORD in)
 static inline ebmpDWORD FlipDWORD(ebmpDWORD in)
 {
 	return (((in & 0xFF000000) >> 24) | ((in & 0x000000FF) << 24) | ((in
-			& 0x00FF0000) >> 8) | ((in & 0x0000FF00) << 8));
+		& 0x00FF0000) >> 8) | ((in & 0x0000FF00) << 8));
 }
 
 static int IntPow(int base, int exponent)
@@ -101,7 +101,7 @@ static int IntPow(int base, int exponent)
 	return output;
 }
 
-static bool SafeFread(char* buffer, int size, int number, struct BMPFile *bmpFile)
+static bool SafeFread(char* buffer, int size, int number, struct BMPFile* bmpFile)
 {
 	if (bmpFile->fp)
 	{
@@ -110,63 +110,60 @@ static bool SafeFread(char* buffer, int size, int number, struct BMPFile *bmpFil
 		{
 			return false;
 		}
-		ItemsRead = (int) fread(buffer, size, number, bmpFile->fp);
+		ItemsRead = static_cast<int>(fread(buffer, size, number, bmpFile->fp));
 		if (ItemsRead < number)
 		{
 			return false;
 		}
 		return true;
 	}
-	else
+	int amount = number * size;
+
+	bool retval = true;
+	if (amount + bmpFile->currentPosition > bmpFile->imgSize)
 	{
-		int amount = number * size;
-
-		bool retval = true;
-		if (amount + bmpFile->currentPosition > bmpFile->imgSize)
-		{
-			retval = false;
-			amount = bmpFile->imgSize - bmpFile->currentPosition;
-		}
-
-		void *start = (void *) (bmpFile->imgData + bmpFile->currentPosition);
-		memcpy(buffer, start, amount);
-		bmpFile->currentPosition += amount;
-		return retval;
+		retval = false;
+		amount = bmpFile->imgSize - bmpFile->currentPosition;
 	}
+
+	auto start = (void*)(bmpFile->imgData + bmpFile->currentPosition);
+	memcpy(buffer, start, amount);
+	bmpFile->currentPosition += amount;
+	return retval;
 }
 
 class BMFH
 {
-	public:
-		ebmpWORD bfType;
-		ebmpDWORD bfSize;
-		ebmpWORD bfReserved1;
-		ebmpWORD bfReserved2;
-		ebmpDWORD bfOffBits;
+public:
+	ebmpWORD bfType;
+	ebmpDWORD bfSize;
+	ebmpWORD bfReserved1;
+	ebmpWORD bfReserved2;
+	ebmpDWORD bfOffBits;
 
-		BMFH();
-		void display(void);
-		void SwitchEndianess(void);
+	BMFH();
+	void display(void);
+	void SwitchEndianess(void);
 };
 
 class BMIH
 {
-	public:
-		ebmpDWORD biSize;
-		ebmpDWORD biWidth;
-		ebmpDWORD biHeight;
-		ebmpWORD biPlanes;
-		ebmpWORD biBitCount;
-		ebmpDWORD biCompression;
-		ebmpDWORD biSizeImage;
-		ebmpDWORD biXPelsPerMeter;
-		ebmpDWORD biYPelsPerMeter;
-		ebmpDWORD biClrUsed;
-		ebmpDWORD biClrImportant;
+public:
+	ebmpDWORD biSize;
+	ebmpDWORD biWidth;
+	ebmpDWORD biHeight;
+	ebmpWORD biPlanes;
+	ebmpWORD biBitCount;
+	ebmpDWORD biCompression;
+	ebmpDWORD biSizeImage;
+	ebmpDWORD biXPelsPerMeter;
+	ebmpDWORD biYPelsPerMeter;
+	ebmpDWORD biClrUsed;
+	ebmpDWORD biClrImportant;
 
-		BMIH();
-		void display(void);
-		void SwitchEndianess(void);
+	BMIH();
+	void display(void);
+	void SwitchEndianess(void);
 };
 
 BMFH::BMFH()
@@ -183,7 +180,6 @@ void BMFH::SwitchEndianess(void)
 	bfReserved1 = FlipWORD(bfReserved1);
 	bfReserved2 = FlipWORD(bfReserved2);
 	bfOffBits = FlipDWORD(bfOffBits);
-	return;
 }
 
 BMIH::BMIH()
@@ -209,61 +205,58 @@ void BMIH::SwitchEndianess(void)
 	biYPelsPerMeter = FlipDWORD(biYPelsPerMeter);
 	biClrUsed = FlipDWORD(biClrUsed);
 	biClrImportant = FlipDWORD(biClrImportant);
-	return;
 }
 
 class BMP
 {
-	private:
+private:
+	int BitDepth;
+	int Width;
+	int Height;
+	RGBApixel** Pixels;
+	RGBApixel* Colors;
+	int XPelsPerMeter;
+	int YPelsPerMeter;
 
-		int BitDepth;
-		int Width;
-		int Height;
-		RGBApixel** Pixels;
-		RGBApixel* Colors;
-		int XPelsPerMeter;
-		int YPelsPerMeter;
+	bool EasyBMPwarnings;
 
-		bool EasyBMPwarnings;
+	ebmpBYTE* MetaData1;
+	int SizeOfMetaData1;
+	ebmpBYTE* MetaData2;
+	int SizeOfMetaData2;
 
-		ebmpBYTE* MetaData1;
-		int SizeOfMetaData1;
-		ebmpBYTE* MetaData2;
-		int SizeOfMetaData2;
+	bool Read32bitRow(ebmpBYTE* Buffer, int BufferSize, int Row);
+	bool Read24bitRow(ebmpBYTE* Buffer, int BufferSize, int Row);
+	bool Read8bitRow(ebmpBYTE* Buffer, int BufferSize, int Row);
+	bool Read4bitRow(ebmpBYTE* Buffer, int BufferSize, int Row);
+	bool Read1bitRow(ebmpBYTE* Buffer, int BufferSize, int Row);
 
-		bool Read32bitRow(ebmpBYTE* Buffer, int BufferSize, int Row);
-		bool Read24bitRow(ebmpBYTE* Buffer, int BufferSize, int Row);
-		bool Read8bitRow(ebmpBYTE* Buffer, int BufferSize, int Row);
-		bool Read4bitRow(ebmpBYTE* Buffer, int BufferSize, int Row);
-		bool Read1bitRow(ebmpBYTE* Buffer, int BufferSize, int Row);
+public:
+	int TellBitDepth(void);
+	int TellWidth(void);
+	int TellHeight(void);
+	int TellNumberOfColors(void);
+	void SetDPI(int HorizontalDPI, int VerticalDPI);
+	int TellVerticalDPI(void);
+	int TellHorizontalDPI(void);
 
-	public:
+	BMP();
+	BMP(BMP& Input);
+	~BMP();
+	RGBApixel* operator()(int i, int j);
 
-		int TellBitDepth(void);
-		int TellWidth(void);
-		int TellHeight(void);
-		int TellNumberOfColors(void);
-		void SetDPI(int HorizontalDPI, int VerticalDPI);
-		int TellVerticalDPI(void);
-		int TellHorizontalDPI(void);
+	RGBApixel GetPixel(int i, int j) const;
 
-		BMP();
-		BMP(BMP& Input);
-		~BMP();
-		RGBApixel* operator()(int i, int j);
+	bool CreateStandardColorTable(void);
 
-		RGBApixel GetPixel(int i, int j) const;
+	bool SetSize(int NewWidth, int NewHeight);
+	bool SetBitDepth(int NewDepth);
 
-		bool CreateStandardColorTable(void);
+	RGBApixel GetColor(int ColorNumber);
+	bool SetColor(int ColorNumber, RGBApixel NewColor);
 
-		bool SetSize(int NewWidth, int NewHeight);
-		bool SetBitDepth(int NewDepth);
-
-		RGBApixel GetColor(int ColorNumber);
-		bool SetColor(int ColorNumber, RGBApixel NewColor);
-
-		bool Read(struct BMPFile *bmpFile);
-		u8 * DecodeTo4x4RGB8(u8 *dst);
+	bool Read(struct BMPFile* bmpFile);
+	u8* DecodeTo4x4RGB8(u8* dst);
 };
 
 BMP::BMP()
@@ -273,14 +266,14 @@ BMP::BMP()
 	BitDepth = 24;
 	Pixels = new RGBApixel*[Width];
 	Pixels[0] = new RGBApixel[Height];
-	Colors = NULL;
+	Colors = nullptr;
 
 	XPelsPerMeter = 0;
 	YPelsPerMeter = 0;
 
-	MetaData1 = NULL;
+	MetaData1 = nullptr;
 	SizeOfMetaData1 = 0;
-	MetaData2 = NULL;
+	MetaData2 = nullptr;
 	SizeOfMetaData2 = 0;
 }
 
@@ -294,13 +287,13 @@ BMP::BMP(BMP& Input)
 	BitDepth = 24;
 	Pixels = new RGBApixel*[Width];
 	Pixels[0] = new RGBApixel[Height];
-	Colors = NULL;
+	Colors = nullptr;
 	XPelsPerMeter = 0;
 	YPelsPerMeter = 0;
 
-	MetaData1 = NULL;
+	MetaData1 = nullptr;
 	SizeOfMetaData1 = 0;
-	MetaData2 = NULL;
+	MetaData2 = nullptr;
 	SizeOfMetaData2 = 0;
 
 	// now, set the correct bit depth
@@ -362,14 +355,22 @@ BMP::~BMP()
 
 RGBApixel* BMP::operator()(int i, int j)
 {
-	if( i >= Width )
-	{	i = Width-1;}
-	if( i < 0 )
-	{	i = 0;}
-	if( j >= Height )
-	{	j = Height-1;}
-	if( j < 0 )
-	{	j = 0;}
+	if (i >= Width)
+	{
+		i = Width - 1;
+	}
+	if (i < 0)
+	{
+		i = 0;
+	}
+	if (j >= Height)
+	{
+		j = Height - 1;
+	}
+	if (j < 0)
+	{
+		j = 0;
+	}
 	return &(Pixels[i][j]);
 }
 
@@ -405,7 +406,7 @@ int BMP::TellNumberOfColors(void)
 bool BMP::SetBitDepth(int NewDepth)
 {
 	if (NewDepth != 1 && NewDepth != 4 && NewDepth != 8 && NewDepth != 16
-			&& NewDepth != 24 && NewDepth != 32)
+		&& NewDepth != 24 && NewDepth != 32)
 	{
 		return false;
 	}
@@ -422,7 +423,7 @@ bool BMP::SetBitDepth(int NewDepth)
 	}
 	else
 	{
-		Colors = NULL;
+		Colors = nullptr;
 	}
 	if (BitDepth == 1 || BitDepth == 4 || BitDepth == 8)
 	{
@@ -536,15 +537,15 @@ RGBApixel BMP::GetColor(int ColorNumber)
 	return Output;
 }
 
-bool BMP::Read(struct BMPFile *bmpFile)
+bool BMP::Read(struct BMPFile* bmpFile)
 {
 	// read the file header
 
 	BMFH bmfh;
 	bool NotCorrupted = true;
 
-	NotCorrupted &= SafeFread((char*) &(bmfh.bfType), sizeof(ebmpWORD), 1,
-			bmpFile);
+	NotCorrupted &= SafeFread((char*)&(bmfh.bfType), sizeof(ebmpWORD), 1,
+	                          bmpFile);
 
 	bool IsBitmap = false;
 
@@ -562,14 +563,14 @@ bool BMP::Read(struct BMPFile *bmpFile)
 		return false;
 	}
 
-	NotCorrupted &= SafeFread((char*) &(bmfh.bfSize), sizeof(ebmpDWORD), 1,
-			bmpFile);
-	NotCorrupted &= SafeFread((char*) &(bmfh.bfReserved1), sizeof(ebmpWORD), 1,
-			bmpFile);
-	NotCorrupted &= SafeFread((char*) &(bmfh.bfReserved2), sizeof(ebmpWORD), 1,
-			bmpFile);
-	NotCorrupted &= SafeFread((char*) &(bmfh.bfOffBits), sizeof(ebmpDWORD), 1,
-			bmpFile);
+	NotCorrupted &= SafeFread((char*)&(bmfh.bfSize), sizeof(ebmpDWORD), 1,
+	                          bmpFile);
+	NotCorrupted &= SafeFread((char*)&(bmfh.bfReserved1), sizeof(ebmpWORD), 1,
+	                          bmpFile);
+	NotCorrupted &= SafeFread((char*)&(bmfh.bfReserved2), sizeof(ebmpWORD), 1,
+	                          bmpFile);
+	NotCorrupted &= SafeFread((char*)&(bmfh.bfOffBits), sizeof(ebmpDWORD), 1,
+	                          bmpFile);
 
 	if (IsBigEndian())
 	{
@@ -580,29 +581,29 @@ bool BMP::Read(struct BMPFile *bmpFile)
 
 	BMIH bmih;
 
-	NotCorrupted &= SafeFread((char*) &(bmih.biSize), sizeof(ebmpDWORD), 1,
-			bmpFile);
-	NotCorrupted &= SafeFread((char*) &(bmih.biWidth), sizeof(ebmpDWORD), 1,
-			bmpFile);
-	NotCorrupted &= SafeFread((char*) &(bmih.biHeight), sizeof(ebmpDWORD), 1,
-			bmpFile);
-	NotCorrupted &= SafeFread((char*) &(bmih.biPlanes), sizeof(ebmpWORD), 1,
-			bmpFile);
-	NotCorrupted &= SafeFread((char*) &(bmih.biBitCount), sizeof(ebmpWORD), 1,
-			bmpFile);
+	NotCorrupted &= SafeFread((char*)&(bmih.biSize), sizeof(ebmpDWORD), 1,
+	                          bmpFile);
+	NotCorrupted &= SafeFread((char*)&(bmih.biWidth), sizeof(ebmpDWORD), 1,
+	                          bmpFile);
+	NotCorrupted &= SafeFread((char*)&(bmih.biHeight), sizeof(ebmpDWORD), 1,
+	                          bmpFile);
+	NotCorrupted &= SafeFread((char*)&(bmih.biPlanes), sizeof(ebmpWORD), 1,
+	                          bmpFile);
+	NotCorrupted &= SafeFread((char*)&(bmih.biBitCount), sizeof(ebmpWORD), 1,
+	                          bmpFile);
 
-	NotCorrupted &= SafeFread((char*) &(bmih.biCompression), sizeof(ebmpDWORD),
-			1, bmpFile);
-	NotCorrupted &= SafeFread((char*) &(bmih.biSizeImage), sizeof(ebmpDWORD),
-			1, bmpFile);
-	NotCorrupted &= SafeFread((char*) &(bmih.biXPelsPerMeter),
-			sizeof(ebmpDWORD), 1, bmpFile);
-	NotCorrupted &= SafeFread((char*) &(bmih.biYPelsPerMeter),
-			sizeof(ebmpDWORD), 1, bmpFile);
-	NotCorrupted &= SafeFread((char*) &(bmih.biClrUsed), sizeof(ebmpDWORD), 1,
-			bmpFile);
-	NotCorrupted &= SafeFread((char*) &(bmih.biClrImportant),
-			sizeof(ebmpDWORD), 1, bmpFile);
+	NotCorrupted &= SafeFread((char*)&(bmih.biCompression), sizeof(ebmpDWORD),
+	                          1, bmpFile);
+	NotCorrupted &= SafeFread((char*)&(bmih.biSizeImage), sizeof(ebmpDWORD),
+	                          1, bmpFile);
+	NotCorrupted &= SafeFread((char*)&(bmih.biXPelsPerMeter),
+	                          sizeof(ebmpDWORD), 1, bmpFile);
+	NotCorrupted &= SafeFread((char*)&(bmih.biYPelsPerMeter),
+	                          sizeof(ebmpDWORD), 1, bmpFile);
+	NotCorrupted &= SafeFread((char*)&(bmih.biClrUsed), sizeof(ebmpDWORD), 1,
+	                          bmpFile);
+	NotCorrupted &= SafeFread((char*)&(bmih.biClrImportant),
+	                          sizeof(ebmpDWORD), 1, bmpFile);
 
 	if (IsBigEndian())
 	{
@@ -650,33 +651,33 @@ bool BMP::Read(struct BMPFile *bmpFile)
 
 	// set the bit depth
 
-	int TempBitDepth = (int) bmih.biBitCount;
+	int TempBitDepth = bmih.biBitCount;
 	if (TempBitDepth != 1 && TempBitDepth != 4 && TempBitDepth != 8
-			&& TempBitDepth != 16 && TempBitDepth != 24 && TempBitDepth != 32)
+		&& TempBitDepth != 16 && TempBitDepth != 24 && TempBitDepth != 32)
 	{
 		SetSize(1, 1);
 		SetBitDepth(1);
 		return false;
 	}
-	SetBitDepth((int) bmih.biBitCount);
+	SetBitDepth(bmih.biBitCount);
 
 	// set the size
 
-	if ((int) bmih.biWidth <= 0 || (int) bmih.biHeight <= 0)
+	if (static_cast<int>(bmih.biWidth) <= 0 || static_cast<int>(bmih.biHeight) <= 0)
 	{
 		SetSize(1, 1);
 		SetBitDepth(1);
 		return false;
 	}
-	SetSize((int) bmih.biWidth, (int) bmih.biHeight);
+	SetSize(static_cast<int>(bmih.biWidth), static_cast<int>(bmih.biHeight));
 
 	// some preliminaries
 
-	double dBytesPerPixel = ((double) BitDepth) / 8.0;
+	double dBytesPerPixel = static_cast<double>(BitDepth) / 8.0;
 	double dBytesPerRow = dBytesPerPixel * (Width + 0.0);
 	dBytesPerRow = ceil(dBytesPerRow);
 
-	int BytePaddingPerRow = 4 - ((int) (dBytesPerRow)) % 4;
+	int BytePaddingPerRow = 4 - static_cast<int>(dBytesPerRow) % 4;
 	if (BytePaddingPerRow == 4)
 	{
 		BytePaddingPerRow = 0;
@@ -689,7 +690,7 @@ bool BMP::Read(struct BMPFile *bmpFile)
 		// determine the number of colors specified in the
 		// color table
 
-		int NumberOfColorsToRead = ((int) bmfh.bfOffBits - 54) / 4;
+		int NumberOfColorsToRead = (static_cast<int>(bmfh.bfOffBits) - 54) / 4;
 		if (NumberOfColorsToRead > IntPow(2, BitDepth))
 		{
 			NumberOfColorsToRead = IntPow(2, BitDepth);
@@ -698,7 +699,7 @@ bool BMP::Read(struct BMPFile *bmpFile)
 		int n;
 		for (n = 0; n < NumberOfColorsToRead; n++)
 		{
-			SafeFread((char*) &(Colors[n]), 4, 1, bmpFile);
+			SafeFread((char*)&(Colors[n]), 4, 1, bmpFile);
 		}
 		for (n = NumberOfColorsToRead; n < TellNumberOfColors(); n++)
 		{
@@ -731,7 +732,7 @@ bool BMP::Read(struct BMPFile *bmpFile)
 	{
 		ebmpBYTE* TempSkipBYTE;
 		TempSkipBYTE = new ebmpBYTE[BytesToSkip];
-		SafeFread((char*) TempSkipBYTE, BytesToSkip, 1, bmpFile);
+		SafeFread((char*)TempSkipBYTE, BytesToSkip, 1, bmpFile);
 		delete[] TempSkipBYTE;
 	}
 
@@ -741,7 +742,7 @@ bool BMP::Read(struct BMPFile *bmpFile)
 	int i, j;
 	if (BitDepth != 16)
 	{
-		int BufferSize = (int) ((Width * BitDepth) / 8.0);
+		int BufferSize = static_cast<int>((Width * BitDepth) / 8.0);
 		while (8 * BufferSize < Width * BitDepth)
 		{
 			BufferSize++;
@@ -756,7 +757,7 @@ bool BMP::Read(struct BMPFile *bmpFile)
 		while (j > -1)
 		{
 			//   int BytesRead = (int) fread( (char*) Buffer, 1, BufferSize, bmpFile->fp );
-			if (!SafeFread((char*) Buffer, 1, BufferSize, bmpFile))
+			if (!SafeFread((char*)Buffer, 1, BufferSize, bmpFile))
 			{
 				j = -1;
 			}
@@ -814,26 +815,26 @@ bool BMP::Read(struct BMPFile *bmpFile)
 			ebmpWORD TempMaskWORD;
 			//   ebmpWORD ZeroWORD;
 
-			SafeFread((char*) &RedMask, 2, 1, bmpFile);
+			SafeFread((char*)&RedMask, 2, 1, bmpFile);
 			if (IsBigEndian())
 			{
 				RedMask = FlipWORD(RedMask);
 			}
-			SafeFread((char*) &TempMaskWORD, 2, 1, bmpFile);
+			SafeFread((char*)&TempMaskWORD, 2, 1, bmpFile);
 
-			SafeFread((char*) &GreenMask, 2, 1, bmpFile);
+			SafeFread((char*)&GreenMask, 2, 1, bmpFile);
 			if (IsBigEndian())
 			{
 				GreenMask = FlipWORD(GreenMask);
 			}
-			SafeFread((char*) &TempMaskWORD, 2, 1, bmpFile);
+			SafeFread((char*)&TempMaskWORD, 2, 1, bmpFile);
 
-			SafeFread((char*) &BlueMask, 2, 1, bmpFile);
+			SafeFread((char*)&BlueMask, 2, 1, bmpFile);
 			if (IsBigEndian())
 			{
 				BlueMask = FlipWORD(BlueMask);
 			}
-			SafeFread((char*) &TempMaskWORD, 2, 1, bmpFile);
+			SafeFread((char*)&TempMaskWORD, 2, 1, bmpFile);
 		}
 
 		// read and skip any meta data
@@ -842,7 +843,7 @@ bool BMP::Read(struct BMPFile *bmpFile)
 		{
 			ebmpBYTE* TempSkipBYTE;
 			TempSkipBYTE = new ebmpBYTE[BytesToSkip];
-			SafeFread((char*) TempSkipBYTE, BytesToSkip, 1, bmpFile);
+			SafeFread((char*)TempSkipBYTE, BytesToSkip, 1, bmpFile);
 			delete[] TempSkipBYTE;
 		}
 
@@ -879,7 +880,7 @@ bool BMP::Read(struct BMPFile *bmpFile)
 			while (ReadNumber < DataBytes)
 			{
 				ebmpWORD TempWORD;
-				SafeFread((char*) &TempWORD, 2, 1, bmpFile);
+				SafeFread((char*)&TempWORD, 2, 1, bmpFile);
 				if (IsBigEndian())
 				{
 					TempWORD = FlipWORD(TempWORD);
@@ -890,9 +891,9 @@ bool BMP::Read(struct BMPFile *bmpFile)
 				ebmpWORD Green = GreenMask & TempWORD;
 				ebmpWORD Blue = BlueMask & TempWORD;
 
-				ebmpBYTE BlueBYTE = (ebmpBYTE) 8 * (Blue >> BlueShift);
-				ebmpBYTE GreenBYTE = (ebmpBYTE) 8 * (Green >> GreenShift);
-				ebmpBYTE RedBYTE = (ebmpBYTE) 8 * (Red >> RedShift);
+				ebmpBYTE BlueBYTE = static_cast<ebmpBYTE>(8) * (Blue >> BlueShift);
+				ebmpBYTE GreenBYTE = static_cast<ebmpBYTE>(8) * (Green >> GreenShift);
+				ebmpBYTE RedBYTE = static_cast<ebmpBYTE>(8) * (Red >> RedShift);
 
 				(Pixels[i][j]).Red = RedBYTE;
 				(Pixels[i][j]).Green = GreenBYTE;
@@ -904,11 +905,10 @@ bool BMP::Read(struct BMPFile *bmpFile)
 			while (ReadNumber < PaddingBytes)
 			{
 				ebmpBYTE TempBYTE;
-				SafeFread((char*) &TempBYTE, 1, 1, bmpFile);
+				SafeFread((char*)&TempBYTE, 1, 1, bmpFile);
 				ReadNumber++;
 			}
 		}
-
 	}
 
 	return true;
@@ -1083,8 +1083,8 @@ bool BMP::CreateStandardColorTable(void)
 
 void BMP::SetDPI(int HorizontalDPI, int VerticalDPI)
 {
-	XPelsPerMeter = (int) (HorizontalDPI * 39.37007874015748);
-	YPelsPerMeter = (int) (VerticalDPI * 39.37007874015748);
+	XPelsPerMeter = static_cast<int>(HorizontalDPI * 39.37007874015748);
+	YPelsPerMeter = static_cast<int>(VerticalDPI * 39.37007874015748);
 }
 
 // int BMP::TellVerticalDPI( void ) const
@@ -1094,7 +1094,7 @@ int BMP::TellVerticalDPI(void)
 	{
 		YPelsPerMeter = DefaultYPelsPerMeter;
 	}
-	return (int) (YPelsPerMeter / (double) 39.37007874015748);
+	return static_cast<int>(YPelsPerMeter / (double)39.37007874015748);
 }
 
 // int BMP::TellHorizontalDPI( void ) const
@@ -1104,7 +1104,7 @@ int BMP::TellHorizontalDPI(void)
 	{
 		XPelsPerMeter = DefaultXPelsPerMeter;
 	}
-	return (int) (XPelsPerMeter / (double) 39.37007874015748);
+	return static_cast<int>(XPelsPerMeter / (double)39.37007874015748);
 }
 
 bool BMP::Read32bitRow(ebmpBYTE* Buffer, int BufferSize, int Row)
@@ -1116,7 +1116,7 @@ bool BMP::Read32bitRow(ebmpBYTE* Buffer, int BufferSize, int Row)
 	}
 	for (i = 0; i < Width; i++)
 	{
-		memcpy((char*) &(Pixels[i][Row]), (char*) Buffer + 4 * i, 4);
+		memcpy(&Pixels[i][Row], (char*)Buffer + 4 * i, 4);
 	}
 	return true;
 }
@@ -1130,7 +1130,7 @@ bool BMP::Read24bitRow(ebmpBYTE* Buffer, int BufferSize, int Row)
 	}
 	for (i = 0; i < Width; i++)
 	{
-		memcpy((char*) &(Pixels[i][Row]), Buffer + 3 * i, 3);
+		memcpy(&Pixels[i][Row], Buffer + 3 * i, 3);
 	}
 	return true;
 }
@@ -1153,9 +1153,9 @@ bool BMP::Read8bitRow(ebmpBYTE* Buffer, int BufferSize, int Row)
 bool BMP::Read4bitRow(ebmpBYTE* Buffer, int BufferSize, int Row)
 {
 	int Shifts[2] =
-	{ 4, 0 };
+		{4, 0};
 	int Masks[2] =
-	{ 240, 15 };
+		{240, 15};
 
 	int i = 0;
 	int j;
@@ -1169,7 +1169,7 @@ bool BMP::Read4bitRow(ebmpBYTE* Buffer, int BufferSize, int Row)
 		j = 0;
 		while (j < 2 && i < Width)
 		{
-			int Index = (int) ((Buffer[k] & Masks[j]) >> Shifts[j]);
+			int Index = (Buffer[k] & Masks[j]) >> Shifts[j];
 			*(this->operator()(i, Row)) = GetColor(Index);
 			i++;
 			j++;
@@ -1178,12 +1178,13 @@ bool BMP::Read4bitRow(ebmpBYTE* Buffer, int BufferSize, int Row)
 	}
 	return true;
 }
+
 bool BMP::Read1bitRow(ebmpBYTE* Buffer, int BufferSize, int Row)
 {
 	int Shifts[8] =
-	{ 7, 6, 5, 4, 3, 2, 1, 0 };
+		{7, 6, 5, 4, 3, 2, 1, 0};
 	int Masks[8] =
-	{ 128, 64, 32, 16, 8, 4, 2, 1 };
+		{128, 64, 32, 16, 8, 4, 2, 1};
 
 	int i = 0;
 	int j;
@@ -1198,7 +1199,7 @@ bool BMP::Read1bitRow(ebmpBYTE* Buffer, int BufferSize, int Row)
 		j = 0;
 		while (j < 8 && i < Width)
 		{
-			int Index = (int) ((Buffer[k] & Masks[j]) >> Shifts[j]);
+			int Index = (Buffer[k] & Masks[j]) >> Shifts[j];
 			*(this->operator()(i, Row)) = GetColor(Index);
 			i++;
 			j++;
@@ -1213,25 +1214,25 @@ static inline u32 coordsRGBA8(u32 x, u32 y, u32 w)
 	return ((((y >> 2) * (w >> 2) + (x >> 2)) << 5) + ((y & 3) << 2) + (x & 3)) << 1;
 }
 
-u8 * BMP::DecodeTo4x4RGB8(u8 *dstPtr)
+u8* BMP::DecodeTo4x4RGB8(u8* dstPtr)
 {
 	int newWidth = Width;
-	if(newWidth%4) newWidth += (4-newWidth%4);
+	if (newWidth % 4) newWidth += (4 - newWidth % 4);
 	int newHeight = Height;
-	if(newHeight%4) newHeight += (4-newHeight%4);
+	if (newHeight % 4) newHeight += (4 - newHeight % 4);
 
 	int len = (newWidth * newHeight) << 2;
-	if(len%32) len += (32-len%32);
+	if (len % 32) len += (32 - len % 32);
 
-	u8 * dst;
+	u8* dst;
 
-	if(dstPtr)
+	if (dstPtr)
 		dst = dstPtr; // use existing allocation
 	else
-		dst = (u8 *)bmp_memalign (32, len);
+		dst = static_cast<u8*>(bmp_memalign(32, len));
 
-	if(!dst)
-		return NULL;
+	if (!dst)
+		return nullptr;
 
 	int x, y, offset;
 
@@ -1241,19 +1242,19 @@ u8 * BMP::DecodeTo4x4RGB8(u8 *dstPtr)
 		{
 			offset = coordsRGBA8(x, y, newWidth);
 
-			if(x >= Width || y >= Height)
+			if (x >= Width || y >= Height)
 			{
 				dst[offset] = 0;
-				dst[offset+1] = 255;
-				dst[offset+32] = 255;
-				dst[offset+33] = 255;
+				dst[offset + 1] = 255;
+				dst[offset + 32] = 255;
+				dst[offset + 33] = 255;
 			}
 			else
 			{
 				dst[offset] = 255;
-				dst[offset+1] = Pixels[x][y].Red;
-				dst[offset+32] = Pixels[x][y].Green;
-				dst[offset+33] = Pixels[x][y].Blue;
+				dst[offset + 1] = Pixels[x][y].Red;
+				dst[offset + 32] = Pixels[x][y].Green;
+				dst[offset + 33] = Pixels[x][y].Blue;
 			}
 		}
 	}
@@ -1282,8 +1283,8 @@ static bool Rescale(BMP& InputImage, char mode, int NewDimension)
 
 	if (CapMode == 'P')
 	{
-		NewWidth = (int) floor(OldWidth * NewDimension / 100.0);
-		NewHeight = (int) floor(OldHeight * NewDimension / 100.0);
+		NewWidth = static_cast<int>(floor(OldWidth * NewDimension / 100.0));
+		NewHeight = static_cast<int>(floor(OldHeight * NewDimension / 100.0));
 	}
 	if (CapMode == 'F')
 	{
@@ -1299,15 +1300,15 @@ static bool Rescale(BMP& InputImage, char mode, int NewDimension)
 
 	if (CapMode == 'W')
 	{
-		double percent = (double) NewDimension / (double) OldWidth;
+		double percent = static_cast<double>(NewDimension) / static_cast<double>(OldWidth);
 		NewWidth = NewDimension;
-		NewHeight = (int) floor(OldHeight * percent);
+		NewHeight = static_cast<int>(floor(OldHeight * percent));
 	}
 	if (CapMode == 'H')
 	{
-		double percent = (double) NewDimension / (double) OldHeight;
+		double percent = static_cast<double>(NewDimension) / static_cast<double>(OldHeight);
 		NewHeight = NewDimension;
-		NewWidth = (int) floor(OldWidth * percent);
+		NewWidth = static_cast<int>(floor(OldWidth * percent));
 	}
 
 	if (NewWidth < 1)
@@ -1327,66 +1328,66 @@ static bool Rescale(BMP& InputImage, char mode, int NewDimension)
 
 	for (int j = 0; j < NewHeight - 1; j++)
 	{
-		ThetaJ = (double) (j * (OldHeight - 1.0)) / (double) (NewHeight - 1.0);
-		J = (int) floor(ThetaJ);
+		ThetaJ = j * (OldHeight - 1.0) / (NewHeight - 1.0);
+		J = static_cast<int>(floor(ThetaJ));
 		ThetaJ -= J;
 
 		for (int i = 0; i < NewWidth - 1; i++)
 		{
-			ThetaI = (double) (i * (OldWidth - 1.0))
-					/ (double) (NewWidth - 1.0);
-			I = (int) floor(ThetaI);
+			ThetaI = i * (OldWidth - 1.0)
+				/ (NewWidth - 1.0);
+			I = static_cast<int>(floor(ThetaI));
 			ThetaI -= I;
 
-			InputImage(i, j)->Red = (ebmpBYTE) ((1.0 - ThetaI - ThetaJ + ThetaI
+			InputImage(i, j)->Red = static_cast<ebmpBYTE>((1.0 - ThetaI - ThetaJ + ThetaI
 					* ThetaJ) * (OldImage(I, J)->Red) + (ThetaI - ThetaI
 					* ThetaJ) * (OldImage(I + 1, J)->Red) + (ThetaJ - ThetaI
 					* ThetaJ) * (OldImage(I, J + 1)->Red) + (ThetaI * ThetaJ)
-					* (OldImage(I + 1, J + 1)->Red));
-			InputImage(i, j)->Green = (ebmpBYTE) ((1.0 - ThetaI - ThetaJ
-					+ ThetaI * ThetaJ) * OldImage(I, J)->Green + (ThetaI
-					- ThetaI * ThetaJ) * OldImage(I + 1, J)->Green + (ThetaJ
-					- ThetaI * ThetaJ) * OldImage(I, J + 1)->Green + (ThetaI
-					* ThetaJ) * OldImage(I + 1, J + 1)->Green);
-			InputImage(i, j)->Blue = (ebmpBYTE) ((1.0 - ThetaI - ThetaJ
-					+ ThetaI * ThetaJ) * OldImage(I, J)->Blue + (ThetaI
-					- ThetaI * ThetaJ) * OldImage(I + 1, J)->Blue + (ThetaJ
-					- ThetaI * ThetaJ) * OldImage(I, J + 1)->Blue + (ThetaI
-					* ThetaJ) * OldImage(I + 1, J + 1)->Blue);
+				* (OldImage(I + 1, J + 1)->Red));
+			InputImage(i, j)->Green = static_cast<ebmpBYTE>((1.0 - ThetaI - ThetaJ
+				+ ThetaI * ThetaJ) * OldImage(I, J)->Green + (ThetaI
+				- ThetaI * ThetaJ) * OldImage(I + 1, J)->Green + (ThetaJ
+				- ThetaI * ThetaJ) * OldImage(I, J + 1)->Green + (ThetaI
+				* ThetaJ) * OldImage(I + 1, J + 1)->Green);
+			InputImage(i, j)->Blue = static_cast<ebmpBYTE>((1.0 - ThetaI - ThetaJ
+				+ ThetaI * ThetaJ) * OldImage(I, J)->Blue + (ThetaI
+				- ThetaI * ThetaJ) * OldImage(I + 1, J)->Blue + (ThetaJ
+				- ThetaI * ThetaJ) * OldImage(I, J + 1)->Blue + (ThetaI
+				* ThetaJ) * OldImage(I + 1, J + 1)->Blue);
 		}
-		InputImage(NewWidth - 1, j)->Red = (ebmpBYTE) ((1.0 - ThetaJ)
-				* (OldImage(OldWidth - 1, J)->Red) + ThetaJ * (OldImage(
+		InputImage(NewWidth - 1, j)->Red = static_cast<ebmpBYTE>((1.0 - ThetaJ)
+			* (OldImage(OldWidth - 1, J)->Red) + ThetaJ * (OldImage(
 				OldWidth - 1, J + 1)->Red));
-		InputImage(NewWidth - 1, j)->Green = (ebmpBYTE) ((1.0 - ThetaJ)
-				* (OldImage(OldWidth - 1, J)->Green) + ThetaJ * (OldImage(
+		InputImage(NewWidth - 1, j)->Green = static_cast<ebmpBYTE>((1.0 - ThetaJ)
+			* (OldImage(OldWidth - 1, J)->Green) + ThetaJ * (OldImage(
 				OldWidth - 1, J + 1)->Green));
-		InputImage(NewWidth - 1, j)->Blue = (ebmpBYTE) ((1.0 - ThetaJ)
-				* (OldImage(OldWidth - 1, J)->Blue) + ThetaJ * (OldImage(
+		InputImage(NewWidth - 1, j)->Blue = static_cast<ebmpBYTE>((1.0 - ThetaJ)
+			* (OldImage(OldWidth - 1, J)->Blue) + ThetaJ * (OldImage(
 				OldWidth - 1, J + 1)->Blue));
 	}
 
 	for (int i = 0; i < NewWidth - 1; i++)
 	{
-		ThetaI = (double) (i * (OldWidth - 1.0)) / (double) (NewWidth - 1.0);
-		I = (int) floor(ThetaI);
+		ThetaI = i * (OldWidth - 1.0) / (NewWidth - 1.0);
+		I = static_cast<int>(floor(ThetaI));
 		ThetaI -= I;
-		InputImage(i, NewHeight - 1)->Red = (ebmpBYTE) ((1.0 - ThetaI)
-				* (OldImage(I, OldHeight - 1)->Red) + ThetaI * (OldImage(I,
-				OldHeight - 1)->Red));
-		InputImage(i, NewHeight - 1)->Green = (ebmpBYTE) ((1.0 - ThetaI)
-				* (OldImage(I, OldHeight - 1)->Green) + ThetaI * (OldImage(I,
-				OldHeight - 1)->Green));
-		InputImage(i, NewHeight - 1)->Blue = (ebmpBYTE) ((1.0 - ThetaI)
-				* (OldImage(I, OldHeight - 1)->Blue) + ThetaI * (OldImage(I,
-				OldHeight - 1)->Blue));
+		InputImage(i, NewHeight - 1)->Red = static_cast<ebmpBYTE>((1.0 - ThetaI)
+			* (OldImage(I, OldHeight - 1)->Red) + ThetaI * (OldImage(I,
+			                                                         OldHeight - 1)->Red));
+		InputImage(i, NewHeight - 1)->Green = static_cast<ebmpBYTE>((1.0 - ThetaI)
+			* (OldImage(I, OldHeight - 1)->Green) + ThetaI * (OldImage(I,
+			                                                           OldHeight - 1)->Green));
+		InputImage(i, NewHeight - 1)->Blue = static_cast<ebmpBYTE>((1.0 - ThetaI)
+			* (OldImage(I, OldHeight - 1)->Blue) + ThetaI * (OldImage(I,
+			                                                          OldHeight - 1)->Blue));
 	}
 
 	*InputImage(NewWidth - 1, NewHeight - 1) = *OldImage(OldWidth - 1,
-			OldHeight - 1);
+	                                                     OldHeight - 1);
 	return true;
 }
 
-u8 * DecodeBMP(const u8 *src, u32 srclen, int *width, int *height, u8 *dstPtr)
+u8* DecodeBMP(const u8* src, u32 srclen, int* width, int* height, u8* dstPtr)
 {
 	BMP bmp;
 	struct BMPFile bmpFile;
@@ -1394,19 +1395,20 @@ u8 * DecodeBMP(const u8 *src, u32 srclen, int *width, int *height, u8 *dstPtr)
 	bmpFile.imgData = src;
 	bmpFile.imgSize = srclen;
 	if (!bmp.Read(&bmpFile))
-		return NULL;
+		return nullptr;
 
-	if(bmp.TellWidth() > MAX_TEX_WIDTH || bmp.TellHeight() > MAX_TEX_HEIGHT)
+	if (bmp.TellWidth() > MAX_TEX_WIDTH || bmp.TellHeight() > MAX_TEX_HEIGHT)
 	{
-		if((float)bmp.TellHeight()/(float)bmp.TellWidth() > (float)MAX_TEX_HEIGHT/(float)MAX_TEX_WIDTH)
+		if (static_cast<float>(bmp.TellHeight()) / static_cast<float>(bmp.TellWidth()) > static_cast<float>(
+			MAX_TEX_HEIGHT) / static_cast<float>(MAX_TEX_WIDTH))
 			Rescale(bmp, 'H', MAX_TEX_HEIGHT);
 		else
 			Rescale(bmp, 'W', MAX_TEX_WIDTH);
 	}
 
-	u8 *dst = bmp.DecodeTo4x4RGB8(dstPtr);
+	u8* dst = bmp.DecodeTo4x4RGB8(dstPtr);
 
-	if(dst)
+	if (dst)
 	{
 		*width = bmp.TellWidth();
 		*height = bmp.TellHeight();

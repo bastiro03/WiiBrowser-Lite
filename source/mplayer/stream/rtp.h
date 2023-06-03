@@ -19,6 +19,6 @@
 #ifndef MPLAYER_RTP_H
 #define MPLAYER_RTP_H
 
-int read_rtp_from_server(int fd, char *buffer, int length);
+int read_rtp_from_server(int fd, char* buffer, int length);
 
 #endif /* MPLAYER_RTP_H */

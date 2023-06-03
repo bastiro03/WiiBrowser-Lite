@@ -67,7 +67,6 @@
 #define IP_TOS				1
 #define IP_TTL				2
 
-
 #define IPTOS_TOS_MASK      0x1E
 #define IPTOS_TOS(tos)      ((tos) & IPTOS_TOS_MASK)
 #define IPTOS_LOWDELAY      0x10
@@ -90,7 +89,6 @@
 #define IPTOS_PREC_PRIORITY             0x20
 #define IPTOS_PREC_ROUTINE              0x00
 
-
 /*
  * Commands for ioctlsocket(),  taken from the BSD file fcntl.h.
  *
@@ -107,8 +105,8 @@
 #define IOC_OUT         0x40000000      /* copy out parameters */
 #define IOC_IN          0x80000000      /* copy in parameters */
 #define IOC_INOUT       (IOC_IN|IOC_OUT)
-                                        /* 0x20000000 distinguishes new &
-                                           old ioctl's */
+/* 0x20000000 distinguishes new &
+   old ioctl's */
 #define _IO(x,y)        (IOC_VOID|((x)<<8)|(y))
 
 #define _IOR(x,y,t)     (IOC_OUT|(((long)sizeof(t)&IOCPARM_MASK)<<16)|((x)<<8)|(y))
@@ -137,16 +135,17 @@
 #endif
 
 #ifndef FD_SET
-  #undef  FD_SETSIZE
-  #define FD_SETSIZE		16
-  #define FD_SET(n, p)		((p)->fd_bits[(n)/8] |=  (1 << ((n) & 7)))
-  #define FD_CLR(n, p)		((p)->fd_bits[(n)/8] &= ~(1 << ((n) & 7)))
-  #define FD_ISSET(n,p)		((p)->fd_bits[(n)/8] &   (1 << ((n) & 7)))
-  #define FD_ZERO(p)		memset((void*)(p),0,sizeof(*(p)))
+#undef  FD_SETSIZE
+#define FD_SETSIZE		16
+#define FD_SET(n, p)		((p)->fd_bits[(n)/8] |=  (1 << ((n) & 7)))
+#define FD_CLR(n, p)		((p)->fd_bits[(n)/8] &= ~(1 << ((n) & 7)))
+#define FD_ISSET(n,p)		((p)->fd_bits[(n)/8] &   (1 << ((n) & 7)))
+#define FD_ZERO(p)		memset((void*)(p),0,sizeof(*(p)))
 
-  typedef struct fd_set {
-	u8 fd_bits [(FD_SETSIZE+7)/8];
-  } fd_set;
+using fd_set = struct fd_set
+{
+	u8 fd_bits[(FD_SETSIZE + 7) / 8];
+};
 
 #endif
 
@@ -199,74 +198,79 @@ extern "C" {
 
 #ifndef HAVE_IN_ADDR
 #define HAVE_IN_ADDR
-struct in_addr {
-  u32 s_addr;
+
+struct in_addr
+{
+	u32 s_addr;
 };
 #endif
 
-struct sockaddr_in {
-  u8 sin_len;
-  u8 sin_family;
-  u16 sin_port;
-  struct in_addr sin_addr;
-  s8 sin_zero[8];
+struct sockaddr_in
+{
+	u8 sin_len;
+	u8 sin_family;
+	u16 sin_port;
+	struct in_addr sin_addr;
+	s8 sin_zero[8];
 };
 
-struct hostent {
-  char    *h_name;        /* official name of host */
-  char    **h_aliases;    /* alias list */
-  u16     h_addrtype;     /* host address type */
-  u16     h_length;       /* length of address */
-  char    **h_addr_list;  /* list of addresses from name server */
+struct hostent
+{
+	char* h_name; /* official name of host */
+	char** h_aliases; /* alias list */
+	u16 h_addrtype; /* host address type */
+	u16 h_length; /* length of address */
+	char** h_addr_list; /* list of addresses from name server */
 };
 
-struct pollsd {
+struct pollsd
+{
 	s32 socket;
 	u32 events;
 	u32 revents;
 };
 
-u32 inet_addr(const char *cp);
-s8 inet_aton(const char *cp, struct in_addr *addr);
-char *inet_ntoa(struct in_addr addr); /* returns ptr to static buffer; not reentrant! */
+u32 inet_addr(const char* cp);
+s8 inet_aton(const char* cp, struct in_addr* addr);
+char* inet_ntoa(struct in_addr addr); /* returns ptr to static buffer; not reentrant! */
 
-s32 if_config( char *local_ip, char *netmask, char *gateway,bool use_dhcp);
-s32 if_configex(struct in_addr *local_ip,struct in_addr *netmask,struct in_addr *gateway,bool use_dhcp);
+s32 if_config(char* local_ip, char* netmask, char* gateway, bool use_dhcp);
+s32 if_configex(struct in_addr* local_ip, struct in_addr* netmask, struct in_addr* gateway, bool use_dhcp);
 
 s32 net_init();
 #ifdef HW_RVL
-typedef s32 (*netcallback)(s32 result, void *usrdata);
-s32 net_init_async(netcallback cb, void *usrdata);
-s32 net_get_status(void);
-void net_wc24cleanup();
-s32 net_get_mac_address(void *mac_buf);
+	typedef s32(*netcallback)(s32 result, void* usrdata);
+	s32 net_init_async(netcallback cb, void* usrdata);
+	s32 net_get_status(void);
+	void net_wc24cleanup();
+	s32 net_get_mac_address(void* mac_buf);
 #endif
 void net_deinit();
 
 u32 net_gethostip();
-s32 net_socket(u32 domain,u32 type,u32 protocol);
-s32 net_bind(s32 s,struct sockaddr *name,socklen_t namelen);
-s32 net_listen(s32 s,u32 backlog);
-s32 net_accept(s32 s,struct sockaddr *addr,socklen_t *addrlen);
-s32 net_connect(s32 s,struct sockaddr *,socklen_t);
-s32 net_write(s32 s,const void *data,s32 size);
-s32 net_send(s32 s,const void *data,s32 size,u32 flags);
-s32 net_sendto(s32 s,const void *data,s32 len,u32 flags,struct sockaddr *to,socklen_t tolen);
-s32 net_recv(s32 s,void *mem,s32 len,u32 flags);
-s32 net_recvfrom(s32 s,void *mem,s32 len,u32 flags,struct sockaddr *from,socklen_t *fromlen);
-s32 net_read(s32 s,void *mem,s32 len);
+s32 net_socket(u32 domain, u32 type, u32 protocol);
+s32 net_bind(s32 s, struct sockaddr* name, socklen_t namelen);
+s32 net_listen(s32 s, u32 backlog);
+s32 net_accept(s32 s, struct sockaddr* addr, socklen_t* addrlen);
+s32 net_connect(s32 s, struct sockaddr*, socklen_t);
+s32 net_write(s32 s, const void* data, s32 size);
+s32 net_send(s32 s, const void* data, s32 size, u32 flags);
+s32 net_sendto(s32 s, const void* data, s32 len, u32 flags, struct sockaddr* to, socklen_t tolen);
+s32 net_recv(s32 s, void* mem, s32 len, u32 flags);
+s32 net_recvfrom(s32 s, void* mem, s32 len, u32 flags, struct sockaddr* from, socklen_t* fromlen);
+s32 net_read(s32 s, void* mem, s32 len);
 s32 net_close(s32 s);
-s32 net_select(s32 maxfdp1,fd_set *readset,fd_set *writeset,fd_set *exceptset,struct timeval *timeout);
-s32 net_setsockopt(s32 s,u32 level,u32 optname,const void *optval,socklen_t optlen);
-s32 net_ioctl(s32 s, u32 cmd, void *argp);
+s32 net_select(s32 maxfdp1, fd_set* readset, fd_set* writeset, fd_set* exceptset, struct timeval* timeout);
+s32 net_setsockopt(s32 s, u32 level, u32 optname, const void* optval, socklen_t optlen);
+s32 net_ioctl(s32 s, u32 cmd, void* argp);
 s32 net_fcntl(s32 s, u32 cmd, u32 flags);
-s32 net_poll(struct pollsd *sds,s32 nsds,s32 timeout);
+s32 net_poll(struct pollsd* sds, s32 nsds, s32 timeout);
 s32 net_shutdown(s32 s, u32 how);
 
-struct hostent * net_gethostbyname(const char *addrString);
+struct hostent* net_gethostbyname(const char* addrString);
 
 #ifdef __cplusplus
-	}
+}
 #endif
 
 #endif

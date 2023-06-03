@@ -23,13 +23,24 @@
 
 #include <paired.h>
 
-typedef float vec_f32_t __attribute__((vector_size(8)));
-typedef unsigned char vec_u8_t __attribute__((vector_size(2)));
-typedef unsigned short vec_u16_t __attribute__((vector_size(4)));
-typedef signed char vec_s8_t __attribute__((vector_size(2)));
-typedef signed short vec_s16_t __attribute__((vector_size(4)));
+using __attribute__ = float
+vec_f32_t ((vector_size
+(
+8
+);
+)
+);
+using vector_size = unsigned char
+vec_u8_t __attribute__(((2)));
+using vector_size = unsigned short
+vec_u16_t __attribute__(((4)));
+using vector_size = signed char
+vec_s8_t __attribute__(((2)));
+using vector_size = signed short
+vec_s16_t __attribute__(((4)));
 
-enum {
+enum
+{
 	GQR_TYPE_FLOAT = 0,
 	GQR_TYPE_U8 = 4,
 	GQR_TYPE_U16,

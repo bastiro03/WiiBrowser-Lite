@@ -28,32 +28,33 @@
 
 #include "libavutil/x86_cpu.h"
 
-typedef struct cpucaps_s {
-    int cpuType;
-    int cpuModel;
-    int cpuStepping;
-    int hasMMX;
-    int hasMMX2;
-    int has3DNow;
-    int has3DNowExt;
-    int hasSSE;
-    int hasSSE2;
-    int hasSSE3;
-    int hasSSSE3;
-    int hasSSE4a;
-    int isX86;
-    unsigned cl_size; /* size of cache line */
-    int hasAltiVec;
-    int hasTSC;
+typedef struct cpucaps_s
+{
+	int cpuType;
+	int cpuModel;
+	int cpuStepping;
+	int hasMMX;
+	int hasMMX2;
+	int has3DNow;
+	int has3DNowExt;
+	int hasSSE;
+	int hasSSE2;
+	int hasSSE3;
+	int hasSSSE3;
+	int hasSSE4a;
+	int isX86;
+	unsigned cl_size; /* size of cache line */
+	int hasAltiVec;
+	int hasTSC;
 } CpuCaps;
 
 extern CpuCaps gCpuCaps;
 
-void do_cpuid(unsigned int ax, unsigned int *p);
+void do_cpuid(unsigned int ax, unsigned int* p);
 
-void GetCpuCaps(CpuCaps *caps);
+void GetCpuCaps(CpuCaps* caps);
 
 /* returned value is malloc()'ed so free() it after use */
-char *GetCpuFriendlyName(unsigned int regs[], unsigned int regs2[]);
+char* GetCpuFriendlyName(unsigned int regs[], unsigned int regs2[]);
 
 #endif /* MPLAYER_CPUDETECT_H */

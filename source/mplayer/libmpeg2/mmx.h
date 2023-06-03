@@ -30,18 +30,20 @@
  * values by ULL, lest they be truncated by the compiler)
  */
 
-typedef	union {
-	long long		q;	/* Quadword (64-bit) value */
-	unsigned long long	uq;	/* Unsigned Quadword */
-	int			d[2];	/* 2 Doubleword (32-bit) values */
-	unsigned int		ud[2];	/* 2 Unsigned Doubleword */
-	short			w[4];	/* 4 Word (16-bit) values */
-	unsigned short		uw[4];	/* 4 Unsigned Word */
-	char			b[8];	/* 8 Byte (8-bit) values */
-	unsigned char		ub[8];	/* 8 Unsigned Byte */
-	float			s[2];	/* Single-precision (32-bit) value */
-} ATTR_ALIGN(8) mmx_t;	/* On an 8-byte (64-bit) boundary */
-
+using ATTR_ALIGN = union
+{
+	long long q; /* Quadword (64-bit) value */
+	unsigned long long uq; /* Unsigned Quadword */
+	int d[2]; /* 2 Doubleword (32-bit) values */
+	unsigned int ud[2]; /* 2 Unsigned Doubleword */
+	short w[4]; /* 4 Word (16-bit) values */
+	unsigned short uw[4]; /* 4 Unsigned Word */
+	char b[8]; /* 8 Byte (8-bit) values */
+	unsigned char ub[8]; /* 8 Unsigned Byte */
+	float s[2]; /* Single-precision (32-bit) value */
+}(
+8
+); /* On an 8-byte (64-bit) boundary */
 
 #define	mmx_i2r(op,imm,reg) \
 	__asm__ __volatile__ (#op " %0, %%" #reg \
@@ -60,7 +62,6 @@ typedef	union {
 
 #define	mmx_r2r(op,regs,regd) \
 	__asm__ __volatile__ (#op " %" #regs ", %" #regd)
-
 
 #define	emms() __asm__ __volatile__ ("emms")
 
@@ -195,15 +196,12 @@ typedef	union {
 #define	pxor_m2r(var,reg)	mmx_m2r (pxor, var, reg)
 #define	pxor_r2r(regs,regd)	mmx_r2r (pxor, regs, regd)
 
-
 /* 3DNOW extensions */
 
 #define pavgusb_m2r(var,reg)	mmx_m2r (pavgusb, var, reg)
 #define pavgusb_r2r(regs,regd)	mmx_r2r (pavgusb, regs, regd)
 
-
 /* AMD MMX extensions - also available in intel SSE */
-
 
 #define mmx_m2ri(op,mem,reg,imm) \
 	__asm__ __volatile__ (#op " %1, %0, %%" #reg \
@@ -219,7 +217,6 @@ typedef	union {
 	__asm__ __volatile__ ("prefetch" #hint " %0" \
 			      : /* nothing */ \
 			      : "m" (mem))
-
 
 #define	maskmovq(regs,maskreg)		mmx_r2ri (maskmovq, regs, maskreg)
 
@@ -260,20 +257,22 @@ typedef	union {
 #define	psadbw_m2r(var,reg)		mmx_m2r (psadbw, var, reg)
 #define	psadbw_r2r(regs,regd)		mmx_r2r (psadbw, regs, regd)
 
-
 /* SSE2 */
 
-typedef	union {
-	long long		q[2];	/* Quadword (64-bit) value */
-	unsigned long long	uq[2];	/* Unsigned Quadword */
-	int			d[4];	/* 2 Doubleword (32-bit) values */
-	unsigned int		ud[4];	/* 2 Unsigned Doubleword */
-	short			w[8];	/* 4 Word (16-bit) values */
-	unsigned short		uw[8];	/* 4 Unsigned Word */
-	char			b[16];	/* 8 Byte (8-bit) values */
-	unsigned char		ub[16];	/* 8 Unsigned Byte */
-	float			s[4];	/* Single-precision (32-bit) value */
-} ATTR_ALIGN(16) sse_t;	/* On an 16-byte (128-bit) boundary */
+using ATTR_ALIGN = union
+{
+	long long q[2]; /* Quadword (64-bit) value */
+	unsigned long long uq[2]; /* Unsigned Quadword */
+	int d[4]; /* 2 Doubleword (32-bit) values */
+	unsigned int ud[4]; /* 2 Unsigned Doubleword */
+	short w[8]; /* 4 Word (16-bit) values */
+	unsigned short uw[8]; /* 4 Unsigned Word */
+	char b[16]; /* 8 Byte (8-bit) values */
+	unsigned char ub[16]; /* 8 Unsigned Byte */
+	float s[4]; /* Single-precision (32-bit) value */
+}(
+16
+); /* On an 16-byte (128-bit) boundary */
 
 #define	movdqu_m2r(var,reg)	mmx_m2r (movdqu, var, reg)
 #define	movdqu_r2m(reg,var)	mmx_r2m (movdqu, reg, var)

@@ -35,13 +35,13 @@ WRITE_2D_FUNC(dv_vlc_pair)
 
 int main(void)
 {
-    dv_vlc_map_tableinit();
+	dv_vlc_map_tableinit();
 
-    write_fileheader();
+	write_fileheader();
 
-    printf("static const struct dv_vlc_pair dv_vlc_map[DV_VLC_MAP_RUN_SIZE][DV_VLC_MAP_LEV_SIZE] = {\n");
-    write_dv_vlc_pair_2d_array(dv_vlc_map, DV_VLC_MAP_RUN_SIZE, DV_VLC_MAP_LEV_SIZE);
-    printf("};\n");
+	printf("static const struct dv_vlc_pair dv_vlc_map[DV_VLC_MAP_RUN_SIZE][DV_VLC_MAP_LEV_SIZE] = {\n");
+	write_dv_vlc_pair_2d_array(dv_vlc_map, DV_VLC_MAP_RUN_SIZE, DV_VLC_MAP_LEV_SIZE);
+	printf("};\n");
 
-    return 0;
+	return 0;
 }

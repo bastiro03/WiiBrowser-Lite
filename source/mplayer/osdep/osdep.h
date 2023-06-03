@@ -47,4 +47,3 @@
 #endif /* __OS2__ */
 
 #endif /* MPLAYER_OSDEP_H */
-

@@ -2,7 +2,7 @@
   * using gen_tld.pl and tld.list
   */
 
-static const char *tld[] = {
+static const char* tld[] = {
 	".LOCALHOST",
 	".INVALID",
 	".EXAMPLE",
@@ -325,15 +325,17 @@ static const char *tld[] = {
 	".AD",
 	".AC"
 };
-static size_t tldOffset(const char *domain) {
-	const char *end = domain + strlen(domain);
-	for(unsigned int i = 0; i < 321; ++i) 
+
+static size_t tldOffset(const char* domain)
+{
+	const char* end = domain + strlen(domain);
+	for (unsigned int i = 0; i < 321; ++i)
 	{
 		size_t len = strlen(tld[i]);
-		if(strcasecmp(end - len, tld[i]) == 0) 
+		if (strcasecmp(end - len, tld[i]) == 0)
 		{
 			return len;
 		}
 	}
- return 0;
+	return 0;
 }

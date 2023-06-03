@@ -27,98 +27,120 @@
 ///////////////////////
 // ASF Object Header
 ///////////////////////
-typedef struct __attribute__((packed)) {
-  uint8_t guid[16];
-  uint64_t size;
-} ASF_obj_header_t;
+typedef struct __attribute__ ((packed))
+{
+	uint8_t guid[16];
+	uint64_t size;
+}
+
+ASF_obj_header_t;
 
 ////////////////
 // ASF Header
 ////////////////
-typedef struct __attribute__((packed)) {
-  ASF_obj_header_t objh;
-  uint32_t cno; // number of subchunks
-  uint8_t v1; // unknown (0x01)
-  uint8_t v2; // unknown (0x02)
-} ASF_header_t;
+typedef struct __attribute__ ((packed))
+{
+	ASF_obj_header_t objh;
+	uint32_t cno; // number of subchunks
+	uint8_t v1; // unknown (0x01)
+	uint8_t v2; // unknown (0x02)
+}
+
+ASF_header_t;
 
 /////////////////////
 // ASF File Header
 /////////////////////
-typedef struct __attribute__((packed)) {
-  uint8_t stream_id[16]; // stream GUID
-  uint64_t file_size;
-  uint64_t creation_time; //File creation time FILETIME 8
-  uint64_t num_packets;    //Number of packets UINT64 8
-  uint64_t play_duration; //Timestamp of the end position UINT64 8
-  uint64_t send_duration;  //Duration of the playback UINT64 8
-  uint64_t preroll; //Time to bufferize before playing UINT64 8
-  uint32_t flags; //Unknown, maybe flags ( usually contains 2 ) UINT32 4
-  uint32_t min_packet_size; //Min size of the packet, in bytes UINT32 4
-  uint32_t max_packet_size; //Max size of the packet  UINT32 4
-  uint32_t max_bitrate; //Maximum bitrate of the media (sum of all the stream)
-} ASF_file_header_t;
+typedef struct __attribute__ ((packed))
+{
+	uint8_t stream_id[16]; // stream GUID
+	uint64_t file_size;
+	uint64_t creation_time; //File creation time FILETIME 8
+	uint64_t num_packets; //Number of packets UINT64 8
+	uint64_t play_duration; //Timestamp of the end position UINT64 8
+	uint64_t send_duration; //Duration of the playback UINT64 8
+	uint64_t preroll; //Time to bufferize before playing UINT64 8
+	uint32_t flags; //Unknown, maybe flags ( usually contains 2 ) UINT32 4
+	uint32_t min_packet_size; //Min size of the packet, in bytes UINT32 4
+	uint32_t max_packet_size; //Max size of the packet  UINT32 4
+	uint32_t max_bitrate; //Maximum bitrate of the media (sum of all the stream)
+}
+
+ASF_file_header_t;
 
 ///////////////////////
 // ASF Stream Header
 ///////////////////////
-typedef struct __attribute__((packed)) {
-  uint8_t type[16]; // Stream type (audio/video) GUID 16
-  uint8_t concealment[16]; // Audio error concealment type GUID 16
-  uint64_t unk1; // Unknown, maybe reserved ( usually contains 0 ) UINT64 8
-  uint32_t type_size; //Total size of type-specific data UINT32 4
-  uint32_t stream_size; //Size of stream-specific data UINT32 4
-  uint16_t stream_no; //Stream number UINT16 2
-  uint32_t unk2; //Unknown UINT32 4
-} ASF_stream_header_t;
+typedef struct __attribute__ ((packed))
+{
+	uint8_t type[16]; // Stream type (audio/video) GUID 16
+	uint8_t concealment[16]; // Audio error concealment type GUID 16
+	uint64_t unk1; // Unknown, maybe reserved ( usually contains 0 ) UINT64 8
+	uint32_t type_size; //Total size of type-specific data UINT32 4
+	uint32_t stream_size; //Size of stream-specific data UINT32 4
+	uint16_t stream_no; //Stream number UINT16 2
+	uint32_t unk2; //Unknown UINT32 4
+}
+
+ASF_stream_header_t;
 
 ///////////////////////////
 // ASF Content Description
 ///////////////////////////
-typedef struct  __attribute__((packed)) {
-  uint16_t title_size;
-  uint16_t author_size;
-  uint16_t copyright_size;
-  uint16_t comment_size;
-  uint16_t rating_size;
-} ASF_content_description_t;
+typedef struct __attribute__ ((packed))
+{
+	uint16_t title_size;
+	uint16_t author_size;
+	uint16_t copyright_size;
+	uint16_t comment_size;
+	uint16_t rating_size;
+}
+
+ASF_content_description_t;
 
 ////////////////////////
 // ASF Segment Header
 ////////////////////////
-typedef struct __attribute__((packed)) {
-  uint8_t streamno;
-  uint8_t seq;
-  uint32_t x;
-  uint8_t flag;
-} ASF_segmhdr_t;
+typedef struct __attribute__ ((packed))
+{
+	uint8_t streamno;
+	uint8_t seq;
+	uint32_t x;
+	uint8_t flag;
+}
+
+ASF_segmhdr_t;
 
 //////////////////////
 // ASF Stream Chunck
 //////////////////////
-typedef struct __attribute__((packed)) {
-	uint16_t	type;
-	uint16_t	size;
-	uint32_t	sequence_number;
-	uint16_t	unknown;
-	uint16_t	size_confirm;
-} ASF_stream_chunck_t;
+typedef struct __attribute__ ((packed))
+{
+	uint16_t type;
+	uint16_t size;
+	uint32_t sequence_number;
+	uint16_t unknown;
+	uint16_t size_confirm;
+}
+
+ASF_stream_chunck_t;
 
 // Definition of the stream type
 #if HAVE_BIGENDIAN
-	#define ASF_STREAMING_CLEAR	0x2443		// $C
-	#define ASF_STREAMING_DATA	0x2444		// $D
-	#define ASF_STREAMING_END_TRANS	0x2445		// $E
-	#define	ASF_STREAMING_HEADER	0x2448		// $H
+#define ASF_STREAMING_CLEAR	0x2443		// $C
+#define ASF_STREAMING_DATA	0x2444		// $D
+#define ASF_STREAMING_END_TRANS	0x2445		// $E
+#define	ASF_STREAMING_HEADER	0x2448		// $H
 #else
-	#define ASF_STREAMING_CLEAR	0x4324		// $C
-	#define ASF_STREAMING_DATA	0x4424		// $D
-	#define ASF_STREAMING_END_TRANS	0x4524		// $E
-	#define	ASF_STREAMING_HEADER	0x4824		// $H
+#define ASF_STREAMING_CLEAR	0x4324		// $C
+#define ASF_STREAMING_DATA	0x4424		// $D
+#define ASF_STREAMING_END_TRANS	0x4524		// $E
+#define	ASF_STREAMING_HEADER	0x4824		// $H
 #endif
 
 // Definition of the differents type of ASF streaming
-typedef enum {
+typedef enum
+{
 	ASF_Unknown_e,
 	ASF_Live_e,
 	ASF_Prerecorded_e,
@@ -127,14 +149,14 @@ typedef enum {
 	ASF_Authenticate_e
 } ASF_StreamType_e;
 
-typedef struct {
+typedef struct
+{
 	ASF_StreamType_e streaming_type;
 	int request;
 	int packet_size;
-	int *audio_streams,n_audio,*video_streams,n_video;
+	int *audio_streams, n_audio, *video_streams, n_video;
 	int audio_id, video_id;
 } asf_http_streaming_ctrl_t;
-
 
 /*
  * Some macros to swap little endian structures read from an ASF file
@@ -214,38 +236,39 @@ typedef struct {
 #endif
 
 // priv struct for the demuxer
-struct asf_priv {
-    ASF_header_t header;
-    unsigned char* packet;
-    int scrambling_h;
-    int scrambling_w;
-    int scrambling_b;
-    unsigned packetsize;
-    double   packetrate;
-    double movielength;
-    int asf_is_dvr_ms;
-    uint32_t asf_frame_state;
-    int asf_frame_start_found;
-    double dvr_last_vid_pts;
-    uint64_t vid_frame_ct;
-    uint64_t play_duration;
-    uint64_t num_packets;
-    int new_vid_frame_seg;
-    int *vid_repdata_sizes;
-    int *aud_repdata_sizes;
-    int vid_repdata_count;
-    int aud_repdata_count;
-    uint64_t avg_vid_frame_time;
-    uint64_t last_key_payload_time;
-    uint64_t last_aud_pts;
-    uint64_t last_aud_diff;
-    int found_first_key_frame;
-    uint32_t last_vid_seq;
-    int vid_ext_timing_index;
-    int aud_ext_timing_index;
-    int vid_ext_frame_index;
-    int know_frame_time;
-    unsigned bps;
+struct asf_priv
+{
+	ASF_header_t header;
+	unsigned char* packet;
+	int scrambling_h;
+	int scrambling_w;
+	int scrambling_b;
+	unsigned packetsize;
+	double packetrate;
+	double movielength;
+	int asf_is_dvr_ms;
+	uint32_t asf_frame_state;
+	int asf_frame_start_found;
+	double dvr_last_vid_pts;
+	uint64_t vid_frame_ct;
+	uint64_t play_duration;
+	uint64_t num_packets;
+	int new_vid_frame_seg;
+	int* vid_repdata_sizes;
+	int* aud_repdata_sizes;
+	int vid_repdata_count;
+	int aud_repdata_count;
+	uint64_t avg_vid_frame_time;
+	uint64_t last_key_payload_time;
+	uint64_t last_aud_pts;
+	uint64_t last_aud_diff;
+	int found_first_key_frame;
+	uint32_t last_vid_seq;
+	int vid_ext_timing_index;
+	int aud_ext_timing_index;
+	int vid_ext_frame_index;
+	int know_frame_time;
+	unsigned bps;
 };
 
 #endif /* MPLAYER_ASF_H */

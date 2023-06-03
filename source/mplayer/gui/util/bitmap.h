@@ -29,16 +29,17 @@
 /* for legacy reasons, we must treat all kind of fuchsia/magenta as transparent */
 #define IS_TRANSPARENT(c) ((ALPHA_OPAQUE | (c)) == GUI_TRANSPARENT)
 
-typedef struct {
-    unsigned long Width;
-    unsigned long Height;
-    unsigned int Bpp;
-    unsigned long ImageSize;
-    char *Image;
+typedef struct
+{
+	unsigned long Width;
+	unsigned long Height;
+	unsigned int Bpp;
+	unsigned long ImageSize;
+	char* Image;
 } guiImage;
 
-void bpFree(guiImage *img);
-int bpRead(const char *fname, guiImage *img);
-int bpRenderMask(const guiImage *in, guiImage *out);
+void bpFree(guiImage* img);
+int bpRead(const char* fname, guiImage* img);
+int bpRenderMask(const guiImage* in, guiImage* out);
 
 #endif /* MPLAYER_GUI_BITMAP_H */

@@ -39,7 +39,7 @@
 #include "libavutil/intmath.h"
 #include "mathops.h"
 
-void ff_mdct_calcw_c(FFTContext *s, FFTDouble *output, const FFTSample *input);
+void ff_mdct_calcw_c(FFTContext* s, FFTDouble* output, const FFTSample* input);
 
 #define SCALE_FLOAT(a, bits) lrint((a) * (double)(1 << (bits)))
 #define FIX15(a) av_clip(SCALE_FLOAT(a, 15), -32767, 32767)
@@ -68,8 +68,8 @@ void ff_mdct_calcw_c(FFTContext *s, FFTDouble *output, const FFTSample *input);
 #define ff_imdct_half_c FFT_NAME(ff_imdct_half_c)
 #define ff_mdct_calc_c  FFT_NAME(ff_mdct_calc_c)
 
-void ff_imdct_calc_c(FFTContext *s, FFTSample *output, const FFTSample *input);
-void ff_imdct_half_c(FFTContext *s, FFTSample *output, const FFTSample *input);
-void ff_mdct_calc_c(FFTContext *s, FFTSample *output, const FFTSample *input);
+void ff_imdct_calc_c(FFTContext* s, FFTSample* output, const FFTSample* input);
+void ff_imdct_half_c(FFTContext* s, FFTSample* output, const FFTSample* input);
+void ff_mdct_calc_c(FFTContext* s, FFTSample* output, const FFTSample* input);
 
 #endif /* AVCODEC_FFT_INTERNAL_H */

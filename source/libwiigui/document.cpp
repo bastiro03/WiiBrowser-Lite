@@ -16,7 +16,7 @@
 
 Document::Document()
 {
-    document = NULL;
+	document = nullptr;
 }
 
 /**
@@ -25,15 +25,15 @@ Document::Document()
 
 Document::~Document()
 {
-    document = NULL;
+	document = nullptr;
 }
 
-void Document::SetOffset(int *offset)
+void Document::SetOffset(int* offset)
 {
-    document = offset;
+	document = offset;
 }
 
 int Document::GetOffset()
 {
-    return (document ? (*document+40) : 0);
+	return (document ? (*document + 40) : 0);
 }

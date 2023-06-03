@@ -32,14 +32,14 @@ void Cleanup();
 
 void EnableVideoImg();
 bool VideoImgVisible();
-bool LoadYouTubeFile(char *newurl, char *data);
+bool LoadYouTubeFile(char* newurl, char* data);
 
 extern u8 HWButton;
 extern char new_page[];
 
-extern CURL *curl_handle;
-extern CURLM *curl_multi;
-extern CURLSH *curl_share;
+extern CURL* curl_handle;
+extern CURLM* curl_multi;
+extern CURLSH* curl_share;
 
 enum
 {
@@ -58,23 +58,23 @@ enum
 
 enum
 {
-    NET_ERR = 1,
-    IP_ERR
+	NET_ERR = 1,
+	IP_ERR
 };
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-    void DisableVideoImg();
-    void UpdatePointer();
-    void DoMPlayerGuiDraw();
+void DisableVideoImg();
+void UpdatePointer();
+void DoMPlayerGuiDraw();
 
-    void SetPointer (bool drag, int chan);
-    void ShowAction (const char *msg);
-    void SetMessage (const char *msg);
+void SetPointer(bool drag, int chan);
+void ShowAction(const char* msg);
+void SetMessage(const char* msg);
 
-    void CancelAction();
-    bool CancelDownload();
+void CancelAction();
+bool CancelDownload();
 #ifdef __cplusplus
 }
 #endif

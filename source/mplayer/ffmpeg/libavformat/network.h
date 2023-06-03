@@ -84,32 +84,34 @@ void ff_tls_deinit(void);
 
 int ff_network_wait_fd(int fd, int write);
 
-int ff_inet_aton (const char * str, struct in_addr * add);
+int ff_inet_aton(const char* str, struct in_addr* add);
 
 #if !HAVE_STRUCT_SOCKADDR_STORAGE
-struct sockaddr_storage {
+struct sockaddr_storage
+{
 #if HAVE_STRUCT_SOCKADDR_SA_LEN
-    uint8_t ss_len;
-    uint8_t ss_family;
+	uint8_t ss_len;
+	uint8_t ss_family;
 #else
-    uint16_t ss_family;
+	uint16_t ss_family;
 #endif
-    char ss_pad1[6];
-    int64_t ss_align;
-    char ss_pad2[112];
+	char ss_pad1[6];
+	int64_t ss_align;
+	char ss_pad2[112];
 };
 #endif
 
 #if !HAVE_STRUCT_ADDRINFO
-struct addrinfo {
-    int ai_flags;
-    int ai_family;
-    int ai_socktype;
-    int ai_protocol;
-    int ai_addrlen;
-    struct sockaddr *ai_addr;
-    char *ai_canonname;
-    struct addrinfo *ai_next;
+struct addrinfo
+{
+	int ai_flags;
+	int ai_family;
+	int ai_socktype;
+	int ai_protocol;
+	int ai_addrlen;
+	struct sockaddr* ai_addr;
+	char* ai_canonname;
+	struct addrinfo* ai_next;
 };
 #endif
 
@@ -159,13 +161,13 @@ struct addrinfo {
 #endif
 
 #if !HAVE_GETADDRINFO
-int ff_getaddrinfo(const char *node, const char *service,
-                   const struct addrinfo *hints, struct addrinfo **res);
-void ff_freeaddrinfo(struct addrinfo *res);
-int ff_getnameinfo(const struct sockaddr *sa, int salen,
-                   char *host, int hostlen,
-                   char *serv, int servlen, int flags);
-const char *ff_gai_strerror(int ecode);
+int ff_getaddrinfo(const char* node, const char* service,
+                   const struct addrinfo* hints, struct addrinfo** res);
+void ff_freeaddrinfo(struct addrinfo* res);
+int ff_getnameinfo(const struct sockaddr* sa, int salen,
+                   char* host, int hostlen,
+                   char* serv, int servlen, int flags);
+const char* ff_gai_strerror(int ecode);
 #define getaddrinfo ff_getaddrinfo
 #define freeaddrinfo ff_freeaddrinfo
 #define getnameinfo ff_getnameinfo
@@ -183,6 +185,6 @@ const char *ff_gai_strerror(int ecode);
 #define IN6_IS_ADDR_MULTICAST(a) (((uint8_t *) (a))[0] == 0xff)
 #endif
 
-int ff_is_multicast_address(struct sockaddr *addr);
+int ff_is_multicast_address(struct sockaddr* addr);
 
 #endif /* AVFORMAT_NETWORK_H */

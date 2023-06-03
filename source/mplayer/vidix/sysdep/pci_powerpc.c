@@ -5,26 +5,26 @@
 */
 
 #if defined(Lynx) || defined(__OpenBSD__)
-static int pci_config_type( void ) { return 1; }
+static int pci_config_type(void) { return 1; }
 
 static int pci_get_vendor(
-          unsigned char bus,
-          unsigned char dev,
-          int func)
+	unsigned char bus,
+	unsigned char dev,
+	int func)
 {
-    int retval;
-    pciconfig_read(bus, dev<<3, PCI_ID_REG, 4, &retval);
-    return retval;
+	int retval;
+	pciconfig_read(bus, dev << 3, PCI_ID_REG, 4, &retval);
+	return retval;
 }
 
 static long pci_config_read_long(
-          unsigned char bus,
-          unsigned char dev,
-          int func,
-          unsigned cmd)
+	unsigned char bus,
+	unsigned char dev,
+	int func,
+	unsigned cmd)
 {
-    long retval;
-    pciconfig_read(bus, dev<<3, cmd, 4, &retval);
-    return retval;
+	long retval;
+	pciconfig_read(bus, dev << 3, cmd, 4, &retval);
+	return retval;
 }
 #endif /*Lynx/OpenBSD*/

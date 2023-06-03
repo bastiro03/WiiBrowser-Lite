@@ -19,12 +19,12 @@
 #ifndef MPLAYER_MPLAYER_H
 #define MPLAYER_MPLAYER_H
 
-extern char  *filename;
-extern char  *current_module;
-extern char **audio_fm_list;
-extern char **video_fm_list;
-extern char **video_driver_list;
-extern char **audio_driver_list;
+extern char* filename;
+extern char* current_module;
+extern char** audio_fm_list;
+extern char** video_fm_list;
+extern char** video_driver_list;
+extern char** audio_driver_list;
 
 extern int osd_level;
 extern unsigned int osd_visible;
@@ -34,7 +34,7 @@ extern int slave_mode;
 extern int player_idle_mode;
 extern int use_menu;
 
-extern float  audio_delay;
+extern float audio_delay;
 extern double start_pts;
 extern int progbar_align;
 
@@ -44,7 +44,7 @@ extern int disable_gui_conf;
 
 extern int capture_dump;
 extern int stream_dump_type;
-extern char *stream_dump_name;
+extern char* stream_dump_name;
 
 void update_set_of_subtitles(void);
 

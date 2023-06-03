@@ -28,40 +28,42 @@
 #include "mp_image.h"
 #include "vf.h"
 
-struct vf_priv_s {
-    int aspect;
+struct vf_priv_s
+{
+	int aspect;
 };
 
 //===========================================================================//
 
-static int config(struct vf_instance *vf,
-        int width, int height, int d_width, int d_height,
-	unsigned int flags, unsigned int outfmt){
+static int config(struct vf_instance* vf,
+                  int width, int height, int d_width, int d_height,
+                  unsigned int flags, unsigned int outfmt)
+{
+	int scaled_y = vf->priv->aspect * d_height / d_width;
 
-    int scaled_y=vf->priv->aspect*d_height/d_width;
+	d_width = width; // do X-scaling by hardware
+	d_height = scaled_y;
 
-    d_width=width; // do X-scaling by hardware
-    d_height=scaled_y;
-
-    return vf_next_config(vf,width,height,d_width,d_height,flags,outfmt);
+	return vf_next_config(vf, width, height, d_width, d_height, flags, outfmt);
 }
 
-static int vf_open(vf_instance_t *vf, char *args){
-    vf->config=config;
-    vf->default_caps=0;
-    vf->priv=malloc(sizeof(struct vf_priv_s));
-    vf->priv->aspect=768;
-    if(args) vf->priv->aspect=atoi(args);
-    return 1;
+static int vf_open(vf_instance_t* vf, char* args)
+{
+	vf->config = config;
+	vf->default_caps = 0;
+	vf->priv = malloc(sizeof(struct vf_priv_s));
+	vf->priv->aspect = 768;
+	if (args) vf->priv->aspect = atoi(args);
+	return 1;
 }
 
 const vf_info_t vf_info_dvbscale = {
-    "calc Y scaling for DVB card",
-    "dvbscale",
-    "A'rpi",
-    "",
-    vf_open,
-    NULL
+	"calc Y scaling for DVB card",
+	"dvbscale",
+	"A'rpi",
+	"",
+	vf_open,
+	NULL
 };
 
 //===========================================================================//

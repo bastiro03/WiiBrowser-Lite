@@ -31,28 +31,29 @@
 /**
  * Audio buffer used for intermediate storage between conversion phases.
  */
-typedef struct AudioData {
-    const AVClass *class;               /**< AVClass for logging            */
-    uint8_t *data[AVRESAMPLE_MAX_CHANNELS]; /**< data plane pointers        */
-    uint8_t *buffer;                    /**< data buffer                    */
-    unsigned int buffer_size;           /**< allocated buffer size          */
-    int allocated_samples;              /**< number of samples the buffer can hold */
-    int nb_samples;                     /**< current number of samples      */
-    enum AVSampleFormat sample_fmt;     /**< sample format                  */
-    int channels;                       /**< channel count                  */
-    int allocated_channels;             /**< allocated channel count        */
-    int is_planar;                      /**< sample format is planar        */
-    int planes;                         /**< number of data planes          */
-    int sample_size;                    /**< bytes per sample               */
-    int stride;                         /**< sample byte offset within a plane */
-    int read_only;                      /**< data is read-only              */
-    int allow_realloc;                  /**< realloc is allowed             */
-    int ptr_align;                      /**< minimum data pointer alignment */
-    int samples_align;                  /**< allocated samples alignment    */
-    const char *name;                   /**< name for debug logging         */
+typedef struct AudioData
+{
+	const AVClass* class; /**< AVClass for logging            */
+	uint8_t* data[AVRESAMPLE_MAX_CHANNELS]; /**< data plane pointers        */
+	uint8_t* buffer; /**< data buffer                    */
+	unsigned int buffer_size; /**< allocated buffer size          */
+	int allocated_samples; /**< number of samples the buffer can hold */
+	int nb_samples; /**< current number of samples      */
+	enum AVSampleFormat sample_fmt; /**< sample format                  */
+	int channels; /**< channel count                  */
+	int allocated_channels; /**< allocated channel count        */
+	int is_planar; /**< sample format is planar        */
+	int planes; /**< number of data planes          */
+	int sample_size; /**< bytes per sample               */
+	int stride; /**< sample byte offset within a plane */
+	int read_only; /**< data is read-only              */
+	int allow_realloc; /**< realloc is allowed             */
+	int ptr_align; /**< minimum data pointer alignment */
+	int samples_align; /**< allocated samples alignment    */
+	const char* name; /**< name for debug logging         */
 } AudioData;
 
-int ff_audio_data_set_channels(AudioData *a, int channels);
+int ff_audio_data_set_channels(AudioData* a, int channels);
 
 /**
  * Initialize AudioData using a given source.
@@ -73,9 +74,9 @@ int ff_audio_data_set_channels(AudioData *a, int channels);
  * @param name            name for debug logging (can be NULL)
  * @return                0 on success, negative AVERROR value on error
  */
-int ff_audio_data_init(AudioData *a, void **src, int plane_size, int channels,
+int ff_audio_data_init(AudioData* a, void** src, int plane_size, int channels,
                        int nb_samples, enum AVSampleFormat sample_fmt,
-                       int read_only, const char *name);
+                       int read_only, const char* name);
 
 /**
  * Allocate AudioData.
@@ -88,9 +89,9 @@ int ff_audio_data_init(AudioData *a, void **src, int plane_size, int channels,
  * @param name            name for debug logging (can be NULL)
  * @return                newly allocated AudioData struct, or NULL on error
  */
-AudioData *ff_audio_data_alloc(int channels, int nb_samples,
+AudioData* ff_audio_data_alloc(int channels, int nb_samples,
                                enum AVSampleFormat sample_fmt,
-                               const char *name);
+                               const char* name);
 
 /**
  * Reallocate AudioData.
@@ -101,7 +102,7 @@ AudioData *ff_audio_data_alloc(int channels, int nb_samples,
  * @param nb_samples  number of samples to allocate space for
  * @return            0 on success, negative AVERROR value on error
  */
-int ff_audio_data_realloc(AudioData *a, int nb_samples);
+int ff_audio_data_realloc(AudioData* a, int nb_samples);
 
 /**
  * Free AudioData.
@@ -110,7 +111,7 @@ int ff_audio_data_realloc(AudioData *a, int nb_samples);
  *
  * @param a  AudioData struct
  */
-void ff_audio_data_free(AudioData **a);
+void ff_audio_data_free(AudioData** a);
 
 /**
  * Copy data from one AudioData to another.
@@ -119,7 +120,7 @@ void ff_audio_data_free(AudioData **a);
  * @param in   input AudioData
  * @return     0 on success, negative AVERROR value on error
  */
-int ff_audio_data_copy(AudioData *out, AudioData *in);
+int ff_audio_data_copy(AudioData* out, AudioData* in);
 
 /**
  * Append data from one AudioData to the end of another.
@@ -133,7 +134,7 @@ int ff_audio_data_copy(AudioData *out, AudioData *in);
  * @param nb_samples  number of samples to copy
  * @return            0 on success, negative AVERROR value on error
  */
-int ff_audio_data_combine(AudioData *dst, int dst_offset, AudioData *src,
+int ff_audio_data_combine(AudioData* dst, int dst_offset, AudioData* src,
                           int src_offset, int nb_samples);
 
 /**
@@ -144,7 +145,7 @@ int ff_audio_data_combine(AudioData *dst, int dst_offset, AudioData *src,
  * @param a           AudioData struct
  * @param nb_samples  number of samples to drain
  */
-void ff_audio_data_drain(AudioData *a, int nb_samples);
+void ff_audio_data_drain(AudioData* a, int nb_samples);
 
 /**
  * Add samples in AudioData to an AVAudioFifo.
@@ -156,7 +157,7 @@ void ff_audio_data_drain(AudioData *a, int nb_samples);
  * @return            number of samples actually added to the FIFO, or
  *                    negative AVERROR code on error
  */
-int ff_audio_data_add_to_fifo(AVAudioFifo *af, AudioData *a, int offset,
+int ff_audio_data_add_to_fifo(AVAudioFifo* af, AudioData* a, int offset,
                               int nb_samples);
 
 /**
@@ -168,6 +169,6 @@ int ff_audio_data_add_to_fifo(AVAudioFifo *af, AudioData *a, int offset,
  * @return            number of samples actually read from the FIFO, or
  *                    negative AVERROR code on error
  */
-int ff_audio_data_read_from_fifo(AVAudioFifo *af, AudioData *a, int nb_samples);
+int ff_audio_data_read_from_fifo(AVAudioFifo* af, AudioData* a, int nb_samples);
 
 #endif /* AVRESAMPLE_AUDIO_DATA_H */

@@ -26,28 +26,30 @@
 #include "libavutil/log.h"
 #include "libavutil/opt.h"
 
-typedef struct RawAudioDemuxerContext {
-    AVClass *class;
-    int sample_rate;
-    int channels;
+typedef struct RawAudioDemuxerContext
+{
+	AVClass* class;
+	int sample_rate;
+	int channels;
 } RawAudioDemuxerContext;
 
-typedef struct FFRawVideoDemuxerContext {
-    const AVClass *class;     /**< Class for private options. */
-    char *video_size;         /**< String describing video size, set by a private option. */
-    char *pixel_format;       /**< Set by a private option. */
-    char *framerate;          /**< String describing framerate, set by a private option. */
+typedef struct FFRawVideoDemuxerContext
+{
+	const AVClass* class; /**< Class for private options. */
+	char* video_size; /**< String describing video size, set by a private option. */
+	char* pixel_format; /**< Set by a private option. */
+	char* framerate; /**< String describing framerate, set by a private option. */
 } FFRawVideoDemuxerContext;
 
 extern const AVOption ff_rawvideo_options[];
 
-int ff_raw_read_header(AVFormatContext *s);
+int ff_raw_read_header(AVFormatContext* s);
 
-int ff_raw_read_partial_packet(AVFormatContext *s, AVPacket *pkt);
+int ff_raw_read_partial_packet(AVFormatContext* s, AVPacket* pkt);
 
-int ff_raw_audio_read_header(AVFormatContext *s);
+int ff_raw_audio_read_header(AVFormatContext* s);
 
-int ff_raw_video_read_header(AVFormatContext *s);
+int ff_raw_video_read_header(AVFormatContext* s);
 
 #define FF_RAWVIDEO_DEMUXER_CLASS(name)\
 static const AVClass name ## _demuxer_class = {\

@@ -61,23 +61,23 @@
    want in a struct dv1394_init.
 
    Example 1:
-         To play a raw .DV file:   cat foo.DV > /dev/dv1394
-         (cat will use write() internally)
+		 To play a raw .DV file:   cat foo.DV > /dev/dv1394
+		 (cat will use write() internally)
 
    Example 2:
-           static struct dv1394_init init = {
-              0x63,        (broadcast channel)
-              4,           (four-frame ringbuffer)
-              DV1394_NTSC, (send NTSC video)
-              0, 0         (default empty packet rate)
-           }
+		   static struct dv1394_init init = {
+			  0x63,        (broadcast channel)
+			  4,           (four-frame ringbuffer)
+			  DV1394_NTSC, (send NTSC video)
+			  0, 0         (default empty packet rate)
+		   }
 
-           ioctl(fd, DV1394_INIT, &init);
+		   ioctl(fd, DV1394_INIT, &init);
 
-           while(1) {
-                  read( <a raw DV file>, buf, DV1394_NTSC_FRAME_SIZE );
-                  write( <the dv1394 FD>, buf, DV1394_NTSC_FRAME_SIZE );
-           }
+		   while(1) {
+				  read( <a raw DV file>, buf, DV1394_NTSC_FRAME_SIZE );
+				  write( <the dv1394 FD>, buf, DV1394_NTSC_FRAME_SIZE );
+		   }
 
    2)
 
@@ -99,20 +99,17 @@
    frames are clear (ready to be filled with new DV data). Finally, use
    DV1394_SUBMIT_FRAMES again to send the new data to the DV output.
 
-
    Example: here is what a four-frame ringbuffer might look like
-            during DV transmission:
+			during DV transmission:
 
+		 frame 0   frame 1   frame 2   frame 3
 
-         frame 0   frame 1   frame 2   frame 3
+		*--------------------------------------*
+		| CLEAR   | DV data | DV data | CLEAR  |
+		*--------------------------------------*
+				   <ACTIVE>
 
-        *--------------------------------------*
-        | CLEAR   | DV data | DV data | CLEAR  |
-        *--------------------------------------*
-                   <ACTIVE>
-
-        transmission goes in this direction --->>>
-
+		transmission goes in this direction --->>>
 
    The DV hardware is currently transmitting the data in frame 1.
    Once frame 1 is finished, it will automatically transmit frame 2.
@@ -120,14 +117,13 @@
    will continue to transmit frame 2, and will increase the dropped_frames
    counter each time it repeats the transmission).
 
-
    If you called DV1394_GET_STATUS at this instant, you would
    receive the following values:
 
-                  n_frames          = 4
-                  active_frame      = 1
-                  first_clear_frame = 3
-                  n_clear_frames    = 2
+				  n_frames          = 4
+				  active_frame      = 1
+				  first_clear_frame = 3
+				  n_clear_frames    = 2
 
    At this point, you should write new DV data into frame 3 and optionally
    frame 0. Then call DV1394_SUBMIT_FRAMES to inform the device that
@@ -156,31 +152,30 @@
    check return values in your code!)
 
    while( frames left ) {
+	struct pollfd *pfd = ...;
 
-    struct pollfd *pfd = ...;
+	pfd->fd = dv1394_fd;
+	pfd->revents = 0;
+	pfd->events = POLLOUT | POLLIN; (OUT for transmit, IN for receive)
 
-    pfd->fd = dv1394_fd;
-    pfd->revents = 0;
-    pfd->events = POLLOUT | POLLIN; (OUT for transmit, IN for receive)
+	(add other sources of I/O here)
 
-    (add other sources of I/O here)
+	poll(pfd, 1, -1); (or select(); add a timeout if you want)
 
-    poll(pfd, 1, -1); (or select(); add a timeout if you want)
+	if(pfd->revents) {
+		 struct dv1394_status status;
 
-    if(pfd->revents) {
-         struct dv1394_status status;
+		 ioctl(dv1394_fd, DV1394_GET_STATUS, &status);
 
-         ioctl(dv1394_fd, DV1394_GET_STATUS, &status);
-
-         if(status.dropped_frames > 0) {
-              reset_dv1394();
-         } else {
-              int i;
-              for(i = 0; i < status.n_clear_frames; i++) {
-                  copy_DV_frame();
-              }
-         }
-    }
+		 if(status.dropped_frames > 0) {
+			  reset_dv1394();
+		 } else {
+			  int i;
+			  for(i = 0; i < status.n_clear_frames; i++) {
+				  copy_DV_frame();
+			  }
+		 }
+	}
    }
 
    where copy_DV_frame() reads or writes on the dv1394 file descriptor
@@ -197,7 +192,6 @@
 
 */
 
-
 /* maximum number of frames in the ringbuffer */
 #define DV1394_MAX_FRAMES 32
 
@@ -209,85 +203,76 @@
 #define DV1394_NTSC_FRAME_SIZE (480 * DV1394_NTSC_PACKETS_PER_FRAME)
 #define DV1394_PAL_FRAME_SIZE  (480 * DV1394_PAL_PACKETS_PER_FRAME)
 
-
 /* ioctl() commands */
 
-enum {
-        /* I don't like using 0 as a valid ioctl() */
-        DV1394_INVALID = 0,
+enum
+{
+	/* I don't like using 0 as a valid ioctl() */
+	DV1394_INVALID = 0,
 
+	/* get the driver ready to transmit video.
+	   pass a struct dv1394_init* as the parameter (see below),
+	   or NULL to get default parameters */
+	DV1394_INIT,
 
-        /* get the driver ready to transmit video.
-           pass a struct dv1394_init* as the parameter (see below),
-           or NULL to get default parameters */
-        DV1394_INIT,
+	/* stop transmitting video and free the ringbuffer */
+	DV1394_SHUTDOWN,
 
+	/* submit N new frames to be transmitted, where
+	   the index of the first new frame is first_clear_buffer,
+	   and the index of the last new frame is
+	   (first_clear_buffer + N) % n_frames */
+	DV1394_SUBMIT_FRAMES,
 
-        /* stop transmitting video and free the ringbuffer */
-        DV1394_SHUTDOWN,
+	/* block until N buffers are clear (pass N as the parameter)
+	   Because we re-transmit the last frame on underrun, there
+	   will at most be n_frames - 1 clear frames at any time */
+	DV1394_WAIT_FRAMES,
 
+	/* capture new frames that have been received, where
+	   the index of the first new frame is first_clear_buffer,
+	   and the index of the last new frame is
+	   (first_clear_buffer + N) % n_frames */
+	DV1394_RECEIVE_FRAMES,
 
-        /* submit N new frames to be transmitted, where
-           the index of the first new frame is first_clear_buffer,
-           and the index of the last new frame is
-           (first_clear_buffer + N) % n_frames */
-        DV1394_SUBMIT_FRAMES,
+	DV1394_START_RECEIVE,
 
-
-        /* block until N buffers are clear (pass N as the parameter)
-           Because we re-transmit the last frame on underrun, there
-           will at most be n_frames - 1 clear frames at any time */
-        DV1394_WAIT_FRAMES,
-
-        /* capture new frames that have been received, where
-           the index of the first new frame is first_clear_buffer,
-           and the index of the last new frame is
-           (first_clear_buffer + N) % n_frames */
-        DV1394_RECEIVE_FRAMES,
-
-
-        DV1394_START_RECEIVE,
-
-
-        /* pass a struct dv1394_status* as the parameter (see below) */
-        DV1394_GET_STATUS,
+	/* pass a struct dv1394_status* as the parameter (see below) */
+	DV1394_GET_STATUS,
 };
 
-
-
-enum pal_or_ntsc {
-        DV1394_NTSC = 0,
-        DV1394_PAL
+enum pal_or_ntsc
+{
+	DV1394_NTSC = 0,
+	DV1394_PAL
 };
-
-
-
 
 /* this is the argument to DV1394_INIT */
-struct dv1394_init {
-        /* DV1394_API_VERSION */
-        unsigned int api_version;
+struct dv1394_init
+{
+	/* DV1394_API_VERSION */
+	unsigned int api_version;
 
-        /* isochronous transmission channel to use */
-        unsigned int channel;
+	/* isochronous transmission channel to use */
+	unsigned int channel;
 
-        /* number of frames in the ringbuffer. Must be at least 2
-           and at most DV1394_MAX_FRAMES. */
-        unsigned int n_frames;
+	/* number of frames in the ringbuffer. Must be at least 2
+	   and at most DV1394_MAX_FRAMES. */
+	unsigned int n_frames;
 
-        /* send/receive PAL or NTSC video format */
-        enum pal_or_ntsc format;
+	/* send/receive PAL or NTSC video format */
+	enum pal_or_ntsc format;
 
-        /* the following are used only for transmission */
+	/* the following are used only for transmission */
 
-        /* set these to zero unless you want a
-           non-default empty packet rate (see below) */
-        unsigned long cip_n;
-        unsigned long cip_d;
+	/* set these to zero unless you want a
+	   non-default empty packet rate (see below) */
+	unsigned long cip_n;
+	unsigned long cip_d;
 
-        /* set this to zero unless you want a
-           non-default SYT cycle offset (default = 3 cycles) */
-        unsigned int syt_offset;
+	/* set this to zero unless you want a
+	   non-default SYT cycle offset (default = 3 cycles) */
+	unsigned int syt_offset;
 };
 
 /* NOTE: you may only allocate the DV frame ringbuffer once each time
@@ -322,36 +307,34 @@ struct dv1394_init {
 
  */
 
+struct dv1394_status
+{
+	/* this embedded init struct returns the current dv1394
+	   parameters in use */
+	struct dv1394_init init;
 
+	/* the ringbuffer frame that is currently being
+	   displayed. (-1 if the device is not transmitting anything) */
+	int active_frame;
 
-struct dv1394_status {
-        /* this embedded init struct returns the current dv1394
-           parameters in use */
-        struct dv1394_init init;
+	/* index of the first buffer (ahead of active_frame) that
+	   is ready to be filled with data */
+	unsigned int first_clear_frame;
 
-        /* the ringbuffer frame that is currently being
-           displayed. (-1 if the device is not transmitting anything) */
-        int active_frame;
+	/* how many buffers, including first_clear_buffer, are
+	   ready to be filled with data */
+	unsigned int n_clear_frames;
 
-        /* index of the first buffer (ahead of active_frame) that
-           is ready to be filled with data */
-        unsigned int first_clear_frame;
+	/* how many times the DV stream has underflowed, overflowed,
+	   or otherwise encountered an error, since the previous call
+	   to DV1394_GET_STATUS */
+	unsigned int dropped_frames;
 
-        /* how many buffers, including first_clear_buffer, are
-           ready to be filled with data */
-        unsigned int n_clear_frames;
-
-        /* how many times the DV stream has underflowed, overflowed,
-           or otherwise encountered an error, since the previous call
-           to DV1394_GET_STATUS */
-        unsigned int dropped_frames;
-
-        /* N.B. The dropped_frames counter is only a lower bound on the actual
-           number of dropped frames, with the special case that if dropped_frames
-           is zero, then it is guaranteed that NO frames have been dropped
-           since the last call to DV1394_GET_STATUS.
-        */
+	/* N.B. The dropped_frames counter is only a lower bound on the actual
+	   number of dropped frames, with the special case that if dropped_frames
+	   is zero, then it is guaranteed that NO frames have been dropped
+	   since the last call to DV1394_GET_STATUS.
+	*/
 };
-
 
 #endif /* AVDEVICE_DV1394_H */

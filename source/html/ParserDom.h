@@ -10,28 +10,36 @@ namespace htmlcxx
 	{
 		class ParserDom : public ParserSax
 		{
-			public:
-				ParserDom() {}
-				~ParserDom() {}
+		public:
+			ParserDom()
+			{
+			}
 
-				const tree<Node> &parseTree(const std::string &html);
-				const tree<Node> &getTree()
-				{ return mHtmlTree; }
+			~ParserDom() override
+			{
+			}
 
-			protected:
-				virtual void beginParsing();
+			const tree<Node>& parseTree(const std::string& html);
 
-				virtual void foundTag(Node node, bool isEnd);
-				virtual void foundText(Node node);
-				virtual void foundComment(Node node);
+			const tree<Node>& getTree()
+			{
+				return mHtmlTree;
+			}
 
-				virtual void endParsing();
-				
-				tree<Node> mHtmlTree;
-				tree<Node>::iterator mCurrentState;
+		protected:
+			void beginParsing() override;
+
+			void foundTag(Node node, bool isEnd) override;
+			void foundText(Node node) override;
+			void foundComment(Node node) override;
+
+			void endParsing() override;
+
+			tree<Node> mHtmlTree;
+			tree<Node>::iterator mCurrentState;
 		};
 
-		std::ostream &operator<<(std::ostream &stream, const tree<HTML::Node> &tr);
+		std::ostream& operator<<(std::ostream& stream, const tree<Node>& tr);
 	} //namespace HTML
 } //namespace htmlcxx
 

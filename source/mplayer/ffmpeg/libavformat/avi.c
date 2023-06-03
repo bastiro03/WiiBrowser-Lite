@@ -22,24 +22,24 @@
 #include "avi.h"
 
 const AVMetadataConv ff_avi_metadata_conv[] = {
-    { "IART", "artist"    },
-    { "ICMT", "comment"   },
-    { "ICOP", "copyright" },
-    { "ICRD", "date"      },
-    { "IGNR", "genre"     },
-    { "ILNG", "language"  },
-    { "INAM", "title"     },
-    { "IPRD", "album"     },
-    { "IPRT", "track"     },
-    { "ISFT", "encoder"   },
-    { "ITCH", "encoded_by"},
-    { "strn", "title"     },
-    { 0 },
+	{"IART", "artist"},
+	{"ICMT", "comment"},
+	{"ICOP", "copyright"},
+	{"ICRD", "date"},
+	{"IGNR", "genre"},
+	{"ILNG", "language"},
+	{"INAM", "title"},
+	{"IPRD", "album"},
+	{"IPRT", "track"},
+	{"ISFT", "encoder"},
+	{"ITCH", "encoded_by"},
+	{"strn", "title"},
+	{0},
 };
 
 const char ff_avi_tags[][5] = {
-    "IARL", "IART", "ICMS", "ICMT", "ICOP", "ICRD", "ICRP", "IDIM", "IDPI",
-    "IENG", "IGNR", "IKEY", "ILGT", "ILNG", "IMED", "INAM", "IPLT", "IPRD",
-    "IPRT", "ISBJ", "ISFT", "ISHP", "ISRC", "ISRF", "ITCH",
-    {0}
+	"IARL", "IART", "ICMS", "ICMT", "ICOP", "ICRD", "ICRP", "IDIM", "IDPI",
+	"IENG", "IGNR", "IKEY", "ILGT", "ILNG", "IMED", "INAM", "IPLT", "IPRD",
+	"IPRT", "ISBJ", "ISFT", "ISHP", "ISRC", "ISRF", "ITCH",
+	{0}
 };

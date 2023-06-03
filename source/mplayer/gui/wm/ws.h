@@ -109,79 +109,80 @@
 #define wsWMIceWM    3
 #define wsWMWMaker   4
 
-typedef   void (*wsTReDraw)(void);
-typedef   void (*wsTReSize)(unsigned int X, unsigned int Y, unsigned int width, unsigned int height);
-typedef   void (*wsTIdle)(void);
-typedef   void (*wsTKeyHandler)(int KeyCode, int Type, int Key);
-typedef   void (*wsTMouseHandler)(int Button, int X, int Y, int RX, int RY);
-typedef   void (*wsTDNDHandler)(int num, char **str);
+typedef void (*wsTReDraw)(void);
+typedef void (*wsTReSize)(unsigned int X, unsigned int Y, unsigned int width, unsigned int height);
+typedef void (*wsTIdle)(void);
+typedef void (*wsTKeyHandler)(int KeyCode, int Type, int Key);
+typedef void (*wsTMouseHandler)(int Button, int X, int Y, int RX, int RY);
+typedef void (*wsTDNDHandler)(int num, char** str);
 
-typedef struct {
-    Window WindowID;
-    Window Parent;
-    int X, Y, Width, Height;
-    int OldX, OldY, OldWidth, OldHeight;
-    int MaxX, MaxY;
-    int isFullScreen;
-    int BorderWidth;
-    int Property;
-    unsigned char *bImage;
-    XImage *xImage;
-    Pixmap Mask;
-    int Decorations;
+typedef struct
+{
+	Window WindowID;
+	Window Parent;
+	int X, Y, Width, Height;
+	int OldX, OldY, OldWidth, OldHeight;
+	int MaxX, MaxY;
+	int isFullScreen;
+	int BorderWidth;
+	int Property;
+	unsigned char* bImage;
+	XImage* xImage;
+	Pixmap Mask;
+	int Decorations;
 
-    int State;
-    int Visible;
-    int Mapped;
-    int Focused;
-    int Rolled;
+	int State;
+	int Visible;
+	int Mapped;
+	int Focused;
+	int Rolled;
 
-    wsTReDraw ReDraw;
-    wsTReSize ReSize;
-    wsTIdle Idle;
-    wsTKeyHandler KeyHandler;
-    wsTMouseHandler MouseHandler;
-    wsTDNDHandler DandDHandler;
+	wsTReDraw ReDraw;
+	wsTReSize ReSize;
+	wsTIdle Idle;
+	wsTKeyHandler KeyHandler;
+	wsTMouseHandler MouseHandler;
+	wsTDNDHandler DandDHandler;
 
-    int Alt;
-    int Shift;
-    int Control;
-    int NumLock;
-    int CapsLock;
-/* Misc ------------------------------------------------------------------------------------- */
+	int Alt;
+	int Shift;
+	int Control;
+	int NumLock;
+	int CapsLock;
+	/* Misc ------------------------------------------------------------------------------------- */
 
-    Atom AtomDeleteWindow;
-    Atom AtomTakeFocus;
-    Atom AtomRolle;
-    Atom AtomProtocols;
-    Atom AtomsProtocols[3];
-    Atom AtomLeaderClient;
-    Atom AtomRemote;
-    Atom AtomWMSizeHint;
-    Atom AtomWMNormalHint;
+	Atom AtomDeleteWindow;
+	Atom AtomTakeFocus;
+	Atom AtomRolle;
+	Atom AtomProtocols;
+	Atom AtomsProtocols[3];
+	Atom AtomLeaderClient;
+	Atom AtomRemote;
+	Atom AtomWMSizeHint;
+	Atom AtomWMNormalHint;
 
 #ifdef HAVE_SHM
-    XShmSegmentInfo Shminfo;
+	XShmSegmentInfo Shminfo;
 #endif
-    unsigned char *ImageData;
-    unsigned short int *ImageDataw;
-    unsigned int *ImageDatadw;
-    GC wGC;
-    XGCValues wGCV;
-    unsigned long WindowMask;
-    XVisualInfo VisualInfo;
-    XSetWindowAttributes WindowAttrib;
-    XSizeHints SizeHint;
-    XWMHints WMHints;
+	unsigned char* ImageData;
+	unsigned short int* ImageDataw;
+	unsigned int* ImageDatadw;
+	GC wGC;
+	XGCValues wGCV;
+	unsigned long WindowMask;
+	XVisualInfo VisualInfo;
+	XSetWindowAttributes WindowAttrib;
+	XSizeHints SizeHint;
+	XWMHints WMHints;
 
-    XFontStruct *Font;
-    int FontHeight;
+	XFontStruct* Font;
+	int FontHeight;
 
-    Cursor wsCursor;
-    char wsCursorData[1];
-    Pixmap wsCursorPixmap;
-    int wsMouseEventType;
-    XColor wsColor;
+	Cursor wsCursor;
+	char wsCursorData[1];
+	Pixmap wsCursorPixmap;
+	int wsMouseEventType;
+	XColor wsColor;
 } wsTWindow;
 
 extern int wsMaxX;
@@ -189,12 +190,12 @@ extern int wsMaxY;
 extern int wsOrgX;
 extern int wsOrgY;
 
-extern Display *wsDisplay;
+extern Display* wsDisplay;
 extern int wsScreen;
 extern Window wsRootWin;
 extern int wsLayer;
 
-extern unsigned char *wsImageData;
+extern unsigned char* wsImageData;
 
 extern XEvent wsEvent;
 
@@ -211,14 +212,14 @@ extern int wsUseXShm;
 extern unsigned long wsKeyTable[512];
 
 void wsXDone(void);
-void wsXInit(Display *disp);
+void wsXInit(Display* disp);
 
 int wsGetDepthOnScreen(void);
 
 void wsDoExit(void);
 void wsMainLoop(void);
 void wsAutohideCursor(void);
-Bool wsEvents(Display *display, XEvent *Event);
+Bool wsEvents(Display* display, XEvent* Event);
 void wsHandleEvents(void);
 
 // ----------------------------------------------------------------------------------------------
@@ -229,50 +230,50 @@ void wsHandleEvents(void);
 //   cV    : mouse cursor visible
 //   D     : "decoration", visible titlebar, etc ...
 // ----------------------------------------------------------------------------------------------
-void wsCreateWindow(wsTWindow *win, int X, int Y, int wX, int hY, int bW, int cV, unsigned char D, char *label);
-void wsDestroyWindow(wsTWindow *win);
-void wsMoveWindow(wsTWindow *win, Bool abs, int x, int y);
-void wsMoveWindowWithin(wsTWindow *win, Bool abs, int x, int y);
-void wsResizeWindow(wsTWindow *win, int sx, int sy);
+void wsCreateWindow(wsTWindow* win, int X, int Y, int wX, int hY, int bW, int cV, unsigned char D, char* label);
+void wsDestroyWindow(wsTWindow* win);
+void wsMoveWindow(wsTWindow* win, Bool abs, int x, int y);
+void wsMoveWindowWithin(wsTWindow* win, Bool abs, int x, int y);
+void wsResizeWindow(wsTWindow* win, int sx, int sy);
 void wsIconify(wsTWindow win);
-void wsRaiseWindowTop(Display *dpy, Window win);
-void wsSetBackground(wsTWindow *win, int color);
-void wsSetForegroundRGB(wsTWindow *win, int r, int g, int b);
-void wsSetBackgroundRGB(wsTWindow *win, int r, int g, int b);
+void wsRaiseWindowTop(Display* dpy, Window win);
+void wsSetBackground(wsTWindow* win, int color);
+void wsSetForegroundRGB(wsTWindow* win, int r, int g, int b);
+void wsSetBackgroundRGB(wsTWindow* win, int r, int g, int b);
 #define wsClearWindow(win) XClearWindow(wsDisplay, win.WindowID)
-void wsSetTitle(wsTWindow *win, char *name);
-void wsVisibleWindow(wsTWindow *win, int show);
-void wsWindowDecoration(wsTWindow *win, long d);
-void wsSetLayer(Display *wsDisplay, Window win, int layer);
-void wsFullScreen(wsTWindow *win);
-void wsPostRedisplay(wsTWindow *win);
-void wsSetShape(wsTWindow *win, char *data);
-void wsSetIcon(Display *dpy, Window win, guiIcon_t *icon);
+void wsSetTitle(wsTWindow* win, char* name);
+void wsVisibleWindow(wsTWindow* win, int show);
+void wsWindowDecoration(wsTWindow* win, long d);
+void wsSetLayer(Display* wsDisplay, Window win, int layer);
+void wsFullScreen(wsTWindow* win);
+void wsPostRedisplay(wsTWindow* win);
+void wsSetShape(wsTWindow* win, char* data);
+void wsSetIcon(Display* dpy, Window win, guiIcon_t* icon);
 
 // ----------------------------------------------------------------------------------------------
 //    Draw string at x,y with fc ( foreground color ) and bc ( background color ).
 // ----------------------------------------------------------------------------------------------
-void wsDrawString(wsTWindow win, int x, int y, char *str, int fc, int bc);
-int wsTextWidth(wsTWindow win, char *str);
+void wsDrawString(wsTWindow win, int x, int y, char* str, int fc, int bc);
+int wsTextWidth(wsTWindow win, char* str);
 
 // ----------------------------------------------------------------------------------------------
 //    Show / hide mouse cursor.
 // ----------------------------------------------------------------------------------------------
-void wsVisibleMouse(wsTWindow *win, int m);
-void wsSetMousePosition(wsTWindow *win, int x, int y);
+void wsVisibleMouse(wsTWindow* win, int m);
+void wsSetMousePosition(wsTWindow* win, int x, int y);
 
 // ----------------------------------------------------------------------------------------------
 // Image handling
 // ----------------------------------------------------------------------------------------------
-void wsCreateImage(wsTWindow *win, int Width, int Height);
-void wsConvert(wsTWindow *win, unsigned char *Image);
-void wsPutImage(wsTWindow *win);
-void wsResizeImage(wsTWindow *win, int Width, int Height);
-void wsDestroyImage(wsTWindow *win);
+void wsCreateImage(wsTWindow* win, int Width, int Height);
+void wsConvert(wsTWindow* win, unsigned char* Image);
+void wsPutImage(wsTWindow* win);
+void wsResizeImage(wsTWindow* win, int Width, int Height);
+void wsDestroyImage(wsTWindow* win);
 int wsGetOutMask(void);
 
-void wsScreenSaverOn(Display *mDisplay);
-void wsScreenSaverOff(Display *mDisplay);
+void wsScreenSaverOn(Display* mDisplay);
+void wsScreenSaverOff(Display* mDisplay);
 
 #define wgIsRect(X, Y, tX, tY, bX, bY) (((X) > (tX)) && ((Y) > (tY)) && ((X) < (bX)) && ((Y) < (bY)))
 

@@ -48,29 +48,30 @@
 #define AF_CONTROL_PROP_CHANNEL (0x8<<5) // Argument is set per channel
 #define AF_CONTROL_PROP_MASK	(0xF<<5)
 
-typedef struct af_control_info_s{
-  int	 def;	// Control enumrification
-  char*	 name; 	// Name of argument
-  char*	 info;	// Description of what it does
-  int 	 flags;	// Flags as defined above
-  float	 max;	// Max and min value
-  float	 min;	// (only aplicable on float and int)
-  int	 xdim;	// 1st dimension
-  int	 ydim;	// 2nd dimension (=0 for everything except matrix)
-  size_t sz;	// Size of argument in bytes
-  int	 ch;	// Channel number (for future use)
-  void*  arg;	// Data (for future use)
-}af_control_info_t;
-
+typedef struct af_control_info_s
+{
+	int def; // Control enumrification
+	char* name; // Name of argument
+	char* info; // Description of what it does
+	int flags; // Flags as defined above
+	float max; // Max and min value
+	float min; // (only aplicable on float and int)
+	int xdim; // 1st dimension
+	int ydim; // 2nd dimension (=0 for everything except matrix)
+	size_t sz; // Size of argument in bytes
+	int ch; // Channel number (for future use)
+	void* arg; // Data (for future use)
+} af_control_info_t;
 
 /*********************************************
 // Extended control used with arguments that operates on only one
 // channel at the time
 */
-typedef struct af_control_ext_s{
-  void* arg;	// Argument
-  int	ch;	// Chanel number
-}af_control_ext_t;
+typedef struct af_control_ext_s
+{
+	void* arg; // Argument
+	int ch; // Chanel number
+} af_control_ext_t;
 
 /*********************************************
 // Control parameters
@@ -110,7 +111,6 @@ typedef struct af_control_ext_s{
    for this specific filter, they will be given as a char* in the
    argument */
 #define AF_CONTROL_COMMAND_LINE		0x00000300 | AF_CONTROL_OPTIONAL
-
 
 // FILTER SPECIFIC CALLS
 
@@ -219,10 +219,8 @@ typedef struct af_control_ext_s{
 // Set equalizer gain, arg is a control_ext with a float*
 #define AF_CONTROL_EQUALIZER_GAIN 	0x00001D00 | AF_CONTROL_FILTER_SPECIFIC
 
-
 // Delay length in ms, arg is a control_ext with a float*
 #define AF_CONTROL_DELAY_LEN		0x00001E00 | AF_CONTROL_FILTER_SPECIFIC
-
 
 // Subwoofer
 
@@ -232,20 +230,16 @@ typedef struct af_control_ext_s{
 // Cutoff frequency [Hz] for lowpass filter, arg is float*
 #define AF_CONTROL_SUB_FC		0x00002000 | AF_CONTROL_FILTER_SPECIFIC
 
-
 // Export
 #define AF_CONTROL_EXPORT_SZ            0x00003000 | AF_CONTROL_FILTER_SPECIFIC
 
-
 // ExtraStereo Multiplier
 #define AF_CONTROL_ES_MUL		0x00003100 | AF_CONTROL_FILTER_SPECIFIC
-
 
 // Center
 
 // Channel number which to inster the filtered data, arg in int*
 #define AF_CONTROL_CENTER_CH		0x00003200 | AF_CONTROL_FILTER_SPECIFIC
-
 
 // SineSuppress
 #define AF_CONTROL_SS_FREQ		0x00003300 | AF_CONTROL_FILTER_SPECIFIC

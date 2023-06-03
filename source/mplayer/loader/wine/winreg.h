@@ -31,17 +31,19 @@
  *	registry provider structs
  */
 typedef struct value_entA
-{   LPSTR	ve_valuename;
-    DWORD	ve_valuelen;
-    DWORD_PTR	ve_valueptr;
-    DWORD	ve_type;
+{
+	LPSTR ve_valuename;
+	DWORD ve_valuelen;
+	DWORD_PTR ve_valueptr;
+	DWORD ve_type;
 } VALENTA, *PVALENTA;
 
-typedef struct value_entW {
-    LPWSTR	ve_valuename;
-    DWORD	ve_valuelen;
-    DWORD_PTR	ve_valueptr;
-    DWORD	ve_type;
+typedef struct value_entW
+{
+	LPWSTR ve_valuename;
+	DWORD ve_valuelen;
+	DWORD_PTR ve_valueptr;
+	DWORD ve_type;
 } VALENTW, *PVALENTW;
 
 typedef ACCESS_MASK REGSAM;

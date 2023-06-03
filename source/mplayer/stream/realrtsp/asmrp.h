@@ -42,6 +42,6 @@
 
 #define MAX_RULEMATCHES 16
 
-int asmrp_match (const char *rules, int bandwidth, int *matches) ;
+int asmrp_match(const char* rules, int bandwidth, int* matches);
 
 #endif /* MPLAYER_ASMRP_H */

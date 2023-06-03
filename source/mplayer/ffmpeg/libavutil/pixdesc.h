@@ -25,23 +25,24 @@
 #include <inttypes.h>
 #include "pixfmt.h"
 
-typedef struct AVComponentDescriptor{
-    uint16_t plane        :2;            ///< which of the 4 planes contains the component
+typedef struct AVComponentDescriptor
+{
+	uint16_t plane : 2; ///< which of the 4 planes contains the component
 
-    /**
-     * Number of elements between 2 horizontally consecutive pixels minus 1.
-     * Elements are bits for bitstream formats, bytes otherwise.
-     */
-    uint16_t step_minus1  :3;
+	/**
+	 * Number of elements between 2 horizontally consecutive pixels minus 1.
+	 * Elements are bits for bitstream formats, bytes otherwise.
+	 */
+	uint16_t step_minus1 : 3;
 
-    /**
-     * Number of elements before the component of the first pixel plus 1.
-     * Elements are bits for bitstream formats, bytes otherwise.
-     */
-    uint16_t offset_plus1 :3;
-    uint16_t shift        :3;            ///< number of least significant bits that must be shifted away to get the value
-    uint16_t depth_minus1 :4;            ///< number of bits in the component minus 1
-}AVComponentDescriptor;
+	/**
+	 * Number of elements before the component of the first pixel plus 1.
+	 * Elements are bits for bitstream formats, bytes otherwise.
+	 */
+	uint16_t offset_plus1 : 3;
+	uint16_t shift : 3; ///< number of least significant bits that must be shifted away to get the value
+	uint16_t depth_minus1 : 4; ///< number of bits in the component minus 1
+} AVComponentDescriptor;
 
 /**
  * Descriptor that unambiguously describes how the bits of a pixel are
@@ -52,39 +53,40 @@ typedef struct AVComponentDescriptor{
  *       and all the YUV variants) AVPixFmtDescriptor just stores how values
  *       are stored not what these values represent.
  */
-typedef struct AVPixFmtDescriptor{
-    const char *name;
-    uint8_t nb_components;      ///< The number of components each pixel has, (1-4)
+typedef struct AVPixFmtDescriptor
+{
+	const char* name;
+	uint8_t nb_components; ///< The number of components each pixel has, (1-4)
 
-    /**
-     * Amount to shift the luma width right to find the chroma width.
-     * For YV12 this is 1 for example.
-     * chroma_width = -((-luma_width) >> log2_chroma_w)
-     * The note above is needed to ensure rounding up.
-     * This value only refers to the chroma components.
-     */
-    uint8_t log2_chroma_w;      ///< chroma_width = -((-luma_width )>>log2_chroma_w)
+	/**
+	 * Amount to shift the luma width right to find the chroma width.
+	 * For YV12 this is 1 for example.
+	 * chroma_width = -((-luma_width) >> log2_chroma_w)
+	 * The note above is needed to ensure rounding up.
+	 * This value only refers to the chroma components.
+	 */
+	uint8_t log2_chroma_w; ///< chroma_width = -((-luma_width )>>log2_chroma_w)
 
-    /**
-     * Amount to shift the luma height right to find the chroma height.
-     * For YV12 this is 1 for example.
-     * chroma_height= -((-luma_height) >> log2_chroma_h)
-     * The note above is needed to ensure rounding up.
-     * This value only refers to the chroma components.
-     */
-    uint8_t log2_chroma_h;
-    uint8_t flags;
+	/**
+	 * Amount to shift the luma height right to find the chroma height.
+	 * For YV12 this is 1 for example.
+	 * chroma_height= -((-luma_height) >> log2_chroma_h)
+	 * The note above is needed to ensure rounding up.
+	 * This value only refers to the chroma components.
+	 */
+	uint8_t log2_chroma_h;
+	uint8_t flags;
 
-    /**
-     * Parameters that describe how pixels are packed.
-     * If the format has 2 or 4 components, then alpha is last.
-     * If the format has 1 or 2 components, then luma is 0.
-     * If the format has 3 or 4 components,
-     * if the RGB flag is set then 0 is red, 1 is green and 2 is blue;
-     * otherwise 0 is luma, 1 is chroma-U and 2 is chroma-V.
-     */
-    AVComponentDescriptor comp[4];
-}AVPixFmtDescriptor;
+	/**
+	 * Parameters that describe how pixels are packed.
+	 * If the format has 2 or 4 components, then alpha is last.
+	 * If the format has 1 or 2 components, then luma is 0.
+	 * If the format has 3 or 4 components,
+	 * if the RGB flag is set then 0 is red, 1 is green and 2 is blue;
+	 * otherwise 0 is luma, 1 is chroma-U and 2 is chroma-V.
+	 */
+	AVComponentDescriptor comp[4];
+} AVPixFmtDescriptor;
 
 #define PIX_FMT_BE        1 ///< Pixel format is big-endian.
 #define PIX_FMT_PAL       2 ///< Pixel format has a palette in data[1], values are indexes in this palette.
@@ -120,8 +122,8 @@ extern const AVPixFmtDescriptor av_pix_fmt_descriptors[];
  * component c in data[1] to dst, rather than the palette indexes in
  * data[0]. The behavior is undefined if the format is not paletted.
  */
-void av_read_image_line(uint16_t *dst, const uint8_t *data[4], const int linesize[4],
-                        const AVPixFmtDescriptor *desc, int x, int y, int c, int w, int read_pal_component);
+void av_read_image_line(uint16_t* dst, const uint8_t* data[4], const int linesize[4],
+                        const AVPixFmtDescriptor* desc, int x, int y, int c, int w, int read_pal_component);
 
 /**
  * Write the values from src to the pixel format component c of an
@@ -137,8 +139,8 @@ void av_read_image_line(uint16_t *dst, const uint8_t *data[4], const int linesiz
  * @param w the width of the line to write, that is the number of
  * values to write to the image line
  */
-void av_write_image_line(const uint16_t *src, uint8_t *data[4], const int linesize[4],
-                         const AVPixFmtDescriptor *desc, int x, int y, int c, int w);
+void av_write_image_line(const uint16_t* src, uint8_t* data[4], const int linesize[4],
+                         const AVPixFmtDescriptor* desc, int x, int y, int c, int w);
 
 /**
  * Return the pixel format corresponding to name.
@@ -151,7 +153,7 @@ void av_write_image_line(const uint16_t *src, uint8_t *data[4], const int linesi
  *
  * Finally if no pixel format has been found, returns PIX_FMT_NONE.
  */
-enum PixelFormat av_get_pix_fmt(const char *name);
+enum PixelFormat av_get_pix_fmt(const char* name);
 
 /**
  * Return the short name for a pixel format, NULL in case pix_fmt is
@@ -159,7 +161,7 @@ enum PixelFormat av_get_pix_fmt(const char *name);
  *
  * @see av_get_pix_fmt(), av_get_pix_fmt_string()
  */
-const char *av_get_pix_fmt_name(enum PixelFormat pix_fmt);
+const char* av_get_pix_fmt_name(enum PixelFormat pix_fmt);
 
 /**
  * Print in buf the string corresponding to the pixel format with
@@ -171,7 +173,7 @@ const char *av_get_pix_fmt_name(enum PixelFormat pix_fmt);
  * corresponding info string, or a negative value to print the
  * corresponding header.
  */
-char *av_get_pix_fmt_string (char *buf, int buf_size, enum PixelFormat pix_fmt);
+char* av_get_pix_fmt_string(char* buf, int buf_size, enum PixelFormat pix_fmt);
 
 /**
  * Return the number of bits per pixel used by the pixel format
@@ -181,6 +183,6 @@ char *av_get_pix_fmt_string (char *buf, int buf_size, enum PixelFormat pix_fmt);
  * used for storing the pixel information, that is padding bits are
  * not counted.
  */
-int av_get_bits_per_pixel(const AVPixFmtDescriptor *pixdesc);
+int av_get_bits_per_pixel(const AVPixFmtDescriptor* pixdesc);
 
 #endif /* AVUTIL_PIXDESC_H */

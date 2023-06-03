@@ -35,86 +35,87 @@
 // scaler code by David Ashley dash@xdr.com based on algorithm used in pnmscale
 // ******************************************************************************************
 // ******************************************************************************************
-typedef struct scaler {
-	void (*callback)(void *data, unsigned char *row, int len);
-	void *callback_data;
-	int sw,sh;
-	int dw,dh;
+using scaler = struct scaler
+{
+	void (*callback)(void* data, unsigned char* row, int len);
+	void* callback_data;
+	int sw, sh;
+	int dw, dh;
 	int bpp;
-	unsigned char *accum;
-	unsigned char *output;
-	int yf,yr;
+	unsigned char* accum;
+	unsigned char* output;
+	int yf, yr;
 	int bytewidth;
 	int obytewidth;
-} scaler;
+};
 
-static inline void accumrow(unsigned char *d, int w, unsigned char *s,
-		int top, int bottom)
+static inline void accumrow(unsigned char* d, int w, unsigned char* s,
+                            int top, int bottom)
 {
 	int f;
-	f=0x100*top/bottom;
-	while(w--)
-		d[w] += s[w]*f>>8;
+	f = 0x100 * top / bottom;
+	while (w--)
+		d[w] += s[w] * f >> 8;
 }
 
-static inline void accumpixel(unsigned char *d, int bpp, unsigned char *s,
-		int top, int bottom)
+static inline void accumpixel(unsigned char* d, int bpp, unsigned char* s,
+                              int top, int bottom)
 {
-	int f=0x100*top/bottom;
-	while(bpp--)
-		d[bpp] += s[bpp]*f>>8;
+	int f = 0x100 * top / bottom;
+	while (bpp--)
+		d[bpp] += s[bpp] * f >> 8;
 }
 
-static inline void xscale(unsigned char *d, int w2, unsigned char *s, int w1, int bpp)
+static inline void xscale(unsigned char* d, int w2, unsigned char* s, int w1, int bpp)
 {
 	int pixelcount;
-	int xf,xr;
+	int xf, xr;
 
-	pixelcount=w2;
+	pixelcount = w2;
 
-	xf=w2;
-	xr=w1;
+	xf = w2;
+	xr = w1;
 
-	memset(d, 0, w2*bpp);
-	while(pixelcount)
+	memset(d, 0, w2 * bpp);
+	while (pixelcount)
 	{
-		if(xr>xf)
+		if (xr > xf)
 		{
 			accumpixel(d, bpp, s, xf, w1);
-			xr-=xf;
-			xf=0;
-		} else
+			xr -= xf;
+			xf = 0;
+		}
+		else
 		{
 			accumpixel(d, bpp, s, xr, w1);
-			xf-=xr;
-			xr=0;
-
+			xf -= xr;
+			xr = 0;
 		}
-		if(xr==0) // we can kick out a pixel
+		if (xr == 0) // we can kick out a pixel
 		{
-			d+=bpp;
-			xr=w1;
+			d += bpp;
+			xr = w1;
 			--pixelcount;
 		}
-		if(xf==0) // we can step the source pointer
+		if (xf == 0) // we can step the source pointer
 		{
-			s+=bpp;
-			xf=w2;
+			s += bpp;
+			xf = w2;
 		}
 	}
 }
 
-void *scaler_alloc(int dw, int dh, int sw, int sh, int bpp,
-		void (*callback)(void *data, unsigned char *row, int len),
-		void *data)
+void* scaler_alloc(int dw, int dh, int sw, int sh, int bpp,
+                   void (*callback)(void* data, unsigned char* row, int len),
+                   void* data)
 {
-	scaler *s=(scaler *)jpg_malloc(sizeof(scaler));
-	if(s)
+	auto s = static_cast<scaler*>(jpg_malloc(sizeof(scaler)));
+	if (s)
 	{
 		s->bytewidth = sw * bpp;
 		s->obytewidth = dw * bpp;
-		s->accum = (unsigned char *)jpg_malloc(s->bytewidth);
-		s->output = (unsigned char *)jpg_malloc(s->obytewidth);
+		s->accum = static_cast<unsigned char*>(jpg_malloc(s->bytewidth));
+		s->output = static_cast<unsigned char*>(jpg_malloc(s->obytewidth));
 		s->sw = sw;
 		s->sh = sh;
 		s->dw = dw;
@@ -122,66 +123,68 @@ void *scaler_alloc(int dw, int dh, int sw, int sh, int bpp,
 		s->bpp = bpp;
 		s->callback = callback;
 		s->callback_data = data;
-		s->yf=dh;
-		s->yr=sh;
-		if(s->accum && s->output)
+		s->yf = dh;
+		s->yr = sh;
+		if (s->accum && s->output)
 			memset(s->accum, 0, s->bytewidth);
 		else
 		{
-			if(s->accum)
+			if (s->accum)
 				jpg_free(s->accum);
-			if(s->output)
+			if (s->output)
 				jpg_free(s->output);
 			jpg_free(s);
-			s=0;
+			s = nullptr;
 		}
 	}
- 	return s;
+	return s;
 }
 
-void scaler_free(void *p)
+void scaler_free(void* p)
 {
-	scaler *s=(scaler *)p;
-	if(s)
+	auto s = static_cast<scaler*>(p);
+	if (s)
 	{
-		if(s->accum)
+		if (s->accum)
 			jpg_free(s->accum);
-		if(s->output)
+		if (s->output)
 			jpg_free(s->output);
 		jpg_free(s);
 	}
 }
 
-void scaler_feed(void *p, unsigned char *row)
+void scaler_feed(void* p, unsigned char* row)
 {
-	scaler *s=(scaler *)p;
-	while(s)
+	auto s = static_cast<scaler*>(p);
+	while (s)
 	{
-		if(s->yr > s->yf)
+		if (s->yr > s->yf)
 		{
 			accumrow(s->accum, s->bytewidth, row, s->yf, s->sh);
 			s->yr -= s->yf;
 			s->yf = 0;
-		} else
+		}
+		else
 		{
 			accumrow(s->accum, s->bytewidth, row, s->yr, s->sh);
 			s->yf -= s->yr;
 			s->yr = 0;
 		}
-		if(s->yr == 0) // we can kick out a line
+		if (s->yr == 0) // we can kick out a line
 		{
 			xscale(s->output, s->dw, s->accum, s->sw, s->bpp);
 			memset(s->accum, 0, s->bytewidth);
 			s->yr = s->sh;
 			s->callback(s->callback_data, s->output, s->obytewidth);
 		}
-		if(s->yf == 0) // we're done with the input line.
+		if (s->yf == 0) // we're done with the input line.
 		{
 			s->yf = s->dh;
 			break;
 		}
 	}
 }
+
 // ******************************************************************************************
 // ******************************************************************************************
 // end of scaler code
@@ -194,13 +197,13 @@ void scaler_feed(void *p, unsigned char *row)
  * \brief very low level C 'structure', used to decode jpeg file
  * Should not appear in the Doxygen supplied documentation
  */
-typedef struct
+using my_source_mgr = struct
 {
 	struct jpeg_source_mgr pub; /* public fields */
 	JOCTET eoi_buffer[2]; /* a place to put a dummy EOI */
-} my_source_mgr;
+};
 
-typedef my_source_mgr * my_src_ptr;
+using my_src_ptr = my_source_mgr*;
 
 /*
  * Initialize source --- called by jpeg_read_header
@@ -208,7 +211,9 @@ typedef my_source_mgr * my_src_ptr;
  */
 
 METHODDEF(void)
-init_source (j_decompress_ptr cinfo)
+init_source
+
+(j_decompress_ptr cinfo)
 {
 	/* No work, since jpeg_memory_src set up the buffer pointer and count.
 	 * Indeed, if we want to read multiple JPEG images from one buffer,
@@ -230,16 +235,17 @@ init_source (j_decompress_ptr cinfo)
  * some sort of output image, no matter how corrupted.
  */
 
-METHODDEF(boolean)
-fill_input_buffer (j_decompress_ptr cinfo)
+METHODDEF (boolean)
+
+fill_input_buffer(j_decompress_ptr cinfo)
 {
-	my_src_ptr src = (my_src_ptr) cinfo->src;
+	my_src_ptr src = static_cast<my_src_ptr>(cinfo->src);
 
 	WARNMS(cinfo, JWRN_JPEG_EOF);
 
 	/* Create a fake EOI marker */
-	src->eoi_buffer[0] = (JOCTET) 0xFF;
-	src->eoi_buffer[1] = (JOCTET) JPEG_EOI;
+	src->eoi_buffer[0] = static_cast<JOCTET>(0xFF);
+	src->eoi_buffer[1] = static_cast<JOCTET>(JPEG_EOI);
 	src->pub.next_input_byte = src->eoi_buffer;
 	src->pub.bytes_in_buffer = 2;
 
@@ -257,22 +263,26 @@ fill_input_buffer (j_decompress_ptr cinfo)
  */
 
 METHODDEF(void)
-skip_input_data (j_decompress_ptr cinfo, long num_bytes)
+skip_input_data
+(j_decompress_ptr cinfo
+,
+long num_bytes
+)
 {
-	my_src_ptr src = (my_src_ptr) cinfo->src;
+	my_src_ptr src = (my_src_ptr)cinfo->src;
 
-	if (num_bytes> 0)
+	if (num_bytes > 0)
 	{
-		while (num_bytes> (long) src->pub.bytes_in_buffer)
+		while (num_bytes > (long)src->pub.bytes_in_buffer)
 		{
-			num_bytes -= (long) src->pub.bytes_in_buffer;
-			(void) fill_input_buffer(cinfo);
+			num_bytes -= (long)src->pub.bytes_in_buffer;
+			(void)fill_input_buffer(cinfo);
 			/* note we assume that fill_input_buffer will never return FALSE,
 			 * so suspension need not be handled.
 			 */
 		}
-		src->pub.next_input_byte += (size_t) num_bytes;
-		src->pub.bytes_in_buffer -= (size_t) num_bytes;
+		src->pub.next_input_byte += (size_t)num_bytes;
+		src->pub.bytes_in_buffer -= (size_t)num_bytes;
 	}
 }
 
@@ -294,7 +304,9 @@ skip_input_data (j_decompress_ptr cinfo, long num_bytes)
  */
 
 METHODDEF(void)
-term_source (j_decompress_ptr cinfo)
+term_source
+
+(j_decompress_ptr cinfo)
 {
 	/* no work necessary here */
 	(void)cinfo;
@@ -305,7 +317,11 @@ term_source (j_decompress_ptr cinfo)
  */
 
 GLOBAL(void)
-jpeg_memory_src (j_decompress_ptr cinfo, const JOCTET * buffer, size_t bufsize)
+jpeg_memory_src
+(j_decompress_ptr cinfo
+,
+const JOCTET *buffer, size_t bufsize
+)
 {
 	my_src_ptr src;
 
@@ -317,12 +333,12 @@ jpeg_memory_src (j_decompress_ptr cinfo, const JOCTET * buffer, size_t bufsize)
 	 */
 	if (cinfo->src == NULL)
 	{ /* first time for this JPEG object? */
-		cinfo->src = (struct jpeg_source_mgr *)
-		(*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_PERMANENT,
-		sizeof(my_source_mgr));
+		cinfo->src = (struct jpeg_source_mgr*)
+			(*cinfo->mem->alloc_small) ((j_common_ptr)cinfo, JPOOL_PERMANENT,
+				sizeof(my_source_mgr));
 	}
 
-	src = (my_src_ptr) cinfo->src;
+	src = (my_src_ptr)cinfo->src;
 	src->pub.init_source = init_source;
 	src->pub.fill_input_buffer = fill_input_buffer;
 	src->pub.skip_input_data = skip_input_data;
@@ -338,27 +354,27 @@ static inline u32 coordsRGBA8(u32 x, u32 y, u32 w)
 	return ((((y >> 2) * (w >> 2) + (x >> 2)) << 5) + ((y & 3) << 2) + (x & 3)) << 1;
 }
 
-static u8 * RawTo4x4RGBA(u8 *src, u32 width, u32 height, u32 rowsize, int * dstWidth, int * dstHeight, u8 *dstPtr)
+static u8* RawTo4x4RGBA(u8* src, u32 width, u32 height, u32 rowsize, int* dstWidth, int* dstHeight, u8* dstPtr)
 {
-	u8 *dst;
+	u8* dst;
 	int x, y, offset;
-	u8 *pixel;
+	u8* pixel;
 
 	int padWidth = width;
 	int padHeight = height;
-	if(padWidth%4) padWidth += (4-padWidth%4);
-	if(padHeight%4) padHeight += (4-padHeight%4);
+	if (padWidth % 4) padWidth += (4 - padWidth % 4);
+	if (padHeight % 4) padHeight += (4 - padHeight % 4);
 
 	int len = (padWidth * padHeight) << 2;
-	if(len%32) len += (32-len%32);
+	if (len % 32) len += (32 - len % 32);
 
-	if(dstPtr)
+	if (dstPtr)
 		dst = dstPtr; // use existing allocation
 	else
-		dst = (u8 *)jpg_memalign (32, len);
+		dst = static_cast<u8*>(jpg_memalign(32, len));
 
-	if(!dst)
-		return NULL;
+	if (!dst)
+		return nullptr;
 
 	for (y = 0; y < padHeight; y++)
 	{
@@ -366,20 +382,20 @@ static u8 * RawTo4x4RGBA(u8 *src, u32 width, u32 height, u32 rowsize, int * dstW
 		{
 			offset = coordsRGBA8(x, y, padWidth);
 
-			if(x >= (int)width || y >= (int)height)
+			if (x >= static_cast<int>(width) || y >= static_cast<int>(height))
 			{
 				dst[offset] = 0;
-				dst[offset+1] = 255;
-				dst[offset+32] = 255;
-				dst[offset+33] = 255;
+				dst[offset + 1] = 255;
+				dst[offset + 32] = 255;
+				dst[offset + 33] = 255;
 			}
 			else
 			{
-				pixel = &src[rowsize*y+x*3];
+				pixel = &src[rowsize * y + x * 3];
 				dst[offset] = 255; // Alpha
-				dst[offset+1] = pixel[0]; // Red
-				dst[offset+32] = pixel[1]; // Green
-				dst[offset+33] = pixel[2]; // Blue
+				dst[offset + 1] = pixel[0]; // Red
+				dst[offset + 32] = pixel[1]; // Green
+				dst[offset + 33] = pixel[2]; // Blue
 			}
 		}
 	}
@@ -390,24 +406,25 @@ static u8 * RawTo4x4RGBA(u8 *src, u32 width, u32 height, u32 rowsize, int * dstW
 	return dst;
 }
 
-struct stuffer {
-	unsigned char *dest;
+struct stuffer
+{
+	unsigned char* dest;
 	int stride;
 };
 
-static void got_row(void *data, unsigned char *row, int len)
+static void got_row(void* data, unsigned char* row, int len)
 {
-	struct stuffer *st = (struct stuffer *)data;
+	auto st = static_cast<struct stuffer*>(data);
 	memcpy(st->dest, row, len);
 	st->dest += st->stride;
 }
 
-u8 * DecodeJPEG(const u8 *src, u32 len, int *width, int *height, u8 *dstPtr)
+u8* DecodeJPEG(const u8* src, u32 len, int* width, int* height, u8* dstPtr)
 {
 	struct jpeg_decompress_struct cinfo;
 	struct jpeg_error_mgr jerr;
 	int output_width, output_height;
-	void *scaler;
+	void* scaler;
 	float scale, scale2;
 	struct stuffer stuffer;
 
@@ -416,15 +433,15 @@ u8 * DecodeJPEG(const u8 *src, u32 len, int *width, int *height, u8 *dstPtr)
 	cinfo.progress = NULL;
 	jpeg_memory_src(&cinfo, src, len);
 	jpeg_read_header(&cinfo, TRUE);
-	if(cinfo.jpeg_color_space == JCS_GRAYSCALE)
+	if (cinfo.jpeg_color_space == JCS_GRAYSCALE)
 		cinfo.out_color_space = JCS_RGB;
 
 	jpeg_calc_output_dimensions(&cinfo);
 	jpeg_start_decompress(&cinfo);
 
-	scale = (float)MAX_TEX_WIDTH / cinfo.output_width;
-	scale2 = (float)MAX_TEX_HEIGHT / cinfo.output_height;
-	if(scale2 < scale)
+	scale = static_cast<float>(MAX_TEX_WIDTH) / cinfo.output_width;
+	scale2 = static_cast<float>(MAX_TEX_HEIGHT) / cinfo.output_height;
+	if (scale2 < scale)
 		scale = scale2;
 	// guarantee that one of width or height ends up at max allowed value
 	output_width = scale * cinfo.output_width;
@@ -432,27 +449,27 @@ u8 * DecodeJPEG(const u8 *src, u32 len, int *width, int *height, u8 *dstPtr)
 
 	stuffer.stride = output_width * cinfo.output_components;
 
-	u8 *tmpData = (u8 *)jpg_malloc(stuffer.stride * output_height);
+	u8* tmpData = static_cast<u8*>(jpg_malloc(stuffer.stride * output_height));
 	JSAMPROW row_pointer[1];
-	row_pointer[0] = (u8 *)jpg_malloc(cinfo.output_width * cinfo.output_components);
+	row_pointer[0] = static_cast<u8*>(jpg_malloc(cinfo.output_width * cinfo.output_components));
 
 	stuffer.dest = tmpData;
 
 	scaler = scaler_alloc(output_width, output_height,
-		cinfo.output_width, cinfo.output_height,
-		cinfo.output_components, got_row, &stuffer);
+	                      cinfo.output_width, cinfo.output_height,
+	                      cinfo.output_components, got_row, &stuffer);
 
-	if(!tmpData || !row_pointer[0] || !scaler)
+	if (!tmpData || !row_pointer[0] || !scaler)
 	{
 		jpeg_finish_decompress(&cinfo);
 		jpeg_destroy_decompress(&cinfo);
-		if(row_pointer[0])
+		if (row_pointer[0])
 			jpg_free(row_pointer[0]);
-		if(tmpData)
+		if (tmpData)
 			jpg_free(tmpData);
-		if(scaler)
+		if (scaler)
 			scaler_free(scaler);
-		return NULL;
+		return nullptr;
 	}
 
 	while (cinfo.output_scanline < cinfo.output_height)
@@ -462,7 +479,7 @@ u8 * DecodeJPEG(const u8 *src, u32 len, int *width, int *height, u8 *dstPtr)
 	}
 	scaler_free(scaler);
 
-	u8 *dst = RawTo4x4RGBA(tmpData, output_width, output_height, stuffer.stride, width, height, dstPtr);
+	u8* dst = RawTo4x4RGBA(tmpData, output_width, output_height, stuffer.stride, width, height, dstPtr);
 
 	jpeg_finish_decompress(&cinfo);
 	jpeg_destroy_decompress(&cinfo);

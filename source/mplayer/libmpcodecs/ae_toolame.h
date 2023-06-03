@@ -24,6 +24,6 @@
 
 extern const m_option_t toolameopts_conf[];
 
-int mpae_init_toolame(audio_encoder_t *encoder);
+int mpae_init_toolame(audio_encoder_t* encoder);
 
 #endif /* MPLAYER_AE_TOOLAME_H */

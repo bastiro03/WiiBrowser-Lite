@@ -232,7 +232,6 @@
     PD(   0,   0), E2(   2,   2), E2(   6,   6), E2(  12,  12), E2(  20,  20),\
     E2(  32,  32), E2(  46,  46)
 
-
 /**
  * Pack two delta values (a,b) into one 16bit word
  * according with endianess of the host machine.
@@ -254,29 +253,29 @@
  * VQ tables for 4x4 block modes.
  * Let the compiler decompress and build the tables for us.
  */
-static const int16_t delta_tab_1_1[195] = { TAB_1_1 };
-static const int16_t delta_tab_1_2[159] = { TAB_1_2 };
-static const int16_t delta_tab_1_3[133] = { TAB_1_3 };
-static const int16_t delta_tab_1_4[115] = { TAB_1_4 };
-static const int16_t delta_tab_1_5[101] = { TAB_1_5 };
-static const int16_t delta_tab_1_6[93]  = { TAB_1_6 };
-static const int16_t delta_tab_1_7[87]  = { TAB_1_7 };
-static const int16_t delta_tab_1_8[77]  = { TAB_1_8 };
+static const int16_t delta_tab_1_1[195] = {TAB_1_1};
+static const int16_t delta_tab_1_2[159] = {TAB_1_2};
+static const int16_t delta_tab_1_3[133] = {TAB_1_3};
+static const int16_t delta_tab_1_4[115] = {TAB_1_4};
+static const int16_t delta_tab_1_5[101] = {TAB_1_5};
+static const int16_t delta_tab_1_6[93] = {TAB_1_6};
+static const int16_t delta_tab_1_7[87] = {TAB_1_7};
+static const int16_t delta_tab_1_8[77] = {TAB_1_8};
 
-static const int16_t delta_tab_2_1[195] = { TAB_2_1 };
-static const int16_t delta_tab_2_2[159] = { TAB_2_2 };
-static const int16_t delta_tab_2_3[133] = { TAB_2_3 };
-static const int16_t delta_tab_2_4[115] = { TAB_2_4 };
-static const int16_t delta_tab_2_5[101] = { TAB_2_5 };
-static const int16_t delta_tab_2_6[93]  = { TAB_2_6 };
-static const int16_t delta_tab_2_7[87]  = { TAB_2_7 };
-static const int16_t delta_tab_2_8[77]  = { TAB_2_8 };
+static const int16_t delta_tab_2_1[195] = {TAB_2_1};
+static const int16_t delta_tab_2_2[159] = {TAB_2_2};
+static const int16_t delta_tab_2_3[133] = {TAB_2_3};
+static const int16_t delta_tab_2_4[115] = {TAB_2_4};
+static const int16_t delta_tab_2_5[101] = {TAB_2_5};
+static const int16_t delta_tab_2_6[93] = {TAB_2_6};
+static const int16_t delta_tab_2_7[87] = {TAB_2_7};
+static const int16_t delta_tab_2_8[77] = {TAB_2_8};
 
-static const int16_t delta_tab_3_1[128] = { TAB_3_1 };
-static const int16_t delta_tab_3_2[79]  = { TAB_3_2 };
-static const int16_t delta_tab_3_3[79]  = { TAB_3_3 };
-static const int16_t delta_tab_3_4[79]  = { TAB_3_4 };
-static const int16_t delta_tab_3_5[79]  = { TAB_3_5 };
+static const int16_t delta_tab_3_1[128] = {TAB_3_1};
+static const int16_t delta_tab_3_2[79] = {TAB_3_2};
+static const int16_t delta_tab_3_3[79] = {TAB_3_3};
+static const int16_t delta_tab_3_4[79] = {TAB_3_4};
+static const int16_t delta_tab_3_5[79] = {TAB_3_5};
 
 #undef PD
 
@@ -295,68 +294,68 @@ static const int16_t delta_tab_3_5[79]  = { TAB_3_5 };
  * Those are based on the same delta tables by using
  * each value twice: ABCD --> AABBCCDD.
  */
-static const int32_t delta_tab_1_1_m10[195] = { TAB_1_1 };
-static const int32_t delta_tab_1_2_m10[159] = { TAB_1_2 };
-static const int32_t delta_tab_1_3_m10[133] = { TAB_1_3 };
-static const int32_t delta_tab_1_4_m10[115] = { TAB_1_4 };
-static const int32_t delta_tab_1_5_m10[101] = { TAB_1_5 };
-static const int32_t delta_tab_1_6_m10[93]  = { TAB_1_6 };
-static const int32_t delta_tab_1_7_m10[87]  = { TAB_1_7 };
-static const int32_t delta_tab_1_8_m10[77]  = { TAB_1_8 };
+static const int32_t delta_tab_1_1_m10[195] = {TAB_1_1};
+static const int32_t delta_tab_1_2_m10[159] = {TAB_1_2};
+static const int32_t delta_tab_1_3_m10[133] = {TAB_1_3};
+static const int32_t delta_tab_1_4_m10[115] = {TAB_1_4};
+static const int32_t delta_tab_1_5_m10[101] = {TAB_1_5};
+static const int32_t delta_tab_1_6_m10[93] = {TAB_1_6};
+static const int32_t delta_tab_1_7_m10[87] = {TAB_1_7};
+static const int32_t delta_tab_1_8_m10[77] = {TAB_1_8};
 
-static const int32_t delta_tab_2_1_m10[195] = { TAB_2_1 };
-static const int32_t delta_tab_2_2_m10[159] = { TAB_2_2 };
-static const int32_t delta_tab_2_3_m10[133] = { TAB_2_3 };
-static const int32_t delta_tab_2_4_m10[115] = { TAB_2_4 };
-static const int32_t delta_tab_2_5_m10[101] = { TAB_2_5 };
-static const int32_t delta_tab_2_6_m10[93]  = { TAB_2_6 };
-static const int32_t delta_tab_2_7_m10[87]  = { TAB_2_7 };
-static const int32_t delta_tab_2_8_m10[77]  = { TAB_2_8 };
+static const int32_t delta_tab_2_1_m10[195] = {TAB_2_1};
+static const int32_t delta_tab_2_2_m10[159] = {TAB_2_2};
+static const int32_t delta_tab_2_3_m10[133] = {TAB_2_3};
+static const int32_t delta_tab_2_4_m10[115] = {TAB_2_4};
+static const int32_t delta_tab_2_5_m10[101] = {TAB_2_5};
+static const int32_t delta_tab_2_6_m10[93] = {TAB_2_6};
+static const int32_t delta_tab_2_7_m10[87] = {TAB_2_7};
+static const int32_t delta_tab_2_8_m10[77] = {TAB_2_8};
 
-static const int32_t delta_tab_3_1_m10[128] = { TAB_3_1 };
-static const int32_t delta_tab_3_2_m10[79]  = { TAB_3_2 };
-static const int32_t delta_tab_3_3_m10[79]  = { TAB_3_3 };
-static const int32_t delta_tab_3_4_m10[79]  = { TAB_3_4 };
-static const int32_t delta_tab_3_5_m10[79]  = { TAB_3_5 };
+static const int32_t delta_tab_3_1_m10[128] = {TAB_3_1};
+static const int32_t delta_tab_3_2_m10[79] = {TAB_3_2};
+static const int32_t delta_tab_3_3_m10[79] = {TAB_3_3};
+static const int32_t delta_tab_3_4_m10[79] = {TAB_3_4};
+static const int32_t delta_tab_3_5_m10[79] = {TAB_3_5};
 
-
-typedef struct {
-    const int16_t  *deltas;     ///< delta tables for 4x4 block modes
-    const int32_t  *deltas_m10; ///< delta tables for 8x8 block modes
-    uint8_t        num_dyads;   ///< number of two-pixel deltas
-    uint8_t        quad_exp;    ///< log2 of four-pixel deltas
+typedef struct
+{
+	const int16_t* deltas; ///< delta tables for 4x4 block modes
+	const int32_t* deltas_m10; ///< delta tables for 8x8 block modes
+	uint8_t num_dyads; ///< number of two-pixel deltas
+	uint8_t quad_exp; ///< log2 of four-pixel deltas
 } vqEntry;
 
 static const vqEntry vq_tab[24] = {
-    /* set 1 */
-    { delta_tab_1_1, delta_tab_1_1_m10, 195,  7 },
-    { delta_tab_1_2, delta_tab_1_2_m10, 159,  9 },
-    { delta_tab_1_3, delta_tab_1_3_m10, 133, 10 },
-    { delta_tab_1_4, delta_tab_1_4_m10, 115, 11 },
-    { delta_tab_1_5, delta_tab_1_5_m10, 101, 12 },
-    { delta_tab_1_6, delta_tab_1_6_m10,  93, 12 },
-    { delta_tab_1_7, delta_tab_1_7_m10,  87, 12 },
-    { delta_tab_1_8, delta_tab_1_8_m10,  77, 13 },
+	/* set 1 */
+	{delta_tab_1_1, delta_tab_1_1_m10, 195, 7},
+	{delta_tab_1_2, delta_tab_1_2_m10, 159, 9},
+	{delta_tab_1_3, delta_tab_1_3_m10, 133, 10},
+	{delta_tab_1_4, delta_tab_1_4_m10, 115, 11},
+	{delta_tab_1_5, delta_tab_1_5_m10, 101, 12},
+	{delta_tab_1_6, delta_tab_1_6_m10, 93, 12},
+	{delta_tab_1_7, delta_tab_1_7_m10, 87, 12},
+	{delta_tab_1_8, delta_tab_1_8_m10, 77, 13},
 
-    /* set 2 */
-    { delta_tab_2_1, delta_tab_2_1_m10, 195,  7 },
-    { delta_tab_2_2, delta_tab_2_2_m10, 159,  9 },
-    { delta_tab_2_3, delta_tab_2_3_m10, 133, 10 },
-    { delta_tab_2_4, delta_tab_2_4_m10, 115, 11 },
-    { delta_tab_2_5, delta_tab_2_5_m10, 101, 12 },
-    { delta_tab_2_6, delta_tab_2_6_m10,  93, 12 },
-    { delta_tab_2_7, delta_tab_2_7_m10,  87, 12 },
-    { delta_tab_2_8, delta_tab_2_8_m10,  77, 13 },
+	/* set 2 */
+	{delta_tab_2_1, delta_tab_2_1_m10, 195, 7},
+	{delta_tab_2_2, delta_tab_2_2_m10, 159, 9},
+	{delta_tab_2_3, delta_tab_2_3_m10, 133, 10},
+	{delta_tab_2_4, delta_tab_2_4_m10, 115, 11},
+	{delta_tab_2_5, delta_tab_2_5_m10, 101, 12},
+	{delta_tab_2_6, delta_tab_2_6_m10, 93, 12},
+	{delta_tab_2_7, delta_tab_2_7_m10, 87, 12},
+	{delta_tab_2_8, delta_tab_2_8_m10, 77, 13},
 
-    /* set 3 */
-    { delta_tab_3_1, delta_tab_3_1_m10, 128, 11 },
-    { delta_tab_3_2, delta_tab_3_2_m10,  79, 13 },
-    { delta_tab_3_3, delta_tab_3_3_m10,  79, 13 },
-    { delta_tab_3_4, delta_tab_3_4_m10,  79, 13 },
-    { delta_tab_3_5, delta_tab_3_5_m10,  79, 13 },
-    { delta_tab_3_5, delta_tab_3_5_m10,  79, 13 },
-    { delta_tab_3_5, delta_tab_3_5_m10,  79, 13 },
-    { delta_tab_3_5, delta_tab_3_5_m10,  79, 13 }
+	/* set 3 */
+	{delta_tab_3_1, delta_tab_3_1_m10, 128, 11},
+	{delta_tab_3_2, delta_tab_3_2_m10, 79, 13},
+	{delta_tab_3_3, delta_tab_3_3_m10, 79, 13},
+	{delta_tab_3_4, delta_tab_3_4_m10, 79, 13},
+	{delta_tab_3_5, delta_tab_3_5_m10, 79, 13},
+	{delta_tab_3_5, delta_tab_3_5_m10, 79, 13},
+	{delta_tab_3_5, delta_tab_3_5_m10, 79, 13},
+	{delta_tab_3_5, delta_tab_3_5_m10, 79, 13}
 };
 
 #endif /* AVCODEC_INDEO3DATA_H */

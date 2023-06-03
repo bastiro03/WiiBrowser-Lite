@@ -33,8 +33,8 @@
 # define EXTERN extern
 #endif
 
-EXTERN vorbis_func_floor     *_floor_P[];
-EXTERN vorbis_func_residue   *_residue_P[];
-EXTERN vorbis_func_mapping   *_mapping_P[];
+EXTERN vorbis_func_floor* _floor_P[];
+EXTERN vorbis_func_residue* _residue_P[];
+EXTERN vorbis_func_mapping* _mapping_P[];
 
 #endif

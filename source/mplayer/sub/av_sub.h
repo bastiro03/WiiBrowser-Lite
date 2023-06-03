@@ -23,8 +23,8 @@
 
 struct sh_sub;
 
-void reset_avsub(struct sh_sub *sh);
-int decode_avsub(struct sh_sub *sh, uint8_t **data, int *size,
-                 double *pts, double *endpts);
+void reset_avsub(struct sh_sub* sh);
+int decode_avsub(struct sh_sub* sh, uint8_t** data, int* size,
+                 double* pts, double* endpts);
 
 #endif /* MPLAYER_AV_SUB_H */

@@ -19,16 +19,17 @@
 #ifndef MPLAYER_GUI_BITMAP_H
 #define MPLAYER_GUI_BITMAP_H
 
-typedef struct {
-    unsigned long Width;
-    unsigned long Height;
-    unsigned int BPP;
-    unsigned long ImageSize;
-    char *Image;
+typedef struct
+{
+	unsigned long Width;
+	unsigned long Height;
+	unsigned int BPP;
+	unsigned long ImageSize;
+	char* Image;
 } txSample;
 
-void bpFree(txSample *bf);
-int bpRead(char *fname, txSample *bf);
-void Convert32to1(txSample *in, txSample *out, int adaptivlimit);
+void bpFree(txSample* bf);
+int bpRead(char* fname, txSample* bf);
+void Convert32to1(txSample* in, txSample* out, int adaptivlimit);
 
 #endif /* MPLAYER_GUI_BITMAP_H */

@@ -48,13 +48,13 @@ static int lumadering = 0;
 static int chromadering = 0;
 
 const m_option_t xvid_dec_opts[] = {
-	{ "dr2", &do_dr2, CONF_TYPE_FLAG, 0, 0, 1, NULL},
-	{ "nodr2", &do_dr2, CONF_TYPE_FLAG, 0, 1, 0, NULL},
-	{ "filmeffect", &filmeffect, CONF_TYPE_FLAG, 0, 0, 1, NULL},
-	{ "deblock-luma", &lumadeblock, CONF_TYPE_FLAG, 0, 0, 1, NULL},
-	{ "deblock-chroma", &chromadeblock, CONF_TYPE_FLAG, 0, 0, 1, NULL},
-	{ "dering-luma", &lumadering, CONF_TYPE_FLAG, 0, 0, 1, NULL},
-	{ "dering-chroma", &chromadering, CONF_TYPE_FLAG, 0, 0, 1, NULL},
+	{"dr2", &do_dr2, CONF_TYPE_FLAG, 0, 0, 1, NULL},
+	{"nodr2", &do_dr2, CONF_TYPE_FLAG, 0, 1, 0, NULL},
+	{"filmeffect", &filmeffect, CONF_TYPE_FLAG, 0, 0, 1, NULL},
+	{"deblock-luma", &lumadeblock, CONF_TYPE_FLAG, 0, 0, 1, NULL},
+	{"deblock-chroma", &chromadeblock, CONF_TYPE_FLAG, 0, 0, 1, NULL},
+	{"dering-luma", &lumadering, CONF_TYPE_FLAG, 0, 0, 1, NULL},
+	{"dering-chroma", &chromadering, CONF_TYPE_FLAG, 0, 0, 1, NULL},
 	{NULL, NULL, 0, 0, 0, 0, NULL}
 };
 
@@ -62,7 +62,8 @@ const m_option_t xvid_dec_opts[] = {
  * Module private data
  ****************************************************************************/
 
-typedef struct {
+typedef struct
+{
 	int cs;
 	unsigned char img_type;
 	void* hdl;
@@ -74,7 +75,7 @@ typedef struct {
  * Module function helpers
  ****************************************************************************/
 
-static float stats2aspect(xvid_dec_stats_t *stats);
+static float stats2aspect(xvid_dec_stats_t* stats);
 
 /*****************************************************************************
  * Video decoder API function definitions
@@ -84,7 +85,7 @@ static float stats2aspect(xvid_dec_stats_t *stats);
  * control - to set/get/query special features/parameters
  *==========================================================================*/
 
-static int control(sh_video_t *sh,int cmd,void* arg,...)
+static int control(sh_video_t* sh, int cmd, void* arg, ...)
 {
 	return CONTROL_UNKNOWN;
 }
@@ -93,7 +94,7 @@ static int control(sh_video_t *sh,int cmd,void* arg,...)
  * init - initialize the codec
  *==========================================================================*/
 
-static int init(sh_video_t *sh)
+static int init(sh_video_t* sh)
 {
 	xvid_gbl_info_t xvid_gbl_info;
 	xvid_gbl_init_t xvid_ini;
@@ -110,12 +111,12 @@ static int init(sh_video_t *sh)
 	memset(&dec_p, 0, sizeof(xvid_dec_create_t));
 	dec_p.version = XVID_VERSION;
 
-
-	switch(sh->codec->outfmt[sh->outfmtidx]){
+	switch (sh->codec->outfmt[sh->outfmtidx])
+	{
 	case IMGFMT_YV12:
 		/* We will use our own buffers, this speeds decoding avoiding
 		 * frame memcpy's overhead */
-		cs = (do_dr2)?XVID_CSP_INTERNAL:XVID_CSP_USER;
+		cs = (do_dr2) ? XVID_CSP_INTERNAL : XVID_CSP_USER;
 		break;
 	case IMGFMT_YUY2:
 		cs = XVID_CSP_YUY2;
@@ -127,7 +128,7 @@ static int init(sh_video_t *sh)
 	case IMGFMT_IYUV:
 		/* We will use our own buffers, this speeds decoding avoiding
 		 * frame memcpy's overhead */
-		cs = (do_dr2)?XVID_CSP_INTERNAL:XVID_CSP_USER;
+		cs = (do_dr2) ? XVID_CSP_INTERNAL : XVID_CSP_USER;
 		break;
 	case IMGFMT_BGR15:
 		cs = XVID_CSP_RGB555;
@@ -148,10 +149,13 @@ static int init(sh_video_t *sh)
 	}
 
 	/* Gather some information about the host library */
-	if(xvid_global(NULL, XVID_GBL_INFO, &xvid_gbl_info, NULL) < 0) {
-		mp_msg(MSGT_MENCODER,MSGL_INFO, "xvid: could not get information about the library\n");
-	} else {
-		mp_msg(MSGT_MENCODER,MSGL_INFO, "xvid: using library version %d.%d.%d (build %s)\n",
+	if (xvid_global(NULL, XVID_GBL_INFO, &xvid_gbl_info, NULL) < 0)
+	{
+		mp_msg(MSGT_MENCODER, MSGL_INFO, "xvid: could not get information about the library\n");
+	}
+	else
+	{
+		mp_msg(MSGT_MENCODER, MSGL_INFO, "xvid: using library version %d.%d.%d (build %s)\n",
 		       XVID_VERSION_MAJOR(xvid_gbl_info.actual_version),
 		       XVID_VERSION_MINOR(xvid_gbl_info.actual_version),
 		       XVID_VERSION_PATCH(xvid_gbl_info.actual_version),
@@ -159,17 +163,18 @@ static int init(sh_video_t *sh)
 	}
 
 	/* Initialize the xvidcore library */
-	if(xvid_global(NULL, XVID_GBL_INIT, &xvid_ini, NULL))
+	if (xvid_global(NULL, XVID_GBL_INIT, &xvid_ini, NULL))
 		return 0;
 
 	/* We use 0 width and height so xvidcore will resize its buffers
 	 * if required. That allows this vd plugin to do resize on first
 	 * VOL encountered (don't trust containers' width and height) */
 	dec_p.width = 0;
-	dec_p.height =  0;
+	dec_p.height = 0;
 
 	/* Get a decoder instance */
-	if(xvid_decore(0, XVID_DEC_CREATE, &dec_p, NULL)<0) {
+	if (xvid_decore(0, XVID_DEC_CREATE, &dec_p, NULL) < 0)
+	{
 		mp_msg(MSGT_DECVIDEO, MSGL_ERR, "XviD init failed\n");
 		return 0;
 	}
@@ -180,7 +185,8 @@ static int init(sh_video_t *sh)
 	p->vo_initialized = 0;
 	sh->context = p;
 
-	switch(cs) {
+	switch (cs)
+	{
 	case XVID_CSP_INTERNAL:
 		p->img_type = MP_IMGTYPE_EXPORT;
 		break;
@@ -199,11 +205,12 @@ static int init(sh_video_t *sh)
  * uninit - close the codec
  *==========================================================================*/
 
-static void uninit(sh_video_t *sh){
+static void uninit(sh_video_t* sh)
+{
 	priv_t* p = sh->context;
-	if(!p)
+	if (!p)
 		return;
-	xvid_decore(p->hdl,XVID_DEC_DESTROY, NULL, NULL);
+	xvid_decore(p->hdl, XVID_DEC_DESTROY, NULL, NULL);
 	free(p);
 }
 
@@ -211,7 +218,7 @@ static void uninit(sh_video_t *sh){
  * decode - decode a frame from stream
  *==========================================================================*/
 
-static mp_image_t* decode(sh_video_t *sh, void* data, int len, int flags)
+static mp_image_t* decode(sh_video_t* sh, void* data, int len, int flags)
 {
 	xvid_dec_frame_t dec;
 	xvid_dec_stats_t stats;
@@ -219,11 +226,10 @@ static mp_image_t* decode(sh_video_t *sh, void* data, int len, int flags)
 
 	priv_t* p = sh->context;
 
-
-	if(!data || len <= 0)
+	if (!data || len <= 0)
 		return NULL;
 
-	memset(&dec,0,sizeof(xvid_dec_frame_t));
+	memset(&dec, 0, sizeof(xvid_dec_frame_t));
 	memset(&stats, 0, sizeof(xvid_dec_stats_t));
 	dec.version = XVID_VERSION;
 	stats.version = XVID_VERSION;
@@ -232,32 +238,35 @@ static mp_image_t* decode(sh_video_t *sh, void* data, int len, int flags)
 	dec.length = len;
 
 	dec.general |= XVID_LOWDELAY
-	/* XXX: if lowdelay is unset, and xvidcore internal buffers are
-	 *      used => crash. MUST FIX */
-	        | (filmeffect ? XVID_FILMEFFECT : 0 )
-	        | (lumadeblock ? XVID_DEBLOCKY : 0 )
-	        | (chromadeblock ? XVID_DEBLOCKUV : 0 );
+		/* XXX: if lowdelay is unset, and xvidcore internal buffers are
+		 *      used => crash. MUST FIX */
+		| (filmeffect ? XVID_FILMEFFECT : 0)
+		| (lumadeblock ? XVID_DEBLOCKY : 0)
+		| (chromadeblock ? XVID_DEBLOCKUV : 0);
 #if XVID_API >= XVID_MAKE_API(4,1)
-	dec.general |= (lumadering ? XVID_DEBLOCKY|XVID_DERINGY : 0 );
-	dec.general |= (chromadering ? XVID_DEBLOCKUV|XVID_DERINGUV : 0 );
+	dec.general |= (lumadering ? XVID_DEBLOCKY | XVID_DERINGY : 0);
+	dec.general |= (chromadering ? XVID_DEBLOCKUV | XVID_DERINGUV : 0);
 #endif
 	dec.output.csp = p->cs;
 
 	/* Decoding loop because xvidcore may return VOL information for
 	 * on the fly buffer resizing. In that case we must decode VOL,
 	 * init VO, then decode the frame */
-	do {
+	do
+	{
 		int consumed;
 
 		/* If we don't know frame size yet, don't even try to request
 		 * a buffer, we must loop until we find a VOL, so VO plugin
 		 * is initialized and we can obviously output something */
-		if (p->vo_initialized) {
+		if (p->vo_initialized)
+		{
 			mpi = mpcodecs_get_image(sh, p->img_type,
-					MP_IMGFLAG_ACCEPT_STRIDE,
-					sh->disp_w, sh->disp_h);
+			                         MP_IMGFLAG_ACCEPT_STRIDE,
+			                         sh->disp_w, sh->disp_h);
 
-			if(p->cs != XVID_CSP_INTERNAL) {
+			if (p->cs != XVID_CSP_INTERNAL)
+			{
 				dec.output.plane[0] = mpi->planes[0];
 				dec.output.plane[1] = mpi->planes[1];
 				dec.output.plane[2] = mpi->planes[2];
@@ -270,16 +279,18 @@ static mp_image_t* decode(sh_video_t *sh, void* data, int len, int flags)
 
 		/* Decode data */
 		consumed = xvid_decore(p->hdl, XVID_DEC_DECODE, &dec, &stats);
-		if (consumed < 0) {
+		if (consumed < 0)
+		{
 			mp_msg(MSGT_DECVIDEO, MSGL_ERR, "Decoding error\n");
 			return NULL;
 		}
 
 		/* Found a VOL information stats, if VO plugin is not initialized
 		 * yet then do it now */
-		if (stats.type == XVID_TYPE_VOL && !p->vo_initialized) {
+		if (stats.type == XVID_TYPE_VOL && !p->vo_initialized)
+		{
 			sh->aspect = stats2aspect(&stats);
-			if(!mpcodecs_config_vo(sh, stats.data.vol.width, stats.data.vol.height, IMGFMT_YV12))
+			if (!mpcodecs_config_vo(sh, stats.data.vol.width, stats.data.vol.height, IMGFMT_YV12))
 				return NULL;
 
 			/* Don't take this path twice */
@@ -289,7 +300,8 @@ static mp_image_t* decode(sh_video_t *sh, void* data, int len, int flags)
 		/* Don't forget to update buffer position and buffer length */
 		dec.bitstream += consumed;
 		dec.length -= consumed;
-	} while ((stats.type == XVID_TYPE_VOL || stats.type == XVID_TYPE_NOTHING) && dec.length > 0);
+	}
+	while ((stats.type == XVID_TYPE_VOL || stats.type == XVID_TYPE_NOTHING) && dec.length > 0);
 
 	/* There are two ways to get out of the decoding loop:
 	 *  - a frame has been returned
@@ -297,7 +309,8 @@ static mp_image_t* decode(sh_video_t *sh, void* data, int len, int flags)
 
 	/* If mpi is NULL, it proves nothing has been returned by the decoder
 	 * so don't try to display internal buffers. */
-	if (mpi != NULL && p->cs == XVID_CSP_INTERNAL) {
+	if (mpi != NULL && p->cs == XVID_CSP_INTERNAL)
+	{
 		mpi->planes[0] = dec.output.plane[0];
 		mpi->planes[1] = dec.output.plane[1];
 		mpi->planes[2] = dec.output.plane[2];
@@ -318,9 +331,10 @@ static mp_image_t* decode(sh_video_t *sh, void* data, int len, int flags)
 
 /* Returns DAR value according to VOL's informations contained in stats
  * param */
-static float stats2aspect(xvid_dec_stats_t *stats)
+static float stats2aspect(xvid_dec_stats_t* stats)
 {
-	if (stats->type == XVID_TYPE_VOL) {
+	if (stats->type == XVID_TYPE_VOL)
+	{
 		float wpar;
 		float hpar;
 		float dar;
@@ -336,7 +350,8 @@ static float stats2aspect(xvid_dec_stats_t *stats)
 		 * As MPEG4 is so well designed (*cough*), VOL header carries
 		 * both informations together -- lucky eh ? */
 
-		switch (stats->data.vol.par) {
+		switch (stats->data.vol.par)
+		{
 		case XVID_PAR_11_VGA: /* 1:1 vga (square), default if supplied PAR is not a valid value */
 			wpar = hpar = 1.0f;
 			break;
@@ -365,8 +380,8 @@ static float stats2aspect(xvid_dec_stats_t *stats)
 			break;
 		}
 
-		dar  = ((float)stats->data.vol.width*wpar);
-		dar /= ((float)stats->data.vol.height*hpar);
+		dar = ((float)stats->data.vol.width * wpar);
+		dar /= ((float)stats->data.vol.height * hpar);
 
 		return dar;
 	}

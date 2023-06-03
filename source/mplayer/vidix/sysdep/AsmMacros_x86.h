@@ -91,252 +91,280 @@ extern int svgahelper_initialized;
 
 static inline void svga_outb(short port, char value)
 {
-    io_t iov;
+	io_t iov;
 
-    iov.val = value;
-    iov.port = port;
-    ioctl(svgahelper_fd, SVGALIB_HELPER_IOCSOUTB, &iov);
+	iov.val = value;
+	iov.port = port;
+	ioctl(svgahelper_fd, SVGALIB_HELPER_IOCSOUTB, &iov);
 }
 
 static inline void svga_outw(short port, char value)
 {
-    io_t iov;
+	io_t iov;
 
-    iov.val = value;
-    iov.port = port;
-    ioctl(svgahelper_fd, SVGALIB_HELPER_IOCSOUTW, &iov);
+	iov.val = value;
+	iov.port = port;
+	ioctl(svgahelper_fd, SVGALIB_HELPER_IOCSOUTW, &iov);
 }
 
 static inline void svga_outl(short port, unsigned int value)
 {
-    io_t iov;
+	io_t iov;
 
-    iov.val = value;
-    iov.port = port;
-    ioctl(svgahelper_fd, SVGALIB_HELPER_IOCSOUTL, &iov);
+	iov.val = value;
+	iov.port = port;
+	ioctl(svgahelper_fd, SVGALIB_HELPER_IOCSOUTL, &iov);
 }
 
 static inline unsigned int svga_inb(short port)
 {
-    io_t iov;
+	io_t iov;
 
-    iov.port = port;
-    ioctl(svgahelper_fd, SVGALIB_HELPER_IOCGINB, &iov);
+	iov.port = port;
+	ioctl(svgahelper_fd, SVGALIB_HELPER_IOCGINB, &iov);
 
-    return iov.val;
+	return iov.val;
 }
 
 static inline unsigned int svga_inw(short port)
 {
-    io_t iov;
+	io_t iov;
 
-    iov.port = port;
-    ioctl(svgahelper_fd, SVGALIB_HELPER_IOCGINW, &iov);
+	iov.port = port;
+	ioctl(svgahelper_fd, SVGALIB_HELPER_IOCGINW, &iov);
 
-    return iov.val;
+	return iov.val;
 }
 
 static inline unsigned int svga_inl(short port)
 {
-    io_t iov;
+	io_t iov;
 
-    iov.port = port;
-    ioctl(svgahelper_fd, SVGALIB_HELPER_IOCGINL, &iov);
+	iov.port = port;
+	ioctl(svgahelper_fd, SVGALIB_HELPER_IOCGINL, &iov);
 
-    return iov.val;
+	return iov.val;
 }
 #endif /* CONIFG_SVGAHELPER */
 
 static inline void outb(short port, char val)
 {
 #ifdef CONFIG_SVGAHELPER
-    if (svgahelper_initialized == 1)
-    {
-	svga_outb(port, val);
-	return;
-    }
+	if (svgahelper_initialized == 1)
+	{
+		svga_outb(port, val);
+		return;
+	}
 #endif
 
 #ifdef CONFIG_DHAHELPER
-    if (dhahelper_initialized == 1)
-    {
-	dhahelper_port_t _port;
+	if (dhahelper_initialized == 1)
+	{
+		dhahelper_port_t _port;
 
-	_port.operation = PORT_OP_WRITE;
-	_port.addr = port;
-	_port.size = 1;
-	_port.value = val;
-        if (ioctl(dhahelper_fd, DHAHELPER_PORT, &_port) == 0)
-	    return;
-    }
-    else
+		_port.operation = PORT_OP_WRITE;
+		_port.addr = port;
+		_port.size = 1;
+		_port.value = val;
+		if (ioctl(dhahelper_fd, DHAHELPER_PORT, &_port) == 0)
+			return;
+	}
+	else
 #endif
-   __asm__ volatile("outb %0,%1" : :"a" (val), "d" (port));
-    return;
+	volatile __asm__ (
+	"outb %0,%1"
+	:
+	:
+	"a"(val), "d"(port)
+	)
 }
 
 static inline void outw(short port, short val)
 {
 #ifdef CONFIG_SVGAHELPER
-    if (svgahelper_initialized == 1)
-    {
-	svga_outw(port, val);
-	return;
-    }
+	if (svgahelper_initialized == 1)
+	{
+		svga_outw(port, val);
+		return;
+	}
 #endif
 
 #ifdef CONFIG_DHAHELPER
-    if (dhahelper_initialized == 1)
-    {
-	dhahelper_port_t _port;
+	if (dhahelper_initialized == 1)
+	{
+		dhahelper_port_t _port;
 
-	_port.operation = PORT_OP_WRITE;
-	_port.addr = port;
-	_port.size = 2;
-	_port.value = val;
-        if (ioctl(dhahelper_fd, DHAHELPER_PORT, &_port) == 0)
-	    return;
-    }
-    else
+		_port.operation = PORT_OP_WRITE;
+		_port.addr = port;
+		_port.size = 2;
+		_port.value = val;
+		if (ioctl(dhahelper_fd, DHAHELPER_PORT, &_port) == 0)
+			return;
+	}
+	else
 #endif
-   __asm__ volatile("outw %0,%1" : :"a" (val), "d" (port));
-    return;
+	volatile __asm__ (
+	"outw %0,%1"
+	:
+	:
+	"a"(val), "d"(port)
+	)
 }
 
 static inline void outl(short port, unsigned int val)
 {
 #ifdef CONFIG_SVGAHELPER
-    if (svgahelper_initialized == 1)
-    {
-	svga_outl(port, val);
-	return;
-    }
+	if (svgahelper_initialized == 1)
+	{
+		svga_outl(port, val);
+		return;
+	}
 #endif
 
 #ifdef CONFIG_DHAHELPER
-    if (dhahelper_initialized == 1)
-    {
-	dhahelper_port_t _port;
+	if (dhahelper_initialized == 1)
+	{
+		dhahelper_port_t _port;
 
-	_port.operation = PORT_OP_WRITE;
-	_port.addr = port;
-	_port.size = 4;
-	_port.value = val;
-        if (ioctl(dhahelper_fd, DHAHELPER_PORT, &_port) == 0)
-	    return;
-    }
-    else
+		_port.operation = PORT_OP_WRITE;
+		_port.addr = port;
+		_port.size = 4;
+		_port.value = val;
+		if (ioctl(dhahelper_fd, DHAHELPER_PORT, &_port) == 0)
+			return;
+	}
+	else
 #endif
-   __asm__ volatile("outl %0,%1" : :"a" (val), "d" (port));
-    return;
+	volatile __asm__ (
+	"outl %0,%1"
+	:
+	:
+	"a"(val), "d"(port)
+	)
 }
 
 static inline unsigned int inb(short port)
 {
-   unsigned char ret = 0;
+	unsigned char ret = 0;
 
 #ifdef CONFIG_SVGAHELPER
-    if (svgahelper_initialized == 1)
-    {
-	return svga_inb(port);
-    }
+	if (svgahelper_initialized == 1)
+	{
+		return svga_inb(port);
+	}
 #endif
 
 #ifdef CONFIG_DHAHELPER
-    if (dhahelper_initialized == 1)
-    {
-	dhahelper_port_t _port;
+	if (dhahelper_initialized == 1)
+	{
+		dhahelper_port_t _port;
 
-	_port.operation = PORT_OP_READ;
-	_port.addr = port;
-	_port.size = 1;
-        if (ioctl(dhahelper_fd, DHAHELPER_PORT, &_port) == 0)
-	    return _port.value;
-    }
-    else
+		_port.operation = PORT_OP_READ;
+		_port.addr = port;
+		_port.size = 1;
+		if (ioctl(dhahelper_fd, DHAHELPER_PORT, &_port) == 0)
+			return _port.value;
+	}
+	else
 #endif
-   __asm__ volatile("inb %1,%0" :
-       "=a" (ret) :
-       "d" (port));
-   return ret;
+	volatile __asm__ (
+	"inb %1,%0"
+	:
+	"=a"(ret)
+	:
+	"d"(port)
+	)
+	return ret;
 }
 
 static inline unsigned int inw(short port)
 {
-   unsigned short ret = 0;
+	unsigned short ret = 0;
 
 #ifdef CONFIG_SVGAHELPER
-    if (svgahelper_initialized == 1)
-    {
-	return svga_inw(port);
-    }
+	if (svgahelper_initialized == 1)
+	{
+		return svga_inw(port);
+	}
 #endif
 
 #ifdef CONFIG_DHAHELPER
-    if (dhahelper_initialized == 1)
-    {
-	dhahelper_port_t _port;
+	if (dhahelper_initialized == 1)
+	{
+		dhahelper_port_t _port;
 
-	_port.operation = PORT_OP_READ;
-	_port.addr = port;
-	_port.size = 2;
-        if (ioctl(dhahelper_fd, DHAHELPER_PORT, &_port) == 0)
-	    return _port.value;
-    }
-    else
+		_port.operation = PORT_OP_READ;
+		_port.addr = port;
+		_port.size = 2;
+		if (ioctl(dhahelper_fd, DHAHELPER_PORT, &_port) == 0)
+			return _port.value;
+	}
+	else
 #endif
-   __asm__ volatile("inw %1,%0" :
-       "=a" (ret) :
-       "d" (port));
-   return ret;
+	volatile __asm__ (
+	"inw %1,%0"
+	:
+	"=a"(ret)
+	:
+	"d"(port)
+	)
+	return ret;
 }
 
 static inline unsigned int inl(short port)
 {
-   unsigned int ret = 0;
+	unsigned int ret = 0;
 
 #ifdef CONFIG_SVGAHELPER
-    if (svgahelper_initialized == 1)
-    {
-	return svga_inl(port);
-    }
+	if (svgahelper_initialized == 1)
+	{
+		return svga_inl(port);
+	}
 #endif
 
 #ifdef CONFIG_DHAHELPER
-    if (dhahelper_initialized == 1)
-    {
-	dhahelper_port_t _port;
+	if (dhahelper_initialized == 1)
+	{
+		dhahelper_port_t _port;
 
-	_port.operation = PORT_OP_READ;
-	_port.addr = port;
-	_port.size = 4;
-        if (ioctl(dhahelper_fd, DHAHELPER_PORT, &_port) == 0)
-	    return _port.value;
-    }
-    else
+		_port.operation = PORT_OP_READ;
+		_port.addr = port;
+		_port.size = 4;
+		if (ioctl(dhahelper_fd, DHAHELPER_PORT, &_port) == 0)
+			return _port.value;
+	}
+	else
 #endif
-   __asm__ volatile("inl %1,%0" :
-       "=a" (ret) :
-       "d" (port));
-   return ret;
+	volatile __asm__ (
+	"inl %1,%0"
+	:
+	"=a"(ret)
+	:
+	"d"(port)
+	)
+	return ret;
 }
 
 static inline void intr_disable(void)
 {
 #ifdef CONFIG_SVGAHELPER
-    if (svgahelper_initialized == 1)
-	return;
+	if (svgahelper_initialized == 1)
+		return;
 #endif
-  __asm__ volatile("cli");
+	volatile __asm__ (
+	"cli"
+	)
 }
 
 static inline void intr_enable(void)
 {
 #ifdef CONFIG_SVGAHELPER
-    if (svgahelper_initialized == 1)
-	return;
+	if (svgahelper_initialized == 1)
+		return;
 #endif
-  __asm__ volatile("sti");
+	volatile __asm__ (
+	"sti"
+	)
 }
 
 #endif /* MPLAYER_ASMMACROS_X86_H */

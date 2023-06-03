@@ -22,15 +22,13 @@
 #ifndef MPLAYER_YUV4MPEG_INTERN_H
 #define MPLAYER_YUV4MPEG_INTERN_H
 
-
 #define Y4M_MAGIC "YUV4MPEG2"
 #define Y4M_FRAME_MAGIC "FRAME"
 
 #define Y4M_DELIM " "  /* single-character(space) separating tagged fields */
 
 #define Y4M_LINE_MAX 256   /* max number of characters in a header line
-                               (including the '\n', but not the '\0') */
-
+							   (including the '\n', but not the '\0') */
 
 /* standard framerate ratios */
 #define Y4M_FPS_UNKNOWN    { 0, 0 }

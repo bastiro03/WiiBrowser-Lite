@@ -24,6 +24,6 @@
 
 #include "avformat.h"
 
-int ff_raw_write_packet(AVFormatContext *s, AVPacket *pkt);
+int ff_raw_write_packet(AVFormatContext* s, AVPacket* pkt);
 
 #endif /* AVFORMAT_RAWENC_H */

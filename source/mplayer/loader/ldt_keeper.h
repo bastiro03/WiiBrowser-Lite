@@ -1,11 +1,12 @@
 #ifndef MPLAYER_LDT_KEEPER_H
 #define MPLAYER_LDT_KEEPER_H
 
-extern void *fs_seg;
+extern void* fs_seg;
 
-typedef struct {
-  void* fs_seg;
-  char* prev_struct;
+typedef struct
+{
+	void* fs_seg;
+	char* prev_struct;
 } ldt_fs_t;
 
 void Setup_FS_Segment(void);

@@ -20,50 +20,52 @@
 #include "avformat.h"
 #include "libavutil/intreadwrite.h"
 
-static int ivf_write_header(AVFormatContext *s)
+static int ivf_write_header(AVFormatContext* s)
 {
-    AVCodecContext *ctx;
-    AVIOContext *pb = s->pb;
+	AVCodecContext* ctx;
+	AVIOContext* pb = s->pb;
 
-    if (s->nb_streams != 1) {
-        av_log(s, AV_LOG_ERROR, "Format supports only exactly one video stream\n");
-        return AVERROR(EINVAL);
-    }
-    ctx = s->streams[0]->codec;
-    if (ctx->codec_type != AVMEDIA_TYPE_VIDEO || ctx->codec_id != CODEC_ID_VP8) {
-        av_log(s, AV_LOG_ERROR, "Currently only VP8 is supported!\n");
-        return AVERROR(EINVAL);
-    }
-    avio_write(pb, "DKIF", 4);
-    avio_wl16(pb, 0); // version
-    avio_wl16(pb, 32); // header length
-    avio_wl32(pb, ctx->codec_tag ? ctx->codec_tag : AV_RL32("VP80"));
-    avio_wl16(pb, ctx->width);
-    avio_wl16(pb, ctx->height);
-    avio_wl32(pb, s->streams[0]->time_base.den);
-    avio_wl32(pb, s->streams[0]->time_base.num);
-    avio_wl64(pb, s->streams[0]->duration); // TODO: duration or number of frames?!?
+	if (s->nb_streams != 1)
+	{
+		av_log(s, AV_LOG_ERROR, "Format supports only exactly one video stream\n");
+		return AVERROR(EINVAL);
+	}
+	ctx = s->streams[0]->codec;
+	if (ctx->codec_type != AVMEDIA_TYPE_VIDEO || ctx->codec_id != CODEC_ID_VP8)
+	{
+		av_log(s, AV_LOG_ERROR, "Currently only VP8 is supported!\n");
+		return AVERROR(EINVAL);
+	}
+	avio_write(pb, "DKIF", 4);
+	avio_wl16(pb, 0); // version
+	avio_wl16(pb, 32); // header length
+	avio_wl32(pb, ctx->codec_tag ? ctx->codec_tag : AV_RL32("VP80"));
+	avio_wl16(pb, ctx->width);
+	avio_wl16(pb, ctx->height);
+	avio_wl32(pb, s->streams[0]->time_base.den);
+	avio_wl32(pb, s->streams[0]->time_base.num);
+	avio_wl64(pb, s->streams[0]->duration); // TODO: duration or number of frames?!?
 
-    return 0;
+	return 0;
 }
 
-static int ivf_write_packet(AVFormatContext *s, AVPacket *pkt)
+static int ivf_write_packet(AVFormatContext* s, AVPacket* pkt)
 {
-    AVIOContext *pb = s->pb;
-    avio_wl32(pb, pkt->size);
-    avio_wl64(pb, pkt->pts);
-    avio_write(pb, pkt->data, pkt->size);
-    avio_flush(pb);
+	AVIOContext* pb = s->pb;
+	avio_wl32(pb, pkt->size);
+	avio_wl64(pb, pkt->pts);
+	avio_write(pb, pkt->data, pkt->size);
+	avio_flush(pb);
 
-    return 0;
+	return 0;
 }
 
 AVOutputFormat ff_ivf_muxer = {
-    .name         = "ivf",
-    .long_name    = NULL_IF_CONFIG_SMALL("On2 IVF"),
-    .extensions   = "ivf",
-    .audio_codec  = CODEC_ID_NONE,
-    .video_codec  = CODEC_ID_VP8,
-    .write_header = ivf_write_header,
-    .write_packet = ivf_write_packet,
+	.name = "ivf",
+	.long_name = NULL_IF_CONFIG_SMALL("On2 IVF"),
+	.extensions = "ivf",
+	.audio_codec = CODEC_ID_NONE,
+	.video_codec = CODEC_ID_VP8,
+	.write_header = ivf_write_header,
+	.write_packet = ivf_write_packet,
 };

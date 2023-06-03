@@ -58,10 +58,10 @@
 static av_always_inline av_const uint16_t av_bswap16(uint16_t x)
 {
 #if defined(GEKKO)
-    return __builtin_bswap16(x);
+	return __builtin_bswap16(x);
 #else
-    x= (x>>8) | (x<<8);
-    return x;
+	x = (x >> 8) | (x << 8);
+	return x;
 #endif
 }
 #endif
@@ -69,14 +69,14 @@ static av_always_inline av_const uint16_t av_bswap16(uint16_t x)
 #ifndef av_bswap32
 static av_always_inline av_const uint32_t av_bswap32(uint32_t x)
 {
-    return AV_BSWAP32C(x);
+	return AV_BSWAP32C(x);
 }
 #endif
 
 #ifndef av_bswap64
 static inline uint64_t av_const av_bswap64(uint64_t x)
 {
-    return (uint64_t)av_bswap32(x) << 32 | av_bswap32(x >> 32);
+	return (uint64_t)av_bswap32(x) << 32 | av_bswap32(x >> 32);
 }
 #endif
 

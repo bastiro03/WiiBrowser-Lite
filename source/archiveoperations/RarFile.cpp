@@ -36,310 +36,309 @@
 
 extern int RarErrorCode;
 
-RarFile::RarFile(const char *filepath)
+RarFile::RarFile(const char* filepath)
 {
-    RarArc.Open(filepath);
-    RarArc.SetExceptions(false);
-    this->LoadList();
+	RarArc.Open(filepath);
+	RarArc.SetExceptions(false);
+	this->LoadList();
 }
 
 RarFile::~RarFile()
 {
-    ClearList();
-    RarArc.Close();
+	ClearList();
+	RarArc.Close();
 }
 
 bool RarFile::LoadList()
 {
-    if (!RarArc.IsArchive(true))
-    {
-        RarArc.Close();
-        return false;
-    }
+	if (!RarArc.IsArchive(true))
+	{
+		RarArc.Close();
+		return false;
+	}
 
-    if (!RarArc.IsOpened())
-    {
-        RarArc.Close();
-        return false;
-    }
+	if (!RarArc.IsOpened())
+	{
+		RarArc.Close();
+		return false;
+	}
 
-    while(RarArc.ReadHeader() > 0)
-    {
-        int HeaderType=RarArc.GetHeaderType();
-        if (HeaderType==ENDARC_HEAD)
-            break;
+	while (RarArc.ReadHeader() > 0)
+	{
+		int HeaderType = RarArc.GetHeaderType();
+		if (HeaderType == ENDARC_HEAD)
+			break;
 
-        if(HeaderType == FILE_HEAD)
-        {
-            ArchiveFileStruct * TempStruct = new ArchiveFileStruct;
+		if (HeaderType == FILE_HEAD)
+		{
+			auto TempStruct = new ArchiveFileStruct;
 
-            int wstrlength = strlenw(RarArc.NewLhd.FileNameW);
+			int wstrlength = strlenw(RarArc.NewLhd.FileNameW);
 
-            if(wstrlength > 0)
-            {
-                TempStruct->filename = new char[(wstrlength+1)*2];
-                WideToUtf(RarArc.NewLhd.FileNameW, TempStruct->filename, (wstrlength+1)*2);
-            }
-            else
-            {
-                TempStruct->filename = new char[strlen(RarArc.NewLhd.FileName)+1];
-                strcpy(TempStruct->filename, RarArc.NewLhd.FileName);
-            }
-            TempStruct->length = (size_t) RarArc.NewLhd.FullUnpSize;
-            TempStruct->comp_length = (size_t) RarArc.NewLhd.FullPackSize;
-            TempStruct->isdir = RarArc.IsArcDir();
-            TempStruct->fileindex = RarStructure.size();
-            TempStruct->ModTime = (u64) RarArc.NewLhd.mtime.GetDos();
-            TempStruct->archiveType = RAR;
+			if (wstrlength > 0)
+			{
+				TempStruct->filename = new char[(wstrlength + 1) * 2];
+				WideToUtf(RarArc.NewLhd.FileNameW, TempStruct->filename, (wstrlength + 1) * 2);
+			}
+			else
+			{
+				TempStruct->filename = new char[strlen(RarArc.NewLhd.FileName) + 1];
+				strcpy(TempStruct->filename, RarArc.NewLhd.FileName);
+			}
+			TempStruct->length = static_cast<size_t>(RarArc.NewLhd.FullUnpSize);
+			TempStruct->comp_length = static_cast<size_t>(RarArc.NewLhd.FullPackSize);
+			TempStruct->isdir = RarArc.IsArcDir();
+			TempStruct->fileindex = RarStructure.size();
+			TempStruct->ModTime = static_cast<u64>(RarArc.NewLhd.mtime.GetDos());
+			TempStruct->archiveType = RAR;
 
-            RarStructure.push_back(TempStruct);
-        }
-        RarArc.SeekToNext();
-    }
-    return true;
+			RarStructure.push_back(TempStruct);
+		}
+		RarArc.SeekToNext();
+	}
+	return true;
 }
 
 void RarFile::ClearList()
 {
-    for(u32 i = 0; i < RarStructure.size(); i++)
-    {
-        if(RarStructure.at(i)->filename != NULL)
-        {
-            delete [] RarStructure.at(i)->filename;
-            RarStructure.at(i)->filename = NULL;
-        }
-        if(RarStructure.at(i) != NULL)
-        {
-            delete RarStructure.at(i);
-            RarStructure.at(i) = NULL;
-        }
-    }
+	for (u32 i = 0; i < RarStructure.size(); i++)
+	{
+		if (RarStructure.at(i)->filename != nullptr)
+		{
+			delete[] RarStructure.at(i)->filename;
+			RarStructure.at(i)->filename = nullptr;
+		}
+		if (RarStructure.at(i) != nullptr)
+		{
+			delete RarStructure.at(i);
+			RarStructure.at(i) = nullptr;
+		}
+	}
 
-    RarStructure.clear();
+	RarStructure.clear();
 }
 
-ArchiveFileStruct * RarFile::GetFileStruct(int ind)
+ArchiveFileStruct* RarFile::GetFileStruct(int ind)
 {
-    if(ind > (int) RarStructure.size() || ind < 0)
-        return NULL;
+	if (ind > static_cast<int>(RarStructure.size()) || ind < 0)
+		return nullptr;
 
-    return RarStructure.at(ind);
+	return RarStructure.at(ind);
 }
 
 u32 RarFile::GetItemCount()
 {
-    return RarStructure.size();
+	return RarStructure.size();
 }
-
 
 bool RarFile::SeekFile(int ind)
 {
-    if(ind < 0 || ind >= (int) RarStructure.size())
-        return false;
+	if (ind < 0 || ind >= static_cast<int>(RarStructure.size()))
+		return false;
 
-    RarArc.Seek(0, SEEK_SET);
+	RarArc.Seek(0, SEEK_SET);
 
-    while(RarArc.ReadHeader() > 0)
-    {
-        int HeaderType=RarArc.GetHeaderType();
-        if (HeaderType==ENDARC_HEAD)
-            break;
+	while (RarArc.ReadHeader() > 0)
+	{
+		int HeaderType = RarArc.GetHeaderType();
+		if (HeaderType == ENDARC_HEAD)
+			break;
 
-        if(HeaderType == FILE_HEAD && RarArc.NewLhd.FileName)
-        {
-            if(RarArc.NewLhd.FileNameW && RarArc.NewLhd.FileNameW[0] != 0)
-            {
-                char UnicodeName[1024];
-                WideToUtf(RarArc.NewLhd.FileNameW, UnicodeName, sizeof(UnicodeName));
+		if (HeaderType == FILE_HEAD && RarArc.NewLhd.FileName)
+		{
+			if (RarArc.NewLhd.FileNameW && RarArc.NewLhd.FileNameW[0] != 0)
+			{
+				char UnicodeName[1024];
+				WideToUtf(RarArc.NewLhd.FileNameW, UnicodeName, sizeof(UnicodeName));
 
-                if(strcmp(RarStructure[ind]->filename, UnicodeName) == 0)
-                    return true;
-            }
-            else
-            {
-                if(strcmp(RarStructure[ind]->filename, RarArc.NewLhd.FileName) == 0)
-                    return true;
-            }
-        }
+				if (strcmp(RarStructure[ind]->filename, UnicodeName) == 0)
+					return true;
+			}
+			else
+			{
+				if (strcmp(RarStructure[ind]->filename, RarArc.NewLhd.FileName) == 0)
+					return true;
+			}
+		}
 
-        RarArc.SeekToNext();
-    }
+		RarArc.SeekToNext();
+	}
 
-    return false;
+	return false;
 }
 
 bool RarFile::CheckPassword()
 {
-    if((RarArc.NewLhd.Flags & LHD_PASSWORD) && Password.length() == 0)
-    {
-        int choice = WindowPrompt(("Password is needed."), ("Please enter the password."), ("OK"), ("Cancel"));
-        if(!choice)
-            return false;
+	if ((RarArc.NewLhd.Flags & LHD_PASSWORD) && Password.length() == 0)
+	{
+		int choice = WindowPrompt(("Password is needed."), ("Please enter the password."), ("OK"), ("Cancel"));
+		if (!choice)
+			return false;
 
-        char entered[150];
-        memset(entered, 0, sizeof(entered));
+		char entered[150];
+		memset(entered, 0, sizeof(entered));
 
-        if(OnScreenKeyboard(NULL, entered, sizeof(entered)) == 0)
-            return false;
+		if (OnScreenKeyboard(nullptr, entered, sizeof(entered)) == 0)
+			return false;
 
-        Password.assign(entered);
-    }
+		Password.assign(entered);
+	}
 
-    return true;
+	return true;
 }
 
-void RarFile::UnstoreFile(ComprDataIO &DataIO, int64 DestUnpSize)
+void RarFile::UnstoreFile(ComprDataIO& DataIO, int64 DestUnpSize)
 {
-  Array<byte> Buffer(0x10000);
-  while (1)
-  {
-    uint Code=DataIO.UnpRead(&Buffer[0],Buffer.Size());
-    if (Code==0 || (int)Code==-1)
-      break;
-    Code=Code<DestUnpSize ? Code:(uint)DestUnpSize;
-    DataIO.UnpWrite(&Buffer[0],Code);
-    if (DestUnpSize>=0)
-      DestUnpSize-=Code;
-  }
+	Array<byte> Buffer(0x10000);
+	while (true)
+	{
+		uint Code = DataIO.UnpRead(&Buffer[0], Buffer.Size());
+		if (Code == 0 || static_cast<int>(Code) == -1)
+			break;
+		Code = Code < DestUnpSize ? Code : static_cast<uint>(DestUnpSize);
+		DataIO.UnpWrite(&Buffer[0], Code);
+		if (DestUnpSize >= 0)
+			DestUnpSize -= Code;
+	}
 }
 
-int RarFile::InternalExtractFile(const char * outpath, bool withpath)
+int RarFile::InternalExtractFile(const char* outpath, bool withpath)
 {
-    if (!RarArc.IsOpened())
-        return -1;
+	if (!RarArc.IsOpened())
+		return -1;
 
-    ComprDataIO DataIO;
-    Unpack Unp(&DataIO);
-    Unp.Init(NULL);
+	ComprDataIO DataIO;
+	Unpack Unp(&DataIO);
+	Unp.Init(NULL);
 
-    char filepath[MAXPATHLEN];
-    char filename[255];
+	char filepath[MAXPATHLEN];
+	char filename[255];
 
-    if(RarArc.NewLhd.FileNameW && RarArc.NewLhd.FileNameW[0] != 0)
-        WideToUtf(RarArc.NewLhd.FileNameW, filename, sizeof(filename));
-    else
-        snprintf(filename, sizeof(filename), "%s", RarArc.NewLhd.FileName);
+	if (RarArc.NewLhd.FileNameW && RarArc.NewLhd.FileNameW[0] != 0)
+		WideToUtf(RarArc.NewLhd.FileNameW, filename, sizeof(filename));
+	else
+		snprintf(filename, sizeof(filename), "%s", RarArc.NewLhd.FileName);
 
-    char * Realfilename = strrchr(filename, '/');
-    if(!Realfilename)
-        Realfilename = filename;
-    else
-        Realfilename++;
+	char* Realfilename = strrchr(filename, '/');
+	if (!Realfilename)
+		Realfilename = filename;
+	else
+		Realfilename++;
 
-    if(withpath)
-        snprintf(filepath, sizeof(filepath), "%s/%s", outpath, filename);
-    else
-        snprintf(filepath, sizeof(filepath), "%s/%s", outpath, Realfilename);
+	if (withpath)
+		snprintf(filepath, sizeof(filepath), "%s/%s", outpath, filename);
+	else
+		snprintf(filepath, sizeof(filepath), "%s/%s", outpath, Realfilename);
 
-    if(RarArc.IsArcDir())
-    {
-        CreateSubfolder(filepath);
-        return 1;
-    }
+	if (RarArc.IsArcDir())
+	{
+		CreateSubfolder(filepath);
+		return 1;
+	}
 
-    char * temppath = strdup(filepath);
-    char * pointer = strrchr(temppath, '/');
-    if(pointer)
-    {
-        pointer++;
-        pointer[0] = '\0';
-    }
+	char* temppath = strdup(filepath);
+	char* pointer = strrchr(temppath, '/');
+	if (pointer)
+	{
+		pointer++;
+		pointer[0] = '\0';
+	}
 
-    CreateSubfolder(temppath);
+	CreateSubfolder(temppath);
 
-    free(temppath);
-    temppath = NULL;
+	free(temppath);
+	temppath = nullptr;
 
-    if(!CheckPassword())
-        return -2;
+	if (!CheckPassword())
+		return -2;
 
-    remove(filepath);
+	remove(filepath);
 
-    File CurFile;
-    if(!CurFile.Create(filepath))
-    {
-        return false;
-    }
+	File CurFile;
+	if (!CurFile.Create(filepath))
+	{
+		return false;
+	}
 
-    DataIO.UnpVolume = false;
-    DataIO.UnpArcSize = RarArc.NewLhd.FullPackSize;
-    DataIO.CurUnpRead=0;
-    DataIO.CurUnpWrite=0;
-    DataIO.UnpFileCRC=RarArc.OldFormat ? 0 : 0xffffffff;
-    DataIO.PackedCRC=0xffffffff;
-    DataIO.SetEncryption(
-    (RarArc.NewLhd.Flags & LHD_PASSWORD) ? RarArc.NewLhd.UnpVer:0, Password.c_str(),
-    (RarArc.NewLhd.Flags & LHD_SALT) ? RarArc.NewLhd.Salt:NULL,false,
-    RarArc.NewLhd.UnpVer>=36);
-    DataIO.SetPackedSizeToRead(RarArc.NewLhd.FullPackSize);
-    DataIO.SetFiles(&RarArc,&CurFile);
-    DataIO.SetTestMode(false);
-    DataIO.SetSkipUnpCRC(false);
-    int RarErrorCode = 0;
+	DataIO.UnpVolume = false;
+	DataIO.UnpArcSize = RarArc.NewLhd.FullPackSize;
+	DataIO.CurUnpRead = 0;
+	DataIO.CurUnpWrite = 0;
+	DataIO.UnpFileCRC = RarArc.OldFormat ? 0 : 0xffffffff;
+	DataIO.PackedCRC = 0xffffffff;
+	DataIO.SetEncryption(
+		(RarArc.NewLhd.Flags & LHD_PASSWORD) ? RarArc.NewLhd.UnpVer : 0, Password.c_str(),
+		(RarArc.NewLhd.Flags & LHD_SALT) ? RarArc.NewLhd.Salt : NULL, false,
+		RarArc.NewLhd.UnpVer >= 36);
+	DataIO.SetPackedSizeToRead(RarArc.NewLhd.FullPackSize);
+	DataIO.SetFiles(&RarArc, &CurFile);
+	DataIO.SetTestMode(false);
+	DataIO.SetSkipUnpCRC(false);
+	int RarErrorCode = 0;
 
-    if (RarArc.NewLhd.Method == 0x30)
-    {
-        UnstoreFile(DataIO,RarArc.NewLhd.FullUnpSize);
-    }
-    else
-    {
-        Unp.SetDestSize(RarArc.NewLhd.FullUnpSize);
+	if (RarArc.NewLhd.Method == 0x30)
+	{
+		UnstoreFile(DataIO, RarArc.NewLhd.FullUnpSize);
+	}
+	else
+	{
+		Unp.SetDestSize(RarArc.NewLhd.FullUnpSize);
 
-        if (RarArc.NewLhd.UnpVer <= 15)
-            Unp.DoUnpack(15, false);
-        else
-            Unp.DoUnpack(RarArc.NewLhd.UnpVer,(RarArc.NewLhd.Flags & LHD_SOLID)!=0);
-    }
+		if (RarArc.NewLhd.UnpVer <= 15)
+			Unp.DoUnpack(15, false);
+		else
+			Unp.DoUnpack(RarArc.NewLhd.UnpVer, (RarArc.NewLhd.Flags & LHD_SOLID) != 0);
+	}
 
-    CurFile.Close();
+	CurFile.Close();
 
-    if(RarErrorCode != 0)
-    {
-        remove(filepath);
-        return -3;
-    }
+	if (RarErrorCode != 0)
+	{
+		remove(filepath);
+		return -3;
+	}
 
-    if((!RarArc.OldFormat && UINT32(DataIO.UnpFileCRC) != UINT32(RarArc.NewLhd.FileCRC^0xffffffff)) ||
-        (RarArc.OldFormat && UINT32(DataIO.UnpFileCRC) != UINT32(RarArc.NewLhd.FileCRC)))
-    {
-        remove(filepath);
-        return -4;
-    }
+	if ((!RarArc.OldFormat && UINT32(DataIO.UnpFileCRC) != UINT32(RarArc.NewLhd.FileCRC ^ 0xffffffff)) ||
+		(RarArc.OldFormat && UINT32(DataIO.UnpFileCRC) != UINT32(RarArc.NewLhd.FileCRC)))
+	{
+		remove(filepath);
+		return -4;
+	}
 
-    return 1;
+	return 1;
 }
 
-int RarFile::ExtractFile(int fileindex, const char * outpath, bool withpath)
+int RarFile::ExtractFile(int fileindex, const char* outpath, bool withpath)
 {
-    if(!SeekFile(fileindex))
-    {
-        return -6;
-    }
+	if (!SeekFile(fileindex))
+	{
+		return -6;
+	}
 
 	return InternalExtractFile(outpath, withpath);
 }
 
-int RarFile::ExtractAll(const char * destpath)
+int RarFile::ExtractAll(const char* destpath)
 {
-    //! This is faster than looping and using ExtractFile for each item
-    RarArc.Seek(0, SEEK_SET);
+	//! This is faster than looping and using ExtractFile for each item
+	RarArc.Seek(0, SEEK_SET);
 
-    while(RarArc.ReadHeader() > 0)
-    {
-        int HeaderType=RarArc.GetHeaderType();
-        if (HeaderType==ENDARC_HEAD)
-            break;
+	while (RarArc.ReadHeader() > 0)
+	{
+		int HeaderType = RarArc.GetHeaderType();
+		if (HeaderType == ENDARC_HEAD)
+			break;
 
-        if(HeaderType == FILE_HEAD)
-        {
-            int ret = InternalExtractFile(destpath, true);
-            if(ret < 0)
-            {
-                return ret;
-            }
-        }
-        RarArc.SeekToNext();
-    }
+		if (HeaderType == FILE_HEAD)
+		{
+			int ret = InternalExtractFile(destpath, true);
+			if (ret < 0)
+			{
+				return ret;
+			}
+		}
+		RarArc.SeekToNext();
+	}
 
 	return 1;
 }

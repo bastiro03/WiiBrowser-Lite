@@ -27,6 +27,6 @@
 
 extern int reuse_socket;
 
-int udp_open_socket (URL_t *url);
+int udp_open_socket(URL_t* url);
 
 #endif /* MPLAYER_UDP_H */

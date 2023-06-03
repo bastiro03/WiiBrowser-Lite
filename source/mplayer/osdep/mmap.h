@@ -50,9 +50,9 @@
 
 #ifndef _MMAP_DECLARED
 #define _MMAP_DECLARED
-void *mmap( void *addr, size_t len, int prot, int flags, int fildes, off_t off );
+void* mmap(void* addr, size_t len, int prot, int flags, int fildes, off_t off);
 #endif
-int   munmap( void *addr, size_t len );
-int   mprotect( void *addr, size_t len, int prot );
+int munmap(void* addr, size_t len);
+int mprotect(void* addr, size_t len, int prot);
 
 #endif /* MPLAYER_MMAP_H */

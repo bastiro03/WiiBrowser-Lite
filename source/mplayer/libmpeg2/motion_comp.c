@@ -35,42 +35,42 @@
 
 mpeg2_mc_t mpeg2_mc;
 
-void mpeg2_mc_init (uint32_t accel)
+void mpeg2_mc_init(uint32_t accel)
 {
 #if HAVE_MMX2
-    if (accel & MPEG2_ACCEL_X86_MMXEXT)
-	mpeg2_mc = mpeg2_mc_mmxext;
-    else
+	if (accel & MPEG2_ACCEL_X86_MMXEXT)
+		mpeg2_mc = mpeg2_mc_mmxext;
+	else
 #endif
 #if HAVE_AMD3DNOW
-    if (accel & MPEG2_ACCEL_X86_3DNOW)
-	mpeg2_mc = mpeg2_mc_3dnow;
-    else
+		if (accel & MPEG2_ACCEL_X86_3DNOW)
+			mpeg2_mc = mpeg2_mc_3dnow;
+		else
 #endif
 #if HAVE_MMX
-    if (accel & MPEG2_ACCEL_X86_MMX)
-	mpeg2_mc = mpeg2_mc_mmx;
-    else
+			if (accel & MPEG2_ACCEL_X86_MMX)
+				mpeg2_mc = mpeg2_mc_mmx;
+			else
 #endif
 #if HAVE_ALTIVEC
-    if (accel & MPEG2_ACCEL_PPC_ALTIVEC)
-	mpeg2_mc = mpeg2_mc_altivec;
-    else
+				if (accel & MPEG2_ACCEL_PPC_ALTIVEC)
+					mpeg2_mc = mpeg2_mc_altivec;
+				else
 #endif
 #if ARCH_ALPHA
-    if (accel & MPEG2_ACCEL_ALPHA)
-	mpeg2_mc = mpeg2_mc_alpha;
-    else
+					if (accel & MPEG2_ACCEL_ALPHA)
+						mpeg2_mc = mpeg2_mc_alpha;
+					else
 #endif
 #if HAVE_VIS
-    if (accel & MPEG2_ACCEL_SPARC_VIS)
-	mpeg2_mc = mpeg2_mc_vis;
-    else
+						if (accel & MPEG2_ACCEL_SPARC_VIS)
+							mpeg2_mc = mpeg2_mc_vis;
+						else
 #endif
 #if ARCH_ARM
-    if (accel & MPEG2_ACCEL_ARM)
-	mpeg2_mc = mpeg2_mc_arm;
-    else
+							if (accel & MPEG2_ACCEL_ARM)
+								mpeg2_mc = mpeg2_mc_arm;
+							else
 #endif
 	mpeg2_mc = mpeg2_mc_c;
 }
@@ -133,13 +133,13 @@ static void MC_##op##_##xy##_8_c (uint8_t * dest, const uint8_t * ref,	\
 
 /* definitions of the actual mc functions */
 
-MC_FUNC (put,o)
-MC_FUNC (avg,o)
-MC_FUNC (put,x)
-MC_FUNC (avg,x)
-MC_FUNC (put,y)
-MC_FUNC (avg,y)
-MC_FUNC (put,xy)
-MC_FUNC (avg,xy)
+MC_FUNC(put, o)
+MC_FUNC(avg, o)
+MC_FUNC(put, x)
+MC_FUNC(avg, x)
+MC_FUNC(put, y)
+MC_FUNC(avg, y)
+MC_FUNC(put, xy)
+MC_FUNC(avg, xy)
 
-MPEG2_MC_EXTERN (c)
+MPEG2_MC_EXTERN(c)

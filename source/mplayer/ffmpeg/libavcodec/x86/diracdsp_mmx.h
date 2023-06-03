@@ -29,19 +29,19 @@ DECL_DIRAC_PIXOP(put, mmx);
 DECL_DIRAC_PIXOP(avg, mmx);
 DECL_DIRAC_PIXOP(avg, mmx2);
 
-void ff_put_dirac_pixels16_sse2(uint8_t *dst, const uint8_t *src[5], int stride, int h);
-void ff_avg_dirac_pixels16_sse2(uint8_t *dst, const uint8_t *src[5], int stride, int h);
-void ff_put_dirac_pixels32_sse2(uint8_t *dst, const uint8_t *src[5], int stride, int h);
-void ff_avg_dirac_pixels32_sse2(uint8_t *dst, const uint8_t *src[5], int stride, int h);
+void ff_put_dirac_pixels16_sse2(uint8_t* dst, const uint8_t* src[5], int stride, int h);
+void ff_avg_dirac_pixels16_sse2(uint8_t* dst, const uint8_t* src[5], int stride, int h);
+void ff_put_dirac_pixels32_sse2(uint8_t* dst, const uint8_t* src[5], int stride, int h);
+void ff_avg_dirac_pixels32_sse2(uint8_t* dst, const uint8_t* src[5], int stride, int h);
 
-void ff_add_rect_clamped_mmx(uint8_t *, const uint16_t *, int, const int16_t *, int, int, int);
-void ff_add_rect_clamped_sse2(uint8_t *, const uint16_t *, int, const int16_t *, int, int, int);
+void ff_add_rect_clamped_mmx(uint8_t*, const uint16_t*, int, const int16_t*, int, int, int);
+void ff_add_rect_clamped_sse2(uint8_t*, const uint16_t*, int, const int16_t*, int, int, int);
 
-void ff_add_dirac_obmc8_mmx(uint16_t *dst, const uint8_t *src, int stride, const uint8_t *obmc_weight, int yblen);
-void ff_add_dirac_obmc16_mmx(uint16_t *dst, const uint8_t *src, int stride, const uint8_t *obmc_weight, int yblen);
-void ff_add_dirac_obmc32_mmx(uint16_t *dst, const uint8_t *src, int stride, const uint8_t *obmc_weight, int yblen);
+void ff_add_dirac_obmc8_mmx(uint16_t* dst, const uint8_t* src, int stride, const uint8_t* obmc_weight, int yblen);
+void ff_add_dirac_obmc16_mmx(uint16_t* dst, const uint8_t* src, int stride, const uint8_t* obmc_weight, int yblen);
+void ff_add_dirac_obmc32_mmx(uint16_t* dst, const uint8_t* src, int stride, const uint8_t* obmc_weight, int yblen);
 
-void ff_add_dirac_obmc16_sse2(uint16_t *dst, const uint8_t *src, int stride, const uint8_t *obmc_weight, int yblen);
-void ff_add_dirac_obmc32_sse2(uint16_t *dst, const uint8_t *src, int stride, const uint8_t *obmc_weight, int yblen);
+void ff_add_dirac_obmc16_sse2(uint16_t* dst, const uint8_t* src, int stride, const uint8_t* obmc_weight, int yblen);
+void ff_add_dirac_obmc32_sse2(uint16_t* dst, const uint8_t* src, int stride, const uint8_t* obmc_weight, int yblen);
 
 #endif

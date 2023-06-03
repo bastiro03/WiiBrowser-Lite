@@ -47,19 +47,23 @@ float ass_line_spacing = 0.;
 int ass_top_margin = 0;
 int ass_bottom_margin = 0;
 int extract_embedded_fonts = 1;
-char **ass_force_style_list = NULL;
+char** ass_force_style_list = NULL;
 int ass_use_margins = 0;
 char* ass_color = NULL;
 char* ass_border_color = NULL;
 char* ass_styles_file = NULL;
 int ass_hinting = ASS_HINTING_NATIVE + 4; // native hinting for unscaled osd
 
-static void init_style(ASS_Style *style, const char *name, double playres)
+static void init_style(ASS_Style* style, const char* name, double playres)
 {
 	double fs;
 	uint32_t c1, c2;
 	style->Name = strdup(name);
-	style->FontName = (font_fontconfig >= 0 && sub_font_name) ? strdup(sub_font_name) : (font_fontconfig >= 0 && font_name) ? strdup(font_name) : strdup("Sans");
+	style->FontName = (font_fontconfig >= 0 && sub_font_name)
+		                  ? strdup(sub_font_name)
+		                  : (font_fontconfig >= 0 && font_name)
+		                  ? strdup(font_name)
+		                  : strdup("Sans");
 	style->treat_fontname_as_pattern = 1;
 
 	fs = playres * text_font_scale_factor / 100.;
@@ -93,7 +97,8 @@ static void init_style(ASS_Style *style, const char *name, double playres)
 	style->ScaleY = 1.;
 }
 
-ASS_Track* ass_default_track(ASS_Library* library) {
+ASS_Track* ass_default_track(ASS_Library* library)
+{
 	ASS_Track* track = ass_new_track(library);
 
 	track->track_type = TRACK_TYPE_ASS;
@@ -101,7 +106,8 @@ ASS_Track* ass_default_track(ASS_Library* library) {
 	track->PlayResY = 288;
 	track->WrapStyle = 0;
 
-	if (track->n_styles == 0) {
+	if (track->n_styles == 0)
+	{
 		// stupid hack to stop libass to add a default track
 		// in front in ass_read_styles - this makes it impossible
 		// to completely override the "Default" track.
@@ -112,7 +118,8 @@ ASS_Track* ass_default_track(ASS_Library* library) {
 	if (ass_styles_file)
 		ass_read_styles(track, ass_styles_file, sub_cp);
 
-	if (track->default_style <= 0) {
+	if (track->default_style <= 0)
+	{
 		int sid = ass_alloc_style(track);
 		init_style(track->styles + sid, "Default", track->PlayResY);
 		track->default_style = sid;
@@ -127,10 +134,10 @@ static int check_duplicate_plaintext_event(ASS_Track* track)
 	int i;
 	ASS_Event* evt = track->events + track->n_events - 1;
 
-	for (i = 0; i<track->n_events - 1; ++i) // ignoring last event, it is the one we are comparing with
+	for (i = 0; i < track->n_events - 1; ++i) // ignoring last event, it is the one we are comparing with
 		if (track->events[i].Start == evt->Start &&
-		    track->events[i].Duration == evt->Duration &&
-		    strcmp(track->events[i].Text, evt->Text) == 0)
+			track->events[i].Duration == evt->Duration &&
+			strcmp(track->events[i].Text, evt->Text) == 0)
 			return 1;
 	return 0;
 }
@@ -145,8 +152,8 @@ static int check_duplicate_plaintext_event(ASS_Track* track)
  **/
 int ass_process_subtitle(ASS_Track* track, subtitle* sub)
 {
-        int eid;
-        ASS_Event* event;
+	int eid;
+	ASS_Event* event;
 	int len = 0, j;
 	char* p;
 	char* end;
@@ -175,21 +182,21 @@ int ass_process_subtitle(ASS_Track* track, subtitle* sub)
 	for (j = 0; j < sub->lines; ++j)
 		p += snprintf(p, end - p, "%s\\N", sub->text[j]);
 
-	if (sub->lines > 0) p-=2; // remove last "\N"
+	if (sub->lines > 0) p -= 2; // remove last "\N"
 	*p = 0;
 
-	if (check_duplicate_plaintext_event(track)) {
+	if (check_duplicate_plaintext_event(track))
+	{
 		ass_free_event(track, eid);
 		track->n_events--;
 		return -1;
 	}
 
 	mp_msg(MSGT_ASS, MSGL_V, "plaintext event at %" PRId64 ", +%" PRId64 ": %s  \n",
-			(int64_t)event->Start, (int64_t)event->Duration, event->Text);
+	       (int64_t)event->Start, (int64_t)event->Duration, event->Text);
 
 	return eid;
 }
-
 
 /**
  * \brief Convert subdata to ASS_Track
@@ -197,18 +204,21 @@ int ass_process_subtitle(ASS_Track* track, subtitle* sub)
  * \param fps video framerate
  * \return newly allocated ASS_Track, filled with subtitles from subdata
  */
-ASS_Track* ass_read_subdata(ASS_Library* library, sub_data* subdata, double fps) {
+ASS_Track* ass_read_subdata(ASS_Library* library, sub_data* subdata, double fps)
+{
 	ASS_Track* track;
 	int i;
 
 	track = ass_default_track(library);
 	track->name = subdata->filename ? strdup(subdata->filename) : 0;
 
-	for (i = 0; i < subdata->sub_num; ++i) {
+	for (i = 0; i < subdata->sub_num; ++i)
+	{
 		int eid = ass_process_subtitle(track, subdata->subtitles + i);
 		if (eid < 0)
 			continue;
-		if (!subdata->sub_uses_time) {
+		if (!subdata->sub_uses_time)
+		{
 			track->events[eid].Start *= 100. / fps;
 			track->events[eid].Duration *= 100. / fps;
 		}
@@ -216,24 +226,28 @@ ASS_Track* ass_read_subdata(ASS_Library* library, sub_data* subdata, double fps)
 	return track;
 }
 
-ASS_Track* ass_read_stream(ASS_Library* library, const char *fname, char *charset) {
-	char *buf = NULL;
-	ASS_Track *track;
+ASS_Track* ass_read_stream(ASS_Library* library, const char* fname, char* charset)
+{
+	char* buf = NULL;
+	ASS_Track* track;
 	size_t sz = 0;
 	size_t buf_alloc = 0;
-	stream_t *fd;
+	stream_t* fd;
 
 	fd = open_stream(fname, NULL, NULL);
-	if (!fd) {
+	if (!fd)
+	{
 		mp_msg(MSGT_ASS, MSGL_WARN, MSGTR_LIBASS_FopenFailed, fname);
 		return NULL;
 	}
 	if (fd->end_pos > STREAM_BUFFER_SIZE)
 		/* read entire file if size is known */
 		buf_alloc = fd->end_pos;
-	for (;;) {
+	for (;;)
+	{
 		int i;
-		if (buf_alloc >= 100*1024*1024) {
+		if (buf_alloc >= 100 * 1024 * 1024)
+		{
 			mp_msg(MSGT_ASS, MSGL_INFO, MSGTR_LIBASS_RefusingToLoadSubtitlesLargerThan100M, fname);
 			sz = 0;
 			break;
@@ -246,14 +260,16 @@ ASS_Track* ass_read_stream(ASS_Library* library, const char *fname, char *charse
 		sz += i;
 	}
 	free_stream(fd);
-	if (!sz) {
+	if (!sz)
+	{
 		free(buf);
 		return NULL;
 	}
 	buf[sz] = 0;
 	buf = realloc(buf, sz + 1);
 	track = ass_read_memory(library, buf, sz, charset);
-	if (track) {
+	if (track)
+	{
 		free(track->name);
 		track->name = strdup(fname);
 	}
@@ -268,21 +284,22 @@ static void adjust_font_scale(ASS_Track* track)
 	extern int mplayerheight;
 	extern float mplayer_ass_font_scale;
 
-	if(track && track->PlayResY == 288	&& (!track->PlayResX || track->PlayResX==384)) // embedded font not detected
-		ass_font_scale = ((double)mplayerheight / (double)gx_height * mplayer_ass_font_scale * 2.0f)+3.0f;
+	if (track && track->PlayResY == 288 && (!track->PlayResX || track->PlayResX == 384)) // embedded font not detected
+		ass_font_scale = ((double)mplayerheight / (double)gx_height * mplayer_ass_font_scale * 2.0f) + 3.0f;
 	else
 		ass_font_scale = (double)mplayerheight / (double)gx_height * mplayer_ass_font_scale / 1.8f;
 }
 #endif
 
-void ass_configure(ASS_Renderer* priv, int w, int h, int unscaled) {
+void ass_configure(ASS_Renderer* priv, int w, int h, int unscaled)
+{
 	int hinting;
 	ass_set_frame_size(priv, w, h);
 	ass_set_margins(priv, ass_top_margin, ass_bottom_margin, 0, 0);
 	ass_set_use_margins(priv, ass_use_margins);
 #ifdef GEKKO
 	adjust_font_scale(ass_track);
-#endif	
+#endif
 	ass_set_font_scale(priv, ass_font_scale);
 	if (!unscaled && (ass_hinting & 4))
 		hinting = 0;
@@ -292,7 +309,8 @@ void ass_configure(ASS_Renderer* priv, int w, int h, int unscaled) {
 	ass_set_line_spacing(priv, ass_line_spacing);
 }
 
-void ass_configure_fonts(ASS_Renderer* priv) {
+void ass_configure_fonts(ASS_Renderer* priv)
+{
 	char *dir, *path, *family;
 	dir = get_path("fonts");
 	if (font_fontconfig < 0 && sub_font_name) path = strdup(sub_font_name);
@@ -302,22 +320,23 @@ void ass_configure_fonts(ASS_Renderer* priv) {
 	else if (font_fontconfig >= 0 && font_name) family = strdup(font_name);
 	else family = 0;
 
-        ass_set_fonts(priv, path, family, font_fontconfig, NULL, 1);
+	ass_set_fonts(priv, path, family, font_fontconfig, NULL, 1);
 
 	free(dir);
 	free(path);
 	free(family);
 }
 
-static void message_callback(int level, const char *format, va_list va, void *ctx)
+static void message_callback(int level, const char* format, va_list va, void* ctx)
 {
 	int n;
-	char *str;
+	char* str;
 	va_list dst;
 
 	va_copy(dst, va);
 	n = vsnprintf(NULL, 0, format, va);
-	if (n > 0 && (str = malloc(n + 1))) {
+	if (n > 0 && (str = malloc(n + 1)))
+	{
 		vsnprintf(str, n + 1, format, dst);
 		mp_msg(MSGT_ASS, level, "[ass] %s\n", str);
 		free(str);
@@ -327,13 +346,15 @@ static void message_callback(int level, const char *format, va_list va, void *ct
 /**
  * Reset all per-file settings for next file.
  */
-void ass_mp_reset_config(ASS_Library *l) {
+void ass_mp_reset_config(ASS_Library* l)
+{
 	ass_set_extract_fonts(l, extract_embedded_fonts);
 	ass_set_style_overrides(l, ass_force_style_list);
 	ass_force_reload = 1;
 }
 
-ASS_Library* ass_init(void) {
+ASS_Library* ass_init(void)
+{
 	ASS_Library* priv;
 	char* path = get_path("fonts");
 	priv = ass_library_init();
@@ -346,8 +367,10 @@ ASS_Library* ass_init(void) {
 
 int ass_force_reload = 0; // flag set if global ass-related settings were changed
 
-ASS_Image* ass_mp_render_frame(ASS_Renderer *priv, ASS_Track* track, long long now, int* detect_change) {
-	if (ass_force_reload) {
+ASS_Image* ass_mp_render_frame(ASS_Renderer* priv, ASS_Track* track, long long now, int* detect_change)
+{
+	if (ass_force_reload)
+	{
 #ifdef GEKKO
 		adjust_font_scale(track);
 #endif
@@ -361,37 +384,40 @@ ASS_Image* ass_mp_render_frame(ASS_Renderer *priv, ASS_Track* track, long long n
 
 /* EOSD source for ASS subtitles. */
 
-static ASS_Renderer *ass_renderer;
+static ASS_Renderer* ass_renderer;
 static int prev_visibility;
 
-static void eosd_ass_update(struct mp_eosd_source *src, const struct mp_eosd_settings *res, double ts)
+static void eosd_ass_update(struct mp_eosd_source* src, const struct mp_eosd_settings* res, double ts)
 {
 	long long ts_ms = (ts + sub_delay) * 1000 + .5;
-	ASS_Image *aimg;
-	struct mp_eosd_image *img;
-	if (res->changed || !src->initialized) {
-		double dar = (double) (res->w - res->ml - res->mr) / (res->h - res->mt - res->mb);
+	ASS_Image* aimg;
+	struct mp_eosd_image* img;
+	if (res->changed || !src->initialized)
+	{
+		double dar = (double)(res->w - res->ml - res->mr) / (res->h - res->mt - res->mb);
 		ass_configure(ass_renderer, res->w, res->h, res->unscaled);
 		ass_set_margins(ass_renderer, res->mt, res->mb, res->ml, res->mr);
 		ass_set_aspect_ratio(ass_renderer, dar, (double)res->srcw / res->srch);
 		src->initialized = 1;
 	}
-	aimg = sub_visibility && ass_track && ts != MP_NOPTS_VALUE ?
-		ass_mp_render_frame(ass_renderer, ass_track, ts_ms, &src->changed) :
-		NULL;
+	aimg = sub_visibility && ass_track && ts != MP_NOPTS_VALUE
+		       ? ass_mp_render_frame(ass_renderer, ass_track, ts_ms, &src->changed)
+		       : NULL;
 	if (!aimg != !src->images)
 		src->changed = 2;
-	if (src->changed) {
+	if (src->changed)
+	{
 		eosd_image_remove_all(src);
-		while (aimg) {
+		while (aimg)
+		{
 			img = eosd_image_alloc();
-			img->w      = aimg->w;
-			img->h      = aimg->h;
+			img->w = aimg->w;
+			img->h = aimg->h;
 			img->bitmap = aimg->bitmap;
 			img->stride = aimg->stride;
-			img->color  = aimg->color;
-			img->dst_x  = aimg->dst_x;
-			img->dst_y  = aimg->dst_y;
+			img->color = aimg->color;
+			img->dst_x = aimg->dst_x;
+			img->dst_y = aimg->dst_y;
 			eosd_image_append(src, img);
 			aimg = aimg->next;
 		}
@@ -399,19 +425,19 @@ static void eosd_ass_update(struct mp_eosd_source *src, const struct mp_eosd_set
 	prev_visibility = sub_visibility;
 }
 
-static void eosd_ass_uninit(struct mp_eosd_source *src)
+static void eosd_ass_uninit(struct mp_eosd_source* src)
 {
 	eosd_image_remove_all(src);
 	ass_renderer_done(ass_renderer);
 }
 
 static struct mp_eosd_source eosd_ass = {
-	.uninit  = eosd_ass_uninit,
-	.update  = eosd_ass_update,
+	.uninit = eosd_ass_uninit,
+	.update = eosd_ass_update,
 	.z_index = 10,
 };
 
-void eosd_ass_init(ASS_Library *ass_library)
+void eosd_ass_init(ASS_Library* ass_library)
 {
 	ass_renderer = ass_renderer_init(ass_library);
 	if (!ass_renderer)

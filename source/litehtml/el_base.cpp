@@ -2,14 +2,12 @@
 #include "el_base.h"
 #include "document.h"
 
-litehtml::el_base::el_base( litehtml::document* doc ) : element(doc)
+litehtml::el_base::el_base(document* doc) : element(doc)
 {
-
 }
 
 litehtml::el_base::~el_base()
 {
-
 }
 
 void litehtml::el_base::finish()

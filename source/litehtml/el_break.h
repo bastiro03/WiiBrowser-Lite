@@ -6,9 +6,9 @@ namespace litehtml
 	class el_break : public element
 	{
 	public:
-		el_break(litehtml::document* doc);
-		virtual ~el_break();
+		el_break(document* doc);
+		~el_break() override;
 
-		virtual bool				is_break() const;
+		bool is_break() const override;
 	};
 }

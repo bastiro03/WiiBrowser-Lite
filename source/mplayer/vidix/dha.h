@@ -48,37 +48,36 @@
 
 typedef struct pciinfo_s
 {
-  int		bus,card,func;			/* PCI/AGP bus:card:func */
-  unsigned short command;                       /* Device control register */
-  unsigned short vendor,device;			/* Card vendor+device ID */
-  unsigned	base0,base1,base2,baserom;	/* Memory and I/O base addresses */
-//  unsigned	base0_limit, base1_limit, base2_limit, baserom_limit;
-}pciinfo_t;
+	int bus, card, func; /* PCI/AGP bus:card:func */
+	unsigned short command; /* Device control register */
+	unsigned short vendor, device; /* Card vendor+device ID */
+	unsigned base0, base1, base2, baserom; /* Memory and I/O base addresses */
+	//  unsigned	base0_limit, base1_limit, base2_limit, baserom_limit;
+} pciinfo_t;
 
 /* needed for mga_vid */
 int pci_config_read(unsigned char bus, unsigned char dev, unsigned char func,
-			unsigned char cmd, int len, unsigned long *val);
-			/* Fill array pci_list which must have size MAX_PCI_DEVICES
-			   and return 0 if sucessful */
-int pci_scan(pciinfo_t *pci_list,unsigned *num_card);
+                    unsigned char cmd, int len, unsigned long* val);
+/* Fill array pci_list which must have size MAX_PCI_DEVICES
+   and return 0 if sucessful */
+int pci_scan(pciinfo_t* pci_list, unsigned* num_card);
 
-
-	    /* Enables/disables accessing to IO space from application side.
-	       Should return 0 if o'k or errno on error. */
+/* Enables/disables accessing to IO space from application side.
+   Should return 0 if o'k or errno on error. */
 int enable_app_io(void);
 int disable_app_io(void);
 
-unsigned char  INPORT8(unsigned idx);
+unsigned char INPORT8(unsigned idx);
 unsigned short INPORT16(unsigned idx);
-unsigned       INPORT32(unsigned idx);
+unsigned INPORT32(unsigned idx);
 #define INPORT(idx) INPORT32(idx)
-void          OUTPORT8(unsigned idx, unsigned char val);
-void          OUTPORT16(unsigned idx, unsigned short val);
-void          OUTPORT32(unsigned idx, unsigned val);
+void OUTPORT8(unsigned idx, unsigned char val);
+void OUTPORT16(unsigned idx, unsigned short val);
+void OUTPORT32(unsigned idx, unsigned val);
 #define OUTPORT(idx,val) OUTPORT32(idx,val)
 
-void *  map_phys_mem(unsigned long base, unsigned long size);
-void    unmap_phys_mem(void *ptr, unsigned long size);
+void* map_phys_mem(unsigned long base, unsigned long size);
+void unmap_phys_mem(void* ptr, unsigned long size);
 
 /*  These are the region types  */
 #define MTRR_TYPE_UNCACHABLE 0

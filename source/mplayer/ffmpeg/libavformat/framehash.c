@@ -20,14 +20,15 @@
 
 #include "internal.h"
 
-int ff_framehash_write_header(AVFormatContext *s)
+int ff_framehash_write_header(AVFormatContext* s)
 {
-    int i;
-    for (i = 0; i < s->nb_streams; i++) {
-        AVStream *st = s->streams[i];
-        avpriv_set_pts_info(st, 64, st->codec->time_base.num, st->codec->time_base.den);
-        avio_printf(s->pb, "#tb %d: %d/%d\n", i, st->time_base.num, st->time_base.den);
-        avio_flush(s->pb);
-    }
-    return 0;
+	int i;
+	for (i = 0; i < s->nb_streams; i++)
+	{
+		AVStream* st = s->streams[i];
+		avpriv_set_pts_info(st, 64, st->codec->time_base.num, st->codec->time_base.den);
+		avio_printf(s->pb, "#tb %d: %d/%d\n", i, st->time_base.num, st->time_base.den);
+		avio_flush(s->pb);
+	}
+	return 0;
 }

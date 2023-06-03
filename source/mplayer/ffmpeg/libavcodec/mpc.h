@@ -41,38 +41,52 @@
 #define MPC_FRAME_SIZE   (BANDS * SAMPLES_PER_BAND)
 
 /** Subband structure - hold all variables for each subband */
-typedef struct {
-    int msf; ///< mid-stereo flag
-    int res[2];
-    int scfi[2];
-    int scf_idx[2][3];
-    int Q[2];
-}Band;
+typedef struct
+{
+	int msf; ///< mid-stereo flag
+	int res[2];
+	int scfi[2];
+	int scf_idx[2][3];
+	int Q[2];
+} Band;
 
-typedef struct {
-    AVFrame frame;
-    DSPContext dsp;
-    MPADSPContext mpadsp;
-    GetBitContext gb;
-    int IS, MSS, gapless;
-    int lastframelen;
-    int maxbands, last_max_band;
-    int last_bits_used;
-    int oldDSCF[2][BANDS];
-    Band bands[BANDS];
-    int Q[2][MPC_FRAME_SIZE];
-    int cur_frame, frames;
-    uint8_t *bits;
-    int buf_size;
-    AVLFG rnd;
-    int frames_to_skip;
-    /* for synthesis */
-    DECLARE_ALIGNED(16, MPA_INT, synth_buf)[MPA_MAX_CHANNELS][512*2];
-    int synth_buf_offset[MPA_MAX_CHANNELS];
-    DECLARE_ALIGNED(16, int32_t, sb_samples)[MPA_MAX_CHANNELS][36][SBLIMIT];
+typedef struct
+{
+	AVFrame frame;
+	DSPContext dsp;
+	MPADSPContext mpadsp;
+	GetBitContext gb;
+	int IS, MSS, gapless;
+	int lastframelen;
+	int maxbands, last_max_band;
+	int last_bits_used;
+	int oldDSCF[2][BANDS];
+	Band bands[BANDS];
+	int Q[2][MPC_FRAME_SIZE];
+	int cur_frame, frames;
+	uint8_t* bits;
+	int buf_size;
+	AVLFG rnd;
+	int frames_to_skip;
+	/* for synthesis */
+	DECLARE_ALIGNED (
+	16
+	,
+	MPA_INT
+	,
+	synth_buf
+	)[MPA_MAX_CHANNELS][512 * 2];
+	int synth_buf_offset[MPA_MAX_CHANNELS];
+	DECLARE_ALIGNED (
+	16
+	,
+	int32_t
+	,
+	sb_samples
+	)[MPA_MAX_CHANNELS][36][SBLIMIT];
 } MPCContext;
 
 void ff_mpc_init(void);
-void ff_mpc_dequantize_and_synth(MPCContext *c, int maxband, void *dst, int channels);
+void ff_mpc_dequantize_and_synth(MPCContext* c, int maxband, void* dst, int channels);
 
 #endif /* AVCODEC_MPC_H */

@@ -54,30 +54,44 @@
 #define X8(x) x,x,x,x,x,x,x,x
 
 //concatenated table, for forward DCT transformation
-DECLARE_ALIGNED(16, static const int16_t, fdct_tg_all_16)[24] = {
-    X8(13036),  // tg * (2<<16) + 0.5
-    X8(27146),  // tg * (2<<16) + 0.5
-    X8(-21746)  // tg * (2<<16) + 0.5
+DECLARE_ALIGNED(16, static int16_t, fdct_tg_all_16)[24] =
+ {
+	X8(13036),  // tg * (2<<16) + 0.5
+	X8(27146),  // tg * (2<<16) + 0.5
+	X8(-21746)  // tg * (2<<16) + 0.5
 };
 
-DECLARE_ALIGNED(16, static const int16_t, ocos_4_16)[8] = {
-    X8(23170)   //cos * (2<<15) + 0.5
+DECLARE_ALIGNED(16, static int16_t, ocos_4_16)[8] =
+ {
+	X8(23170)   //cos * (2<<15) + 0.5
 };
 
-DECLARE_ALIGNED(16, static const int16_t, fdct_one_corr)[8] = { X8(1) };
+DECLARE_ALIGNED(16, static int16_t, fdct_one_corr)[8] =
+ { X8(1) };
 
-DECLARE_ALIGNED(8, static const int32_t, fdct_r_row)[2] = {RND_FRW_ROW, RND_FRW_ROW };
+DECLARE_ALIGNED(8, static int32_t, fdct_r_row)[2] =
+ { RND_FRW_ROW, RND_FRW_ROW };
 
 static const struct
 {
- DECLARE_ALIGNED(16, const int32_t, fdct_r_row_sse2)[4];
+	DECLARE_ALIGNED (
+	16
+	,
+	const int32_t
+	,
+	fdct_r_row_sse2
+	)[4];
 } fdct_r_row_sse2 =
-{{
- RND_FRW_ROW, RND_FRW_ROW, RND_FRW_ROW, RND_FRW_ROW
-}};
+{
+	{
+		RND_FRW_ROW, RND_FRW_ROW, RND_FRW_ROW, RND_FRW_ROW
+	}
+};
+
 //DECLARE_ALIGNED(16, static const long, fdct_r_row_sse2)[4] = {RND_FRW_ROW, RND_FRW_ROW, RND_FRW_ROW, RND_FRW_ROW};
 
-DECLARE_ALIGNED(8, static const int16_t, tab_frw_01234567)[] = {  // forward_dct coeff table
+DECLARE_ALIGNED(8, static int16_t, tab_frw_01234567)[] =
+ {  // forward_dct coeff table
   16384,   16384,   22725,   19266,
   16384,   16384,   12873,    4520,
   21407,    8867,   19266,   -4520,
@@ -153,15 +167,22 @@ DECLARE_ALIGNED(8, static const int16_t, tab_frw_01234567)[] = {  // forward_dct
 
 static const struct
 {
- DECLARE_ALIGNED(16, const int16_t, tab_frw_01234567_sse2)[256];
+	DECLARE_ALIGNED (
+	16
+	,
+	const int16_t
+	,
+	tab_frw_01234567_sse2
+	)[256];
 } tab_frw_01234567_sse2 =
-{{
-//DECLARE_ALIGNED(16, static const int16_t, tab_frw_01234567_sse2)[] = {  // forward_dct coeff table
+{
+	{
+		//DECLARE_ALIGNED(16, static const int16_t, tab_frw_01234567_sse2)[] = {  // forward_dct coeff table
 #define TABLE_SSE2 C4,  C4,  C1,  C3, -C6, -C2, -C1, -C5, \
-                   C4,  C4,  C5,  C7,  C2,  C6,  C3, -C7, \
-                  -C4,  C4,  C7,  C3,  C6, -C2,  C7, -C5, \
-                   C4, -C4,  C5, -C1,  C2, -C6,  C3, -C1,
-// c1..c7 * cos(pi/4) * 2^15
+		                   C4,  C4,  C5,  C7,  C2,  C6,  C3, -C7, \
+		                  -C4,  C4,  C7,  C3,  C6, -C2,  C7, -C5, \
+		                   C4, -C4,  C5, -C1,  C2, -C6,  C3, -C1,
+		// c1..c7 * cos(pi/4) * 2^15
 #define C1 22725
 #define C2 21407
 #define C3 19266
@@ -169,7 +190,7 @@ static const struct
 #define C5 12873
 #define C6 8867
 #define C7 4520
-TABLE_SSE2
+		TABLE_SSE2
 
 #undef C1
 #undef C2
@@ -185,7 +206,7 @@ TABLE_SSE2
 #define C5 17855
 #define C6 12299
 #define C7 6270
-TABLE_SSE2
+		TABLE_SSE2
 
 #undef C1
 #undef C2
@@ -201,7 +222,7 @@ TABLE_SSE2
 #define C5 16819
 #define C6 11585
 #define C7 5906
-TABLE_SSE2
+		TABLE_SSE2
 
 #undef C1
 #undef C2
@@ -217,7 +238,7 @@ TABLE_SSE2
 #define C5 15137
 #define C6 10426
 #define C7 5315
-TABLE_SSE2
+		TABLE_SSE2
 
 #undef C1
 #undef C2
@@ -233,7 +254,7 @@ TABLE_SSE2
 #define C5 12873
 #define C6 8867
 #define C7 4520
-TABLE_SSE2
+		TABLE_SSE2
 
 #undef C1
 #undef C2
@@ -249,7 +270,7 @@ TABLE_SSE2
 #define C5 15137
 #define C6 10426
 #define C7 5315
-TABLE_SSE2
+		TABLE_SSE2
 
 #undef C1
 #undef C2
@@ -265,7 +286,7 @@ TABLE_SSE2
 #define C5 16819
 #define C6 11585
 #define C7 5906
-TABLE_SSE2
+		TABLE_SSE2
 
 #undef C1
 #undef C2
@@ -281,8 +302,9 @@ TABLE_SSE2
 #define C5 17855
 #define C6 12299
 #define C7 6270
-TABLE_SSE2
-}};
+		TABLE_SSE2
+	}
+};
 
 #define S(s) AV_TOSTRING(s) //AV_STRINGIFY is too long
 
@@ -373,9 +395,11 @@ static av_always_inline void fdct_col_##cpu(const int16_t *in, int16_t *out, int
 FDCT_COL(mmx, mm, movq)
 FDCT_COL(sse2, xmm, movdqa)
 
-static av_always_inline void fdct_row_sse2(const int16_t *in, int16_t *out)
+static av_always_inline
+
+void fdct_row_sse2(const int16_t* in, int16_t* out)
 {
-    __asm__ volatile(
+	volatile __asm__ (
 #define FDCT_ROW_SSE2_H1(i,t)                    \
         "movq      " #i "(%0), %%xmm2      \n\t" \
         "movq      " #i "+8(%0), %%xmm0    \n\t" \
@@ -410,172 +434,202 @@ static av_always_inline void fdct_row_sse2(const int16_t *in, int16_t *out)
         "packssdw  %%xmm3, %%xmm1       \n\t" \
         "movdqa    %%xmm1, " #i "(%4)   \n\t"
 
-        "movdqa    (%2), %%xmm6         \n\t"
-        FDCT_ROW_SSE2_H1(0,0)
-        FDCT_ROW_SSE2(0)
-        FDCT_ROW_SSE2_H2(64,0)
-        FDCT_ROW_SSE2(64)
+		
+	"movdqa    (%2), %%xmm6         \n\t"
+		FDCT_ROW_SSE2_H1(0, 0)
+		FDCT_ROW_SSE2(0)
+		FDCT_ROW_SSE2_H2(64, 0)
+		FDCT_ROW_SSE2(64)
 
-        FDCT_ROW_SSE2_H1(16,64)
-        FDCT_ROW_SSE2(16)
-        FDCT_ROW_SSE2_H2(112,64)
-        FDCT_ROW_SSE2(112)
+		FDCT_ROW_SSE2_H1(16, 64)
+		FDCT_ROW_SSE2(16)
+		FDCT_ROW_SSE2_H2(112, 64)
+		FDCT_ROW_SSE2(112)
 
-        FDCT_ROW_SSE2_H1(32,128)
-        FDCT_ROW_SSE2(32)
-        FDCT_ROW_SSE2_H2(96,128)
-        FDCT_ROW_SSE2(96)
+		FDCT_ROW_SSE2_H1(32, 128)
+		FDCT_ROW_SSE2(32)
+		FDCT_ROW_SSE2_H2(96, 128)
+		FDCT_ROW_SSE2(96)
 
-        FDCT_ROW_SSE2_H1(48,192)
-        FDCT_ROW_SSE2(48)
-        FDCT_ROW_SSE2_H2(80,192)
-        FDCT_ROW_SSE2(80)
-        :
-        : "r" (in), "r" (tab_frw_01234567_sse2.tab_frw_01234567_sse2),
-          "r" (fdct_r_row_sse2.fdct_r_row_sse2), "i" (SHIFT_FRW_ROW), "r" (out)
-          XMM_CLOBBERS_ONLY("%xmm0", "%xmm1", "%xmm2", "%xmm3",
-                            "%xmm4", "%xmm5", "%xmm6", "%xmm7")
-    );
+		FDCT_ROW_SSE2_H1(48, 192)
+		FDCT_ROW_SSE2(48)
+		FDCT_ROW_SSE2_H2(80, 192)
+		FDCT_ROW_SSE2(80)
+	:
+	:
+	"r"(in), "r"(tab_frw_01234567_sse2.tab_frw_01234567_sse2),
+		"r"(fdct_r_row_sse2.fdct_r_row_sse2), "i"(SHIFT_FRW_ROW), "r"(out)
+	XMM_CLOBBERS_ONLY("%xmm0", "%xmm1", "%xmm2", "%xmm3",
+	                  "%xmm4", "%xmm5", "%xmm6", "%xmm7")
+	)
 }
 
-static av_always_inline void fdct_row_mmx2(const int16_t *in, int16_t *out, const int16_t *table)
+static av_always_inline
+
+void fdct_row_mmx2(const int16_t* in, int16_t* out, const int16_t* table)
 {
-    __asm__ volatile (
-        "pshufw    $0x1B, 8(%0), %%mm5 \n\t"
-        "movq       (%0), %%mm0 \n\t"
-        "movq      %%mm0, %%mm1 \n\t"
-        "paddsw    %%mm5, %%mm0 \n\t"
-        "psubsw    %%mm5, %%mm1 \n\t"
-        "movq      %%mm0, %%mm2 \n\t"
-        "punpckldq %%mm1, %%mm0 \n\t"
-        "punpckhdq %%mm1, %%mm2 \n\t"
-        "movq       (%1), %%mm1 \n\t"
-        "movq      8(%1), %%mm3 \n\t"
-        "movq     16(%1), %%mm4 \n\t"
-        "movq     24(%1), %%mm5 \n\t"
-        "movq     32(%1), %%mm6 \n\t"
-        "movq     40(%1), %%mm7 \n\t"
-        "pmaddwd   %%mm0, %%mm1 \n\t"
-        "pmaddwd   %%mm2, %%mm3 \n\t"
-        "pmaddwd   %%mm0, %%mm4 \n\t"
-        "pmaddwd   %%mm2, %%mm5 \n\t"
-        "pmaddwd   %%mm0, %%mm6 \n\t"
-        "pmaddwd   %%mm2, %%mm7 \n\t"
-        "pmaddwd  48(%1), %%mm0 \n\t"
-        "pmaddwd  56(%1), %%mm2 \n\t"
-        "paddd     %%mm1, %%mm3 \n\t"
-        "paddd     %%mm4, %%mm5 \n\t"
-        "paddd     %%mm6, %%mm7 \n\t"
-        "paddd     %%mm0, %%mm2 \n\t"
-        "movq       (%2), %%mm0 \n\t"
-        "paddd     %%mm0, %%mm3 \n\t"
-        "paddd     %%mm0, %%mm5 \n\t"
-        "paddd     %%mm0, %%mm7 \n\t"
-        "paddd     %%mm0, %%mm2 \n\t"
-        "psrad $"S(SHIFT_FRW_ROW)", %%mm3 \n\t"
-        "psrad $"S(SHIFT_FRW_ROW)", %%mm5 \n\t"
-        "psrad $"S(SHIFT_FRW_ROW)", %%mm7 \n\t"
-        "psrad $"S(SHIFT_FRW_ROW)", %%mm2 \n\t"
-        "packssdw  %%mm5, %%mm3 \n\t"
-        "packssdw  %%mm2, %%mm7 \n\t"
-        "movq      %%mm3,  (%3) \n\t"
-        "movq      %%mm7, 8(%3) \n\t"
-        :
-        : "r" (in), "r" (table), "r" (fdct_r_row), "r" (out));
+	volatile __asm__ (
+		
+	"pshufw    $0x1B, 8(%0), %%mm5 \n\t"
+		"movq       (%0), %%mm0 \n\t"
+		"movq      %%mm0, %%mm1 \n\t"
+		"paddsw    %%mm5, %%mm0 \n\t"
+		"psubsw    %%mm5, %%mm1 \n\t"
+		"movq      %%mm0, %%mm2 \n\t"
+		"punpckldq %%mm1, %%mm0 \n\t"
+		"punpckhdq %%mm1, %%mm2 \n\t"
+		"movq       (%1), %%mm1 \n\t"
+		"movq      8(%1), %%mm3 \n\t"
+		"movq     16(%1), %%mm4 \n\t"
+		"movq     24(%1), %%mm5 \n\t"
+		"movq     32(%1), %%mm6 \n\t"
+		"movq     40(%1), %%mm7 \n\t"
+		"pmaddwd   %%mm0, %%mm1 \n\t"
+		"pmaddwd   %%mm2, %%mm3 \n\t"
+		"pmaddwd   %%mm0, %%mm4 \n\t"
+		"pmaddwd   %%mm2, %%mm5 \n\t"
+		"pmaddwd   %%mm0, %%mm6 \n\t"
+		"pmaddwd   %%mm2, %%mm7 \n\t"
+		"pmaddwd  48(%1), %%mm0 \n\t"
+		"pmaddwd  56(%1), %%mm2 \n\t"
+		"paddd     %%mm1, %%mm3 \n\t"
+		"paddd     %%mm4, %%mm5 \n\t"
+		"paddd     %%mm6, %%mm7 \n\t"
+		"paddd     %%mm0, %%mm2 \n\t"
+		"movq       (%2), %%mm0 \n\t"
+		"paddd     %%mm0, %%mm3 \n\t"
+		"paddd     %%mm0, %%mm5 \n\t"
+		"paddd     %%mm0, %%mm7 \n\t"
+		"paddd     %%mm0, %%mm2 \n\t"
+		"psrad $"
+	S(SHIFT_FRW_ROW)
+	", %%mm3 \n\t"
+		"psrad $"
+	S(SHIFT_FRW_ROW)
+	", %%mm5 \n\t"
+		"psrad $"
+	S(SHIFT_FRW_ROW)
+	", %%mm7 \n\t"
+		"psrad $"
+	S(SHIFT_FRW_ROW)
+	", %%mm2 \n\t"
+		"packssdw  %%mm5, %%mm3 \n\t"
+		"packssdw  %%mm2, %%mm7 \n\t"
+		"movq      %%mm3,  (%3) \n\t"
+		"movq      %%mm7, 8(%3) \n\t"
+	:
+	:
+	"r"(in), "r"(table), "r"(fdct_r_row), "r"(out)
+	)
 }
 
-static av_always_inline void fdct_row_mmx(const int16_t *in, int16_t *out, const int16_t *table)
+static av_always_inline
+
+void fdct_row_mmx(const int16_t* in, int16_t* out, const int16_t* table)
 {
-    //FIXME reorder (I do not have an old MMX-only CPU here to benchmark ...)
-    __asm__ volatile(
-        "movd     12(%0), %%mm1 \n\t"
-        "punpcklwd 8(%0), %%mm1 \n\t"
-        "movq      %%mm1, %%mm2 \n\t"
-        "psrlq     $0x20, %%mm1 \n\t"
-        "movq      0(%0), %%mm0 \n\t"
-        "punpcklwd %%mm2, %%mm1 \n\t"
-        "movq      %%mm0, %%mm5 \n\t"
-        "paddsw    %%mm1, %%mm0 \n\t"
-        "psubsw    %%mm1, %%mm5 \n\t"
-        "movq      %%mm0, %%mm2 \n\t"
-        "punpckldq %%mm5, %%mm0 \n\t"
-        "punpckhdq %%mm5, %%mm2 \n\t"
-        "movq      0(%1), %%mm1 \n\t"
-        "movq      8(%1), %%mm3 \n\t"
-        "movq     16(%1), %%mm4 \n\t"
-        "movq     24(%1), %%mm5 \n\t"
-        "movq     32(%1), %%mm6 \n\t"
-        "movq     40(%1), %%mm7 \n\t"
-        "pmaddwd   %%mm0, %%mm1 \n\t"
-        "pmaddwd   %%mm2, %%mm3 \n\t"
-        "pmaddwd   %%mm0, %%mm4 \n\t"
-        "pmaddwd   %%mm2, %%mm5 \n\t"
-        "pmaddwd   %%mm0, %%mm6 \n\t"
-        "pmaddwd   %%mm2, %%mm7 \n\t"
-        "pmaddwd  48(%1), %%mm0 \n\t"
-        "pmaddwd  56(%1), %%mm2 \n\t"
-        "paddd     %%mm1, %%mm3 \n\t"
-        "paddd     %%mm4, %%mm5 \n\t"
-        "paddd     %%mm6, %%mm7 \n\t"
-        "paddd     %%mm0, %%mm2 \n\t"
-        "movq       (%2), %%mm0 \n\t"
-        "paddd     %%mm0, %%mm3 \n\t"
-        "paddd     %%mm0, %%mm5 \n\t"
-        "paddd     %%mm0, %%mm7 \n\t"
-        "paddd     %%mm0, %%mm2 \n\t"
-        "psrad $"S(SHIFT_FRW_ROW)", %%mm3 \n\t"
-        "psrad $"S(SHIFT_FRW_ROW)", %%mm5 \n\t"
-        "psrad $"S(SHIFT_FRW_ROW)", %%mm7 \n\t"
-        "psrad $"S(SHIFT_FRW_ROW)", %%mm2 \n\t"
-        "packssdw  %%mm5, %%mm3 \n\t"
-        "packssdw  %%mm2, %%mm7 \n\t"
-        "movq      %%mm3, 0(%3) \n\t"
-        "movq      %%mm7, 8(%3) \n\t"
-        :
-        : "r" (in), "r" (table), "r" (fdct_r_row), "r" (out));
+	//FIXME reorder (I do not have an old MMX-only CPU here to benchmark ...)
+	volatile __asm__ (
+		
+	"movd     12(%0), %%mm1 \n\t"
+		"punpcklwd 8(%0), %%mm1 \n\t"
+		"movq      %%mm1, %%mm2 \n\t"
+		"psrlq     $0x20, %%mm1 \n\t"
+		"movq      0(%0), %%mm0 \n\t"
+		"punpcklwd %%mm2, %%mm1 \n\t"
+		"movq      %%mm0, %%mm5 \n\t"
+		"paddsw    %%mm1, %%mm0 \n\t"
+		"psubsw    %%mm1, %%mm5 \n\t"
+		"movq      %%mm0, %%mm2 \n\t"
+		"punpckldq %%mm5, %%mm0 \n\t"
+		"punpckhdq %%mm5, %%mm2 \n\t"
+		"movq      0(%1), %%mm1 \n\t"
+		"movq      8(%1), %%mm3 \n\t"
+		"movq     16(%1), %%mm4 \n\t"
+		"movq     24(%1), %%mm5 \n\t"
+		"movq     32(%1), %%mm6 \n\t"
+		"movq     40(%1), %%mm7 \n\t"
+		"pmaddwd   %%mm0, %%mm1 \n\t"
+		"pmaddwd   %%mm2, %%mm3 \n\t"
+		"pmaddwd   %%mm0, %%mm4 \n\t"
+		"pmaddwd   %%mm2, %%mm5 \n\t"
+		"pmaddwd   %%mm0, %%mm6 \n\t"
+		"pmaddwd   %%mm2, %%mm7 \n\t"
+		"pmaddwd  48(%1), %%mm0 \n\t"
+		"pmaddwd  56(%1), %%mm2 \n\t"
+		"paddd     %%mm1, %%mm3 \n\t"
+		"paddd     %%mm4, %%mm5 \n\t"
+		"paddd     %%mm6, %%mm7 \n\t"
+		"paddd     %%mm0, %%mm2 \n\t"
+		"movq       (%2), %%mm0 \n\t"
+		"paddd     %%mm0, %%mm3 \n\t"
+		"paddd     %%mm0, %%mm5 \n\t"
+		"paddd     %%mm0, %%mm7 \n\t"
+		"paddd     %%mm0, %%mm2 \n\t"
+		"psrad $"
+	S(SHIFT_FRW_ROW)
+	", %%mm3 \n\t"
+		"psrad $"
+	S(SHIFT_FRW_ROW)
+	", %%mm5 \n\t"
+		"psrad $"
+	S(SHIFT_FRW_ROW)
+	", %%mm7 \n\t"
+		"psrad $"
+	S(SHIFT_FRW_ROW)
+	", %%mm2 \n\t"
+		"packssdw  %%mm5, %%mm3 \n\t"
+		"packssdw  %%mm2, %%mm7 \n\t"
+		"movq      %%mm3, 0(%3) \n\t"
+		"movq      %%mm7, 8(%3) \n\t"
+	:
+	:
+	"r"(in), "r"(table), "r"(fdct_r_row), "r"(out)
+	)
 }
 
-void ff_fdct_mmx(int16_t *block)
+void ff_fdct_mmx(int16_t* block)
 {
-    DECLARE_ALIGNED(8, int64_t, align_tmp)[16];
-    int16_t * block1= (int16_t*)align_tmp;
-    const int16_t *table= tab_frw_01234567;
-    int i;
+	DECLARE_ALIGNED(8, int64_t, align_tmp)[16];
+	int16_t* block1 = (int16_t*)align_tmp;
+	const int16_t* table = tab_frw_01234567;
+	int i;
 
-    fdct_col_mmx(block, block1, 0);
-    fdct_col_mmx(block, block1, 4);
+	fdct_col_mmx(block, block1, 0);
+	fdct_col_mmx(block, block1, 4);
 
-    for(i=8;i>0;i--) {
-        fdct_row_mmx(block1, block, table);
-        block1 += 8;
-        table += 32;
-        block += 8;
-    }
+	for (i = 8; i > 0; i--)
+	{
+		fdct_row_mmx(block1, block, table);
+		block1 += 8;
+		table += 32;
+		block += 8;
+	}
 }
 
-void ff_fdct_mmx2(int16_t *block)
+void ff_fdct_mmx2(int16_t* block)
 {
-    DECLARE_ALIGNED(8, int64_t, align_tmp)[16];
-    int16_t *block1= (int16_t*)align_tmp;
-    const int16_t *table= tab_frw_01234567;
-    int i;
+	DECLARE_ALIGNED(8, int64_t, align_tmp)[16];
+	int16_t* block1 = (int16_t*)align_tmp;
+	const int16_t* table = tab_frw_01234567;
+	int i;
 
-    fdct_col_mmx(block, block1, 0);
-    fdct_col_mmx(block, block1, 4);
+	fdct_col_mmx(block, block1, 0);
+	fdct_col_mmx(block, block1, 4);
 
-    for(i=8;i>0;i--) {
-        fdct_row_mmx2(block1, block, table);
-        block1 += 8;
-        table += 32;
-        block += 8;
-    }
+	for (i = 8; i > 0; i--)
+	{
+		fdct_row_mmx2(block1, block, table);
+		block1 += 8;
+		table += 32;
+		block += 8;
+	}
 }
 
-void ff_fdct_sse2(int16_t *block)
+void ff_fdct_sse2(int16_t* block)
 {
-    DECLARE_ALIGNED(16, int64_t, align_tmp)[16];
-    int16_t * const block1= (int16_t*)align_tmp;
+	DECLARE_ALIGNED(16, int64_t, align_tmp)[16];
+	int16_t* const block1 = (int16_t*)align_tmp;
 
-    fdct_col_sse2(block, block1, 0);
-    fdct_row_sse2(block1, block);
+	fdct_col_sse2(block, block1, 0);
+	fdct_row_sse2(block1, block);
 }

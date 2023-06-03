@@ -58,7 +58,6 @@
 #define FLOAT_n -1.
 #define FLOAT_p 1.
 
-
 // Transpose 8x8 matrix of 16-bit elements (in-place)
 #define TRANSPOSE8(a,b,c,d,e,f,g,h) \
 do { \
@@ -93,26 +92,27 @@ do { \
     h = vec_mergel (D2, H2); \
 } while (0)
 
-
 /** @brief loads unaligned vector @a *src with offset @a offset
-    and returns it */
-static inline vector unsigned char unaligned_load(int offset, uint8_t *src)
+	and returns it */
+static inline vector
+
+unsigned char unaligned_load(int offset, uint8_t* src)
 {
-    register vector unsigned char first = vec_ld(offset, src);
-    register vector unsigned char second = vec_ld(offset+15, src);
-    register vector unsigned char mask = vec_lvsl(offset, src);
-    return vec_perm(first, second, mask);
+	register vector unsigned char first = vec_ld(offset, src);
+	register vector unsigned char second = vec_ld(offset + 15, src);
+	register vector unsigned char mask = vec_lvsl(offset, src);
+	return vec_perm(first, second, mask);
 }
 
 /**
  * loads vector known misalignment
  * @param perm_vec the align permute vector to combine the two loads from lvsl
  */
-static inline vec_u8 load_with_perm_vec(int offset, uint8_t *src, vec_u8 perm_vec)
+static inline vec_u8 load_with_perm_vec(int offset, uint8_t* src, vec_u8 perm_vec)
 {
-    vec_u8 a = vec_ld(offset, src);
-    vec_u8 b = vec_ld(offset+15, src);
-    return vec_perm(a, b, perm_vec);
+	vec_u8 a = vec_ld(offset, src);
+	vec_u8 b = vec_ld(offset + 15, src);
+	return vec_perm(a, b, perm_vec);
 }
 
 #endif /* AVCODEC_PPC_UTIL_ALTIVEC_H */

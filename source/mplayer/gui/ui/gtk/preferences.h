@@ -21,13 +21,13 @@
 
 #include <gtk/gtk.h>
 
-extern GtkWidget * AudioConfig;
-extern GtkWidget * Preferences;
-extern GtkWidget * prEFontName;
+extern GtkWidget* AudioConfig;
+extern GtkWidget* Preferences;
+extern GtkWidget* prEFontName;
 
-GtkWidget * create_Preferences( void );
-GtkWidget * create_AudioConfig( void );
+GtkWidget* create_Preferences(void);
+GtkWidget* create_AudioConfig(void);
 
-void ShowPreferences( void );
+void ShowPreferences(void);
 
 #endif /* MPLAYER_GUI_PREFERENCES_H */

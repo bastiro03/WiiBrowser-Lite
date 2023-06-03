@@ -29,6 +29,6 @@
  * Find the end of the current frame in the bitstream.
  * @return the position of the first byte of the next frame, or -1
  */
-int ff_mpeg4_find_frame_end(ParseContext *pc, const uint8_t *buf, int buf_size);
+int ff_mpeg4_find_frame_end(ParseContext* pc, const uint8_t* buf, int buf_size);
 
 #endif /* AVCODEC_MPEG4VIDEO_PARSER_H */

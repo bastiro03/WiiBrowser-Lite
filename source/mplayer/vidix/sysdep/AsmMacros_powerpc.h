@@ -64,7 +64,7 @@
 
 #if defined(Lynx) || defined(__OpenBSD__)
 
-extern unsigned char *ioBase;
+extern unsigned char* ioBase;
 
 static inline volatile void eieio(void)
 {
@@ -73,37 +73,37 @@ static inline volatile void eieio(void)
 
 static inline void outb(short port, unsigned char value)
 {
-	*(unsigned char *)(ioBase + port) = value; eieio();
+	*(unsigned char*)(ioBase + port) = value; eieio();
 }
 
 static inline void outw(short port, unsigned short value)
 {
-	*(unsigned short *)(ioBase + port) = value; eieio();
+	*(unsigned short*)(ioBase + port) = value; eieio();
 }
 
 static inline void outl(short port, unsigned short value)
 {
-	*(unsigned long *)(ioBase + port) = value; eieio();
+	*(unsigned long*)(ioBase + port) = value; eieio();
 }
 
 static inline unsigned char inb(short port)
 {
 	unsigned char val;
-	val = *((unsigned char *)(ioBase + port)); eieio();
+	val = *((unsigned char*)(ioBase + port)); eieio();
 	return val;
 }
 
 static inline unsigned short inw(short port)
 {
 	unsigned short val;
-	val = *((unsigned short *)(ioBase + port)); eieio();
+	val = *((unsigned short*)(ioBase + port)); eieio();
 	return val;
 }
 
 static inline unsigned long inl(short port)
 {
 	unsigned long val;
-	val = *((unsigned long *)(ioBase + port)); eieio();
+	val = *((unsigned long*)(ioBase + port)); eieio();
 	return val;
 }
 

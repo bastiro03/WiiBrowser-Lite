@@ -32,61 +32,66 @@
 #include "m_option.h"
 #include "m_struct.h"
 
-static struct vf_priv_s {
-    unsigned int fmt;
-    unsigned int outfmt;
+static struct vf_priv_s
+{
+	unsigned int fmt;
+	unsigned int outfmt;
 } const vf_priv_dflt = {
-  IMGFMT_YUY2,
-  0
+	IMGFMT_YUY2,
+	0
 };
 
 //===========================================================================//
 
-static int query_format(struct vf_instance *vf, unsigned int fmt){
-    if(fmt==vf->priv->fmt) {
-        if (vf->priv->outfmt)
-            fmt = vf->priv->outfmt;
-	return vf_next_query_format(vf,fmt);
-    }
-    return 0;
+static int query_format(struct vf_instance* vf, unsigned int fmt)
+{
+	if (fmt == vf->priv->fmt)
+	{
+		if (vf->priv->outfmt)
+			fmt = vf->priv->outfmt;
+		return vf_next_query_format(vf, fmt);
+	}
+	return 0;
 }
 
-static int config(struct vf_instance *vf, int width, int height,
+static int config(struct vf_instance* vf, int width, int height,
                   int d_width, int d_height,
-                  unsigned flags, unsigned outfmt){
-    return vf_next_config(vf, width, height, d_width, d_height, flags, vf->priv->outfmt);
+                  unsigned flags, unsigned outfmt)
+{
+	return vf_next_config(vf, width, height, d_width, d_height, flags, vf->priv->outfmt);
 }
 
-static int vf_open(vf_instance_t *vf, char *args){
-    vf->query_format=query_format;
-    vf->draw_slice=vf_next_draw_slice;
-    vf->default_caps=0;
-    if (vf->priv->outfmt)
-        vf->config=config;
-    return 1;
+static int vf_open(vf_instance_t* vf, char* args)
+{
+	vf->query_format = query_format;
+	vf->draw_slice = vf_next_draw_slice;
+	vf->default_caps = 0;
+	if (vf->priv->outfmt)
+		vf->config = config;
+	return 1;
 }
 
 #define ST_OFF(f) M_ST_OFF(struct vf_priv_s,f)
 static const m_option_t vf_opts_fields[] = {
-  {"fmt", ST_OFF(fmt), CONF_TYPE_IMGFMT, 0,0 ,0, NULL},
-  {"outfmt", ST_OFF(outfmt), CONF_TYPE_IMGFMT, 0,0 ,0, NULL},
-  { NULL, NULL, 0, 0, 0, 0,  NULL }
+	{"fmt", ST_OFF(fmt), CONF_TYPE_IMGFMT, 0, 0, 0, NULL},
+	{"outfmt", ST_OFF(outfmt), CONF_TYPE_IMGFMT, 0, 0, 0, NULL},
+	{NULL, NULL, 0, 0, 0, 0, NULL}
 };
 
 static const m_struct_t vf_opts = {
-  "format",
-  sizeof(struct vf_priv_s),
-  &vf_priv_dflt,
-  vf_opts_fields
+	"format",
+	sizeof(struct vf_priv_s),
+	&vf_priv_dflt,
+	vf_opts_fields
 };
 
 const vf_info_t vf_info_format = {
-    "force output format",
-    "format",
-    "A'rpi",
-    "FIXME! get_image()/put_image()",
-    vf_open,
-    &vf_opts
+	"force output format",
+	"format",
+	"A'rpi",
+	"FIXME! get_image()/put_image()",
+	vf_open,
+	&vf_opts
 };
 
 //===========================================================================//

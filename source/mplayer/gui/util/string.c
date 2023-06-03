@@ -36,18 +36,19 @@
  *
  * @note Only characters from A to Z will be converted and this is an in-place conversion.
  */
-char *strlower(char *in)
+char* strlower(char* in)
 {
-    char *p = in;
+	char* p = in;
 
-    while (*p) {
-        if (*p >= 'A' && *p <= 'Z')
-            *p += 'a' - 'A';
+	while (*p)
+	{
+		if (*p >= 'A' && *p <= 'Z')
+			*p += 'a' - 'A';
 
-        p++;
-    }
+		p++;
+	}
 
-    return in;
+	return in;
 }
 
 /**
@@ -61,18 +62,19 @@ char *strlower(char *in)
  *
  * @note All occurrences will be swapped and this is an in-place processing.
  */
-char *strswap(char *in, char from, char to)
+char* strswap(char* in, char from, char to)
 {
-    char *p = in;
+	char* p = in;
 
-    while (*p) {
-        if (*p == from)
-            *p = to;
+	while (*p)
+	{
+		if (*p == from)
+			*p = to;
 
-        p++;
-    }
+		p++;
+	}
 
-    return in;
+	return in;
 }
 
 /**
@@ -85,26 +87,27 @@ char *strswap(char *in, char from, char to)
  *
  * @note This is an in-place processing.
  */
-char *trim(char *in)
+char* trim(char* in)
 {
-    char *src, *dest;
-    int freeze = 0;
+	char *src, *dest;
+	int freeze = 0;
 
-    src = dest = in;
+	src = dest = in;
 
-    while (*src) {
-        if (*src == '"')
-            freeze = !freeze;
+	while (*src)
+	{
+		if (*src == '"')
+			freeze = !freeze;
 
-        if (freeze || (*src != ' '))
-            *dest++ = *src;
+		if (freeze || (*src != ' '))
+			*dest++ = *src;
 
-        src++;
-    }
+		src++;
+	}
 
-    *dest = 0;
+	*dest = 0;
 
-    return in;
+	return in;
 }
 
 /**
@@ -120,47 +123,49 @@ char *trim(char *in)
  *
  * @note This is an in-place processing, i.e. @a in will be shortened.
  */
-char *decomment(char *in)
+char* decomment(char* in)
 {
-    char *p;
-    int nap = 0;
+	char* p;
+	int nap = 0;
 
-    p = in;
+	p = in;
 
-    if (*p == '#')
-        *p = 0;
+	if (*p == '#')
+		*p = 0;
 
-    while (*p) {
-        if (*p == '"')
-            nap = !nap;
+	while (*p)
+	{
+		if (*p == '"')
+			nap = !nap;
 
-        if ((*p == ';') && !nap) {
-            *p = 0;
-            break;
-        }
+		if ((*p == ';') && !nap)
+		{
+			*p = 0;
+			break;
+		}
 
-        p++;
-    }
+		p++;
+	}
 
-    return in;
+	return in;
 }
 
-char *gstrchr(const char *str, int c)
+char* gstrchr(const char* str, int c)
 {
-    if (!str)
-        return NULL;
+	if (!str)
+		return NULL;
 
-    return strchr(str, c);
+	return strchr(str, c);
 }
 
-int gstrcmp(const char *a, const char *b)
+int gstrcmp(const char* a, const char* b)
 {
-    if (!a && !b)
-        return 0;
-    if (!a || !b)
-        return -1;
+	if (!a && !b)
+		return 0;
+	if (!a || !b)
+		return -1;
 
-    return strcmp(a, b);
+	return strcmp(a, b);
 }
 
 /**
@@ -172,14 +177,14 @@ int gstrcmp(const char *a, const char *b)
  *
  * @return return value of strncmp() or -1, if a or b are NULL
  */
-int gstrncmp(const char *a, const char *b, size_t n)
+int gstrncmp(const char* a, const char* b, size_t n)
 {
-    if (!a && !b)
-        return 0;
-    if (!a || !b)
-        return -1;
+	if (!a && !b)
+		return 0;
+	if (!a || !b)
+		return -1;
 
-    return strncmp(a, b, n);
+	return strncmp(a, b, n);
 }
 
 /**
@@ -192,12 +197,12 @@ int gstrncmp(const char *a, const char *b, size_t n)
  *
  * @return duplicated string (newly allocated)
  */
-char *gstrdup(const char *str)
+char* gstrdup(const char* str)
 {
-    if (!str)
-        return NULL;
+	if (!str)
+		return NULL;
 
-    return strdup(str);
+	return strdup(str);
 }
 
 /**
@@ -210,10 +215,10 @@ char *gstrdup(const char *str)
  * @param old pointer to a variable suitable to store the new pointer
  * @param str string to be duplicated
  */
-void setdup(char **old, const char *str)
+void setdup(char** old, const char* str)
 {
-    free(*old);
-    *old = gstrdup(str);
+	free(*old);
+	*old = gstrdup(str);
 }
 
 /**
@@ -226,12 +231,12 @@ void setdup(char **old, const char *str)
  * @param dir directory
  * @param name filename
  */
-void setddup(char **old, const char *dir, const char *name)
+void setddup(char** old, const char* dir, const char* name)
 {
-    free(*old);
-    *old = malloc(strlen(dir) + strlen(name) + 2);
-    if (*old)
-        sprintf(*old, "%s/%s", dir, name);
+	free(*old);
+	*old = malloc(strlen(dir) + strlen(name) + 2);
+	if (*old)
+		sprintf(*old, "%s/%s", dir, name);
 }
 
 /**
@@ -245,79 +250,84 @@ void setddup(char **old, const char *dir, const char *name)
  *
  * @return pointer to @a fname buffer
  */
-char *TranslateFilename(int how, char *fname, size_t maxlen)
+char* TranslateFilename(int how, char* fname, size_t maxlen)
 {
-    char *p;
-    size_t len;
+	char* p;
+	size_t len;
 
-    switch (guiInfo.StreamType) {
-    case STREAMTYPE_FILE:
-        if (guiInfo.Filename && *guiInfo.Filename) {
-            p = strrchr(guiInfo.Filename,
+	switch (guiInfo.StreamType)
+	{
+	case STREAMTYPE_FILE:
+		if (guiInfo.Filename && *guiInfo.Filename)
+		{
+			p = strrchr(guiInfo.Filename,
 #if HAVE_DOS_PATHS
-                        '\\');
+				'\\');
 #else
-                        '/');
+			            '/');
 #endif
 
-            if (p)
-                av_strlcpy(fname, p + 1, maxlen);
-            else
-                av_strlcpy(fname, guiInfo.Filename, maxlen);
+			if (p)
+				av_strlcpy(fname, p + 1, maxlen);
+			else
+				av_strlcpy(fname, guiInfo.Filename, maxlen);
 
-            len = strlen(fname);
+			len = strlen(fname);
 
-            if (len > 3 && fname[len - 3] == '.')
-                fname[len - 3] = 0;
-            else if (len > 4 && fname[len - 4] == '.')
-                fname[len - 4] = 0;
-            else if (len > 5 && fname[len - 5] == '.')
-                fname[len - 5] = 0;
-        } else
-            av_strlcpy(fname, MSGTR_NoFileLoaded, maxlen);
-        break;
+			if (len > 3 && fname[len - 3] == '.')
+				fname[len - 3] = 0;
+			else if (len > 4 && fname[len - 4] == '.')
+				fname[len - 4] = 0;
+			else if (len > 5 && fname[len - 5] == '.')
+				fname[len - 5] = 0;
+		}
+		else
+			av_strlcpy(fname, MSGTR_NoFileLoaded, maxlen);
+		break;
 
-    case STREAMTYPE_STREAM:
-        av_strlcpy(fname, guiInfo.Filename, maxlen);
-        break;
+	case STREAMTYPE_STREAM:
+		av_strlcpy(fname, guiInfo.Filename, maxlen);
+		break;
 
-    case STREAMTYPE_CDDA:
-        snprintf(fname, maxlen, MSGTR_Title, guiInfo.Track);
-        break;
+	case STREAMTYPE_CDDA:
+		snprintf(fname, maxlen, MSGTR_Title, guiInfo.Track);
+		break;
 
-    case STREAMTYPE_VCD:
-        snprintf(fname, maxlen, MSGTR_Title, guiInfo.Track - 1);
-        break;
+	case STREAMTYPE_VCD:
+		snprintf(fname, maxlen, MSGTR_Title, guiInfo.Track - 1);
+		break;
 
-    case STREAMTYPE_DVD:
-        if (guiInfo.Chapter)
-            snprintf(fname, maxlen, MSGTR_Chapter, guiInfo.Chapter);
-        else
-            av_strlcat(fname, MSGTR_NoChapter, maxlen);
-        break;
+	case STREAMTYPE_DVD:
+		if (guiInfo.Chapter)
+			snprintf(fname, maxlen, MSGTR_Chapter, guiInfo.Chapter);
+		else
+			av_strlcat(fname, MSGTR_NoChapter, maxlen);
+		break;
 
-    default:
-        av_strlcpy(fname, MSGTR_NoMediaOpened, maxlen);
-        break;
-    }
+	default:
+		av_strlcpy(fname, MSGTR_NoMediaOpened, maxlen);
+		break;
+	}
 
-    if (how) {
-        p = fname;
+	if (how)
+	{
+		p = fname;
 
-        while (*p) {
-            char t = 0;
+		while (*p)
+		{
+			char t = 0;
 
-            if (how == 1 && *p >= 'A' && *p <= 'Z')
-                t = 32;
-            if (how == 2 && *p >= 'a' && *p <= 'z')
-                t = -32;
+			if (how == 1 && *p >= 'A' && *p <= 'Z')
+				t = 32;
+			if (how == 2 && *p >= 'a' && *p <= 'z')
+				t = -32;
 
-            *p = *p + t;
-            p++;
-        }
-    }
+			*p = *p + t;
+			p++;
+		}
+	}
 
-    return fname;
+	return fname;
 }
 
 /**
@@ -331,14 +341,14 @@ char *TranslateFilename(int how, char *fname, size_t maxlen)
  *
  * @return str (success) or NULL (error)
  */
-char *fgetstr(char *str, int size, FILE *file)
+char* fgetstr(char* str, int size, FILE* file)
 {
-    char *s;
+	char* s;
 
-    s = fgets(str, size, file);
+	s = fgets(str, size, file);
 
-    if (s)
-        s[strcspn(s, "\n\r")] = 0;
+	if (s)
+		s[strcspn(s, "\n\r")] = 0;
 
-    return s;
+	return s;
 }

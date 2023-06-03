@@ -21,87 +21,112 @@
 #define WAVE_FILTER_UNKNOWN     0x0000
 #define WAVE_FILTER_DEVELOPMENT 0xFFFF
 
-typedef struct __attribute__((__packed__)) WAVEFILTER {
-  DWORD   cbStruct;
-  DWORD   dwFilterTag;
-  DWORD   fdwFilter;
-  DWORD   dwReserved[5];
-} WAVEFILTER, *PWAVEFILTER, *NPWAVEFILTER, *LPWAVEFILTER;
+typedef struct __attribute__ ((__packed__)) WAVEFILTER
+{
+	DWORD cbStruct;
+	DWORD dwFilterTag;
+	DWORD fdwFilter;
+	DWORD dwReserved[5];
+}
+
+WAVEFILTER
+,
+ *PWAVEFILTER, *NPWAVEFILTER, *LPWAVEFILTER;
 #endif /* ACM_WAVEFILTER */
 
 #ifndef WAVE_FILTER_VOLUME
 #define WAVE_FILTER_VOLUME      0x0001
 
-typedef struct __attribute__((__packed__)) WAVEFILTER_VOLUME {
-   WAVEFILTER      wfltr;
-   DWORD           dwVolume;
-} VOLUMEWAVEFILTER, *PVOLUMEWAVEFILTER, *NPVOLUMEWAVEFILTER, *LPVOLUMEWAVEFILTER;
+typedef struct __attribute__ ((__packed__)) WAVEFILTER_VOLUME
+{
+	WAVEFILTER wfltr;
+	DWORD dwVolume;
+}
+
+VOLUMEWAVEFILTER, *PVOLUMEWAVEFILTER, *NPVOLUMEWAVEFILTER, *LPVOLUMEWAVEFILTER;
 #endif  /* WAVE_FILTER_VOLUME */
 
 #ifndef WAVE_FILTER_ECHO
 #define WAVE_FILTER_ECHO        0x0002
 
-typedef struct __attribute__((__packed__)) WAVEFILTER_ECHO {
-   WAVEFILTER      wfltr;
-   DWORD           dwVolume;
-   DWORD           dwDelay;
-} ECHOWAVEFILTER, *PECHOWAVEFILTER, *NPECHOWAVEFILTER, *LPECHOWAVEFILTER;
+typedef struct __attribute__ ((__packed__)) WAVEFILTER_ECHO
+{
+	WAVEFILTER wfltr;
+	DWORD dwVolume;
+	DWORD dwDelay;
+}
+
+ECHOWAVEFILTER, *PECHOWAVEFILTER, *NPECHOWAVEFILTER, *LPECHOWAVEFILTER;
 #endif  /* WAVEFILTER_ECHO */
 
 #ifndef _WAVEFORMATEX_
 #define _WAVEFORMATEX_
-typedef struct __attribute__((__packed__)) WAVEFORMATEX {
-  WORD   wFormatTag;
-  WORD   nChannels;
-  DWORD  nSamplesPerSec;
-  DWORD  nAvgBytesPerSec;
-  WORD   nBlockAlign;
-  WORD   wBitsPerSample;
-  WORD   cbSize;
-} WAVEFORMATEX, *PWAVEFORMATEX, *NPWAVEFORMATEX, *LPWAVEFORMATEX;
+
+typedef struct __attribute__ ((__packed__)) WAVEFORMATEX
+{
+	WORD wFormatTag;
+	WORD nChannels;
+	DWORD nSamplesPerSec;
+	DWORD nAvgBytesPerSec;
+	WORD nBlockAlign;
+	WORD wBitsPerSample;
+	WORD cbSize;
+}
+
+WAVEFORMATEX
+,
+ *PWAVEFORMATEX, *NPWAVEFORMATEX, *LPWAVEFORMATEX;
 #endif /* _WAVEFORMATEX_ */
 
 #ifndef GUID_TYPE
 #define GUID_TYPE
+
 typedef struct
 {
-    unsigned long f1;
-    unsigned short f2;
-    unsigned short f3;
-    unsigned char f4[8];
+	unsigned long f1;
+	unsigned short f2;
+	unsigned short f3;
+	unsigned char f4[8];
 } GUID;
 #endif
 
 #ifndef _WAVEFORMATEXTENSIBLE_
 #define _WAVEFORMATEXTENSIBLE_
-typedef struct {
-    WAVEFORMATEX    Format;
-    union {
-        WORD wValidBitsPerSample;       /* bits of precision  */
-        WORD wSamplesPerBlock;          /* valid if wBitsPerSample==0 */
-        WORD wReserved;                 /* If neither applies, set to zero. */
-    } Samples;
-    DWORD           dwChannelMask;      /* which channels are */
-                                        /* present in stream  */
-    GUID            SubFormat;
+
+typedef struct
+{
+	WAVEFORMATEX Format;
+
+	union
+	{
+		WORD wValidBitsPerSample; /* bits of precision  */
+		WORD wSamplesPerBlock; /* valid if wBitsPerSample==0 */
+		WORD wReserved; /* If neither applies, set to zero. */
+	} Samples;
+
+	DWORD dwChannelMask; /* which channels are */
+	/* present in stream  */
+	GUID SubFormat;
 } WAVEFORMATEXTENSIBLE, *PWAVEFORMATEXTENSIBLE;
 #endif // !_WAVEFORMATEXTENSIBLE_
 
 #ifndef _MPEGLAYER3WAVEFORMAT_
 #define _MPEGLAYER3WAVEFORMAT_
-typedef struct WINE_PACKED mpeglayer3waveformat_tag {
-  WORD   wFormatTag;
-  WORD   nChannels;
-  DWORD  nSamplesPerSec;
-  DWORD  nAvgBytesPerSec;
-  WORD   nBlockAlign;
-  WORD   wBitsPerSample;
-  WORD   cbSize;
-  WORD   wID;
-  DWORD  fdwFlags;
-  WORD   nBlockSize;
-  WORD   nFramesPerBlock;
-  WORD   nCodecDelay;
+
+typedef struct WINE_PACKED mpeglayer3waveformat_tag
+{
+	WORD wFormatTag;
+	WORD nChannels;
+	DWORD nSamplesPerSec;
+	DWORD nAvgBytesPerSec;
+	WORD nBlockAlign;
+	WORD wBitsPerSample;
+	WORD cbSize;
+	WORD wID;
+	DWORD fdwFlags;
+	WORD nBlockSize;
+	WORD nFramesPerBlock;
+	WORD nCodecDelay;
 } MPEGLAYER3WAVEFORMAT;
 #endif /* !_MPEGLAYER3WAVEFORMAT_ */
 
@@ -244,6 +269,5 @@ typedef struct WINE_PACKED mpeglayer3waveformat_tag {
 //  acquire an official format tag from Microsoft.
 //
 #define WAVE_FORMAT_DEVELOPMENT         (0xFFFF)
-
 
 #endif /* MPLAYER_MMREG_H */

@@ -23,9 +23,10 @@
 #include <string.h>
 #include <sys/types.h>
 
-struct bstr {
-    const uint8_t *start;
-    size_t len;
+struct bstr
+{
+	const uint8_t* start;
+	size_t len;
 };
 
 int bstrcmp(struct bstr str1, struct bstr str2);

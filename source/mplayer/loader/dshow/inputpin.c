@@ -12,8 +12,8 @@
 
 static inline int unimplemented(const char* s, void* p)
 {
-    Debug printf("%s(%p) called (UNIMPLEMENTED)", s, p);
-    return E_NOTIMPL;
+	Debug printf("%s(%p) called (UNIMPLEMENTED)", s, p);
+	return E_NOTIMPL;
 }
 
 /***********
@@ -22,12 +22,12 @@ static inline int unimplemented(const char* s, void* p)
 
 typedef struct
 {
-    IEnumPins_vt* vt;
-    DECLARE_IUNKNOWN();
-    IPin* pin1;
-    IPin* pin2;
-    int counter;
-    GUID interfaces[2];
+	IEnumPins_vt* vt;
+	DECLARE_IUNKNOWN();
+	IPin* pin1;
+	IPin* pin2;
+	int counter;
+	GUID interfaces[2];
 } CEnumPins;
 
 /**
@@ -46,47 +46,47 @@ typedef struct
  *
  */
 static long STDCALL CEnumPins_Next(IEnumPins* This,
-				   /* [in] */ unsigned long cMediaTypes,
-				   /* [size_is][out] */ IPin** ppMediaTypes,
-				   /* [out] */ unsigned long* pcFetched)
+                                   /* [in] */ unsigned long cMediaTypes,
+                                   /* [size_is][out] */ IPin** ppMediaTypes,
+                                   /* [out] */ unsigned long* pcFetched)
 {
-    CEnumPins* pin = (CEnumPins*)This;
+	CEnumPins* pin = (CEnumPins*)This;
 
-    Debug printf("CEnumPins_Next(%p) called\n", This);
-    if (!ppMediaTypes)
-	return E_INVALIDARG;
-    if (!pcFetched && (cMediaTypes!=1))
-	return E_INVALIDARG;
-    if (cMediaTypes<=0)
-	return 0;
+	Debug printf("CEnumPins_Next(%p) called\n", This);
+	if (!ppMediaTypes)
+		return E_INVALIDARG;
+	if (!pcFetched && (cMediaTypes != 1))
+		return E_INVALIDARG;
+	if (cMediaTypes <= 0)
+		return 0;
 
-    //lcounter = ((CEnumPins*)This)->counter;
-    //lpin1 = ((CEnumPins*)This)->pin1;
-    //lpin2 = ((CEnumPins*)This)->pin2;
-    if (((pin->counter == 2) && pin->pin2)
-	|| ((pin->counter == 1) && !pin->pin2))
-    {
+	//lcounter = ((CEnumPins*)This)->counter;
+	//lpin1 = ((CEnumPins*)This)->pin1;
+	//lpin2 = ((CEnumPins*)This)->pin2;
+	if (((pin->counter == 2) && pin->pin2)
+		|| ((pin->counter == 1) && !pin->pin2))
+	{
+		if (pcFetched)
+			*pcFetched = 0;
+		return 1;
+	}
+
 	if (pcFetched)
-	    *pcFetched=0;
+		*pcFetched = 1;
+	if (pin->counter == 0)
+	{
+		*ppMediaTypes = pin->pin1;
+		pin->pin1->vt->AddRef((IUnknown*)pin->pin1);
+	}
+	else
+	{
+		*ppMediaTypes = pin->pin2;
+		pin->pin2->vt->AddRef((IUnknown*)pin->pin2);
+	}
+	pin->counter++;
+	if (cMediaTypes == 1)
+		return 0;
 	return 1;
-    }
-
-    if (pcFetched)
-	*pcFetched=1;
-    if (pin->counter==0)
-    {
-	*ppMediaTypes = pin->pin1;
-	pin->pin1->vt->AddRef((IUnknown*)pin->pin1);
-    }
-    else
-    {
-	*ppMediaTypes = pin->pin2;
-	pin->pin2->vt->AddRef((IUnknown*)pin->pin2);
-    }
-    pin->counter++;
-    if (cMediaTypes == 1)
-	return 0;
-    return 1;
 }
 
 /**
@@ -101,10 +101,10 @@ static long STDCALL CEnumPins_Next(IEnumPins* This,
  *
  */
 static long STDCALL CEnumPins_Skip(IEnumPins* This,
-				   /* [in] */ unsigned long cMediaTypes)
+                                   /* [in] */ unsigned long cMediaTypes)
 {
-    Debug unimplemented("CEnumPins_Skip", This);
-    return E_NOTIMPL;
+	Debug unimplemented("CEnumPins_Skip", This);
+	return E_NOTIMPL;
 }
 
 /**
@@ -117,9 +117,9 @@ static long STDCALL CEnumPins_Skip(IEnumPins* This,
  */
 static long STDCALL CEnumPins_Reset(IEnumPins* This)
 {
-    Debug printf("CEnumPins_Reset(%p) called\n", This);
-    ((CEnumPins*)This)->counter = 0;
-    return 0;
+	Debug printf("CEnumPins_Reset(%p) called\n", This);
+	((CEnumPins*)This)->counter = 0;
+	return 0;
 }
 
 /**
@@ -136,10 +136,10 @@ static long STDCALL CEnumPins_Reset(IEnumPins* This)
  *
  */
 static long STDCALL CEnumPins_Clone(IEnumPins* This,
-				    /* [out] */ IEnumPins** ppEnum)
+                                    /* [out] */ IEnumPins** ppEnum)
 {
-    Debug unimplemented("CEnumPins_Clone", This);
-    return E_NOTIMPL;
+	Debug unimplemented("CEnumPins_Clone", This);
+	return E_NOTIMPL;
 }
 
 /**
@@ -150,8 +150,8 @@ static long STDCALL CEnumPins_Clone(IEnumPins* This,
  */
 static void CEnumPins_Destroy(CEnumPins* This)
 {
-    free(This->vt);
-    free(This);
+	free(This->vt);
+	free(This);
 }
 
 IMPLEMENT_IUNKNOWN(CEnumPins)
@@ -167,37 +167,35 @@ IMPLEMENT_IUNKNOWN(CEnumPins)
  */
 static CEnumPins* CEnumPinsCreate(IPin* p, IPin* pp)
 {
-    CEnumPins* This = malloc(sizeof(CEnumPins));
+	CEnumPins* This = malloc(sizeof(CEnumPins));
 
-    if (!This)
-        return NULL;
+	if (!This)
+		return NULL;
 
-    This->refcount = 1;
-    This->pin1 = p;
-    This->pin2 = pp;
-    This->counter = 0;
+	This->refcount = 1;
+	This->pin1 = p;
+	This->pin2 = pp;
+	This->counter = 0;
 
-    This->vt = malloc(sizeof(IEnumPins_vt));
-    if (!This->vt)
-    {
-	free(This);
-        return NULL;
-    }
-    This->vt->QueryInterface = CEnumPins_QueryInterface;
-    This->vt->AddRef = CEnumPins_AddRef;
-    This->vt->Release = CEnumPins_Release;
-    This->vt->Next = CEnumPins_Next;
-    This->vt->Skip = CEnumPins_Skip;
-    This->vt->Reset = CEnumPins_Reset;
-    This->vt->Clone = CEnumPins_Clone;
+	This->vt = malloc(sizeof(IEnumPins_vt));
+	if (!This->vt)
+	{
+		free(This);
+		return NULL;
+	}
+	This->vt->QueryInterface = CEnumPins_QueryInterface;
+	This->vt->AddRef = CEnumPins_AddRef;
+	This->vt->Release = CEnumPins_Release;
+	This->vt->Next = CEnumPins_Next;
+	This->vt->Skip = CEnumPins_Skip;
+	This->vt->Reset = CEnumPins_Reset;
+	This->vt->Clone = CEnumPins_Clone;
 
-    This->interfaces[0] = IID_IUnknown;
-    This->interfaces[1] = IID_IEnumPins;
+	This->interfaces[0] = IID_IUnknown;
+	This->interfaces[1] = IID_IEnumPins;
 
-    return This;
+	return This;
 }
-
-
 
 /***********
  * InputPin
@@ -222,11 +220,11 @@ static CEnumPins* CEnumPinsCreate(IPin* p, IPin* pp)
  *
  */
 static long STDCALL CInputPin_Connect(IPin* This,
-				      /* [in] */ IPin* pReceivePin,
-				      /* [in] */ AM_MEDIA_TYPE* pmt)
+                                      /* [in] */ IPin* pReceivePin,
+                                      /* [in] */ AM_MEDIA_TYPE* pmt)
 {
-    Debug unimplemented("CInputPin_Connect", This);
-    return E_NOTIMPL;
+	Debug unimplemented("CInputPin_Connect", This);
+	return E_NOTIMPL;
 }
 
 /**
@@ -249,11 +247,11 @@ static long STDCALL CInputPin_Connect(IPin* This,
  *
  */
 static long STDCALL CInputPin_ReceiveConnection(IPin* This,
-						/* [in] */ IPin* pConnector,
-						/* [in] */ const AM_MEDIA_TYPE *pmt)
+                                                /* [in] */ IPin* pConnector,
+                                                /* [in] */ const AM_MEDIA_TYPE* pmt)
 {
-    Debug unimplemented("CInputPin_ReceiveConnection", This);
-    return E_NOTIMPL;
+	Debug unimplemented("CInputPin_ReceiveConnection", This);
+	return E_NOTIMPL;
 }
 
 /**
@@ -270,8 +268,8 @@ static long STDCALL CInputPin_ReceiveConnection(IPin* This,
  */
 static long STDCALL CInputPin_Disconnect(IPin* This)
 {
-    Debug unimplemented("CInputPin_Disconnect", This);
-    return E_NOTIMPL;
+	Debug unimplemented("CInputPin_Disconnect", This);
+	return E_NOTIMPL;
 }
 
 /**
@@ -288,10 +286,10 @@ static long STDCALL CInputPin_Disconnect(IPin* This)
  * Caller must call Release on received IPin, when done
  */
 static long STDCALL CInputPin_ConnectedTo(IPin* This,
-					  /* [out] */ IPin** pPin)
+                                          /* [out] */ IPin** pPin)
 {
-    Debug unimplemented("CInputPin_ConnectedTo", This);
-    return E_NOTIMPL;
+	Debug unimplemented("CInputPin_ConnectedTo", This);
+	return E_NOTIMPL;
 }
 
 /**
@@ -306,13 +304,13 @@ static long STDCALL CInputPin_ConnectedTo(IPin* This,
  *
  */
 static long STDCALL CInputPin_ConnectionMediaType(IPin* This,
-						  /* [out] */ AM_MEDIA_TYPE *pmt)
+                                                  /* [out] */ AM_MEDIA_TYPE* pmt)
 {
-    Debug printf("CInputPin_ConnectionMediaType(%p) called\n", This);
-    if (!pmt)
-	return E_INVALIDARG;
-    CopyMediaType(pmt,&(((CInputPin*)This)->type));
-    return 0;
+	Debug printf("CInputPin_ConnectionMediaType(%p) called\n", This);
+	if (!pmt)
+		return E_INVALIDARG;
+	CopyMediaType(pmt, &(((CInputPin*)This)->type));
+	return 0;
 }
 
 /**
@@ -329,15 +327,15 @@ static long STDCALL CInputPin_ConnectionMediaType(IPin* This,
  *
  */
 static long STDCALL CInputPin_QueryPinInfo(IPin* This,
-					   /* [out] */ PIN_INFO *pInfo)
+                                           /* [out] */ PIN_INFO* pInfo)
 {
-    CBaseFilter* lparent=((CInputPin*)This)->parent;
-    Debug printf("CInputPin_QueryPinInfo(%p) called\n", This);
-    pInfo->dir = PINDIR_OUTPUT;
-    pInfo->pFilter = (IBaseFilter*) lparent;
-    lparent->vt->AddRef((IUnknown*)lparent);
-    pInfo->achName[0] = 0;
-    return 0;
+	CBaseFilter* lparent = ((CInputPin*)This)->parent;
+	Debug printf("CInputPin_QueryPinInfo(%p) called\n", This);
+	pInfo->dir = PINDIR_OUTPUT;
+	pInfo->pFilter = (IBaseFilter*)lparent;
+	lparent->vt->AddRef((IUnknown*)lparent);
+	pInfo->achName[0] = 0;
+	return 0;
 }
 
 /**
@@ -351,11 +349,11 @@ static long STDCALL CInputPin_QueryPinInfo(IPin* This,
  *
  */
 static long STDCALL CInputPin_QueryDirection(IPin* This,
-					      /* [out] */ PIN_DIRECTION *pPinDir)
+                                             /* [out] */ PIN_DIRECTION* pPinDir)
 {
-    *pPinDir = PINDIR_OUTPUT;
-    Debug printf("CInputPin_QueryDirection(%p) called\n", This);
-    return 0;
+	*pPinDir = PINDIR_OUTPUT;
+	Debug printf("CInputPin_QueryDirection(%p) called\n", This);
+	return 0;
 }
 
 /**
@@ -373,10 +371,10 @@ static long STDCALL CInputPin_QueryDirection(IPin* This,
  *
  */
 static long STDCALL CInputPin_QueryId(IPin* This,
-				       /* [out] */ unsigned short* *Id)
+                                      /* [out] */ unsigned short** Id)
 {
-    Debug unimplemented("CInputPin_QueryId", This);
-    return E_NOTIMPL;
+	Debug unimplemented("CInputPin_QueryId", This);
+	return E_NOTIMPL;
 }
 
 /**
@@ -390,10 +388,10 @@ static long STDCALL CInputPin_QueryId(IPin* This,
  *
  */
 static long STDCALL CInputPin_QueryAccept(IPin* This,
-					  /* [in] */ const AM_MEDIA_TYPE* pmt)
+                                          /* [in] */ const AM_MEDIA_TYPE* pmt)
 {
-    Debug unimplemented("CInputPin_QueryAccept", This);
-    return E_NOTIMPL;
+	Debug unimplemented("CInputPin_QueryAccept", This);
+	return E_NOTIMPL;
 }
 
 /**
@@ -411,10 +409,10 @@ static long STDCALL CInputPin_QueryAccept(IPin* This,
  *
  */
 static long STDCALL CInputPin_EnumMediaTypes(IPin* This,
-					     /* [out] */ IEnumMediaTypes** ppEnum)
+                                             /* [out] */ IEnumMediaTypes** ppEnum)
 {
-    Debug unimplemented("CInputPin_EnumMediaTypes", This);
-    return E_NOTIMPL;
+	Debug unimplemented("CInputPin_EnumMediaTypes", This);
+	return E_NOTIMPL;
 }
 
 /**
@@ -430,11 +428,11 @@ static long STDCALL CInputPin_EnumMediaTypes(IPin* This,
  *
  */
 static long STDCALL CInputPin_QueryInternalConnections(IPin* This,
-						       /* [out] */ IPin** apPin,
-						       /* [out][in] */ unsigned long *nPin)
+                                                       /* [out] */ IPin** apPin,
+                                                       /* [out][in] */ unsigned long* nPin)
 {
-    Debug unimplemented("CInputPin_QueryInternalConnections", This);
-    return E_NOTIMPL;
+	Debug unimplemented("CInputPin_QueryInternalConnections", This);
+	return E_NOTIMPL;
 }
 
 /**
@@ -453,12 +451,11 @@ static long STDCALL CInputPin_QueryInternalConnections(IPin* This,
  * Developer must use critical sections for thread-safing work.
  *
  */
-static long STDCALL CInputPin_EndOfStream(IPin * This)
+static long STDCALL CInputPin_EndOfStream(IPin* This)
 {
-    Debug unimplemented("CInputPin_EndOfStream", This);
-    return E_NOTIMPL;
+	Debug unimplemented("CInputPin_EndOfStream", This);
+	return E_NOTIMPL;
 }
-
 
 /**
  * \brief IPin::BeginFlush (begins a flush operation)
@@ -469,12 +466,11 @@ static long STDCALL CInputPin_EndOfStream(IPin * This)
  * \return E_UNEXPECTED - The pin is output pin
  *
  */
-static long STDCALL CInputPin_BeginFlush(IPin * This)
+static long STDCALL CInputPin_BeginFlush(IPin* This)
 {
-    Debug unimplemented("CInputPin_BeginFlush", This);
-    return E_NOTIMPL;
+	Debug unimplemented("CInputPin_BeginFlush", This);
+	return E_NOTIMPL;
 }
-
 
 /**
  * \brief IPin::EndFlush (ends a flush operation)
@@ -487,8 +483,8 @@ static long STDCALL CInputPin_BeginFlush(IPin * This)
  */
 static long STDCALL CInputPin_EndFlush(IPin* This)
 {
-    Debug unimplemented("CInputPin_EndFlush", This);
-    return E_NOTIMPL;
+	Debug unimplemented("CInputPin_EndFlush", This);
+	return E_NOTIMPL;
 }
 
 /**
@@ -505,12 +501,12 @@ static long STDCALL CInputPin_EndFlush(IPin* This)
  *
  */
 static long STDCALL CInputPin_NewSegment(IPin* This,
-					  /* [in] */ REFERENCE_TIME tStart,
-					  /* [in] */ REFERENCE_TIME tStop,
-					  /* [in] */ double dRate)
+                                         /* [in] */ REFERENCE_TIME tStart,
+                                         /* [in] */ REFERENCE_TIME tStop,
+                                         /* [in] */ double dRate)
 {
-    Debug unimplemented("CInputPin_NewSegment", This);
-    return E_NOTIMPL;
+	Debug unimplemented("CInputPin_NewSegment", This);
+	return E_NOTIMPL;
 }
 
 /**
@@ -521,9 +517,9 @@ static long STDCALL CInputPin_NewSegment(IPin* This,
  */
 static void CInputPin_Destroy(CInputPin* This)
 {
-    free(This->vt);
-    FreeMediaType(&(This->type));
-    free(This);
+	free(This->vt);
+	FreeMediaType(&(This->type));
+	free(This);
 }
 
 IMPLEMENT_IUNKNOWN(CInputPin)
@@ -539,57 +535,56 @@ IMPLEMENT_IUNKNOWN(CInputPin)
  */
 CInputPin* CInputPinCreate(CBaseFilter* p, const AM_MEDIA_TYPE* amt)
 {
-    CInputPin* This = malloc(sizeof(CInputPin));
+	CInputPin* This = malloc(sizeof(CInputPin));
 
-    if (!This)
-        return NULL;
+	if (!This)
+		return NULL;
 
-    This->refcount = 1;
-    This->parent = p;
-    CopyMediaType(&(This->type),amt);
+	This->refcount = 1;
+	This->parent = p;
+	CopyMediaType(&(This->type), amt);
 
-    This->vt= malloc(sizeof(IPin_vt));
+	This->vt = malloc(sizeof(IPin_vt));
 
-    if (!This->vt)
-    {
-	free(This);
-	return NULL;
-    }
+	if (!This->vt)
+	{
+		free(This);
+		return NULL;
+	}
 
-    This->vt->QueryInterface = CInputPin_QueryInterface;
-    This->vt->AddRef = CInputPin_AddRef;
-    This->vt->Release = CInputPin_Release;
-    This->vt->Connect = CInputPin_Connect;
-    This->vt->ReceiveConnection = CInputPin_ReceiveConnection;
-    This->vt->Disconnect = CInputPin_Disconnect;
-    This->vt->ConnectedTo = CInputPin_ConnectedTo;
-    This->vt->ConnectionMediaType = CInputPin_ConnectionMediaType;
-    This->vt->QueryPinInfo = CInputPin_QueryPinInfo;
-    This->vt->QueryDirection = CInputPin_QueryDirection;
-    This->vt->QueryId = CInputPin_QueryId;
-    This->vt->QueryAccept = CInputPin_QueryAccept;
-    This->vt->EnumMediaTypes = CInputPin_EnumMediaTypes;
-    This->vt->QueryInternalConnections = CInputPin_QueryInternalConnections;
-    This->vt->EndOfStream = CInputPin_EndOfStream;
-    This->vt->BeginFlush = CInputPin_BeginFlush;
-    This->vt->EndFlush = CInputPin_EndFlush;
-    This->vt->NewSegment = CInputPin_NewSegment;
+	This->vt->QueryInterface = CInputPin_QueryInterface;
+	This->vt->AddRef = CInputPin_AddRef;
+	This->vt->Release = CInputPin_Release;
+	This->vt->Connect = CInputPin_Connect;
+	This->vt->ReceiveConnection = CInputPin_ReceiveConnection;
+	This->vt->Disconnect = CInputPin_Disconnect;
+	This->vt->ConnectedTo = CInputPin_ConnectedTo;
+	This->vt->ConnectionMediaType = CInputPin_ConnectionMediaType;
+	This->vt->QueryPinInfo = CInputPin_QueryPinInfo;
+	This->vt->QueryDirection = CInputPin_QueryDirection;
+	This->vt->QueryId = CInputPin_QueryId;
+	This->vt->QueryAccept = CInputPin_QueryAccept;
+	This->vt->EnumMediaTypes = CInputPin_EnumMediaTypes;
+	This->vt->QueryInternalConnections = CInputPin_QueryInternalConnections;
+	This->vt->EndOfStream = CInputPin_EndOfStream;
+	This->vt->BeginFlush = CInputPin_BeginFlush;
+	This->vt->EndFlush = CInputPin_EndFlush;
+	This->vt->NewSegment = CInputPin_NewSegment;
 
-    This->interfaces[0]=IID_IUnknown;
+	This->interfaces[0] = IID_IUnknown;
 
-    return This;
+	return This;
 }
-
 
 /*************
  * BaseFilter
  *************/
 
-static long STDCALL CBaseFilter_GetClassID(IBaseFilter * This,
-					   /* [out] */ CLSID *pClassID)
+static long STDCALL CBaseFilter_GetClassID(IBaseFilter* This,
+                                           /* [out] */ CLSID* pClassID)
 {
-    Debug unimplemented("CBaseFilter_GetClassID", This);
-    return E_NOTIMPL;
+	Debug unimplemented("CBaseFilter_GetClassID", This);
+	return E_NOTIMPL;
 }
 
 /**
@@ -609,8 +604,8 @@ static long STDCALL CBaseFilter_GetClassID(IBaseFilter * This,
  */
 static long STDCALL CBaseFilter_Stop(IBaseFilter* This)
 {
-    Debug unimplemented("CBaseFilter_Stop", This);
-    return E_NOTIMPL;
+	Debug unimplemented("CBaseFilter_Stop", This);
+	return E_NOTIMPL;
 }
 
 /**
@@ -630,8 +625,8 @@ static long STDCALL CBaseFilter_Stop(IBaseFilter* This)
  */
 static long STDCALL CBaseFilter_Pause(IBaseFilter* This)
 {
-    Debug unimplemented("CBaseFilter_Pause", This);
-    return E_NOTIMPL;
+	Debug unimplemented("CBaseFilter_Pause", This);
+	return E_NOTIMPL;
 }
 
 /**
@@ -652,8 +647,8 @@ static long STDCALL CBaseFilter_Pause(IBaseFilter* This)
  */
 static long STDCALL CBaseFilter_Run(IBaseFilter* This, REFERENCE_TIME tStart)
 {
-    Debug unimplemented("CBaseFilter_Run", This);
-    return E_NOTIMPL;
+	Debug unimplemented("CBaseFilter_Run", This);
+	return E_NOTIMPL;
 }
 
 /**
@@ -671,12 +666,12 @@ static long STDCALL CBaseFilter_Run(IBaseFilter* This, REFERENCE_TIME tStart)
  *
  */
 static long STDCALL CBaseFilter_GetState(IBaseFilter* This,
-					 /* [in] */ unsigned long dwMilliSecsTimeout,
-					 // /* [out] */ FILTER_STATE *State)
-					 void* State)
+                                         /* [in] */ unsigned long dwMilliSecsTimeout,
+                                         // /* [out] */ FILTER_STATE *State)
+                                         void* State)
 {
-    Debug unimplemented("CBaseFilter_GetState", This);
-    return E_NOTIMPL;
+	Debug unimplemented("CBaseFilter_GetState", This);
+	return E_NOTIMPL;
 }
 
 /**
@@ -690,10 +685,10 @@ static long STDCALL CBaseFilter_GetState(IBaseFilter* This,
  *
  */
 static long STDCALL CBaseFilter_SetSyncSource(IBaseFilter* This,
-					      /* [in] */ IReferenceClock *pClock)
+                                              /* [in] */ IReferenceClock* pClock)
 {
-    Debug unimplemented("CBaseFilter_SetSyncSource", This);
-    return E_NOTIMPL;
+	Debug unimplemented("CBaseFilter_SetSyncSource", This);
+	return E_NOTIMPL;
 }
 
 /**
@@ -708,12 +703,11 @@ static long STDCALL CBaseFilter_SetSyncSource(IBaseFilter* This,
  *
  */
 static long STDCALL CBaseFilter_GetSyncSource(IBaseFilter* This,
-					      /* [out] */ IReferenceClock **pClock)
+                                              /* [out] */ IReferenceClock** pClock)
 {
-    Debug unimplemented("CBaseFilter_GetSyncSource", This);
-    return E_NOTIMPL;
+	Debug unimplemented("CBaseFilter_GetSyncSource", This);
+	return E_NOTIMPL;
 }
-
 
 /**
  * \brief IBaseFilter::EnumPins (enumerates the pins of this filter)
@@ -727,11 +721,11 @@ static long STDCALL CBaseFilter_GetSyncSource(IBaseFilter* This,
  *
  */
 static long STDCALL CBaseFilter_EnumPins(IBaseFilter* This,
-					 /* [out] */ IEnumPins **ppEnum)
+                                         /* [out] */ IEnumPins** ppEnum)
 {
-    Debug printf("CBaseFilter_EnumPins(%p) called\n", This);
-    *ppEnum = (IEnumPins*) CEnumPinsCreate(((CBaseFilter*)This)->pin, ((CBaseFilter*)This)->unused_pin);
-    return 0;
+	Debug printf("CBaseFilter_EnumPins(%p) called\n", This);
+	*ppEnum = (IEnumPins*)CEnumPinsCreate(((CBaseFilter*)This)->pin, ((CBaseFilter*)This)->unused_pin);
+	return 0;
 }
 
 /**
@@ -750,11 +744,11 @@ static long STDCALL CBaseFilter_EnumPins(IBaseFilter* This,
  *
  */
 static long STDCALL CBaseFilter_FindPin(IBaseFilter* This,
-					/* [string][in] */ const unsigned short* Id,
-					/* [out] */ IPin **ppPin)
+                                        /* [string][in] */ const unsigned short* Id,
+                                        /* [out] */ IPin** ppPin)
 {
-    Debug unimplemented("CBaseFilter_FindPin\n", This);
-    return E_NOTIMPL;
+	Debug unimplemented("CBaseFilter_FindPin\n", This);
+	return E_NOTIMPL;
 }
 
 /**
@@ -771,11 +765,11 @@ static long STDCALL CBaseFilter_FindPin(IBaseFilter* This,
  *
  */
 static long STDCALL CBaseFilter_QueryFilterInfo(IBaseFilter* This,
-						// /* [out] */ FILTER_INFO *pInfo)
-						void* pInfo)
+                                                // /* [out] */ FILTER_INFO *pInfo)
+                                                void* pInfo)
 {
-    Debug unimplemented("CBaseFilter_QueryFilterInfo", This);
-    return E_NOTIMPL;
+	Debug unimplemented("CBaseFilter_QueryFilterInfo", This);
+	return E_NOTIMPL;
 }
 
 /**
@@ -795,11 +789,11 @@ static long STDCALL CBaseFilter_QueryFilterInfo(IBaseFilter* This,
  *
  */
 static long STDCALL CBaseFilter_JoinFilterGraph(IBaseFilter* This,
-						/* [in] */ IFilterGraph* pGraph,
-						/* [string][in] */ const unsigned short* pName)
+                                                /* [in] */ IFilterGraph* pGraph,
+                                                /* [string][in] */ const unsigned short* pName)
 {
-    Debug unimplemented("CBaseFilter_JoinFilterGraph", This);
-    return E_NOTIMPL;
+	Debug unimplemented("CBaseFilter_JoinFilterGraph", This);
+	return E_NOTIMPL;
 }
 
 /**
@@ -817,10 +811,10 @@ static long STDCALL CBaseFilter_JoinFilterGraph(IBaseFilter* This,
  *
  */
 static long STDCALL CBaseFilter_QueryVendorInfo(IBaseFilter* This,
-						/* [string][out] */ unsigned short** pVendorInfo)
+                                                /* [string][out] */ unsigned short** pVendorInfo)
 {
-    Debug unimplemented("CBaseFilter_QueryVendorInfo", This);
-    return E_NOTIMPL;
+	Debug unimplemented("CBaseFilter_QueryVendorInfo", This);
+	return E_NOTIMPL;
 }
 
 /**
@@ -833,7 +827,7 @@ static long STDCALL CBaseFilter_QueryVendorInfo(IBaseFilter* This,
  */
 static IPin* CBaseFilter_GetPin(CBaseFilter* This)
 {
-    return This->pin;
+	return This->pin;
 }
 
 /**
@@ -846,7 +840,7 @@ static IPin* CBaseFilter_GetPin(CBaseFilter* This)
  */
 static IPin* CBaseFilter_GetUnusedPin(CBaseFilter* This)
 {
-    return This->unused_pin;
+	return This->unused_pin;
 }
 
 /**
@@ -857,12 +851,12 @@ static IPin* CBaseFilter_GetUnusedPin(CBaseFilter* This)
  */
 static void CBaseFilter_Destroy(CBaseFilter* This)
 {
-    free(This->vt);
-    if (This->pin)
-	This->pin->vt->Release((IUnknown*)This->pin);
-    if (This->unused_pin)
-	This->unused_pin->vt->Release((IUnknown*)This->unused_pin);
-    free(This);
+	free(This->vt);
+	if (This->pin)
+		This->pin->vt->Release((IUnknown*)This->pin);
+	if (This->unused_pin)
+		This->unused_pin->vt->Release((IUnknown*)This->unused_pin);
+	free(This);
 }
 
 IMPLEMENT_IUNKNOWN(CBaseFilter)
@@ -878,58 +872,56 @@ IMPLEMENT_IUNKNOWN(CBaseFilter)
  */
 CBaseFilter* CBaseFilterCreate(const AM_MEDIA_TYPE* type, CBaseFilter2* parent)
 {
-    CBaseFilter* This = malloc(sizeof(CBaseFilter));
-    if (!This)
-	return NULL;
+	CBaseFilter* This = malloc(sizeof(CBaseFilter));
+	if (!This)
+		return NULL;
 
-    This->refcount = 1;
+	This->refcount = 1;
 
-    This->pin = (IPin*) CInputPinCreate(This, type);
-    This->unused_pin = (IPin*) CRemotePinCreate(This, parent->GetPin(parent));
+	This->pin = (IPin*)CInputPinCreate(This, type);
+	This->unused_pin = (IPin*)CRemotePinCreate(This, parent->GetPin(parent));
 
-    This->vt = malloc(sizeof(IBaseFilter_vt));
-    if (!This->vt || !This->pin || !This->unused_pin)
-    {
-        CBaseFilter_Destroy(This);
-        return NULL;
-    }
+	This->vt = malloc(sizeof(IBaseFilter_vt));
+	if (!This->vt || !This->pin || !This->unused_pin)
+	{
+		CBaseFilter_Destroy(This);
+		return NULL;
+	}
 
-    This->vt->QueryInterface = CBaseFilter_QueryInterface;
-    This->vt->AddRef = CBaseFilter_AddRef;
-    This->vt->Release = CBaseFilter_Release;
-    This->vt->GetClassID = CBaseFilter_GetClassID;
-    This->vt->Stop = CBaseFilter_Stop;
-    This->vt->Pause = CBaseFilter_Pause;
-    This->vt->Run = CBaseFilter_Run;
-    This->vt->GetState = CBaseFilter_GetState;
-    This->vt->SetSyncSource = CBaseFilter_SetSyncSource;
-    This->vt->GetSyncSource = CBaseFilter_GetSyncSource;
-    This->vt->EnumPins = CBaseFilter_EnumPins;
-    This->vt->FindPin = CBaseFilter_FindPin;
-    This->vt->QueryFilterInfo = CBaseFilter_QueryFilterInfo;
-    This->vt->JoinFilterGraph = CBaseFilter_JoinFilterGraph;
-    This->vt->QueryVendorInfo = CBaseFilter_QueryVendorInfo;
+	This->vt->QueryInterface = CBaseFilter_QueryInterface;
+	This->vt->AddRef = CBaseFilter_AddRef;
+	This->vt->Release = CBaseFilter_Release;
+	This->vt->GetClassID = CBaseFilter_GetClassID;
+	This->vt->Stop = CBaseFilter_Stop;
+	This->vt->Pause = CBaseFilter_Pause;
+	This->vt->Run = CBaseFilter_Run;
+	This->vt->GetState = CBaseFilter_GetState;
+	This->vt->SetSyncSource = CBaseFilter_SetSyncSource;
+	This->vt->GetSyncSource = CBaseFilter_GetSyncSource;
+	This->vt->EnumPins = CBaseFilter_EnumPins;
+	This->vt->FindPin = CBaseFilter_FindPin;
+	This->vt->QueryFilterInfo = CBaseFilter_QueryFilterInfo;
+	This->vt->JoinFilterGraph = CBaseFilter_JoinFilterGraph;
+	This->vt->QueryVendorInfo = CBaseFilter_QueryVendorInfo;
 
-    This->interfaces[0] = IID_IUnknown;
-    This->interfaces[1] = IID_IBaseFilter;
+	This->interfaces[0] = IID_IUnknown;
+	This->interfaces[1] = IID_IBaseFilter;
 
-    This->GetPin = CBaseFilter_GetPin;
-    This->GetUnusedPin = CBaseFilter_GetUnusedPin;
+	This->GetPin = CBaseFilter_GetPin;
+	This->GetUnusedPin = CBaseFilter_GetUnusedPin;
 
-    return This;
+	return This;
 }
-
 
 /**************
  * BaseFilter2
  **************/
 
-
 static long STDCALL CBaseFilter2_GetClassID(IBaseFilter* This,
-					     /* [out] */ CLSID* pClassID)
+                                            /* [out] */ CLSID* pClassID)
 {
-    Debug unimplemented("CBaseFilter2_GetClassID", This);
-    return E_NOTIMPL;
+	Debug unimplemented("CBaseFilter2_GetClassID", This);
+	return E_NOTIMPL;
 }
 
 /**
@@ -949,8 +941,8 @@ static long STDCALL CBaseFilter2_GetClassID(IBaseFilter* This,
  */
 static long STDCALL CBaseFilter2_Stop(IBaseFilter* This)
 {
-    Debug unimplemented("CBaseFilter2_Stop", This);
-    return E_NOTIMPL;
+	Debug unimplemented("CBaseFilter2_Stop", This);
+	return E_NOTIMPL;
 }
 
 /**
@@ -970,8 +962,8 @@ static long STDCALL CBaseFilter2_Stop(IBaseFilter* This)
  */
 static long STDCALL CBaseFilter2_Pause(IBaseFilter* This)
 {
-    Debug unimplemented("CBaseFilter2_Pause", This);
-    return E_NOTIMPL;
+	Debug unimplemented("CBaseFilter2_Pause", This);
+	return E_NOTIMPL;
 }
 
 /**
@@ -992,10 +984,9 @@ static long STDCALL CBaseFilter2_Pause(IBaseFilter* This)
  */
 static long STDCALL CBaseFilter2_Run(IBaseFilter* This, REFERENCE_TIME tStart)
 {
-    Debug unimplemented("CBaseFilter2_Run", This);
-    return E_NOTIMPL;
+	Debug unimplemented("CBaseFilter2_Run", This);
+	return E_NOTIMPL;
 }
-
 
 /**
  * \brief IMediaFilter::GetState (retrieves the filter's state (running, stopped or paused))
@@ -1012,12 +1003,12 @@ static long STDCALL CBaseFilter2_Run(IBaseFilter* This, REFERENCE_TIME tStart)
  *
  */
 static long STDCALL CBaseFilter2_GetState(IBaseFilter* This,
-					  /* [in] */ unsigned long dwMilliSecsTimeout,
-					  // /* [out] */ FILTER_STATE *State)
-					  void* State)
+                                          /* [in] */ unsigned long dwMilliSecsTimeout,
+                                          // /* [out] */ FILTER_STATE *State)
+                                          void* State)
 {
-    Debug unimplemented("CBaseFilter2_GetState", This);
-    return E_NOTIMPL;
+	Debug unimplemented("CBaseFilter2_GetState", This);
+	return E_NOTIMPL;
 }
 
 /**
@@ -1031,10 +1022,10 @@ static long STDCALL CBaseFilter2_GetState(IBaseFilter* This,
  *
  */
 static long STDCALL CBaseFilter2_SetSyncSource(IBaseFilter* This,
-					       /* [in] */ IReferenceClock* pClock)
+                                               /* [in] */ IReferenceClock* pClock)
 {
-    Debug unimplemented("CBaseFilter2_SetSyncSource", This);
-    return E_NOTIMPL;
+	Debug unimplemented("CBaseFilter2_SetSyncSource", This);
+	return E_NOTIMPL;
 }
 
 /**
@@ -1049,10 +1040,10 @@ static long STDCALL CBaseFilter2_SetSyncSource(IBaseFilter* This,
  *
  */
 static long STDCALL CBaseFilter2_GetSyncSource(IBaseFilter* This,
-					       /* [out] */ IReferenceClock** pClock)
+                                               /* [out] */ IReferenceClock** pClock)
 {
-    Debug unimplemented("CBaseFilter2_GetSyncSource", This);
-    return E_NOTIMPL;
+	Debug unimplemented("CBaseFilter2_GetSyncSource", This);
+	return E_NOTIMPL;
 }
 
 /**
@@ -1067,11 +1058,11 @@ static long STDCALL CBaseFilter2_GetSyncSource(IBaseFilter* This,
  *
  */
 static long STDCALL CBaseFilter2_EnumPins(IBaseFilter* This,
-					  /* [out] */ IEnumPins** ppEnum)
+                                          /* [out] */ IEnumPins** ppEnum)
 {
-    Debug printf("CBaseFilter2_EnumPins(%p) called\n", This);
-    *ppEnum = (IEnumPins*) CEnumPinsCreate(((CBaseFilter2*)This)->pin, 0);
-    return 0;
+	Debug printf("CBaseFilter2_EnumPins(%p) called\n", This);
+	*ppEnum = (IEnumPins*)CEnumPinsCreate(((CBaseFilter2*)This)->pin, 0);
+	return 0;
 }
 
 /**
@@ -1090,11 +1081,11 @@ static long STDCALL CBaseFilter2_EnumPins(IBaseFilter* This,
  *
  */
 static long STDCALL CBaseFilter2_FindPin(IBaseFilter* This,
-					 /* [string][in] */ const unsigned short* Id,
-					 /* [out] */ IPin** ppPin)
+                                         /* [string][in] */ const unsigned short* Id,
+                                         /* [out] */ IPin** ppPin)
 {
-    Debug unimplemented("CBaseFilter2_FindPin", This);
-    return E_NOTIMPL;
+	Debug unimplemented("CBaseFilter2_FindPin", This);
+	return E_NOTIMPL;
 }
 
 /**
@@ -1111,11 +1102,11 @@ static long STDCALL CBaseFilter2_FindPin(IBaseFilter* This,
  *
  */
 static long STDCALL CBaseFilter2_QueryFilterInfo(IBaseFilter* This,
-						 // /* [out] */ FILTER_INFO *pInfo)
-						 void* pInfo)
+                                                 // /* [out] */ FILTER_INFO *pInfo)
+                                                 void* pInfo)
 {
-    Debug unimplemented("CBaseFilter2_QueryFilterInfo", This);
-    return E_NOTIMPL;
+	Debug unimplemented("CBaseFilter2_QueryFilterInfo", This);
+	return E_NOTIMPL;
 }
 
 /**
@@ -1135,12 +1126,12 @@ static long STDCALL CBaseFilter2_QueryFilterInfo(IBaseFilter* This,
  *
  */
 static long STDCALL CBaseFilter2_JoinFilterGraph(IBaseFilter* This,
-						 /* [in] */ IFilterGraph* pGraph,
-						 /* [string][in] */
-						  const unsigned short* pName)
+                                                 /* [in] */ IFilterGraph* pGraph,
+                                                 /* [string][in] */
+                                                 const unsigned short* pName)
 {
-    Debug unimplemented("CBaseFilter2_JoinFilterGraph", This);
-    return E_NOTIMPL;
+	Debug unimplemented("CBaseFilter2_JoinFilterGraph", This);
+	return E_NOTIMPL;
 }
 
 /**
@@ -1158,11 +1149,11 @@ static long STDCALL CBaseFilter2_JoinFilterGraph(IBaseFilter* This,
  *
  */
 static long STDCALL CBaseFilter2_QueryVendorInfo(IBaseFilter* This,
-						 /* [string][out] */
-						 unsigned short** pVendorInfo)
+                                                 /* [string][out] */
+                                                 unsigned short** pVendorInfo)
 {
-    Debug unimplemented("CBaseFilter2_QueryVendorInfo", This);
-    return E_NOTIMPL;
+	Debug unimplemented("CBaseFilter2_QueryVendorInfo", This);
+	return E_NOTIMPL;
 }
 
 /**
@@ -1175,7 +1166,7 @@ static long STDCALL CBaseFilter2_QueryVendorInfo(IBaseFilter* This,
  */
 static IPin* CBaseFilter2_GetPin(CBaseFilter2* This)
 {
-    return This->pin;
+	return This->pin;
 }
 
 /**
@@ -1186,23 +1177,23 @@ static IPin* CBaseFilter2_GetPin(CBaseFilter2* This)
  */
 static void CBaseFilter2_Destroy(CBaseFilter2* This)
 {
-    Debug printf("CBaseFilter2_Destroy(%p) called\n", This);
-    if (This->pin)
-	This->pin->vt->Release((IUnknown*) This->pin);
-    free(This->vt);
-    free(This);
+	Debug printf("CBaseFilter2_Destroy(%p) called\n", This);
+	if (This->pin)
+		This->pin->vt->Release((IUnknown*)This->pin);
+	free(This->vt);
+	free(This);
 }
 
 IMPLEMENT_IUNKNOWN(CBaseFilter2)
 
 static GUID CBaseFilter2_interf1 =
-{0x76c61a30, 0xebe1, 0x11cf, {0x89, 0xf9, 0x00, 0xa0, 0xc9, 0x03, 0x49, 0xcb}};
+	{0x76c61a30, 0xebe1, 0x11cf, {0x89, 0xf9, 0x00, 0xa0, 0xc9, 0x03, 0x49, 0xcb}};
 /// IID_IAMNetShowPreroll
 static GUID CBaseFilter2_interf2 =
-{0xaae7e4e2, 0x6388, 0x11d1, {0x8d, 0x93, 0x00, 0x60, 0x97, 0xc9, 0xa2, 0xb2}};
+	{0xaae7e4e2, 0x6388, 0x11d1, {0x8d, 0x93, 0x00, 0x60, 0x97, 0xc9, 0xa2, 0xb2}};
 /// IID_IAMRebuild
 static GUID CBaseFilter2_interf3 =
-{0x02ef04dd, 0x7580, 0x11d1, {0xbe, 0xce, 0x00, 0xc0, 0x4f, 0xb6, 0xe9, 0x37}};
+	{0x02ef04dd, 0x7580, 0x11d1, {0xbe, 0xce, 0x00, 0xc0, 0x4f, 0xb6, 0xe9, 0x37}};
 
 /**
  * \brief CBaseFilter2 constructor
@@ -1212,55 +1203,53 @@ static GUID CBaseFilter2_interf3 =
  */
 CBaseFilter2* CBaseFilter2Create()
 {
-    CBaseFilter2* This = malloc(sizeof(CBaseFilter2));
+	CBaseFilter2* This = malloc(sizeof(CBaseFilter2));
 
-    if (!This)
-	return NULL;
+	if (!This)
+		return NULL;
 
-    This->refcount = 1;
-    This->pin = (IPin*) CRemotePin2Create(This);
+	This->refcount = 1;
+	This->pin = (IPin*)CRemotePin2Create(This);
 
-    This->vt = malloc(sizeof(IBaseFilter_vt));
+	This->vt = malloc(sizeof(IBaseFilter_vt));
 
-    if (!This->pin || !This->vt)
-    {
-	CBaseFilter2_Destroy(This);
-        return NULL;
-    }
+	if (!This->pin || !This->vt)
+	{
+		CBaseFilter2_Destroy(This);
+		return NULL;
+	}
 
-    memset(This->vt, 0, sizeof(IBaseFilter_vt));
-    This->vt->QueryInterface = CBaseFilter2_QueryInterface;
-    This->vt->AddRef = CBaseFilter2_AddRef;
-    This->vt->Release = CBaseFilter2_Release;
-    This->vt->GetClassID = CBaseFilter2_GetClassID;
-    This->vt->Stop = CBaseFilter2_Stop;
-    This->vt->Pause = CBaseFilter2_Pause;
-    This->vt->Run = CBaseFilter2_Run;
-    This->vt->GetState = CBaseFilter2_GetState;
-    This->vt->SetSyncSource = CBaseFilter2_SetSyncSource;
-    This->vt->GetSyncSource = CBaseFilter2_GetSyncSource;
-    This->vt->EnumPins = CBaseFilter2_EnumPins;
-    This->vt->FindPin = CBaseFilter2_FindPin;
-    This->vt->QueryFilterInfo = CBaseFilter2_QueryFilterInfo;
-    This->vt->JoinFilterGraph = CBaseFilter2_JoinFilterGraph;
-    This->vt->QueryVendorInfo = CBaseFilter2_QueryVendorInfo;
+	memset(This->vt, 0, sizeof(IBaseFilter_vt));
+	This->vt->QueryInterface = CBaseFilter2_QueryInterface;
+	This->vt->AddRef = CBaseFilter2_AddRef;
+	This->vt->Release = CBaseFilter2_Release;
+	This->vt->GetClassID = CBaseFilter2_GetClassID;
+	This->vt->Stop = CBaseFilter2_Stop;
+	This->vt->Pause = CBaseFilter2_Pause;
+	This->vt->Run = CBaseFilter2_Run;
+	This->vt->GetState = CBaseFilter2_GetState;
+	This->vt->SetSyncSource = CBaseFilter2_SetSyncSource;
+	This->vt->GetSyncSource = CBaseFilter2_GetSyncSource;
+	This->vt->EnumPins = CBaseFilter2_EnumPins;
+	This->vt->FindPin = CBaseFilter2_FindPin;
+	This->vt->QueryFilterInfo = CBaseFilter2_QueryFilterInfo;
+	This->vt->JoinFilterGraph = CBaseFilter2_JoinFilterGraph;
+	This->vt->QueryVendorInfo = CBaseFilter2_QueryVendorInfo;
 
-    This->GetPin = CBaseFilter2_GetPin;
+	This->GetPin = CBaseFilter2_GetPin;
 
-    This->interfaces[0] = IID_IUnknown;
-    This->interfaces[1] = IID_IBaseFilter;
-    This->interfaces[2] = CBaseFilter2_interf1;
-    This->interfaces[3] = CBaseFilter2_interf2;
-    This->interfaces[4] = CBaseFilter2_interf3;
+	This->interfaces[0] = IID_IUnknown;
+	This->interfaces[1] = IID_IBaseFilter;
+	This->interfaces[2] = CBaseFilter2_interf1;
+	This->interfaces[3] = CBaseFilter2_interf2;
+	This->interfaces[4] = CBaseFilter2_interf3;
 
-    return This;
+	return This;
 }
-
 
 /*************
  * CRemotePin
  *************/
-
 
 /**
  * \brief IPin::ConnectedTo (retrieves pointer to the connected pin, if such exist)
@@ -1277,12 +1266,12 @@ CBaseFilter2* CBaseFilter2Create()
  */
 static long STDCALL CRemotePin_ConnectedTo(IPin* This, /* [out] */ IPin** pPin)
 {
-    Debug printf("CRemotePin_ConnectedTo(%p) called\n", This);
-    if (!pPin)
-	return E_INVALIDARG;
-    *pPin = ((CRemotePin*)This)->remote_pin;
-    (*pPin)->vt->AddRef((IUnknown*)(*pPin));
-    return 0;
+	Debug printf("CRemotePin_ConnectedTo(%p) called\n", This);
+	if (!pPin)
+		return E_INVALIDARG;
+	*pPin = ((CRemotePin*)This)->remote_pin;
+	(*pPin)->vt->AddRef((IUnknown*)(*pPin));
+	return 0;
 }
 
 /**
@@ -1296,13 +1285,13 @@ static long STDCALL CRemotePin_ConnectedTo(IPin* This, /* [out] */ IPin** pPin)
  *
  */
 static long STDCALL CRemotePin_QueryDirection(IPin* This,
-					      /* [out] */ PIN_DIRECTION* pPinDir)
+                                              /* [out] */ PIN_DIRECTION* pPinDir)
 {
-    Debug printf("CRemotePin_QueryDirection(%p) called\n", This);
-    if (!pPinDir)
-	return E_INVALIDARG;
-    *pPinDir=PINDIR_INPUT;
-    return 0;
+	Debug printf("CRemotePin_QueryDirection(%p) called\n", This);
+	if (!pPinDir)
+		return E_INVALIDARG;
+	*pPinDir = PINDIR_INPUT;
+	return 0;
 }
 
 /**
@@ -1318,8 +1307,8 @@ static long STDCALL CRemotePin_QueryDirection(IPin* This,
  */
 static long STDCALL CRemotePin_ConnectionMediaType(IPin* This, /* [out] */ AM_MEDIA_TYPE* pmt)
 {
-    Debug unimplemented("CRemotePin_ConnectionMediaType", This);
-    return E_NOTIMPL;
+	Debug unimplemented("CRemotePin_ConnectionMediaType", This);
+	return E_NOTIMPL;
 }
 
 /**
@@ -1337,13 +1326,13 @@ static long STDCALL CRemotePin_ConnectionMediaType(IPin* This, /* [out] */ AM_ME
  */
 static long STDCALL CRemotePin_QueryPinInfo(IPin* This, /* [out] */ PIN_INFO* pInfo)
 {
-    CBaseFilter* lparent = ((CRemotePin*)This)->parent;
-    Debug printf("CRemotePin_QueryPinInfo(%p) called\n", This);
-    pInfo->dir= PINDIR_INPUT;
-    pInfo->pFilter = (IBaseFilter*) lparent;
-    lparent->vt->AddRef((IUnknown*)lparent);
-    pInfo->achName[0]=0;
-    return 0;
+	CBaseFilter* lparent = ((CRemotePin*)This)->parent;
+	Debug printf("CRemotePin_QueryPinInfo(%p) called\n", This);
+	pInfo->dir = PINDIR_INPUT;
+	pInfo->pFilter = (IBaseFilter*)lparent;
+	lparent->vt->AddRef((IUnknown*)lparent);
+	pInfo->achName[0] = 0;
+	return 0;
 }
 
 /**
@@ -1354,9 +1343,9 @@ static long STDCALL CRemotePin_QueryPinInfo(IPin* This, /* [out] */ PIN_INFO* pI
  */
 static void CRemotePin_Destroy(CRemotePin* This)
 {
-    Debug printf("CRemotePin_Destroy(%p) called\n", This);
-    free(This->vt);
-    free(This);
+	Debug printf("CRemotePin_Destroy(%p) called\n", This);
+	free(This->vt);
+	free(This);
 }
 
 IMPLEMENT_IUNKNOWN(CRemotePin)
@@ -1372,44 +1361,42 @@ IMPLEMENT_IUNKNOWN(CRemotePin)
  */
 CRemotePin* CRemotePinCreate(CBaseFilter* pt, IPin* rpin)
 {
-    CRemotePin* This = malloc(sizeof(CRemotePin));
+	CRemotePin* This = malloc(sizeof(CRemotePin));
 
-    if (!This)
-        return NULL;
+	if (!This)
+		return NULL;
 
-    Debug printf("CRemotePinCreate() called -> %p\n", This);
+	Debug printf("CRemotePinCreate() called -> %p\n", This);
 
-    This->parent = pt;
-    This->remote_pin = rpin;
-    This->refcount = 1;
+	This->parent = pt;
+	This->remote_pin = rpin;
+	This->refcount = 1;
 
-    This->vt = malloc(sizeof(IPin_vt));
+	This->vt = malloc(sizeof(IPin_vt));
 
-    if (!This->vt)
-    {
-	free(This);
-	return NULL;
-    }
+	if (!This->vt)
+	{
+		free(This);
+		return NULL;
+	}
 
-    memset(This->vt, 0, sizeof(IPin_vt));
-    This->vt->QueryInterface = CRemotePin_QueryInterface;
-    This->vt->AddRef = CRemotePin_AddRef;
-    This->vt->Release = CRemotePin_Release;
-    This->vt->QueryDirection = CRemotePin_QueryDirection;
-    This->vt->ConnectedTo = CRemotePin_ConnectedTo;
-    This->vt->ConnectionMediaType = CRemotePin_ConnectionMediaType;
-    This->vt->QueryPinInfo = CRemotePin_QueryPinInfo;
+	memset(This->vt, 0, sizeof(IPin_vt));
+	This->vt->QueryInterface = CRemotePin_QueryInterface;
+	This->vt->AddRef = CRemotePin_AddRef;
+	This->vt->Release = CRemotePin_Release;
+	This->vt->QueryDirection = CRemotePin_QueryDirection;
+	This->vt->ConnectedTo = CRemotePin_ConnectedTo;
+	This->vt->ConnectionMediaType = CRemotePin_ConnectionMediaType;
+	This->vt->QueryPinInfo = CRemotePin_QueryPinInfo;
 
-    This->interfaces[0] = IID_IUnknown;
+	This->interfaces[0] = IID_IUnknown;
 
-    return This;
+	return This;
 }
-
 
 /*************
  * CRemotePin2
  *************/
-
 
 /**
  * \brief IPin::QueryPinInfo (retrieves information about the pin)
@@ -1425,15 +1412,15 @@ CRemotePin* CRemotePinCreate(CBaseFilter* pt, IPin* rpin)
  *
  */
 static long STDCALL CRemotePin2_QueryPinInfo(IPin* This,
-					     /* [out] */ PIN_INFO* pInfo)
+                                             /* [out] */ PIN_INFO* pInfo)
 {
-    CBaseFilter2* lparent=((CRemotePin2*)This)->parent;
-    Debug printf("CRemotePin2_QueryPinInfo(%p) called\n", This);
-    pInfo->pFilter=(IBaseFilter*)lparent;
-    lparent->vt->AddRef((IUnknown*)lparent);
-    pInfo->dir=PINDIR_OUTPUT;
-    pInfo->achName[0]=0;
-    return 0;
+	CBaseFilter2* lparent = ((CRemotePin2*)This)->parent;
+	Debug printf("CRemotePin2_QueryPinInfo(%p) called\n", This);
+	pInfo->pFilter = (IBaseFilter*)lparent;
+	lparent->vt->AddRef((IUnknown*)lparent);
+	pInfo->dir = PINDIR_OUTPUT;
+	pInfo->achName[0] = 0;
+	return 0;
 }
 
 /**
@@ -1445,9 +1432,9 @@ static long STDCALL CRemotePin2_QueryPinInfo(IPin* This,
  */
 static void CRemotePin2_Destroy(CRemotePin2* This)
 {
-    Debug printf("CRemotePin2_Destroy(%p) called\n", This);
-    free(This->vt);
-    free(This);
+	Debug printf("CRemotePin2_Destroy(%p) called\n", This);
+	free(This->vt);
+	free(This);
 }
 
 IMPLEMENT_IUNKNOWN(CRemotePin2)
@@ -1462,31 +1449,31 @@ IMPLEMENT_IUNKNOWN(CRemotePin2)
  */
 CRemotePin2* CRemotePin2Create(CBaseFilter2* p)
 {
-    CRemotePin2* This = malloc(sizeof(CRemotePin2));
+	CRemotePin2* This = malloc(sizeof(CRemotePin2));
 
-    if (!This)
-        return NULL;
+	if (!This)
+		return NULL;
 
-    Debug printf("CRemotePin2Create() called -> %p\n", This);
+	Debug printf("CRemotePin2Create() called -> %p\n", This);
 
-    This->parent = p;
-    This->refcount = 1;
+	This->parent = p;
+	This->refcount = 1;
 
-    This->vt = malloc(sizeof(IPin_vt));
+	This->vt = malloc(sizeof(IPin_vt));
 
-    if (!This->vt)
-    {
-	free(This);
-        return NULL;
-    }
+	if (!This->vt)
+	{
+		free(This);
+		return NULL;
+	}
 
-    memset(This->vt, 0, sizeof(IPin_vt));
-    This->vt->QueryInterface = CRemotePin2_QueryInterface;
-    This->vt->AddRef = CRemotePin2_AddRef;
-    This->vt->Release = CRemotePin2_Release;
-    This->vt->QueryPinInfo = CRemotePin2_QueryPinInfo;
+	memset(This->vt, 0, sizeof(IPin_vt));
+	This->vt->QueryInterface = CRemotePin2_QueryInterface;
+	This->vt->AddRef = CRemotePin2_AddRef;
+	This->vt->Release = CRemotePin2_Release;
+	This->vt->QueryPinInfo = CRemotePin2_QueryPinInfo;
 
-    This->interfaces[0] = IID_IUnknown;
+	This->interfaces[0] = IID_IUnknown;
 
-    return This;
+	return This;
 }

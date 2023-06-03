@@ -6,11 +6,11 @@
 
 typedef struct DMO_Filter
 {
-    int m_iHandle;
-    IDMOVideoOutputOptimizations* m_pOptim;
-    IMediaObject* m_pMedia;
-    IMediaObjectInPlace* m_pInPlace;
-    AM_MEDIA_TYPE *m_pOurType, *m_pDestType;
+	int m_iHandle;
+	IDMOVideoOutputOptimizations* m_pOptim;
+	IMediaObject* m_pMedia;
+	IMediaObjectInPlace* m_pInPlace;
+	AM_MEDIA_TYPE *m_pOurType, *m_pDestType;
 } DMO_Filter;
 
 typedef struct CMediaBuffer CMediaBuffer;
@@ -19,12 +19,11 @@ typedef struct CMediaBuffer CMediaBuffer;
  * Create DMO_Filter object - similar syntax as for DS_Filter
  */
 DMO_Filter* DMO_FilterCreate(const char* dllname, const GUID* id,
-			     AM_MEDIA_TYPE* in_fmt, AM_MEDIA_TYPE* out_fmt);
+                             AM_MEDIA_TYPE* in_fmt, AM_MEDIA_TYPE* out_fmt);
 /**
  * Destroy DMO_Filter object - release all allocated resources
  */
 void DMO_Filter_Destroy(DMO_Filter* This);
-
 
 /**
  * Create IMediaBuffer object - to pass/receive data from DMO_Filter

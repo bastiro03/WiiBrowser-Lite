@@ -29,18 +29,18 @@
 #include "libavcodec/x86/dsputil_mmx.h"
 #include "libavcodec/rv34dsp.h"
 
-void ff_put_rv40_chroma_mc8_mmx  (uint8_t *dst, uint8_t *src,
-                                  int stride, int h, int x, int y);
-void ff_avg_rv40_chroma_mc8_mmx2 (uint8_t *dst, uint8_t *src,
-                                  int stride, int h, int x, int y);
-void ff_avg_rv40_chroma_mc8_3dnow(uint8_t *dst, uint8_t *src,
+void ff_put_rv40_chroma_mc8_mmx(uint8_t* dst, uint8_t* src,
+                                int stride, int h, int x, int y);
+void ff_avg_rv40_chroma_mc8_mmx2(uint8_t* dst, uint8_t* src,
+                                 int stride, int h, int x, int y);
+void ff_avg_rv40_chroma_mc8_3dnow(uint8_t* dst, uint8_t* src,
                                   int stride, int h, int x, int y);
 
-void ff_put_rv40_chroma_mc4_mmx  (uint8_t *dst, uint8_t *src,
-                                  int stride, int h, int x, int y);
-void ff_avg_rv40_chroma_mc4_mmx2 (uint8_t *dst, uint8_t *src,
-                                  int stride, int h, int x, int y);
-void ff_avg_rv40_chroma_mc4_3dnow(uint8_t *dst, uint8_t *src,
+void ff_put_rv40_chroma_mc4_mmx(uint8_t* dst, uint8_t* src,
+                                int stride, int h, int x, int y);
+void ff_avg_rv40_chroma_mc4_mmx2(uint8_t* dst, uint8_t* src,
+                                 int stride, int h, int x, int y);
+void ff_avg_rv40_chroma_mc4_3dnow(uint8_t* dst, uint8_t* src,
                                   int stride, int h, int x, int y);
 
 #define DECLARE_WEIGHT(opt) \
@@ -182,54 +182,55 @@ QPEL_FUNCS_SET (OP, 3, 1, OPT) \
 QPEL_FUNCS_SET (OP, 3, 2, OPT)
 /** @} */
 
-void ff_rv40dsp_init_x86(RV34DSPContext *c, DSPContext *dsp)
+void ff_rv40dsp_init_x86(RV34DSPContext* c, DSPContext* dsp)
 {
 #if HAVE_YASM
-    int mm_flags = av_get_cpu_flags();
+	int mm_flags = av_get_cpu_flags();
 
-    if (mm_flags & AV_CPU_FLAG_MMX) {
-        c->put_chroma_pixels_tab[0] = ff_put_rv40_chroma_mc8_mmx;
-        c->put_chroma_pixels_tab[1] = ff_put_rv40_chroma_mc4_mmx;
-        c->put_pixels_tab[0][15] = ff_put_rv40_qpel16_mc33_mmx;
-        c->put_pixels_tab[1][15] = ff_put_rv40_qpel8_mc33_mmx;
-        c->avg_pixels_tab[0][15] = ff_avg_rv40_qpel16_mc33_mmx;
-        c->avg_pixels_tab[1][15] = ff_avg_rv40_qpel8_mc33_mmx;
+	if (mm_flags & AV_CPU_FLAG_MMX) {
+		c->put_chroma_pixels_tab[0] = ff_put_rv40_chroma_mc8_mmx;
+		c->put_chroma_pixels_tab[1] = ff_put_rv40_chroma_mc4_mmx;
+		c->put_pixels_tab[0][15] = ff_put_rv40_qpel16_mc33_mmx;
+		c->put_pixels_tab[1][15] = ff_put_rv40_qpel8_mc33_mmx;
+		c->avg_pixels_tab[0][15] = ff_avg_rv40_qpel16_mc33_mmx;
+		c->avg_pixels_tab[1][15] = ff_avg_rv40_qpel8_mc33_mmx;
 #if ARCH_X86_32
-        QPEL_MC_SET(put_, _mmx)
+		QPEL_MC_SET(put_, _mmx)
 #endif
-    }
-    if (mm_flags & AV_CPU_FLAG_MMX2) {
-        c->avg_chroma_pixels_tab[0] = ff_avg_rv40_chroma_mc8_mmx2;
-        c->avg_chroma_pixels_tab[1] = ff_avg_rv40_chroma_mc4_mmx2;
-        c->rv40_weight_pixels_tab[0][0] = ff_rv40_weight_func_rnd_16_mmx2;
-        c->rv40_weight_pixels_tab[0][1] = ff_rv40_weight_func_rnd_8_mmx2;
-        c->rv40_weight_pixels_tab[1][0] = ff_rv40_weight_func_nornd_16_mmx2;
-        c->rv40_weight_pixels_tab[1][1] = ff_rv40_weight_func_nornd_8_mmx2;
+	}
+	if (mm_flags & AV_CPU_FLAG_MMX2) {
+		c->avg_chroma_pixels_tab[0] = ff_avg_rv40_chroma_mc8_mmx2;
+		c->avg_chroma_pixels_tab[1] = ff_avg_rv40_chroma_mc4_mmx2;
+		c->rv40_weight_pixels_tab[0][0] = ff_rv40_weight_func_rnd_16_mmx2;
+		c->rv40_weight_pixels_tab[0][1] = ff_rv40_weight_func_rnd_8_mmx2;
+		c->rv40_weight_pixels_tab[1][0] = ff_rv40_weight_func_nornd_16_mmx2;
+		c->rv40_weight_pixels_tab[1][1] = ff_rv40_weight_func_nornd_8_mmx2;
 #if ARCH_X86_32
-        QPEL_MC_SET(avg_, _mmx2)
+		QPEL_MC_SET(avg_, _mmx2)
 #endif
-    } else if (mm_flags & AV_CPU_FLAG_3DNOW) {
-        c->avg_chroma_pixels_tab[0] = ff_avg_rv40_chroma_mc8_3dnow;
-        c->avg_chroma_pixels_tab[1] = ff_avg_rv40_chroma_mc4_3dnow;
+	}
+	else if (mm_flags & AV_CPU_FLAG_3DNOW) {
+		c->avg_chroma_pixels_tab[0] = ff_avg_rv40_chroma_mc8_3dnow;
+		c->avg_chroma_pixels_tab[1] = ff_avg_rv40_chroma_mc4_3dnow;
 #if ARCH_X86_32
-        QPEL_MC_SET(avg_, _3dnow)
+		QPEL_MC_SET(avg_, _3dnow)
 #endif
-    }
-    if (mm_flags & AV_CPU_FLAG_SSE2) {
-        c->rv40_weight_pixels_tab[0][0] = ff_rv40_weight_func_rnd_16_sse2;
-        c->rv40_weight_pixels_tab[0][1] = ff_rv40_weight_func_rnd_8_sse2;
-        c->rv40_weight_pixels_tab[1][0] = ff_rv40_weight_func_nornd_16_sse2;
-        c->rv40_weight_pixels_tab[1][1] = ff_rv40_weight_func_nornd_8_sse2;
-        QPEL_MC_SET(put_, _sse2)
-        QPEL_MC_SET(avg_, _sse2)
-    }
-    if (mm_flags & AV_CPU_FLAG_SSSE3) {
-        c->rv40_weight_pixels_tab[0][0] = ff_rv40_weight_func_rnd_16_ssse3;
-        c->rv40_weight_pixels_tab[0][1] = ff_rv40_weight_func_rnd_8_ssse3;
-        c->rv40_weight_pixels_tab[1][0] = ff_rv40_weight_func_nornd_16_ssse3;
-        c->rv40_weight_pixels_tab[1][1] = ff_rv40_weight_func_nornd_8_ssse3;
-        QPEL_MC_SET(put_, _ssse3)
-        QPEL_MC_SET(avg_, _ssse3)
-    }
+	}
+	if (mm_flags & AV_CPU_FLAG_SSE2) {
+		c->rv40_weight_pixels_tab[0][0] = ff_rv40_weight_func_rnd_16_sse2;
+		c->rv40_weight_pixels_tab[0][1] = ff_rv40_weight_func_rnd_8_sse2;
+		c->rv40_weight_pixels_tab[1][0] = ff_rv40_weight_func_nornd_16_sse2;
+		c->rv40_weight_pixels_tab[1][1] = ff_rv40_weight_func_nornd_8_sse2;
+		QPEL_MC_SET(put_, _sse2)
+			QPEL_MC_SET(avg_, _sse2)
+	}
+	if (mm_flags & AV_CPU_FLAG_SSSE3) {
+		c->rv40_weight_pixels_tab[0][0] = ff_rv40_weight_func_rnd_16_ssse3;
+		c->rv40_weight_pixels_tab[0][1] = ff_rv40_weight_func_rnd_8_ssse3;
+		c->rv40_weight_pixels_tab[1][0] = ff_rv40_weight_func_nornd_16_ssse3;
+		c->rv40_weight_pixels_tab[1][1] = ff_rv40_weight_func_nornd_8_ssse3;
+		QPEL_MC_SET(put_, _ssse3)
+			QPEL_MC_SET(avg_, _ssse3)
+	}
 #endif
 }

@@ -21,21 +21,23 @@
 
 #include <stdarg.h>
 
-typedef struct {
-    char *name;
-    char *data;
-    int size;
+typedef struct
+{
+	char* name;
+	char* data;
+	int size;
 } ASS_Fontdata;
 
-struct ass_library {
-    char *fonts_dir;
-    int extract_fonts;
-    char **style_overrides;
+struct ass_library
+{
+	char* fonts_dir;
+	int extract_fonts;
+	char** style_overrides;
 
-    ASS_Fontdata *fontdata;
-    int num_fontdata;
-    void (*msg_callback)(int, const char *, va_list, void *);
-    void *msg_callback_data;
+	ASS_Fontdata* fontdata;
+	int num_fontdata;
+	void (*msg_callback)(int, const char*, va_list, void*);
+	void* msg_callback_data;
 };
 
 #endif                          /* LIBASS_LIBRARY_H */

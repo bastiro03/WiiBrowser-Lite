@@ -45,6 +45,7 @@
 static HFILE mapdev = -1;
 static ULONG stored_virt_addr;
 static char* mappath = "\\DEV\\PMAP$";
+
 static HFILE open_mmap(void)
 {
 	APIRET rc;
@@ -53,11 +54,11 @@ static HFILE open_mmap(void)
 	if (mapdev != -1)
 		return mapdev;
 
-	rc = DosOpen((PSZ)mappath, (PHFILE)&mapdev, (PULONG)&action,
-	   (ULONG)0, FILE_SYSTEM, FILE_OPEN,
-	   OPEN_SHARE_DENYNONE|OPEN_FLAGS_NOINHERIT|OPEN_ACCESS_READONLY,
-	   (ULONG)0);
-	if (rc!=0)
+	rc = DosOpen((PSZ)mappath, (PHFILE) & mapdev, (PULONG) & action,
+	             (ULONG)0, FILE_SYSTEM, FILE_OPEN,
+	             OPEN_SHARE_DENYNONE | OPEN_FLAGS_NOINHERIT | OPEN_ACCESS_READONLY,
+	             (ULONG)0);
+	if (rc != 0)
 		mapdev = -1;
 	return mapdev;
 }
@@ -75,14 +76,16 @@ static void close_mmap(void)
 
 /* Changed here for structure of driver PMAP$ */
 
-typedef struct{
+typedef struct
+{
 	ULONG addr;
 	ULONG size;
 } DIOParPkt;
 
 /* This is the data packet for the mapping function */
 
-typedef struct {
+typedef struct
+{
 	ULONG addr;
 	USHORT sel;
 } DIODtaPkt;
@@ -94,19 +97,19 @@ typedef struct {
 static long callcount = 0L;
 
 /* ARGSUSED */
-void * map_phys_mem(unsigned long base, unsigned long size)
+void* map_phys_mem(unsigned long base, unsigned long size)
 {
-	DIOParPkt	par;
-	ULONG		plen;
-	DIODtaPkt	dta;
-	ULONG		dlen;
-	static BOOL	ErrRedir = FALSE;
-	APIRET		rc;
+	DIOParPkt par;
+	ULONG plen;
+	DIODtaPkt dta;
+	ULONG dlen;
+	static BOOL ErrRedir = FALSE;
+	APIRET rc;
 
-	par.addr	= (ULONG)base;
-	par.size	= (ULONG)size;
-	plen 		= sizeof(par);
-	dlen		= sizeof(dta);
+	par.addr = (ULONG)base;
+	par.size = (ULONG)size;
+	plen = sizeof(par);
+	dlen = sizeof(dta);
 
 	open_mmap();
 	if (mapdev == -1)
@@ -114,48 +117,50 @@ void * map_phys_mem(unsigned long base, unsigned long size)
 		perror("libdha: device xf86sup.sys is not installed");
 		exit(1);
 	}
-	if ((rc=DosDevIOCtl(mapdev, (ULONG)0x76, (ULONG)0x44,
-	      (PVOID)&par, (ULONG)plen, (PULONG)&plen,
-	      (PVOID)&dta, (ULONG)dlen, (PULONG)&dlen)) == 0) {
-		if (dlen==sizeof(dta)) {
+	if ((rc = DosDevIOCtl(mapdev, (ULONG)0x76, (ULONG)0x44,
+	                      (PVOID) & par, (ULONG)plen, (PULONG) & plen,
+	                      (PVOID) & dta, (ULONG)dlen, (PULONG) & dlen)) == 0)
+	{
+		if (dlen == sizeof(dta))
+		{
 			callcount++;
-			return (void *)dta.addr;
+			return (void*)dta.addr;
 		}
 		/*else fail*/
 	}
-	return (void *)-1;
+	return (void*)-1;
 }
 
 /* ARGSUSED */
-void unmap_phys_mem(void * base, unsigned long size)
+void unmap_phys_mem(void* base, unsigned long size)
 {
-	DIOParPkt	par;
-	ULONG		plen,vmaddr;
+	DIOParPkt par;
+	ULONG plen, vmaddr;
 
-/* We need here the VIRTADDR for unmapping, not the physical address      */
-/* This should be taken care of either here by keeping track of allocated */
-/* pointers, but this is also already done in the driver... Thus it would */
-/* be a waste to do this tracking twice. Can this be changed when the fn. */
-/* is called? This would require tracking this function in all servers,   */
-/* and changing it appropriately to call this with the virtual adress	  */
-/* If the above mapping function is only called once, then we can store   */
-/* the virtual adress and use it here.... 				  */
+	/* We need here the VIRTADDR for unmapping, not the physical address      */
+	/* This should be taken care of either here by keeping track of allocated */
+	/* pointers, but this is also already done in the driver... Thus it would */
+	/* be a waste to do this tracking twice. Can this be changed when the fn. */
+	/* is called? This would require tracking this function in all servers,   */
+	/* and changing it appropriately to call this with the virtual adress	  */
+	/* If the above mapping function is only called once, then we can store   */
+	/* the virtual adress and use it here.... 				  */
 
-	par.addr	= (ULONG)base;
-	par.size	= 0xffffffff; /* This is the virtual address parameter. Set this to ignore */
-	plen 		= sizeof(par);
+	par.addr = (ULONG)base;
+	par.size = 0xffffffff; /* This is the virtual address parameter. Set this to ignore */
+	plen = sizeof(par);
 
 	if (mapdev != -1)
 	{
-	    DosDevIOCtl(mapdev, (ULONG)0x76, (ULONG)0x46,
-	      (PVOID)&par, (ULONG)plen, (PULONG)&plen,
-	      &vmaddr, sizeof(ULONG), &plen);
-	    callcount--;
+		DosDevIOCtl(mapdev, (ULONG)0x76, (ULONG)0x46,
+		            (PVOID) & par, (ULONG)plen, (PULONG) & plen,
+		            &vmaddr, sizeof(ULONG), &plen);
+		callcount--;
 	}
-/* Now if more than one region has been allocated and we close the driver,
- * the other pointers will immediately become invalid. We avoid closing
- * driver for now, but this should be fixed for server exit
- */
+	/* Now if more than one region has been allocated and we close the driver,
+	 * the other pointers will immediately become invalid. We avoid closing
+	 * driver for now, but this should be fixed for server exit
+	 */
 
-	if(!callcount) close_mmap();
+	if (!callcount) close_mmap();
 }

@@ -35,14 +35,14 @@ typedef struct ResampleContext ResampleContext;
  * @param avr  AVAudioResampleContext
  * @return     newly-allocated ResampleContext
  */
-ResampleContext *ff_audio_resample_init(AVAudioResampleContext *avr);
+ResampleContext* ff_audio_resample_init(AVAudioResampleContext* avr);
 
 /**
  * Free a ResampleContext.
  *
  * @param c  ResampleContext
  */
-void ff_audio_resample_free(ResampleContext **c);
+void ff_audio_resample_free(ResampleContext** c);
 
 /**
  * Resample audio data.
@@ -64,7 +64,7 @@ void ff_audio_resample_free(ResampleContext **c);
  * @param consumed  number of samples consumed from the source
  * @return          number of samples written to the destination
  */
-int ff_audio_resample(ResampleContext *c, AudioData *dst, AudioData *src,
-                      int *consumed);
+int ff_audio_resample(ResampleContext* c, AudioData* dst, AudioData* src,
+                      int* consumed);
 
 #endif /* AVRESAMPLE_RESAMPLE_H */

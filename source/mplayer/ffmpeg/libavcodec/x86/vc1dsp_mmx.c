@@ -76,37 +76,48 @@
     "add       %2, %0                  \n\t"
 
 /** Sacrifying mm6 allows to pipeline loads from src */
-static void vc1_put_ver_16b_shift2_mmx(int16_t *dst,
-                                       const uint8_t *src, x86_reg stride,
+static void vc1_put_ver_16b_shift2_mmx(int16_t* dst,
+                                       const uint8_t* src, x86_reg stride,
                                        int rnd, int64_t shift)
 {
-    __asm__ volatile(
-        "mov       $3, %%"REG_c"           \n\t"
-        LOAD_ROUNDER_MMX("%5")
-        "movq      "MANGLE(ff_pw_9)", %%mm6 \n\t"
-        "1:                                \n\t"
-        "movd      (%0), %%mm2             \n\t"
-        "add       %2, %0                  \n\t"
-        "movd      (%0), %%mm3             \n\t"
-        "punpcklbw %%mm0, %%mm2            \n\t"
-        "punpcklbw %%mm0, %%mm3            \n\t"
-        SHIFT2_LINE(  0, 1, 2, 3, 4)
-        SHIFT2_LINE( 24, 2, 3, 4, 1)
-        SHIFT2_LINE( 48, 3, 4, 1, 2)
-        SHIFT2_LINE( 72, 4, 1, 2, 3)
-        SHIFT2_LINE( 96, 1, 2, 3, 4)
-        SHIFT2_LINE(120, 2, 3, 4, 1)
-        SHIFT2_LINE(144, 3, 4, 1, 2)
-        SHIFT2_LINE(168, 4, 1, 2, 3)
-        "sub       %6, %0                  \n\t"
-        "add       $8, %1                  \n\t"
-        "dec       %%"REG_c"               \n\t"
-        "jnz 1b                            \n\t"
-        : "+r"(src), "+r"(dst)
-        : "r"(stride), "r"(-2*stride),
-          "m"(shift), "m"(rnd), "r"(9*stride-4)
-        : "%"REG_c, "memory"
-    );
+	volatile __asm__ (
+		
+	"mov       $3, %%"
+	REG_c
+	"           \n\t"
+		LOAD_ROUNDER_MMX("%5")
+		"movq      "
+	MANGLE(ff_pw_9)
+	", %%mm6 \n\t"
+		"1:                                \n\t"
+		"movd      (%0), %%mm2             \n\t"
+		"add       %2, %0                  \n\t"
+		"movd      (%0), %%mm3             \n\t"
+		"punpcklbw %%mm0, %%mm2            \n\t"
+		"punpcklbw %%mm0, %%mm3            \n\t"
+		SHIFT2_LINE(0, 1, 2, 3, 4)
+		SHIFT2_LINE(24, 2, 3, 4, 1)
+		SHIFT2_LINE(48, 3, 4, 1, 2)
+		SHIFT2_LINE(72, 4, 1, 2, 3)
+		SHIFT2_LINE(96, 1, 2, 3, 4)
+		SHIFT2_LINE(120, 2, 3, 4, 1)
+		SHIFT2_LINE(144, 3, 4, 1, 2)
+		SHIFT2_LINE(168, 4, 1, 2, 3)
+		"sub       %6, %0                  \n\t"
+		"add       $8, %1                  \n\t"
+		"dec       %%"
+	REG_c
+	"               \n\t"
+		"jnz 1b                            \n\t"
+	:
+	"+r"(src), "+r"(dst)
+	:
+	"r"(stride), "r"(-2 * stride),
+		"m"(shift), "m"(rnd), "r"(9 * stride - 4)
+	:
+	"%"
+	REG_c, "memory"
+	)
 }
 
 /**
@@ -155,7 +166,6 @@ static void OPNAME ## vc1_hor_16b_shift2_mmx(uint8_t *dst, x86_reg stride,\
 
 VC1_HOR_16b_SHIFT2(OP_PUT, put_)
 VC1_HOR_16b_SHIFT2(OP_AVG, avg_)
-
 
 /**
  * Purely vertical or horizontal 1/2 shift interpolation.
@@ -386,22 +396,23 @@ OPNAME ## vc1_## NAME ## _mmx(uint8_t *dst, const uint8_t *src,         \
 }
 
 /** 1/4 shift bicubic interpolation */
-MSPEL_FILTER13_8B     (shift1, "0(%1,%4  )", "0(%1,%3,2)", "0(%1,%3  )", "0(%1     )", OP_PUT, put_)
-MSPEL_FILTER13_8B     (shift1, "0(%1,%4  )", "0(%1,%3,2)", "0(%1,%3  )", "0(%1     )", OP_AVG, avg_)
+MSPEL_FILTER13_8B(shift1, "0(%1,%4  )", "0(%1,%3,2)", "0(%1,%3  )", "0(%1     )", OP_PUT, put_)
+MSPEL_FILTER13_8B(shift1, "0(%1,%4  )", "0(%1,%3,2)", "0(%1,%3  )", "0(%1     )", OP_AVG, avg_)
 MSPEL_FILTER13_VER_16B(shift1, "0(%1,%4  )", "0(%1,%3,2)", "0(%1,%3  )", "0(%1     )")
 MSPEL_FILTER13_HOR_16B(shift1, "2*3(%1)", "2*2(%1)", "2*1(%1)", "2*0(%1)", OP_PUT, put_)
 MSPEL_FILTER13_HOR_16B(shift1, "2*3(%1)", "2*2(%1)", "2*1(%1)", "2*0(%1)", OP_AVG, avg_)
 
 /** 3/4 shift bicubic interpolation */
-MSPEL_FILTER13_8B     (shift3, "0(%1     )", "0(%1,%3  )", "0(%1,%3,2)", "0(%1,%4  )", OP_PUT, put_)
-MSPEL_FILTER13_8B     (shift3, "0(%1     )", "0(%1,%3  )", "0(%1,%3,2)", "0(%1,%4  )", OP_AVG, avg_)
+MSPEL_FILTER13_8B(shift3, "0(%1     )", "0(%1,%3  )", "0(%1,%3,2)", "0(%1,%4  )", OP_PUT, put_)
+MSPEL_FILTER13_8B(shift3, "0(%1     )", "0(%1,%3  )", "0(%1,%3,2)", "0(%1,%4  )", OP_AVG, avg_)
 MSPEL_FILTER13_VER_16B(shift3, "0(%1     )", "0(%1,%3  )", "0(%1,%3,2)", "0(%1,%4  )")
 MSPEL_FILTER13_HOR_16B(shift3, "2*0(%1)", "2*1(%1)", "2*2(%1)", "2*3(%1)", OP_PUT, put_)
 MSPEL_FILTER13_HOR_16B(shift3, "2*0(%1)", "2*1(%1)", "2*2(%1)", "2*3(%1)", OP_AVG, avg_)
 
-typedef void (*vc1_mspel_mc_filter_ver_16bits)(int16_t *dst, const uint8_t *src, x86_reg src_stride, int rnd, int64_t shift);
-typedef void (*vc1_mspel_mc_filter_hor_16bits)(uint8_t *dst, x86_reg dst_stride, const int16_t *src, int rnd);
-typedef void (*vc1_mspel_mc_filter_8bits)(uint8_t *dst, const uint8_t *src, x86_reg stride, int rnd, x86_reg offset);
+typedef void (*vc1_mspel_mc_filter_ver_16bits)(int16_t* dst, const uint8_t* src, x86_reg src_stride, int rnd,
+                                               int64_t shift);
+typedef void (*vc1_mspel_mc_filter_hor_16bits)(uint8_t* dst, x86_reg dst_stride, const int16_t* src, int rnd);
+typedef void (*vc1_mspel_mc_filter_8bits)(uint8_t* dst, const uint8_t* src, x86_reg stride, int rnd, x86_reg offset);
 
 /**
  * Interpolate fractional pel values by applying proper vertical then
@@ -484,202 +495,222 @@ DECLARE_FUNCTION(3, 1)
 DECLARE_FUNCTION(3, 2)
 DECLARE_FUNCTION(3, 3)
 
-static void vc1_inv_trans_4x4_dc_mmx2(uint8_t *dest, int linesize, DCTELEM *block)
+static void vc1_inv_trans_4x4_dc_mmx2(uint8_t* dest, int linesize, DCTELEM* block)
 {
-    int dc = block[0];
-    dc = (17 * dc +  4) >> 3;
-    dc = (17 * dc + 64) >> 7;
-    __asm__ volatile(
-        "movd          %0, %%mm0 \n\t"
-        "pshufw $0, %%mm0, %%mm0 \n\t"
-        "pxor       %%mm1, %%mm1 \n\t"
-        "psubw      %%mm0, %%mm1 \n\t"
-        "packuswb   %%mm0, %%mm0 \n\t"
-        "packuswb   %%mm1, %%mm1 \n\t"
-        ::"r"(dc)
-    );
-    __asm__ volatile(
-        "movd          %0, %%mm2 \n\t"
-        "movd          %1, %%mm3 \n\t"
-        "movd          %2, %%mm4 \n\t"
-        "movd          %3, %%mm5 \n\t"
-        "paddusb    %%mm0, %%mm2 \n\t"
-        "paddusb    %%mm0, %%mm3 \n\t"
-        "paddusb    %%mm0, %%mm4 \n\t"
-        "paddusb    %%mm0, %%mm5 \n\t"
-        "psubusb    %%mm1, %%mm2 \n\t"
-        "psubusb    %%mm1, %%mm3 \n\t"
-        "psubusb    %%mm1, %%mm4 \n\t"
-        "psubusb    %%mm1, %%mm5 \n\t"
-        "movd       %%mm2, %0    \n\t"
-        "movd       %%mm3, %1    \n\t"
-        "movd       %%mm4, %2    \n\t"
-        "movd       %%mm5, %3    \n\t"
-        :"+m"(*(uint32_t*)(dest+0*linesize)),
-         "+m"(*(uint32_t*)(dest+1*linesize)),
-         "+m"(*(uint32_t*)(dest+2*linesize)),
-         "+m"(*(uint32_t*)(dest+3*linesize))
-    );
+	int dc = block[0];
+	dc = (17 * dc + 4) >> 3;
+	dc = (17 * dc + 64) >> 7;
+	volatile __asm__ (
+		
+	"movd          %0, %%mm0 \n\t"
+		"pshufw $0, %%mm0, %%mm0 \n\t"
+		"pxor       %%mm1, %%mm1 \n\t"
+		"psubw      %%mm0, %%mm1 \n\t"
+		"packuswb   %%mm0, %%mm0 \n\t"
+		"packuswb   %%mm1, %%mm1 \n\t"
+	::
+	"r"(dc)
+	)
+	volatile __asm__ (
+		
+	"movd          %0, %%mm2 \n\t"
+		"movd          %1, %%mm3 \n\t"
+		"movd          %2, %%mm4 \n\t"
+		"movd          %3, %%mm5 \n\t"
+		"paddusb    %%mm0, %%mm2 \n\t"
+		"paddusb    %%mm0, %%mm3 \n\t"
+		"paddusb    %%mm0, %%mm4 \n\t"
+		"paddusb    %%mm0, %%mm5 \n\t"
+		"psubusb    %%mm1, %%mm2 \n\t"
+		"psubusb    %%mm1, %%mm3 \n\t"
+		"psubusb    %%mm1, %%mm4 \n\t"
+		"psubusb    %%mm1, %%mm5 \n\t"
+		"movd       %%mm2, %0    \n\t"
+		"movd       %%mm3, %1    \n\t"
+		"movd       %%mm4, %2    \n\t"
+		"movd       %%mm5, %3    \n\t"
+	:
+	"+m"(*(uint32_t*)(dest + 0 * linesize)),
+		"+m"(*(uint32_t*)(dest + 1 * linesize)),
+		"+m"(*(uint32_t*)(dest + 2 * linesize)),
+		"+m"(*(uint32_t*)(dest + 3 * linesize))
+	)
 }
 
-static void vc1_inv_trans_4x8_dc_mmx2(uint8_t *dest, int linesize, DCTELEM *block)
+static void vc1_inv_trans_4x8_dc_mmx2(uint8_t* dest, int linesize, DCTELEM* block)
 {
-    int dc = block[0];
-    dc = (17 * dc +  4) >> 3;
-    dc = (12 * dc + 64) >> 7;
-    __asm__ volatile(
-        "movd          %0, %%mm0 \n\t"
-        "pshufw $0, %%mm0, %%mm0 \n\t"
-        "pxor       %%mm1, %%mm1 \n\t"
-        "psubw      %%mm0, %%mm1 \n\t"
-        "packuswb   %%mm0, %%mm0 \n\t"
-        "packuswb   %%mm1, %%mm1 \n\t"
-        ::"r"(dc)
-    );
-    __asm__ volatile(
-        "movd          %0, %%mm2 \n\t"
-        "movd          %1, %%mm3 \n\t"
-        "movd          %2, %%mm4 \n\t"
-        "movd          %3, %%mm5 \n\t"
-        "paddusb    %%mm0, %%mm2 \n\t"
-        "paddusb    %%mm0, %%mm3 \n\t"
-        "paddusb    %%mm0, %%mm4 \n\t"
-        "paddusb    %%mm0, %%mm5 \n\t"
-        "psubusb    %%mm1, %%mm2 \n\t"
-        "psubusb    %%mm1, %%mm3 \n\t"
-        "psubusb    %%mm1, %%mm4 \n\t"
-        "psubusb    %%mm1, %%mm5 \n\t"
-        "movd       %%mm2, %0    \n\t"
-        "movd       %%mm3, %1    \n\t"
-        "movd       %%mm4, %2    \n\t"
-        "movd       %%mm5, %3    \n\t"
-        :"+m"(*(uint32_t*)(dest+0*linesize)),
-         "+m"(*(uint32_t*)(dest+1*linesize)),
-         "+m"(*(uint32_t*)(dest+2*linesize)),
-         "+m"(*(uint32_t*)(dest+3*linesize))
-    );
-    dest += 4*linesize;
-    __asm__ volatile(
-        "movd          %0, %%mm2 \n\t"
-        "movd          %1, %%mm3 \n\t"
-        "movd          %2, %%mm4 \n\t"
-        "movd          %3, %%mm5 \n\t"
-        "paddusb    %%mm0, %%mm2 \n\t"
-        "paddusb    %%mm0, %%mm3 \n\t"
-        "paddusb    %%mm0, %%mm4 \n\t"
-        "paddusb    %%mm0, %%mm5 \n\t"
-        "psubusb    %%mm1, %%mm2 \n\t"
-        "psubusb    %%mm1, %%mm3 \n\t"
-        "psubusb    %%mm1, %%mm4 \n\t"
-        "psubusb    %%mm1, %%mm5 \n\t"
-        "movd       %%mm2, %0    \n\t"
-        "movd       %%mm3, %1    \n\t"
-        "movd       %%mm4, %2    \n\t"
-        "movd       %%mm5, %3    \n\t"
-        :"+m"(*(uint32_t*)(dest+0*linesize)),
-         "+m"(*(uint32_t*)(dest+1*linesize)),
-         "+m"(*(uint32_t*)(dest+2*linesize)),
-         "+m"(*(uint32_t*)(dest+3*linesize))
-    );
+	int dc = block[0];
+	dc = (17 * dc + 4) >> 3;
+	dc = (12 * dc + 64) >> 7;
+	volatile __asm__ (
+		
+	"movd          %0, %%mm0 \n\t"
+		"pshufw $0, %%mm0, %%mm0 \n\t"
+		"pxor       %%mm1, %%mm1 \n\t"
+		"psubw      %%mm0, %%mm1 \n\t"
+		"packuswb   %%mm0, %%mm0 \n\t"
+		"packuswb   %%mm1, %%mm1 \n\t"
+	::
+	"r"(dc)
+	)
+	volatile __asm__ (
+		
+	"movd          %0, %%mm2 \n\t"
+		"movd          %1, %%mm3 \n\t"
+		"movd          %2, %%mm4 \n\t"
+		"movd          %3, %%mm5 \n\t"
+		"paddusb    %%mm0, %%mm2 \n\t"
+		"paddusb    %%mm0, %%mm3 \n\t"
+		"paddusb    %%mm0, %%mm4 \n\t"
+		"paddusb    %%mm0, %%mm5 \n\t"
+		"psubusb    %%mm1, %%mm2 \n\t"
+		"psubusb    %%mm1, %%mm3 \n\t"
+		"psubusb    %%mm1, %%mm4 \n\t"
+		"psubusb    %%mm1, %%mm5 \n\t"
+		"movd       %%mm2, %0    \n\t"
+		"movd       %%mm3, %1    \n\t"
+		"movd       %%mm4, %2    \n\t"
+		"movd       %%mm5, %3    \n\t"
+	:
+	"+m"(*(uint32_t*)(dest + 0 * linesize)),
+		"+m"(*(uint32_t*)(dest + 1 * linesize)),
+		"+m"(*(uint32_t*)(dest + 2 * linesize)),
+		"+m"(*(uint32_t*)(dest + 3 * linesize))
+	)
+	dest += 4 * linesize;
+	volatile __asm__ (
+		
+	"movd          %0, %%mm2 \n\t"
+		"movd          %1, %%mm3 \n\t"
+		"movd          %2, %%mm4 \n\t"
+		"movd          %3, %%mm5 \n\t"
+		"paddusb    %%mm0, %%mm2 \n\t"
+		"paddusb    %%mm0, %%mm3 \n\t"
+		"paddusb    %%mm0, %%mm4 \n\t"
+		"paddusb    %%mm0, %%mm5 \n\t"
+		"psubusb    %%mm1, %%mm2 \n\t"
+		"psubusb    %%mm1, %%mm3 \n\t"
+		"psubusb    %%mm1, %%mm4 \n\t"
+		"psubusb    %%mm1, %%mm5 \n\t"
+		"movd       %%mm2, %0    \n\t"
+		"movd       %%mm3, %1    \n\t"
+		"movd       %%mm4, %2    \n\t"
+		"movd       %%mm5, %3    \n\t"
+	:
+	"+m"(*(uint32_t*)(dest + 0 * linesize)),
+		"+m"(*(uint32_t*)(dest + 1 * linesize)),
+		"+m"(*(uint32_t*)(dest + 2 * linesize)),
+		"+m"(*(uint32_t*)(dest + 3 * linesize))
+	)
 }
 
-static void vc1_inv_trans_8x4_dc_mmx2(uint8_t *dest, int linesize, DCTELEM *block)
+static void vc1_inv_trans_8x4_dc_mmx2(uint8_t* dest, int linesize, DCTELEM* block)
 {
-    int dc = block[0];
-    dc = ( 3 * dc +  1) >> 1;
-    dc = (17 * dc + 64) >> 7;
-    __asm__ volatile(
-        "movd          %0, %%mm0 \n\t"
-        "pshufw $0, %%mm0, %%mm0 \n\t"
-        "pxor       %%mm1, %%mm1 \n\t"
-        "psubw      %%mm0, %%mm1 \n\t"
-        "packuswb   %%mm0, %%mm0 \n\t"
-        "packuswb   %%mm1, %%mm1 \n\t"
-        ::"r"(dc)
-    );
-    __asm__ volatile(
-        "movq          %0, %%mm2 \n\t"
-        "movq          %1, %%mm3 \n\t"
-        "movq          %2, %%mm4 \n\t"
-        "movq          %3, %%mm5 \n\t"
-        "paddusb    %%mm0, %%mm2 \n\t"
-        "paddusb    %%mm0, %%mm3 \n\t"
-        "paddusb    %%mm0, %%mm4 \n\t"
-        "paddusb    %%mm0, %%mm5 \n\t"
-        "psubusb    %%mm1, %%mm2 \n\t"
-        "psubusb    %%mm1, %%mm3 \n\t"
-        "psubusb    %%mm1, %%mm4 \n\t"
-        "psubusb    %%mm1, %%mm5 \n\t"
-        "movq       %%mm2, %0    \n\t"
-        "movq       %%mm3, %1    \n\t"
-        "movq       %%mm4, %2    \n\t"
-        "movq       %%mm5, %3    \n\t"
-        :"+m"(*(uint32_t*)(dest+0*linesize)),
-         "+m"(*(uint32_t*)(dest+1*linesize)),
-         "+m"(*(uint32_t*)(dest+2*linesize)),
-         "+m"(*(uint32_t*)(dest+3*linesize))
-    );
+	int dc = block[0];
+	dc = (3 * dc + 1) >> 1;
+	dc = (17 * dc + 64) >> 7;
+	volatile __asm__ (
+		
+	"movd          %0, %%mm0 \n\t"
+		"pshufw $0, %%mm0, %%mm0 \n\t"
+		"pxor       %%mm1, %%mm1 \n\t"
+		"psubw      %%mm0, %%mm1 \n\t"
+		"packuswb   %%mm0, %%mm0 \n\t"
+		"packuswb   %%mm1, %%mm1 \n\t"
+	::
+	"r"(dc)
+	)
+	volatile __asm__ (
+		
+	"movq          %0, %%mm2 \n\t"
+		"movq          %1, %%mm3 \n\t"
+		"movq          %2, %%mm4 \n\t"
+		"movq          %3, %%mm5 \n\t"
+		"paddusb    %%mm0, %%mm2 \n\t"
+		"paddusb    %%mm0, %%mm3 \n\t"
+		"paddusb    %%mm0, %%mm4 \n\t"
+		"paddusb    %%mm0, %%mm5 \n\t"
+		"psubusb    %%mm1, %%mm2 \n\t"
+		"psubusb    %%mm1, %%mm3 \n\t"
+		"psubusb    %%mm1, %%mm4 \n\t"
+		"psubusb    %%mm1, %%mm5 \n\t"
+		"movq       %%mm2, %0    \n\t"
+		"movq       %%mm3, %1    \n\t"
+		"movq       %%mm4, %2    \n\t"
+		"movq       %%mm5, %3    \n\t"
+	:
+	"+m"(*(uint32_t*)(dest + 0 * linesize)),
+		"+m"(*(uint32_t*)(dest + 1 * linesize)),
+		"+m"(*(uint32_t*)(dest + 2 * linesize)),
+		"+m"(*(uint32_t*)(dest + 3 * linesize))
+	)
 }
 
-static void vc1_inv_trans_8x8_dc_mmx2(uint8_t *dest, int linesize, DCTELEM *block)
+static void vc1_inv_trans_8x8_dc_mmx2(uint8_t* dest, int linesize, DCTELEM* block)
 {
-    int dc = block[0];
-    dc = (3 * dc +  1) >> 1;
-    dc = (3 * dc + 16) >> 5;
-    __asm__ volatile(
-        "movd          %0, %%mm0 \n\t"
-        "pshufw $0, %%mm0, %%mm0 \n\t"
-        "pxor       %%mm1, %%mm1 \n\t"
-        "psubw      %%mm0, %%mm1 \n\t"
-        "packuswb   %%mm0, %%mm0 \n\t"
-        "packuswb   %%mm1, %%mm1 \n\t"
-        ::"r"(dc)
-    );
-    __asm__ volatile(
-        "movq          %0, %%mm2 \n\t"
-        "movq          %1, %%mm3 \n\t"
-        "movq          %2, %%mm4 \n\t"
-        "movq          %3, %%mm5 \n\t"
-        "paddusb    %%mm0, %%mm2 \n\t"
-        "paddusb    %%mm0, %%mm3 \n\t"
-        "paddusb    %%mm0, %%mm4 \n\t"
-        "paddusb    %%mm0, %%mm5 \n\t"
-        "psubusb    %%mm1, %%mm2 \n\t"
-        "psubusb    %%mm1, %%mm3 \n\t"
-        "psubusb    %%mm1, %%mm4 \n\t"
-        "psubusb    %%mm1, %%mm5 \n\t"
-        "movq       %%mm2, %0    \n\t"
-        "movq       %%mm3, %1    \n\t"
-        "movq       %%mm4, %2    \n\t"
-        "movq       %%mm5, %3    \n\t"
-        :"+m"(*(uint32_t*)(dest+0*linesize)),
-         "+m"(*(uint32_t*)(dest+1*linesize)),
-         "+m"(*(uint32_t*)(dest+2*linesize)),
-         "+m"(*(uint32_t*)(dest+3*linesize))
-    );
-    dest += 4*linesize;
-    __asm__ volatile(
-        "movq          %0, %%mm2 \n\t"
-        "movq          %1, %%mm3 \n\t"
-        "movq          %2, %%mm4 \n\t"
-        "movq          %3, %%mm5 \n\t"
-        "paddusb    %%mm0, %%mm2 \n\t"
-        "paddusb    %%mm0, %%mm3 \n\t"
-        "paddusb    %%mm0, %%mm4 \n\t"
-        "paddusb    %%mm0, %%mm5 \n\t"
-        "psubusb    %%mm1, %%mm2 \n\t"
-        "psubusb    %%mm1, %%mm3 \n\t"
-        "psubusb    %%mm1, %%mm4 \n\t"
-        "psubusb    %%mm1, %%mm5 \n\t"
-        "movq       %%mm2, %0    \n\t"
-        "movq       %%mm3, %1    \n\t"
-        "movq       %%mm4, %2    \n\t"
-        "movq       %%mm5, %3    \n\t"
-        :"+m"(*(uint32_t*)(dest+0*linesize)),
-         "+m"(*(uint32_t*)(dest+1*linesize)),
-         "+m"(*(uint32_t*)(dest+2*linesize)),
-         "+m"(*(uint32_t*)(dest+3*linesize))
-    );
+	int dc = block[0];
+	dc = (3 * dc + 1) >> 1;
+	dc = (3 * dc + 16) >> 5;
+	volatile __asm__ (
+		
+	"movd          %0, %%mm0 \n\t"
+		"pshufw $0, %%mm0, %%mm0 \n\t"
+		"pxor       %%mm1, %%mm1 \n\t"
+		"psubw      %%mm0, %%mm1 \n\t"
+		"packuswb   %%mm0, %%mm0 \n\t"
+		"packuswb   %%mm1, %%mm1 \n\t"
+	::
+	"r"(dc)
+	)
+	volatile __asm__ (
+		
+	"movq          %0, %%mm2 \n\t"
+		"movq          %1, %%mm3 \n\t"
+		"movq          %2, %%mm4 \n\t"
+		"movq          %3, %%mm5 \n\t"
+		"paddusb    %%mm0, %%mm2 \n\t"
+		"paddusb    %%mm0, %%mm3 \n\t"
+		"paddusb    %%mm0, %%mm4 \n\t"
+		"paddusb    %%mm0, %%mm5 \n\t"
+		"psubusb    %%mm1, %%mm2 \n\t"
+		"psubusb    %%mm1, %%mm3 \n\t"
+		"psubusb    %%mm1, %%mm4 \n\t"
+		"psubusb    %%mm1, %%mm5 \n\t"
+		"movq       %%mm2, %0    \n\t"
+		"movq       %%mm3, %1    \n\t"
+		"movq       %%mm4, %2    \n\t"
+		"movq       %%mm5, %3    \n\t"
+	:
+	"+m"(*(uint32_t*)(dest + 0 * linesize)),
+		"+m"(*(uint32_t*)(dest + 1 * linesize)),
+		"+m"(*(uint32_t*)(dest + 2 * linesize)),
+		"+m"(*(uint32_t*)(dest + 3 * linesize))
+	)
+	dest += 4 * linesize;
+	volatile __asm__ (
+		
+	"movq          %0, %%mm2 \n\t"
+		"movq          %1, %%mm3 \n\t"
+		"movq          %2, %%mm4 \n\t"
+		"movq          %3, %%mm5 \n\t"
+		"paddusb    %%mm0, %%mm2 \n\t"
+		"paddusb    %%mm0, %%mm3 \n\t"
+		"paddusb    %%mm0, %%mm4 \n\t"
+		"paddusb    %%mm0, %%mm5 \n\t"
+		"psubusb    %%mm1, %%mm2 \n\t"
+		"psubusb    %%mm1, %%mm3 \n\t"
+		"psubusb    %%mm1, %%mm4 \n\t"
+		"psubusb    %%mm1, %%mm5 \n\t"
+		"movq       %%mm2, %0    \n\t"
+		"movq       %%mm3, %1    \n\t"
+		"movq       %%mm4, %2    \n\t"
+		"movq       %%mm5, %3    \n\t"
+	:
+	"+m"(*(uint32_t*)(dest + 0 * linesize)),
+		"+m"(*(uint32_t*)(dest + 1 * linesize)),
+		"+m"(*(uint32_t*)(dest + 2 * linesize)),
+		"+m"(*(uint32_t*)(dest + 3 * linesize))
+	)
 }
 
 #define LOOP_FILTER(EXT) \
@@ -705,92 +736,97 @@ LOOP_FILTER(mmx2)
 LOOP_FILTER(sse2)
 LOOP_FILTER(ssse3)
 
-void ff_vc1_h_loop_filter8_sse4(uint8_t *src, int stride, int pq);
+void ff_vc1_h_loop_filter8_sse4(uint8_t* src, int stride, int pq);
 
-static void vc1_h_loop_filter16_sse4(uint8_t *src, int stride, int pq)
+static void vc1_h_loop_filter16_sse4(uint8_t* src, int stride, int pq)
 {
-    ff_vc1_h_loop_filter8_sse4(src,          stride, pq);
-    ff_vc1_h_loop_filter8_sse4(src+8*stride, stride, pq);
+	ff_vc1_h_loop_filter8_sse4(src, stride, pq);
+	ff_vc1_h_loop_filter8_sse4(src + 8 * stride, stride, pq);
 }
 
 #endif
 
-void ff_put_vc1_chroma_mc8_mmx_nornd  (uint8_t *dst, uint8_t *src,
+void ff_put_vc1_chroma_mc8_mmx_nornd(uint8_t* dst, uint8_t* src,
+                                     int stride, int h, int x, int y);
+void ff_avg_vc1_chroma_mc8_mmx2_nornd(uint8_t* dst, uint8_t* src,
+                                      int stride, int h, int x, int y);
+void ff_avg_vc1_chroma_mc8_3dnow_nornd(uint8_t* dst, uint8_t* src,
                                        int stride, int h, int x, int y);
-void ff_avg_vc1_chroma_mc8_mmx2_nornd (uint8_t *dst, uint8_t *src,
+void ff_put_vc1_chroma_mc8_ssse3_nornd(uint8_t* dst, uint8_t* src,
                                        int stride, int h, int x, int y);
-void ff_avg_vc1_chroma_mc8_3dnow_nornd(uint8_t *dst, uint8_t *src,
-                                       int stride, int h, int x, int y);
-void ff_put_vc1_chroma_mc8_ssse3_nornd(uint8_t *dst, uint8_t *src,
-                                       int stride, int h, int x, int y);
-void ff_avg_vc1_chroma_mc8_ssse3_nornd(uint8_t *dst, uint8_t *src,
+void ff_avg_vc1_chroma_mc8_ssse3_nornd(uint8_t* dst, uint8_t* src,
                                        int stride, int h, int x, int y);
 
-void ff_vc1dsp_init_mmx(VC1DSPContext *dsp)
+void ff_vc1dsp_init_mmx(VC1DSPContext* dsp)
 {
-    int mm_flags = av_get_cpu_flags();
+	int mm_flags = av_get_cpu_flags();
 
-    if (mm_flags & AV_CPU_FLAG_MMX) {
-        dsp->put_vc1_mspel_pixels_tab[ 0] = ff_put_vc1_mspel_mc00_mmx;
-        dsp->put_vc1_mspel_pixels_tab[ 4] = put_vc1_mspel_mc01_mmx;
-        dsp->put_vc1_mspel_pixels_tab[ 8] = put_vc1_mspel_mc02_mmx;
-        dsp->put_vc1_mspel_pixels_tab[12] = put_vc1_mspel_mc03_mmx;
+	if (mm_flags & AV_CPU_FLAG_MMX)
+	{
+		dsp->put_vc1_mspel_pixels_tab[0] = ff_put_vc1_mspel_mc00_mmx;
+		dsp->put_vc1_mspel_pixels_tab[4] = put_vc1_mspel_mc01_mmx;
+		dsp->put_vc1_mspel_pixels_tab[8] = put_vc1_mspel_mc02_mmx;
+		dsp->put_vc1_mspel_pixels_tab[12] = put_vc1_mspel_mc03_mmx;
 
-        dsp->put_vc1_mspel_pixels_tab[ 1] = put_vc1_mspel_mc10_mmx;
-        dsp->put_vc1_mspel_pixels_tab[ 5] = put_vc1_mspel_mc11_mmx;
-        dsp->put_vc1_mspel_pixels_tab[ 9] = put_vc1_mspel_mc12_mmx;
-        dsp->put_vc1_mspel_pixels_tab[13] = put_vc1_mspel_mc13_mmx;
+		dsp->put_vc1_mspel_pixels_tab[1] = put_vc1_mspel_mc10_mmx;
+		dsp->put_vc1_mspel_pixels_tab[5] = put_vc1_mspel_mc11_mmx;
+		dsp->put_vc1_mspel_pixels_tab[9] = put_vc1_mspel_mc12_mmx;
+		dsp->put_vc1_mspel_pixels_tab[13] = put_vc1_mspel_mc13_mmx;
 
-        dsp->put_vc1_mspel_pixels_tab[ 2] = put_vc1_mspel_mc20_mmx;
-        dsp->put_vc1_mspel_pixels_tab[ 6] = put_vc1_mspel_mc21_mmx;
-        dsp->put_vc1_mspel_pixels_tab[10] = put_vc1_mspel_mc22_mmx;
-        dsp->put_vc1_mspel_pixels_tab[14] = put_vc1_mspel_mc23_mmx;
+		dsp->put_vc1_mspel_pixels_tab[2] = put_vc1_mspel_mc20_mmx;
+		dsp->put_vc1_mspel_pixels_tab[6] = put_vc1_mspel_mc21_mmx;
+		dsp->put_vc1_mspel_pixels_tab[10] = put_vc1_mspel_mc22_mmx;
+		dsp->put_vc1_mspel_pixels_tab[14] = put_vc1_mspel_mc23_mmx;
 
-        dsp->put_vc1_mspel_pixels_tab[ 3] = put_vc1_mspel_mc30_mmx;
-        dsp->put_vc1_mspel_pixels_tab[ 7] = put_vc1_mspel_mc31_mmx;
-        dsp->put_vc1_mspel_pixels_tab[11] = put_vc1_mspel_mc32_mmx;
-        dsp->put_vc1_mspel_pixels_tab[15] = put_vc1_mspel_mc33_mmx;
+		dsp->put_vc1_mspel_pixels_tab[3] = put_vc1_mspel_mc30_mmx;
+		dsp->put_vc1_mspel_pixels_tab[7] = put_vc1_mspel_mc31_mmx;
+		dsp->put_vc1_mspel_pixels_tab[11] = put_vc1_mspel_mc32_mmx;
+		dsp->put_vc1_mspel_pixels_tab[15] = put_vc1_mspel_mc33_mmx;
 
-        if (HAVE_YASM)
-            dsp->put_no_rnd_vc1_chroma_pixels_tab[0]= ff_put_vc1_chroma_mc8_mmx_nornd;
-    }
+		if (HAVE_YASM)
+			dsp->put_no_rnd_vc1_chroma_pixels_tab[0] = ff_put_vc1_chroma_mc8_mmx_nornd;
+	}
 
-    if (mm_flags & AV_CPU_FLAG_MMX2){
-        dsp->avg_vc1_mspel_pixels_tab[ 0] = ff_avg_vc1_mspel_mc00_mmx2;
-        dsp->avg_vc1_mspel_pixels_tab[ 4] = avg_vc1_mspel_mc01_mmx2;
-        dsp->avg_vc1_mspel_pixels_tab[ 8] = avg_vc1_mspel_mc02_mmx2;
-        dsp->avg_vc1_mspel_pixels_tab[12] = avg_vc1_mspel_mc03_mmx2;
+	if (mm_flags & AV_CPU_FLAG_MMX2)
+	{
+		dsp->avg_vc1_mspel_pixels_tab[0] = ff_avg_vc1_mspel_mc00_mmx2;
+		dsp->avg_vc1_mspel_pixels_tab[4] = avg_vc1_mspel_mc01_mmx2;
+		dsp->avg_vc1_mspel_pixels_tab[8] = avg_vc1_mspel_mc02_mmx2;
+		dsp->avg_vc1_mspel_pixels_tab[12] = avg_vc1_mspel_mc03_mmx2;
 
-        dsp->avg_vc1_mspel_pixels_tab[ 1] = avg_vc1_mspel_mc10_mmx2;
-        dsp->avg_vc1_mspel_pixels_tab[ 5] = avg_vc1_mspel_mc11_mmx2;
-        dsp->avg_vc1_mspel_pixels_tab[ 9] = avg_vc1_mspel_mc12_mmx2;
-        dsp->avg_vc1_mspel_pixels_tab[13] = avg_vc1_mspel_mc13_mmx2;
+		dsp->avg_vc1_mspel_pixels_tab[1] = avg_vc1_mspel_mc10_mmx2;
+		dsp->avg_vc1_mspel_pixels_tab[5] = avg_vc1_mspel_mc11_mmx2;
+		dsp->avg_vc1_mspel_pixels_tab[9] = avg_vc1_mspel_mc12_mmx2;
+		dsp->avg_vc1_mspel_pixels_tab[13] = avg_vc1_mspel_mc13_mmx2;
 
-        dsp->avg_vc1_mspel_pixels_tab[ 2] = avg_vc1_mspel_mc20_mmx2;
-        dsp->avg_vc1_mspel_pixels_tab[ 6] = avg_vc1_mspel_mc21_mmx2;
-        dsp->avg_vc1_mspel_pixels_tab[10] = avg_vc1_mspel_mc22_mmx2;
-        dsp->avg_vc1_mspel_pixels_tab[14] = avg_vc1_mspel_mc23_mmx2;
+		dsp->avg_vc1_mspel_pixels_tab[2] = avg_vc1_mspel_mc20_mmx2;
+		dsp->avg_vc1_mspel_pixels_tab[6] = avg_vc1_mspel_mc21_mmx2;
+		dsp->avg_vc1_mspel_pixels_tab[10] = avg_vc1_mspel_mc22_mmx2;
+		dsp->avg_vc1_mspel_pixels_tab[14] = avg_vc1_mspel_mc23_mmx2;
 
-        dsp->avg_vc1_mspel_pixels_tab[ 3] = avg_vc1_mspel_mc30_mmx2;
-        dsp->avg_vc1_mspel_pixels_tab[ 7] = avg_vc1_mspel_mc31_mmx2;
-        dsp->avg_vc1_mspel_pixels_tab[11] = avg_vc1_mspel_mc32_mmx2;
-        dsp->avg_vc1_mspel_pixels_tab[15] = avg_vc1_mspel_mc33_mmx2;
+		dsp->avg_vc1_mspel_pixels_tab[3] = avg_vc1_mspel_mc30_mmx2;
+		dsp->avg_vc1_mspel_pixels_tab[7] = avg_vc1_mspel_mc31_mmx2;
+		dsp->avg_vc1_mspel_pixels_tab[11] = avg_vc1_mspel_mc32_mmx2;
+		dsp->avg_vc1_mspel_pixels_tab[15] = avg_vc1_mspel_mc33_mmx2;
 
-        dsp->vc1_inv_trans_8x8_dc = vc1_inv_trans_8x8_dc_mmx2;
-        dsp->vc1_inv_trans_4x8_dc = vc1_inv_trans_4x8_dc_mmx2;
-        dsp->vc1_inv_trans_8x4_dc = vc1_inv_trans_8x4_dc_mmx2;
-        dsp->vc1_inv_trans_4x4_dc = vc1_inv_trans_4x4_dc_mmx2;
+		dsp->vc1_inv_trans_8x8_dc = vc1_inv_trans_8x8_dc_mmx2;
+		dsp->vc1_inv_trans_4x8_dc = vc1_inv_trans_4x8_dc_mmx2;
+		dsp->vc1_inv_trans_8x4_dc = vc1_inv_trans_8x4_dc_mmx2;
+		dsp->vc1_inv_trans_4x4_dc = vc1_inv_trans_4x4_dc_mmx2;
 
-        if (HAVE_YASM)
-            dsp->avg_no_rnd_vc1_chroma_pixels_tab[0]= ff_avg_vc1_chroma_mc8_mmx2_nornd;
-    } else if (HAVE_YASM && mm_flags & AV_CPU_FLAG_3DNOW) {
-        dsp->avg_no_rnd_vc1_chroma_pixels_tab[0]= ff_avg_vc1_chroma_mc8_3dnow_nornd;
-    }
+		if (HAVE_YASM)
+			dsp->avg_no_rnd_vc1_chroma_pixels_tab[0] = ff_avg_vc1_chroma_mc8_mmx2_nornd;
+	}
+	else if (HAVE_YASM&& mm_flags & AV_CPU_FLAG_3DNOW)
+	{
+		dsp->avg_no_rnd_vc1_chroma_pixels_tab[0] = ff_avg_vc1_chroma_mc8_3dnow_nornd;
+	}
 
-    if (HAVE_YASM && mm_flags & AV_CPU_FLAG_SSSE3) {
-        dsp->put_no_rnd_vc1_chroma_pixels_tab[0]= ff_put_vc1_chroma_mc8_ssse3_nornd;
-        dsp->avg_no_rnd_vc1_chroma_pixels_tab[0]= ff_avg_vc1_chroma_mc8_ssse3_nornd;
-    }
+	if (HAVE_YASM&& mm_flags & AV_CPU_FLAG_SSSE3)
+	{
+		dsp->put_no_rnd_vc1_chroma_pixels_tab[0] = ff_put_vc1_chroma_mc8_ssse3_nornd;
+		dsp->avg_no_rnd_vc1_chroma_pixels_tab[0] = ff_avg_vc1_chroma_mc8_ssse3_nornd;
+	}
 
 #define ASSIGN_LF(EXT) \
         dsp->vc1_v_loop_filter4  = ff_vc1_v_loop_filter4_ ## EXT; \
@@ -801,25 +837,25 @@ void ff_vc1dsp_init_mmx(VC1DSPContext *dsp)
         dsp->vc1_h_loop_filter16 = vc1_h_loop_filter16_ ## EXT
 
 #if HAVE_YASM
-    if (mm_flags & AV_CPU_FLAG_MMX) {
-    }
-    return;
-    if (mm_flags & AV_CPU_FLAG_MMX2) {
-        ASSIGN_LF(mmx2);
-    }
+	if (mm_flags & AV_CPU_FLAG_MMX) {
+	}
+	return;
+	if (mm_flags & AV_CPU_FLAG_MMX2) {
+		ASSIGN_LF(mmx2);
+	}
 
-    if (mm_flags & AV_CPU_FLAG_SSE2) {
-        dsp->vc1_v_loop_filter8  = ff_vc1_v_loop_filter8_sse2;
-        dsp->vc1_h_loop_filter8  = ff_vc1_h_loop_filter8_sse2;
-        dsp->vc1_v_loop_filter16 = vc1_v_loop_filter16_sse2;
-        dsp->vc1_h_loop_filter16 = vc1_h_loop_filter16_sse2;
-    }
-    if (mm_flags & AV_CPU_FLAG_SSSE3) {
-        ASSIGN_LF(ssse3);
-    }
-    if (mm_flags & AV_CPU_FLAG_SSE4) {
-        dsp->vc1_h_loop_filter8  = ff_vc1_h_loop_filter8_sse4;
-        dsp->vc1_h_loop_filter16 = vc1_h_loop_filter16_sse4;
-    }
+	if (mm_flags & AV_CPU_FLAG_SSE2) {
+		dsp->vc1_v_loop_filter8 = ff_vc1_v_loop_filter8_sse2;
+		dsp->vc1_h_loop_filter8 = ff_vc1_h_loop_filter8_sse2;
+		dsp->vc1_v_loop_filter16 = vc1_v_loop_filter16_sse2;
+		dsp->vc1_h_loop_filter16 = vc1_h_loop_filter16_sse2;
+	}
+	if (mm_flags & AV_CPU_FLAG_SSSE3) {
+		ASSIGN_LF(ssse3);
+	}
+	if (mm_flags & AV_CPU_FLAG_SSE4) {
+		dsp->vc1_h_loop_filter8 = ff_vc1_h_loop_filter8_sse4;
+		dsp->vc1_h_loop_filter16 = vc1_h_loop_filter16_sse4;
+	}
 #endif
 }

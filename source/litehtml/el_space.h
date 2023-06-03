@@ -7,9 +7,9 @@ namespace litehtml
 	class el_space : public el_text
 	{
 	public:
-		el_space(litehtml::document* doc);
-		virtual ~el_space();
+		el_space(document* doc);
+		~el_space() override;
 
-		virtual bool			is_white_space();
+		bool is_white_space() override;
 	};
 }

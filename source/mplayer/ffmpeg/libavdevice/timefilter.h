@@ -35,7 +35,6 @@
  */
 typedef struct TimeFilter TimeFilter;
 
-
 /**
  * Create a new Delay Locked Loop time filter
  *
@@ -61,7 +60,7 @@ typedef struct TimeFilter TimeFilter;
  * For more details about these parameters and background concepts please see:
  * http://www.kokkinizita.net/papers/usingdll.pdf
  */
-TimeFilter * ff_timefilter_new(double clock_period, double feedback2_factor, double feedback3_factor);
+TimeFilter* ff_timefilter_new(double clock_period, double feedback2_factor, double feedback3_factor);
 
 /**
  * Update the filter
@@ -79,7 +78,7 @@ TimeFilter * ff_timefilter_new(double clock_period, double feedback2_factor, dou
  *
  * @return the filtered time, in seconds
  */
-double ff_timefilter_update(TimeFilter *self, double system_time, double period);
+double ff_timefilter_update(TimeFilter* self, double system_time, double period);
 
 /**
  * Evaluate the filter at a specified time
@@ -88,7 +87,7 @@ double ff_timefilter_update(TimeFilter *self, double system_time, double period)
  *               (last call to ff_timefilter_update).
  * @return  the filtered time
  */
-double ff_timefilter_eval(TimeFilter *self, double delta);
+double ff_timefilter_eval(TimeFilter* self, double delta);
 
 /**
  * Reset the filter
@@ -98,11 +97,11 @@ double ff_timefilter_eval(TimeFilter *self, double delta);
  * Warning: after calling this, the filter is in an undetermined state until
  * the next call to ff_timefilter_update()
  */
-void ff_timefilter_reset(TimeFilter *);
+void ff_timefilter_reset(TimeFilter*);
 
 /**
  * Free all resources associated with the filter
  */
-void ff_timefilter_destroy(TimeFilter *);
+void ff_timefilter_destroy(TimeFilter*);
 
 #endif /* AVDEVICE_TIMEFILTER_H */

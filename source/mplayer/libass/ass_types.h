@@ -35,52 +35,54 @@ typedef struct parser_priv ASS_ParserPriv;
 typedef struct ass_library ASS_Library;
 
 /* ASS Style: line */
-typedef struct ass_style {
-    char *Name;
-    char *FontName;
-    double FontSize;
-    uint32_t PrimaryColour;
-    uint32_t SecondaryColour;
-    uint32_t OutlineColour;
-    uint32_t BackColour;
-    int Bold;
-    int Italic;
-    int Underline;
-    int StrikeOut;
-    double ScaleX;
-    double ScaleY;
-    double Spacing;
-    int Angle;
-    int BorderStyle;
-    double Outline;
-    double Shadow;
-    int Alignment;
-    int MarginL;
-    int MarginR;
-    int MarginV;
-    int Encoding;
-    int treat_fontname_as_pattern;
+typedef struct ass_style
+{
+	char* Name;
+	char* FontName;
+	double FontSize;
+	uint32_t PrimaryColour;
+	uint32_t SecondaryColour;
+	uint32_t OutlineColour;
+	uint32_t BackColour;
+	int Bold;
+	int Italic;
+	int Underline;
+	int StrikeOut;
+	double ScaleX;
+	double ScaleY;
+	double Spacing;
+	int Angle;
+	int BorderStyle;
+	double Outline;
+	double Shadow;
+	int Alignment;
+	int MarginL;
+	int MarginR;
+	int MarginV;
+	int Encoding;
+	int treat_fontname_as_pattern;
 } ASS_Style;
 
 /*
  * ASS_Event corresponds to a single Dialogue line;
  * text is stored as-is, style overrides will be parsed later.
  */
-typedef struct ass_event {
-    long long Start;            // ms
-    long long Duration;         // ms
+typedef struct ass_event
+{
+	long long Start; // ms
+	long long Duration; // ms
 
-    int ReadOrder;
-    int Layer;
-    int Style;
-    char *Name;
-    int MarginL;
-    int MarginR;
-    int MarginV;
-    char *Effect;
-    char *Text;
+	int ReadOrder;
+	int Layer;
+	int Style;
+	char* Name;
+	int MarginL;
+	int MarginR;
+	int MarginV;
+	char* Effect;
+	char* Text;
 
-    ASS_RenderPriv *render_priv;
+	ASS_RenderPriv* render_priv;
 } ASS_Event;
 
 /*
@@ -88,37 +90,39 @@ typedef struct ass_event {
  * (no real difference between them); it can be used in rendering after the
  * headers are parsed (i.e. events format line read).
  */
-typedef struct ass_track {
-    int n_styles;           // amount used
-    int max_styles;         // amount allocated
-    int n_events;
-    int max_events;
-    ASS_Style *styles;    // array of styles, max_styles length, n_styles used
-    ASS_Event *events;    // the same as styles
+typedef struct ass_track
+{
+	int n_styles; // amount used
+	int max_styles; // amount allocated
+	int n_events;
+	int max_events;
+	ASS_Style* styles; // array of styles, max_styles length, n_styles used
+	ASS_Event* events; // the same as styles
 
-    char *style_format;     // style format line (everything after "Format: ")
-    char *event_format;     // event format line
+	char* style_format; // style format line (everything after "Format: ")
+	char* event_format; // event format line
 
-    enum {
-        TRACK_TYPE_UNKNOWN = 0,
-        TRACK_TYPE_ASS,
-        TRACK_TYPE_SSA
-    } track_type;
+	enum
+	{
+		TRACK_TYPE_UNKNOWN = 0,
+		TRACK_TYPE_ASS,
+		TRACK_TYPE_SSA
+	} track_type;
 
-    // Script header fields
-    int PlayResX;
-    int PlayResY;
-    double Timer;
-    int WrapStyle;
-    int ScaledBorderAndShadow;
-    int Kerning;
-    char *Language;
+	// Script header fields
+	int PlayResX;
+	int PlayResY;
+	double Timer;
+	int WrapStyle;
+	int ScaledBorderAndShadow;
+	int Kerning;
+	char* Language;
 
-    int default_style;      // index of default style
-    char *name;             // file name in case of external subs, 0 for streams
+	int default_style; // index of default style
+	char* name; // file name in case of external subs, 0 for streams
 
-    ASS_Library *library;
-    ASS_ParserPriv *parser_priv;
+	ASS_Library* library;
+	ASS_ParserPriv* parser_priv;
 } ASS_Track;
 
 #endif /* LIBASS_TYPES_H */

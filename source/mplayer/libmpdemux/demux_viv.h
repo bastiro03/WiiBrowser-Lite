@@ -19,7 +19,7 @@
 #ifndef MPLAYER_DEMUX_VIV_H
 #define MPLAYER_DEMUX_VIV_H
 
-extern char *vivo_param_acodec;
+extern char* vivo_param_acodec;
 
 extern int vivo_param_abitrate;
 extern int vivo_param_bytesperblock;

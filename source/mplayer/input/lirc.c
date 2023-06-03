@@ -31,93 +31,101 @@
 #include "input.h"
 #include "lirc.h"
 
-static struct lirc_config *lirc_config;
-char *lirc_configfile;
+static struct lirc_config* lirc_config;
+char* lirc_configfile;
 
 static char* cmd_buf = NULL;
 
 int
-mp_input_lirc_init(void) {
-  int lirc_sock;
-  int mode;
+mp_input_lirc_init(void)
+{
+	int lirc_sock;
+	int mode;
 
-  mp_msg(MSGT_LIRC, MSGL_V, "Setting up LIRC support...\n");
-  if((lirc_sock=lirc_init("mplayer",1))==-1){
-    mp_msg(MSGT_LIRC,MSGL_ERR,MSGTR_LIRCopenfailed);
-    return -1;
-  }
+	mp_msg(MSGT_LIRC, MSGL_V, "Setting up LIRC support...\n");
+	if ((lirc_sock = lirc_init("mplayer", 1)) == -1)
+	{
+		mp_msg(MSGT_LIRC, MSGL_ERR, MSGTR_LIRCopenfailed);
+		return -1;
+	}
 
-  mode = fcntl(lirc_sock, F_GETFL);
-  if (mode < 0 || fcntl(lirc_sock, F_SETFL, mode | O_NONBLOCK) < 0) {
-    mp_msg(MSGT_LIRC, MSGL_ERR, "setting non-blocking mode failed: %s\n",
-	strerror(errno));
-    lirc_deinit();
-    return -1;
-  }
+	mode = fcntl(lirc_sock, F_GETFL);
+	if (mode < 0 || fcntl(lirc_sock, F_SETFL, mode | O_NONBLOCK) < 0)
+	{
+		mp_msg(MSGT_LIRC, MSGL_ERR, "setting non-blocking mode failed: %s\n",
+		       strerror(errno));
+		lirc_deinit();
+		return -1;
+	}
 
-  if(lirc_readconfig( lirc_configfile,&lirc_config,NULL )!=0 ){
-    mp_msg(MSGT_LIRC,MSGL_ERR,MSGTR_LIRCcfgerr,
-		    lirc_configfile == NULL ? "~/.lircrc" : lirc_configfile);
-    lirc_deinit();
-    return -1;
-  }
+	if (lirc_readconfig(lirc_configfile, &lirc_config, NULL) != 0)
+	{
+		mp_msg(MSGT_LIRC, MSGL_ERR, MSGTR_LIRCcfgerr,
+		       lirc_configfile == NULL ? "~/.lircrc" : lirc_configfile);
+		lirc_deinit();
+		return -1;
+	}
 
-  return lirc_sock;
+	return lirc_sock;
 }
 
-int mp_input_lirc_read(int fd,char* dest, int s) {
-  int r,cl = 0;
-  char *code = NULL,*c = NULL;
+int mp_input_lirc_read(int fd, char* dest, int s)
+{
+	int r, cl = 0;
+	char *code = NULL, *c = NULL;
 
-  // We have something in the buffer return it
-  if(cmd_buf != NULL) {
-    int l = strlen(cmd_buf), w = l > s ? s : l;
-    memcpy(dest,cmd_buf,w);
-    l -= w;
-    if(l > 0)
-      memmove(cmd_buf,&cmd_buf[w],l+1);
-    else {
-      free(cmd_buf);
-      cmd_buf = NULL;
-    }
-    return w;
-  }
+	// We have something in the buffer return it
+	if (cmd_buf != NULL)
+	{
+		int l = strlen(cmd_buf), w = l > s ? s : l;
+		memcpy(dest, cmd_buf, w);
+		l -= w;
+		if (l > 0)
+			memmove(cmd_buf, &cmd_buf[w], l + 1);
+		else
+		{
+			free(cmd_buf);
+			cmd_buf = NULL;
+		}
+		return w;
+	}
 
-  // Nothing in the buffer, poll the lirc fd
-  if(lirc_nextcode(&code) != 0) {
-    mp_msg(MSGT_LIRC,MSGL_ERR,"Lirc error :(\n");
-    return MP_INPUT_DEAD;
-  }
+	// Nothing in the buffer, poll the lirc fd
+	if (lirc_nextcode(&code) != 0)
+	{
+		mp_msg(MSGT_LIRC, MSGL_ERR, "Lirc error :(\n");
+		return MP_INPUT_DEAD;
+	}
 
-  if(!code) return MP_INPUT_NOTHING;
+	if (!code) return MP_INPUT_NOTHING;
 
-  // We put all cmds in a single buffer separated by \n
-  while((r = lirc_code2char(lirc_config,code,&c))==0 && c!=NULL) {
-    int l = strlen(c);
-    if(l <= 0)
-      continue;
-    cmd_buf = realloc(cmd_buf,cl+l+2);
-    memcpy(&cmd_buf[cl],c,l);
-    cl += l+1;
-    cmd_buf[cl-1] = '\n';
-    cmd_buf[cl] = '\0';
-  }
+	// We put all cmds in a single buffer separated by \n
+	while ((r = lirc_code2char(lirc_config, code, &c)) == 0 && c != NULL)
+	{
+		int l = strlen(c);
+		if (l <= 0)
+			continue;
+		cmd_buf = realloc(cmd_buf, cl + l + 2);
+		memcpy(&cmd_buf[cl], c, l);
+		cl += l + 1;
+		cmd_buf[cl - 1] = '\n';
+		cmd_buf[cl] = '\0';
+	}
 
-  free(code);
+	free(code);
 
-  if(r < 0)
-    return MP_INPUT_DEAD;
-  else if(cmd_buf) // return the first command in the buffer
-    return mp_input_lirc_read(fd,dest,s);
-  else
-    return MP_INPUT_RETRY;
-
+	if (r < 0)
+		return MP_INPUT_DEAD;
+	if (cmd_buf) // return the first command in the buffer
+		return mp_input_lirc_read(fd, dest, s);
+	return MP_INPUT_RETRY;
 }
 
 void
-mp_input_lirc_close(int fd) {
-  free(cmd_buf);
-  cmd_buf = NULL;
-  lirc_freeconfig(lirc_config);
-  lirc_deinit();
+mp_input_lirc_close(int fd)
+{
+	free(cmd_buf);
+	cmd_buf = NULL;
+	lirc_freeconfig(lirc_config);
+	lirc_deinit();
 }

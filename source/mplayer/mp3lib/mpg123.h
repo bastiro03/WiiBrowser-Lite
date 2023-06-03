@@ -56,89 +56,92 @@ typedef float real;
 
 struct al_table
 {
-  short bits;
-  short d;
+	short bits;
+	short d;
 };
 
-struct frame {
-         struct al_table *alloc;
-         int (*synth)(real *,int,unsigned char *,int *);
-    int (*synth_mono)(real *,unsigned char *,int *);
-    int stereo;
-    int jsbound;
-    int single;
-    int II_sblimit;
-    int down_sample_sblimit;
-         int lsf;
-         int mpeg25;
-    int down_sample;
-         int header_change;
-    int lay;
-    int error_protection;
-    int bitrate_index;
-    int sampling_frequency;
-    int padding;
-    int extension;
-    int mode;
-         int mode_ext;
-    int copyright;
-         int original;
-         int emphasis;
-         int framesize; /* computed framesize */
+struct frame
+{
+	struct al_table* alloc;
+	int (*synth)(real*, int, unsigned char*, int*);
+	int (*synth_mono)(real*, unsigned char*, int*);
+	int stereo;
+	int jsbound;
+	int single;
+	int II_sblimit;
+	int down_sample_sblimit;
+	int lsf;
+	int mpeg25;
+	int down_sample;
+	int header_change;
+	int lay;
+	int error_protection;
+	int bitrate_index;
+	int sampling_frequency;
+	int padding;
+	int extension;
+	int mode;
+	int mode_ext;
+	int copyright;
+	int original;
+	int emphasis;
+	int framesize; /* computed framesize */
 };
 
-
-struct gr_info_s {
-      int scfsi;
-      unsigned part2_3_length;
-      unsigned big_values;
-      unsigned scalefac_compress;
-      unsigned block_type;
-      unsigned mixed_block_flag;
-      unsigned table_select[3];
-      unsigned subblock_gain[3];
-      unsigned maxband[3];
-      unsigned maxbandl;
-      unsigned maxb;
-      unsigned region1start;
-      unsigned region2start;
-      unsigned preflag;
-      unsigned scalefac_scale;
-      unsigned count1table_select;
-      real *full_gain[3];
-      real *pow2gain;
+struct gr_info_s
+{
+	int scfsi;
+	unsigned part2_3_length;
+	unsigned big_values;
+	unsigned scalefac_compress;
+	unsigned block_type;
+	unsigned mixed_block_flag;
+	unsigned table_select[3];
+	unsigned subblock_gain[3];
+	unsigned maxband[3];
+	unsigned maxbandl;
+	unsigned maxb;
+	unsigned region1start;
+	unsigned region2start;
+	unsigned preflag;
+	unsigned scalefac_scale;
+	unsigned count1table_select;
+	real* full_gain[3];
+	real* pow2gain;
 };
 
 struct III_sideinfo
 {
-  unsigned main_data_begin;
-  unsigned private_bits;
-  struct {
-         struct gr_info_s gr[2];
-  } ch[2];
+	unsigned main_data_begin;
+	unsigned private_bits;
+
+	struct
+	{
+		struct gr_info_s gr[2];
+	} ch[2];
 };
 
-extern real mp3lib_decwin[(512+32)];
-extern real *mp3lib_pnts[];
+extern real mp3lib_decwin[(512 + 32)];
+extern real* mp3lib_pnts[];
 
-int synth_1to1_pent( real *, int, short * );
-int synth_1to1_MMX( real *, int, short * );
-int synth_1to1_MMX_s(real *, int, short *, short *, int *);
+int synth_1to1_pent(real*, int, short*);
+int synth_1to1_MMX(real*, int, short*);
+int synth_1to1_MMX_s(real*, int, short*, short*, int*);
 
-void dct36_3dnow(real *, real *, real *, real *, real *);
-void dct36_3dnowex(real *, real *, real *, real *, real *);
-void dct36_sse(real *, real *, real *, real *, real *);
+void dct36_3dnow(real*, real*, real*, real*, real*);
+void dct36_3dnowex(real*, real*, real*, real*, real*);
+void dct36_sse(real*, real*, real*, real*, real*);
 
-void dct64_MMX(short *, short *, real *);
-void dct64_MMX_3dnow(short *, short *, real *);
-void dct64_MMX_3dnowex(short *, short *, real *);
-void dct64_sse(short *, short *, real *);
-void dct64_altivec(real *, real *, real *);
-extern void (*dct64_MMX_func)(short *, short *, real *);
+void dct64_MMX(short*, short*, real*);
+void dct64_MMX_3dnow(short*, short*, real*);
+void dct64_MMX_3dnowex(short*, short*, real*);
+void dct64_sse(short*, short*, real*);
+void dct64_altivec(real*, real*, real*);
+extern void (*dct64_MMX_func)(short*, short*, real*);
 
-void mp3lib_dct64(real *, real *, real *);
+void mp3lib_dct64(real*, real*, real*);
 
-typedef int (*synth_func_t)( real *,int,short * );
-typedef void (*dct36_func_t)(real *,real *,real *,real *,real *);
+typedef int (*synth_func_t)(real*, int, short*);
+typedef void (*dct36_func_t)(real*, real*, real*, real*, real*);
 
 #endif /* MPLAYER_MP3LIB_MPG123_H */

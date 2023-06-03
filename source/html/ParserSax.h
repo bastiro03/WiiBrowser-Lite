@@ -11,54 +11,69 @@ namespace htmlcxx
 	{
 		class ParserSax
 		{
-			public:
-				ParserSax() : mpLiteral(0), mCdata(false) {}
-				virtual ~ParserSax() {}
+		public:
+			ParserSax() : mpLiteral(nullptr), mCdata(false)
+			{
+			}
 
-				/** Parse the html code */
-				void parse(const std::string &html);
+			virtual ~ParserSax()
+			{
+			}
 
-				template <typename _Iterator>
-				void parse(_Iterator begin, _Iterator end);
+			/** Parse the html code */
+			void parse(const std::string& html);
 
-			protected:
-				// Redefine this if you want to do some initialization before
-				// the parsing
-				virtual void beginParsing() {}
+			template <typename _Iterator>
+			void parse(_Iterator begin, _Iterator end);
 
-				virtual void foundTag(Node node, bool isEnd) {}
-				virtual void foundText(Node node) {}
-				virtual void foundComment(Node node) {}
+		protected:
+			// Redefine this if you want to do some initialization before
+			// the parsing
+			virtual void beginParsing()
+			{
+			}
 
-				virtual void endParsing() {}
+			virtual void foundTag(Node node, bool isEnd)
+			{
+			}
 
+			virtual void foundText(Node node)
+			{
+			}
 
-				template <typename _Iterator>
-				void parse(_Iterator &begin, _Iterator &end,
-						std::forward_iterator_tag);
+			virtual void foundComment(Node node)
+			{
+			}
 
-				template <typename _Iterator>
-				void parseHtmlTag(_Iterator b, _Iterator c);
+			virtual void endParsing()
+			{
+			}
 
-				template <typename _Iterator>
-				void parseContent(_Iterator b, _Iterator c);
+			template <typename _Iterator>
+			void parse(_Iterator& begin, _Iterator& end,
+			           std::forward_iterator_tag);
 
-				template <typename _Iterator>
-				void parseComment(_Iterator b, _Iterator c);
+			template <typename _Iterator>
+			void parseHtmlTag(_Iterator b, _Iterator c);
 
-				template <typename _Iterator>
-				_Iterator skipHtmlTag(_Iterator ptr, _Iterator end);
-				
-				template <typename _Iterator>
-				_Iterator skipHtmlComment(_Iterator ptr, _Iterator end);
+			template <typename _Iterator>
+			void parseContent(_Iterator b, _Iterator c);
 
-				unsigned long mCurrentOffset;
-				const char *mpLiteral;
-				bool mCdata;
+			template <typename _Iterator>
+			void parseComment(_Iterator b, _Iterator c);
+
+			template <typename _Iterator>
+			_Iterator skipHtmlTag(_Iterator ptr, _Iterator end);
+
+			template <typename _Iterator>
+			_Iterator skipHtmlComment(_Iterator ptr, _Iterator end);
+
+			unsigned long mCurrentOffset;
+			const char* mpLiteral;
+			bool mCdata;
 		};
-
-	}//namespace HTML
-}//namespace htmlcxx
+	} //namespace HTML
+} //namespace htmlcxx
 
 #include "ParserSax.tcc"
 

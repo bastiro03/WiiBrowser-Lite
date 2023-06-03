@@ -26,13 +26,14 @@
 #include <stdlib.h>
 #define DATASIZE 53220
 
-typedef struct {
+typedef struct
+{
 	unsigned char data[DATASIZE];
-	int count;	/* the count of bytes written */
+	int count; /* the count of bytes written */
 	int oddstart;
 	int nibblewaiting;
 } encodedata;
 
-void pixbuf_encode_rle(int x, int y, int w, int h, char *inbuf, int stride, encodedata *ed);
+void pixbuf_encode_rle(int x, int y, int w, int h, char* inbuf, int stride, encodedata* ed);
 
 #endif /* MPLAYER_SPUENC_H */

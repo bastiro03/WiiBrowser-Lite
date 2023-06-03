@@ -29,109 +29,130 @@
 #include "mp_image.h"
 #include "vf.h"
 
-struct vf_priv_s {
-    double current;
-    double step;
-    int autostart;
-    int autostep;
-    unsigned have_step:1;
-    unsigned print:1;
+struct vf_priv_s
+{
+	double current;
+	double step;
+	int autostart;
+	int autostep;
+	unsigned have_step : 1;
+	unsigned print : 1;
 };
 
-static int put_image(vf_instance_t *vf, mp_image_t *src, double pts)
+static int put_image(vf_instance_t* vf, mp_image_t* src, double pts)
 {
-    struct vf_priv_s *p = vf->priv;
+	struct vf_priv_s* p = vf->priv;
 
-    if (p->print) {
-        if (pts == MP_NOPTS_VALUE)
-            mp_msg(MSGT_VFILTER, MSGL_INFO, "PTS: undef\n");
-        else
-            mp_msg(MSGT_VFILTER, MSGL_INFO, "PTS: %f\n", pts);
-    }
-    if (pts != MP_NOPTS_VALUE && p->autostart != 0) {
-        p->current = pts;
-        if (p->autostart > 0)
-            p->autostart--;
-    } else if (pts != MP_NOPTS_VALUE && p->autostep > 0) {
-        p->step = pts - p->current;
-        p->current = pts;
-        p->autostep--;
-        p->have_step = 1;
-    } else if (p->have_step) {
-        p->current += p->step;
-        pts = p->current;
-    } else {
-        pts = MP_NOPTS_VALUE;
-    }
-    return vf_next_put_image(vf, src, pts);
+	if (p->print)
+	{
+		if (pts == MP_NOPTS_VALUE)
+			mp_msg(MSGT_VFILTER, MSGL_INFO, "PTS: undef\n");
+		else
+			mp_msg(MSGT_VFILTER, MSGL_INFO, "PTS: %f\n", pts);
+	}
+	if (pts != MP_NOPTS_VALUE && p->autostart != 0)
+	{
+		p->current = pts;
+		if (p->autostart > 0)
+			p->autostart--;
+	}
+	else if (pts != MP_NOPTS_VALUE && p->autostep > 0)
+	{
+		p->step = pts - p->current;
+		p->current = pts;
+		p->autostep--;
+		p->have_step = 1;
+	}
+	else if (p->have_step)
+	{
+		p->current += p->step;
+		pts = p->current;
+	}
+	else
+	{
+		pts = MP_NOPTS_VALUE;
+	}
+	return vf_next_put_image(vf, src, pts);
 }
 
-static void uninit(vf_instance_t *vf)
+static void uninit(vf_instance_t* vf)
 {
-    free(vf->priv);
+	free(vf->priv);
 }
 
-static int parse_args(struct vf_priv_s *p, const char *args)
+static int parse_args(struct vf_priv_s* p, const char* args)
 {
-    int pos;
-    double num, denom = 1;
-    int iarg;
+	int pos;
+	double num, denom = 1;
+	int iarg;
 
-    while (*args != 0) {
-        pos = 0;
-        if (sscanf(args, "print%n", &pos) == 0 && pos > 0) {
-            p->print = 1;
-        } else if (sscanf(args, "fps=%lf%n/%lf%n", &num, &pos, &denom, &pos) >=
-                   1 && pos > 0) {
-            p->step = denom / num;
-            p->have_step = 1;
-        } else if (sscanf(args, "start=%lf%n", &num, &pos) >= 1 && pos > 0) {
-            p->current = num;
-        } else if (sscanf(args, "autostart=%d%n", &iarg, &pos) == 1 && pos > 0) {
-            p->autostart = iarg;
-        } else if (sscanf(args, "autofps=%d%n", &iarg, &pos) == 1 && pos > 0) {
-            p->autostep = iarg;
-        } else {
-            mp_msg(MSGT_VFILTER, MSGL_FATAL,
-                   "fixpts: unknown suboption: %s\n", args);
-            return 0;
-        }
-        args += pos;
-        if (*args == ':')
-            args++;
-    }
-    return 1;
+	while (*args != 0)
+	{
+		pos = 0;
+		if (sscanf(args, "print%n", &pos) == 0 && pos > 0)
+		{
+			p->print = 1;
+		}
+		else if (sscanf(args, "fps=%lf%n/%lf%n", &num, &pos, &denom, &pos) >=
+			1 && pos > 0)
+		{
+			p->step = denom / num;
+			p->have_step = 1;
+		}
+		else if (sscanf(args, "start=%lf%n", &num, &pos) >= 1 && pos > 0)
+		{
+			p->current = num;
+		}
+		else if (sscanf(args, "autostart=%d%n", &iarg, &pos) == 1 && pos > 0)
+		{
+			p->autostart = iarg;
+		}
+		else if (sscanf(args, "autofps=%d%n", &iarg, &pos) == 1 && pos > 0)
+		{
+			p->autostep = iarg;
+		}
+		else
+		{
+			mp_msg(MSGT_VFILTER, MSGL_FATAL,
+			       "fixpts: unknown suboption: %s\n", args);
+			return 0;
+		}
+		args += pos;
+		if (*args == ':')
+			args++;
+	}
+	return 1;
 }
 
-static int open(vf_instance_t *vf, char *args)
+static int open(vf_instance_t* vf, char* args)
 {
-    struct vf_priv_s *p;
-    struct vf_priv_s ptmp = {
-        .current = 0,
-        .step = 0,
-        .autostart = 0,
-        .autostep = 0,
-        .have_step = 0,
-        .print = 0,
-    };
+	struct vf_priv_s* p;
+	struct vf_priv_s ptmp = {
+		.current = 0,
+		.step = 0,
+		.autostart = 0,
+		.autostep = 0,
+		.have_step = 0,
+		.print = 0,
+	};
 
-    if (!parse_args(&ptmp, args == NULL ? "" : args))
-        return 0;
+	if (!parse_args(&ptmp, args == NULL ? "" : args))
+		return 0;
 
-    vf->put_image = put_image;
-    vf->uninit = uninit;
-    vf->priv = p = malloc(sizeof(struct vf_priv_s));
-    *p = ptmp;
-    p->current = -p->step;
+	vf->put_image = put_image;
+	vf->uninit = uninit;
+	vf->priv = p = malloc(sizeof(struct vf_priv_s));
+	*p = ptmp;
+	p->current = -p->step;
 
-    return 1;
+	return 1;
 }
 
 const vf_info_t vf_info_fixpts = {
-    "Fix presentation timestamps",
-    "fixpts",
-    "Nicolas George",
-    "",
-    &open,
-    NULL
+	"Fix presentation timestamps",
+	"fixpts",
+	"Nicolas George",
+	"",
+	&open,
+	NULL
 };

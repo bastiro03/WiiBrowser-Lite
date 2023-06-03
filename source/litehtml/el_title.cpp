@@ -2,14 +2,12 @@
 #include "el_title.h"
 #include "document.h"
 
-litehtml::el_title::el_title( litehtml::document* doc ) : litehtml::element(doc)
+litehtml::el_title::el_title(document* doc) : element(doc)
 {
-
 }
 
 litehtml::el_title::~el_title()
 {
-
 }
 
 void litehtml::el_title::finish()

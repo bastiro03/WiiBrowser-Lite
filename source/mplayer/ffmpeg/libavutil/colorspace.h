@@ -76,13 +76,13 @@
  cm[(((y) - 128) * FIX(127.0/112.0) + (ONE_HALF + (128 << SCALEBITS))) >> SCALEBITS]
 
 /* NOTE: the clamp is really necessary! */
-static inline int C_JPEG_TO_CCIR(int y) {
-    y = (((y - 128) * FIX(112.0/127.0) + (ONE_HALF + (128 << SCALEBITS))) >> SCALEBITS);
-    if (y < 16)
-        y = 16;
-    return y;
+static inline int C_JPEG_TO_CCIR(int y)
+{
+	y = (((y - 128) * FIX(112.0 / 127.0) + (ONE_HALF + (128 << SCALEBITS))) >> SCALEBITS);
+	if (y < 16)
+		y = 16;
+	return y;
 }
-
 
 #define RGB_TO_Y(r, g, b) \
 ((FIX(0.29900) * (r) + FIX(0.58700) * (g) + \

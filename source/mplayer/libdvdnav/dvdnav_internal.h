@@ -27,7 +27,7 @@
 
 #ifdef WIN32
 
-/* pthread_mutex_* wrapper for win32 */
+ /* pthread_mutex_* wrapper for win32 */
 #include <windows.h>
 #include <process.h>
 typedef CRITICAL_SECTION pthread_mutex_t;
@@ -39,13 +39,13 @@ typedef CRITICAL_SECTION pthread_mutex_t;
 #ifndef HAVE_GETTIMEOFDAY
 /* replacement gettimeofday implementation */
 #include <sys/timeb.h>
-static inline int _private_gettimeofday( struct timeval *tv, void *tz )
+static inline int _private_gettimeofday(struct timeval* tv, void* tz)
 {
-  struct timeb t;
-  ftime( &t );
-  tv->tv_sec = t.time;
-  tv->tv_usec = t.millitm * 1000;
-  return 0;
+	struct timeb t;
+	ftime(&t);
+	tv->tv_sec = t.time;
+	tv->tv_usec = t.millitm * 1000;
+	return 0;
 }
 #define gettimeofday(TV, TZ) _private_gettimeofday((TV), (TZ))
 #endif
@@ -93,96 +93,104 @@ typedef struct read_cache_s read_cache_t;
  */
 
 #ifndef audio_status_t
-typedef struct {
+typedef struct
+{
 #ifdef WORDS_BIGENDIAN
-  unsigned int available     : 1;
-  unsigned int zero1         : 4;
-  unsigned int stream_number : 3;
-  uint8_t zero2;
+	unsigned int available : 1;
+	unsigned int zero1 : 4;
+	unsigned int stream_number : 3;
+	uint8_t zero2;
 #else
-  uint8_t zero2;
-  unsigned int stream_number : 3;
-  unsigned int zero1         : 4;
-  unsigned int available     : 1;
+	uint8_t zero2;
+	unsigned int stream_number : 3;
+	unsigned int zero1 : 4;
+	unsigned int available : 1;
 #endif
-} ATTRIBUTE_PACKED audio_status_t;
+}
+
+ATTRIBUTE_PACKED audio_status_t;
 #endif
 
 #ifndef spu_status_t
-typedef struct {
+typedef struct
+{
 #ifdef WORDS_BIGENDIAN
-  unsigned int available               : 1;
-  unsigned int zero1                   : 2;
-  unsigned int stream_number_4_3       : 5;
-  unsigned int zero2                   : 3;
-  unsigned int stream_number_wide      : 5;
-  unsigned int zero3                   : 3;
-  unsigned int stream_number_letterbox : 5;
-  unsigned int zero4                   : 3;
-  unsigned int stream_number_pan_scan  : 5;
+	unsigned int available : 1;
+	unsigned int zero1 : 2;
+	unsigned int stream_number_4_3 : 5;
+	unsigned int zero2 : 3;
+	unsigned int stream_number_wide : 5;
+	unsigned int zero3 : 3;
+	unsigned int stream_number_letterbox : 5;
+	unsigned int zero4 : 3;
+	unsigned int stream_number_pan_scan : 5;
 #else
-  unsigned int stream_number_pan_scan  : 5;
-  unsigned int zero4                   : 3;
-  unsigned int stream_number_letterbox : 5;
-  unsigned int zero3                   : 3;
-  unsigned int stream_number_wide      : 5;
-  unsigned int zero2                   : 3;
-  unsigned int stream_number_4_3       : 5;
-  unsigned int zero1                   : 2;
-  unsigned int available               : 1;
+	unsigned int stream_number_pan_scan : 5;
+	unsigned int zero4 : 3;
+	unsigned int stream_number_letterbox : 5;
+	unsigned int zero3 : 3;
+	unsigned int stream_number_wide : 5;
+	unsigned int zero2 : 3;
+	unsigned int stream_number_4_3 : 5;
+	unsigned int zero1 : 2;
+	unsigned int available : 1;
 #endif
-} ATTRIBUTE_PACKED spu_status_t;
+}
+
+ATTRIBUTE_PACKED spu_status_t;
 #endif
 
-typedef struct dvdnav_vobu_s {
-  int32_t vobu_start;  /* Logical Absolute. MAX needed is 0x300000 */
-  int32_t vobu_length;
-  int32_t blockN;      /* Relative offset */
-  int32_t vobu_next;   /* Relative offset */
+typedef struct dvdnav_vobu_s
+{
+	int32_t vobu_start; /* Logical Absolute. MAX needed is 0x300000 */
+	int32_t vobu_length;
+	int32_t blockN; /* Relative offset */
+	int32_t vobu_next; /* Relative offset */
 } dvdnav_vobu_t;
 
 /** The main DVDNAV type **/
 
-struct dvdnav_s {
-  /* General data */
-  char        path[MAX_PATH_LEN]; /* Path to DVD device/dir */
-  dvd_file_t *file;               /* Currently opened file */
+struct dvdnav_s
+{
+	/* General data */
+	char path[MAX_PATH_LEN]; /* Path to DVD device/dir */
+	dvd_file_t* file; /* Currently opened file */
 
-  /* Position data */
-  vm_position_t position_next;
-  vm_position_t position_current;
-  dvdnav_vobu_t vobu;
+	/* Position data */
+	vm_position_t position_next;
+	vm_position_t position_current;
+	dvdnav_vobu_t vobu;
 
-  /* NAV data */
-  pci_t pci;
-  dsi_t dsi;
-  uint32_t last_cmd_nav_lbn;      /* detects when a command is issued on an already left NAV */
+	/* NAV data */
+	pci_t pci;
+	dsi_t dsi;
+	uint32_t last_cmd_nav_lbn; /* detects when a command is issued on an already left NAV */
 
-  /* Flags */
-  int skip_still;                 /* Set when skipping a still */
-  int sync_wait;                  /* applications should wait till they are in sync with us */
-  int sync_wait_skip;             /* Set when skipping wait state */
-  int spu_clut_changed;           /* The SPU CLUT changed */
-  int started;                    /* vm_start has been called? */
-  int use_read_ahead;             /* 1 - use read-ahead cache, 0 - don't */
-  int pgc_based;                  /* positioning works PGC based instead of PG based */
-  int cur_cell_time;              /* time expired since the beginning of the current cell, read from the dsi */
+	/* Flags */
+	int skip_still; /* Set when skipping a still */
+	int sync_wait; /* applications should wait till they are in sync with us */
+	int sync_wait_skip; /* Set when skipping wait state */
+	int spu_clut_changed; /* The SPU CLUT changed */
+	int started; /* vm_start has been called? */
+	int use_read_ahead; /* 1 - use read-ahead cache, 0 - don't */
+	int pgc_based; /* positioning works PGC based instead of PG based */
+	int cur_cell_time; /* time expired since the beginning of the current cell, read from the dsi */
 
-  /* VM */
-  vm_t *vm;
-  pthread_mutex_t vm_lock;
+	/* VM */
+	vm_t* vm;
+	pthread_mutex_t vm_lock;
 
-  /* Read-ahead cache */
-  read_cache_t *cache;
+	/* Read-ahead cache */
+	read_cache_t* cache;
 
-  /* Errors */
-  char err_str[MAX_ERR_LEN];
+	/* Errors */
+	char err_str[MAX_ERR_LEN];
 };
 
 /** HELPER FUNCTIONS **/
 
 /* converts a dvd_time_t to PTS ticks */
-int64_t dvdnav_convert_time(dvd_time_t *time);
+int64_t dvdnav_convert_time(dvd_time_t* time);
 
 /** USEFUL MACROS **/
 

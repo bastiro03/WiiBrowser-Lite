@@ -31,83 +31,87 @@
 #define BLOCK_SIZE    18
 #define BLOCK_SAMPLES 32
 
-typedef struct ADXDemuxerContext {
-    int header_size;
+typedef struct ADXDemuxerContext
+{
+	int header_size;
 } ADXDemuxerContext;
 
-static int adx_read_packet(AVFormatContext *s, AVPacket *pkt)
+static int adx_read_packet(AVFormatContext* s, AVPacket* pkt)
 {
-    ADXDemuxerContext *c = s->priv_data;
-    AVCodecContext *avctx = s->streams[0]->codec;
-    int ret, size;
+	ADXDemuxerContext* c = s->priv_data;
+	AVCodecContext* avctx = s->streams[0]->codec;
+	int ret, size;
 
-    size = BLOCK_SIZE * avctx->channels;
+	size = BLOCK_SIZE * avctx->channels;
 
-    pkt->pos = avio_tell(s->pb);
-    pkt->stream_index = 0;
+	pkt->pos = avio_tell(s->pb);
+	pkt->stream_index = 0;
 
-    ret = av_get_packet(s->pb, pkt, size);
-    if (ret != size) {
-        av_free_packet(pkt);
-        return ret < 0 ? ret : AVERROR(EIO);
-    }
-    if (AV_RB16(pkt->data) & 0x8000) {
-        av_free_packet(pkt);
-        return AVERROR_EOF;
-    }
-    pkt->size     = size;
-    pkt->duration = 1;
-    pkt->pts      = (pkt->pos - c->header_size) / size;
+	ret = av_get_packet(s->pb, pkt, size);
+	if (ret != size)
+	{
+		av_free_packet(pkt);
+		return ret < 0 ? ret : AVERROR(EIO);
+	}
+	if (AV_RB16(pkt->data) & 0x8000)
+	{
+		av_free_packet(pkt);
+		return AVERROR_EOF;
+	}
+	pkt->size = size;
+	pkt->duration = 1;
+	pkt->pts = (pkt->pos - c->header_size) / size;
 
-    return 0;
+	return 0;
 }
 
-static int adx_read_header(AVFormatContext *s)
+static int adx_read_header(AVFormatContext* s)
 {
-    ADXDemuxerContext *c = s->priv_data;
-    AVCodecContext *avctx;
-    int ret;
+	ADXDemuxerContext* c = s->priv_data;
+	AVCodecContext* avctx;
+	int ret;
 
-    AVStream *st = avformat_new_stream(s, NULL);
-    if (!st)
-        return AVERROR(ENOMEM);
-    avctx = s->streams[0]->codec;
+	AVStream* st = avformat_new_stream(s, NULL);
+	if (!st)
+		return AVERROR(ENOMEM);
+	avctx = s->streams[0]->codec;
 
-    if (avio_rb16(s->pb) != 0x8000)
-        return AVERROR_INVALIDDATA;
-    c->header_size = avio_rb16(s->pb) + 4;
-    avio_seek(s->pb, -4, SEEK_CUR);
+	if (avio_rb16(s->pb) != 0x8000)
+		return AVERROR_INVALIDDATA;
+	c->header_size = avio_rb16(s->pb) + 4;
+	avio_seek(s->pb, -4, SEEK_CUR);
 
-    avctx->extradata = av_mallocz(c->header_size + FF_INPUT_BUFFER_PADDING_SIZE);
-    if (!avctx->extradata)
-        return AVERROR(ENOMEM);
-    if (avio_read(s->pb, avctx->extradata, c->header_size) < c->header_size) {
-        av_freep(&avctx->extradata);
-        return AVERROR(EIO);
-    }
-    avctx->extradata_size = c->header_size;
+	avctx->extradata = av_mallocz(c->header_size + FF_INPUT_BUFFER_PADDING_SIZE);
+	if (!avctx->extradata)
+		return AVERROR(ENOMEM);
+	if (avio_read(s->pb, avctx->extradata, c->header_size) < c->header_size)
+	{
+		av_freep(&avctx->extradata);
+		return AVERROR(EIO);
+	}
+	avctx->extradata_size = c->header_size;
 
-    ret = avpriv_adx_decode_header(avctx, avctx->extradata,
-                                   avctx->extradata_size, &c->header_size,
-                                   NULL);
-    if (ret)
-        return ret;
+	ret = avpriv_adx_decode_header(avctx, avctx->extradata,
+	                               avctx->extradata_size, &c->header_size,
+	                               NULL);
+	if (ret)
+		return ret;
 
-    st->codec->codec_type  = AVMEDIA_TYPE_AUDIO;
-    st->codec->codec_id    = s->iformat->raw_codec_id;
+	st->codec->codec_type = AVMEDIA_TYPE_AUDIO;
+	st->codec->codec_id = s->iformat->raw_codec_id;
 
-    avpriv_set_pts_info(st, 64, BLOCK_SAMPLES, avctx->sample_rate);
+	avpriv_set_pts_info(st, 64, BLOCK_SAMPLES, avctx->sample_rate);
 
-    return 0;
+	return 0;
 }
 
 AVInputFormat ff_adx_demuxer = {
-    .name           = "adx",
-    .long_name      = NULL_IF_CONFIG_SMALL("CRI ADX"),
-    .priv_data_size = sizeof(ADXDemuxerContext),
-    .read_header    = adx_read_header,
-    .read_packet    = adx_read_packet,
-    .extensions     = "adx",
-    .raw_codec_id   = CODEC_ID_ADPCM_ADX,
-    .flags          = AVFMT_GENERIC_INDEX,
+	.name = "adx",
+	.long_name = NULL_IF_CONFIG_SMALL("CRI ADX"),
+	.priv_data_size = sizeof(ADXDemuxerContext),
+	.read_header = adx_read_header,
+	.read_packet = adx_read_packet,
+	.extensions = "adx",
+	.raw_codec_id = CODEC_ID_ADPCM_ADX,
+	.flags = AVFMT_GENERIC_INDEX,
 };

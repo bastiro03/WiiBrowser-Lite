@@ -65,21 +65,21 @@ static const vo_info_t info =
 	""
 };
 
-const LIBVO_EXTERN (yuv4mpeg)
+const LIBVO_EXTERN(yuv4mpeg)
 
 static int image_width = 0;
 static int image_height = 0;
 static float image_fps = 0;
 
-static uint8_t *image = NULL;
-static uint8_t *image_y = NULL;
-static uint8_t *image_u = NULL;
-static uint8_t *image_v = NULL;
+static uint8_t* image = NULL;
+static uint8_t* image_y = NULL;
+static uint8_t* image_u = NULL;
+static uint8_t* image_v = NULL;
 
-static char *yuv_filename = NULL;
+static char* yuv_filename = NULL;
 
 static int using_format = 0;
-static FILE *yuv_out;
+static FILE* yuv_out;
 static int write_bytes;
 
 #define Y4M_ILACE_NONE         'p'  /* non-interlaced, progressive frame */
@@ -91,20 +91,29 @@ static int config_interlace = Y4M_ILACE_NONE;
 #define Y4M_IS_INTERLACED (config_interlace != Y4M_ILACE_NONE)
 
 static int config(uint32_t width, uint32_t height, uint32_t d_width,
-       uint32_t d_height, uint32_t flags, char *title,
-       uint32_t format)
+                  uint32_t d_height, uint32_t flags, char* title,
+                  uint32_t format)
 {
-	AVRational pixelaspect = av_div_q((AVRational){d_width, d_height},
-	                                  (AVRational){width, height});
+	AVRational pixelaspect = av_div_q((AVRational)
+	{
+		d_width, d_height
+	}
+	,
+	(AVRational)
+	{
+		width, height
+	}
+	)
 	AVRational fps_frac = av_d2q(vo_fps, vo_fps * 1001 + 2);
 	if (image_width == width && image_height == height &&
-	     image_fps == vo_fps && vo_config_count)
-	  return 0;
-	if (vo_config_count) {
-	  mp_msg(MSGT_VO, MSGL_WARN,
-	    "Video formats differ (w:%i=>%i, h:%i=>%i, fps:%f=>%f), "
-	    "restarting output.\n",
-	    image_width, width, image_height, height, image_fps, vo_fps);
+		image_fps == vo_fps && vo_config_count)
+		return 0;
+	if (vo_config_count)
+	{
+		mp_msg(MSGT_VO, MSGL_WARN,
+		       "Video formats differ (w:%i=>%i, h:%i=>%i, fps:%f=>%f), "
+		       "restarting output.\n",
+		       image_width, width, image_height, height, image_fps, vo_fps);
 	}
 	image_height = height;
 	image_width = width;
@@ -115,16 +124,16 @@ static int config(uint32_t width, uint32_t height, uint32_t d_width,
 	{
 		if (height % 4)
 		{
-			mp_msg(MSGT_VO,MSGL_FATAL,
-				MSGTR_VO_YUV4MPEG_InterlacedHeightDivisibleBy4);
+			mp_msg(MSGT_VO, MSGL_FATAL,
+			       MSGTR_VO_YUV4MPEG_InterlacedHeightDivisibleBy4);
 			return -1;
 		}
 	}
 
 	if (width % 2)
 	{
-		mp_msg(MSGT_VO,MSGL_FATAL,
-			MSGTR_VO_YUV4MPEG_WidthDivisibleBy2);
+		mp_msg(MSGT_VO, MSGL_FATAL,
+		       MSGTR_VO_YUV4MPEG_WidthDivisibleBy2);
 		return -1;
 	}
 
@@ -136,9 +145,9 @@ static int config(uint32_t width, uint32_t height, uint32_t d_width,
 		yuv_out = strcmp(yuv_filename, "-") ? fopen(yuv_filename, "wb") : stdout;
 	if (!yuv_out || image == 0)
 	{
-		mp_msg(MSGT_VO,MSGL_FATAL,
-			MSGTR_VO_YUV4MPEG_OutFileOpenError,
-			yuv_filename);
+		mp_msg(MSGT_VO, MSGL_FATAL,
+		       MSGTR_VO_YUV4MPEG_OutFileOpenError,
+		       yuv_filename);
 		return -1;
 	}
 	image_y = image;
@@ -146,91 +155,92 @@ static int config(uint32_t width, uint32_t height, uint32_t d_width,
 	image_v = image_u + image_width * image_height / 4;
 
 	fprintf(yuv_out, "YUV4MPEG2 W%d H%d F%d:%d I%c A%d:%d\n",
-			image_width, image_height, fps_frac.num, fps_frac.den,
-			config_interlace,
-			pixelaspect.num, pixelaspect.den);
+	        image_width, image_height, fps_frac.num, fps_frac.den,
+	        config_interlace,
+	        pixelaspect.num, pixelaspect.den);
 
 	fflush(yuv_out);
 	return 0;
 }
 
-static void draw_alpha(int x0, int y0, int w, int h, unsigned char *src,
-                       unsigned char *srca, int stride) {
-	    	vo_draw_alpha_yv12(w, h, src, srca, stride,
-				       image + y0 * image_width + x0, image_width);
+static void draw_alpha(int x0, int y0, int w, int h, unsigned char* src,
+                       unsigned char* srca, int stride)
+{
+	vo_draw_alpha_yv12(w, h, src, srca, stride,
+	                   image + y0 * image_width + x0, image_width);
 }
 
 static void draw_osd(void)
 {
-    vo_draw_text(image_width, image_height, draw_alpha);
+	vo_draw_text(image_width, image_height, draw_alpha);
 }
 
-static void vo_y4m_write(const void *ptr, const size_t num_bytes)
+static void vo_y4m_write(const void* ptr, const size_t num_bytes)
 {
 	if (fwrite(ptr, 1, num_bytes, yuv_out) != num_bytes)
-		mp_msg(MSGT_VO,MSGL_ERR,
-			MSGTR_VO_YUV4MPEG_OutFileWriteError);
+		mp_msg(MSGT_VO, MSGL_ERR,
+		       MSGTR_VO_YUV4MPEG_OutFileWriteError);
 	fflush(yuv_out);
 }
 
 static int write_last_frame(void)
 {
-    fprintf(yuv_out, "FRAME\n");
+	fprintf(yuv_out, "FRAME\n");
 
-    vo_y4m_write(image, write_bytes);
-    return VO_TRUE;
+	vo_y4m_write(image, write_bytes);
+	return VO_TRUE;
 }
 
-static void flip_page (void)
+static void flip_page(void)
 {
 	fprintf(yuv_out, "FRAME\n");
 
 	vo_y4m_write(image, write_bytes);
 }
 
-static int draw_slice(uint8_t *srcimg[], int stride[], int w,int h,int x,int y)
+static int draw_slice(uint8_t* srcimg[], int stride[], int w, int h, int x, int y)
 {
 	int i;
 	uint8_t *dst, *src = srcimg[0];
 
-		// copy Y:
-		dst = image_y + image_width * y + x;
-		for (i = 0; i < h; i++)
+	// copy Y:
+	dst = image_y + image_width * y + x;
+	for (i = 0; i < h; i++)
+	{
+		fast_memcpy(dst, src, w);
+		src += stride[0];
+		dst += image_width;
+	}
+	{
+		// copy U + V:
+		int imgstride = image_width >> 1;
+		uint8_t* src1 = srcimg[1];
+		uint8_t* src2 = srcimg[2];
+		uint8_t* dstu = image_u + imgstride * (y >> 1) + (x >> 1);
+		uint8_t* dstv = image_v + imgstride * (y >> 1) + (x >> 1);
+		for (i = 0; i < h / 2; i++)
 		{
-			fast_memcpy(dst, src, w);
-			src += stride[0];
-			dst += image_width;
+			fast_memcpy(dstu, src1, w >> 1);
+			fast_memcpy(dstv, src2, w >> 1);
+			src1 += stride[1];
+			src2 += stride[2];
+			dstu += imgstride;
+			dstv += imgstride;
 		}
-		{
-			// copy U + V:
-			int imgstride = image_width >> 1;
-			uint8_t *src1 = srcimg[1];
-			uint8_t *src2 = srcimg[2];
-			uint8_t *dstu = image_u + imgstride * (y >> 1) + (x >> 1);
-			uint8_t *dstv = image_v + imgstride * (y >> 1) + (x >> 1);
-			for (i = 0; i < h / 2; i++)
-			{
-				fast_memcpy(dstu, src1 , w >> 1);
-				fast_memcpy(dstv, src2, w >> 1);
-				src1 += stride[1];
-				src2 += stride[2];
-				dstu += imgstride;
-				dstv += imgstride;
-			}
-		}
+	}
 	return 0;
 }
 
-static int draw_frame(uint8_t * src[])
+static int draw_frame(uint8_t* src[])
 {
-			// gets done in draw_slice
-    return 0;
+	// gets done in draw_slice
+	return 0;
 }
 
 static int query_format(uint32_t format)
 {
 	if (format == IMGFMT_YV12)
-		return VFCAP_CSP_SUPPORTED|VFCAP_CSP_SUPPORTED_BY_HW|VFCAP_OSD|VFCAP_ACCEPT_STRIDE;
+		return VFCAP_CSP_SUPPORTED | VFCAP_CSP_SUPPORTED_BY_HW | VFCAP_OSD | VFCAP_ACCEPT_STRIDE;
 	return 0;
 }
 
@@ -240,7 +250,7 @@ static void uninit(void)
 	free(image);
 	image = NULL;
 
-	if(yuv_out && yuv_out != stdout)
+	if (yuv_out && yuv_out != stdout)
 		fclose(yuv_out);
 	yuv_out = NULL;
 
@@ -251,61 +261,62 @@ static void uninit(void)
 	image_fps = 0;
 }
 
-
 static void check_events(void)
 {
 }
 
-static int preinit(const char *arg)
+static int preinit(const char* arg)
 {
-  int il, il_bf;
-  const opt_t subopts[] = {
-    {"interlaced",    OPT_ARG_BOOL, &il,    NULL},
-    {"interlaced_bf", OPT_ARG_BOOL, &il_bf, NULL},
-    {"file",          OPT_ARG_MSTRZ,  &yuv_filename,  NULL},
-    {NULL}
-  };
+	int il, il_bf;
+	const opt_t subopts[] = {
+		{"interlaced", OPT_ARG_BOOL, &il, NULL},
+		{"interlaced_bf", OPT_ARG_BOOL, &il_bf, NULL},
+		{"file", OPT_ARG_MSTRZ, &yuv_filename, NULL},
+		{NULL}
+	};
 
-  il = 0;
-  il_bf = 0;
-  yuv_filename = strdup("stream.yuv");
-  if (subopt_parse(arg, subopts) != 0) {
-    mp_msg(MSGT_VO, MSGL_FATAL, MSGTR_VO_YUV4MPEG_UnknownSubDev, arg);
-    return -1;
-  }
+	il = 0;
+	il_bf = 0;
+	yuv_filename = strdup("stream.yuv");
+	if (subopt_parse(arg, subopts) != 0)
+	{
+		mp_msg(MSGT_VO, MSGL_FATAL, MSGTR_VO_YUV4MPEG_UnknownSubDev, arg);
+		return -1;
+	}
 
-  config_interlace = Y4M_ILACE_NONE;
-  if (il)
-    config_interlace = Y4M_ILACE_TOP_FIRST;
-  if (il_bf)
-    config_interlace = Y4M_ILACE_BOTTOM_FIRST;
+	config_interlace = Y4M_ILACE_NONE;
+	if (il)
+		config_interlace = Y4M_ILACE_TOP_FIRST;
+	if (il_bf)
+		config_interlace = Y4M_ILACE_BOTTOM_FIRST;
 
-    /* Inform user which output mode is used */
-    switch (config_interlace)
-    {
-        case Y4M_ILACE_TOP_FIRST:
-	    mp_msg(MSGT_VO,MSGL_STATUS,
-	    	    MSGTR_VO_YUV4MPEG_InterlacedTFFMode);
-            break;
-        case Y4M_ILACE_BOTTOM_FIRST:
-	    mp_msg(MSGT_VO,MSGL_STATUS,
-	    	    MSGTR_VO_YUV4MPEG_InterlacedBFFMode);
-            break;
-        default:
-	    mp_msg(MSGT_VO,MSGL_STATUS,
-	    	    MSGTR_VO_YUV4MPEG_ProgressiveMode);
-            break;
-    }
-    return 0;
+	/* Inform user which output mode is used */
+	switch (config_interlace)
+	{
+	case Y4M_ILACE_TOP_FIRST:
+		mp_msg(MSGT_VO, MSGL_STATUS,
+		       MSGTR_VO_YUV4MPEG_InterlacedTFFMode);
+		break;
+	case Y4M_ILACE_BOTTOM_FIRST:
+		mp_msg(MSGT_VO, MSGL_STATUS,
+		       MSGTR_VO_YUV4MPEG_InterlacedBFFMode);
+		break;
+	default:
+		mp_msg(MSGT_VO, MSGL_STATUS,
+		       MSGTR_VO_YUV4MPEG_ProgressiveMode);
+		break;
+	}
+	return 0;
 }
 
-static int control(uint32_t request, void *data)
+static int control(uint32_t request, void* data)
 {
-  switch (request) {
-  case VOCTRL_QUERY_FORMAT:
-    return query_format(*((uint32_t*)data));
-  case VOCTRL_DUPLICATE_FRAME:
-    return write_last_frame();
-  }
-  return VO_NOTIMPL;
+	switch (request)
+	{
+	case VOCTRL_QUERY_FORMAT:
+		return query_format(*((uint32_t*)data));
+	case VOCTRL_DUPLICATE_FRAME:
+		return write_last_frame();
+	}
+	return VO_NOTIMPL;
 }

@@ -6,10 +6,12 @@ namespace litehtml
 	class style : public object
 	{
 	public:
-		typedef object_ptr<style>			ptr;
-		typedef std::vector<style::ptr>		vector;
+		using ptr = object_ptr<style>;
+		using vector = std::vector<ptr>;
+
 	private:
-		string_map		m_properties;
+		string_map m_properties;
+
 	public:
 		style();
 		style(const style& val);
@@ -29,18 +31,19 @@ namespace litehtml
 
 		const wchar_t* get_property(const wchar_t* name) const
 		{
-			if(name)
+			if (name)
 			{
 				string_map::const_iterator f = m_properties.find(name);
-				if(f != m_properties.end())
+				if (f != m_properties.end())
 				{
 					return f->second.c_str();
 				}
 			}
-			return 0;
+			return nullptr;
 		}
 
-		void combine(const litehtml::style& src);
+		void combine(const style& src);
+
 		void clear()
 		{
 			m_properties.clear();
@@ -54,31 +57,31 @@ namespace litehtml
 		void parse_short_font(const std::wstring& val);
 	};
 
-/*
-	class used_styles
-	{
-	public:
-		typedef std::vector<used_styles>	vector;
-
-		style_sheet::ptr	m_style_sheet;
-		bool				m_used;
-
-		used_styles()
+	/*
+		class used_styles
 		{
-			m_used = false;
-		}
+		public:
+			typedef std::vector<used_styles>	vector;
 
-		used_styles(style_sheet::ptr sh, bool used)
-		{
-			m_used			= used;
-			m_style_sheet	= sh;
-		}
+			style_sheet::ptr	m_style_sheet;
+			bool				m_used;
 
-		used_styles(const used_styles& val)
-		{
-			m_style_sheet	= val.m_style_sheet;
-			m_used			= val.m_used;
-		}
-	};
-*/
+			used_styles()
+			{
+				m_used = false;
+			}
+
+			used_styles(style_sheet::ptr sh, bool used)
+			{
+				m_used			= used;
+				m_style_sheet	= sh;
+			}
+
+			used_styles(const used_styles& val)
+			{
+				m_style_sheet	= val.m_style_sheet;
+				m_used			= val.m_used;
+			}
+		};
+	*/
 }

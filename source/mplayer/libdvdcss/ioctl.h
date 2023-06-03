@@ -24,18 +24,18 @@
 #ifndef DVDCSS_IOCTL_H
 #define DVDCSS_IOCTL_H
 
-int ioctl_ReadCopyright     ( int, int, int * );
-int ioctl_ReadDiscKey       ( int, int *, uint8_t * );
-int ioctl_ReadTitleKey      ( int, int *, int, uint8_t * );
-int ioctl_ReportAgid        ( int, int * );
-int ioctl_ReportChallenge   ( int, int *, uint8_t * );
-int ioctl_ReportKey1        ( int, int *, uint8_t * );
-int ioctl_ReportASF         ( int, int *, int * );
-int ioctl_InvalidateAgid    ( int, int * );
-int ioctl_SendChallenge     ( int, int *, uint8_t * );
-int ioctl_SendKey2          ( int, int *, uint8_t * );
-int ioctl_ReportRPC         ( int, int *, int *, int * );
-int ioctl_SendRPC           ( int, int );
+int ioctl_ReadCopyright(int, int, int*);
+int ioctl_ReadDiscKey(int, int*, uint8_t*);
+int ioctl_ReadTitleKey(int, int*, int, uint8_t*);
+int ioctl_ReportAgid(int, int*);
+int ioctl_ReportChallenge(int, int*, uint8_t*);
+int ioctl_ReportKey1(int, int*, uint8_t*);
+int ioctl_ReportASF(int, int*, int*);
+int ioctl_InvalidateAgid(int, int*);
+int ioctl_SendChallenge(int, int*, uint8_t*);
+int ioctl_SendKey2(int, int*, uint8_t*);
+int ioctl_ReportRPC(int, int*, int*, int*);
+int ioctl_SendRPC(int, int);
 
 #define DVD_KEY_SIZE 5
 #define DVD_CHALLENGE_SIZE 10
@@ -183,18 +183,18 @@ typedef union dvd_authinfo dvd_authinfo;
  * Various DVD I/O tables
  *****************************************************************************/
 #if defined( SYS_BEOS ) || defined( WIN32 ) || defined ( SOLARIS_USCSI ) || defined ( HPUX_SCTL_IO ) || defined ( __QNXNTO__ ) || defined ( SYS_OS2 ) || defined ( GEKKO )
-    /* The generic packet command opcodes for CD/DVD Logical Units,
-     * From Table 57 of the SFF8090 Ver. 3 (Mt. Fuji) draft standard. */
+ /* The generic packet command opcodes for CD/DVD Logical Units,
+  * From Table 57 of the SFF8090 Ver. 3 (Mt. Fuji) draft standard. */
 #   define GPCMD_READ_DVD_STRUCTURE 0xad
 #   define GPCMD_REPORT_KEY         0xa4
 #   define GPCMD_SEND_KEY           0xa3
-    /* DVD struct types */
+  /* DVD struct types */
 #   define DVD_STRUCT_PHYSICAL      0x00
 #   define DVD_STRUCT_COPYRIGHT     0x01
 #   define DVD_STRUCT_DISCKEY       0x02
 #   define DVD_STRUCT_BCA           0x03
 #   define DVD_STRUCT_MANUFACT      0x04
-    /* Key formats */
+	/* Key formats */
 #   define DVD_REPORT_AGID          0x00
 #   define DVD_REPORT_CHALLENGE     0x01
 #   define DVD_SEND_CHALLENGE       0x01
@@ -242,101 +242,101 @@ typedef union dvd_authinfo dvd_authinfo;
 #define SCSI_IOCTL_DATA_OUT             0
 #define SCSI_IOCTL_DATA_IN              1
 
-typedef ULONG DVD_SESSION_ID, *PDVD_SESSION_ID;
+typedef ULONG DVD_SESSION_ID, * PDVD_SESSION_ID;
 
 typedef enum DVD_STRUCTURE_FORMAT {
-    DvdPhysicalDescriptor,
-    DvdCopyrightDescriptor,
-    DvdDiskKeyDescriptor,
-    DvdBCADescriptor,
-    DvdManufacturerDescriptor,
-    DvdMaxDescriptor
-} DVD_STRUCTURE_FORMAT, *PDVD_STRUCTURE_FORMAT;
+	DvdPhysicalDescriptor,
+	DvdCopyrightDescriptor,
+	DvdDiskKeyDescriptor,
+	DvdBCADescriptor,
+	DvdManufacturerDescriptor,
+	DvdMaxDescriptor
+} DVD_STRUCTURE_FORMAT, * PDVD_STRUCTURE_FORMAT;
 
 typedef struct DVD_READ_STRUCTURE {
-    LARGE_INTEGER BlockByteOffset;
-    DVD_STRUCTURE_FORMAT Format;
-    DVD_SESSION_ID SessionId;
-    UCHAR LayerNumber;
-} DVD_READ_STRUCTURE, *PDVD_READ_STRUCTURE;
+	LARGE_INTEGER BlockByteOffset;
+	DVD_STRUCTURE_FORMAT Format;
+	DVD_SESSION_ID SessionId;
+	UCHAR LayerNumber;
+} DVD_READ_STRUCTURE, * PDVD_READ_STRUCTURE;
 
 typedef struct DVD_COPYRIGHT_DESCRIPTOR {
-    UCHAR CopyrightProtectionType;
-    UCHAR RegionManagementInformation;
-    USHORT Reserved;
-} DVD_COPYRIGHT_DESCRIPTOR, *PDVD_COPYRIGHT_DESCRIPTOR;
+	UCHAR CopyrightProtectionType;
+	UCHAR RegionManagementInformation;
+	USHORT Reserved;
+} DVD_COPYRIGHT_DESCRIPTOR, * PDVD_COPYRIGHT_DESCRIPTOR;
 
 typedef enum
 {
-    DvdChallengeKey = 0x01,
-    DvdBusKey1,
-    DvdBusKey2,
-    DvdTitleKey,
-    DvdAsf,
-    DvdSetRpcKey = 0x6,
-    DvdGetRpcKey = 0x8,
-    DvdDiskKey = 0x80,
-    DvdInvalidateAGID = 0x3f
+	DvdChallengeKey = 0x01,
+	DvdBusKey1,
+	DvdBusKey2,
+	DvdTitleKey,
+	DvdAsf,
+	DvdSetRpcKey = 0x6,
+	DvdGetRpcKey = 0x8,
+	DvdDiskKey = 0x80,
+	DvdInvalidateAGID = 0x3f
 } DVD_KEY_TYPE;
 
 typedef struct DVD_COPY_PROTECT_KEY
 {
-    ULONG KeyLength;
-    DVD_SESSION_ID SessionId;
-    DVD_KEY_TYPE KeyType;
-    ULONG KeyFlags;
-    union
-    {
-        struct
-        {
-            ULONG FileHandle;
-            ULONG Reserved;   // used for NT alignment
-        };
-        LARGE_INTEGER TitleOffset;
-    } Parameters;
-    UCHAR KeyData[0];
-} DVD_COPY_PROTECT_KEY, *PDVD_COPY_PROTECT_KEY;
+	ULONG KeyLength;
+	DVD_SESSION_ID SessionId;
+	DVD_KEY_TYPE KeyType;
+	ULONG KeyFlags;
+	union
+	{
+		struct
+		{
+			ULONG FileHandle;
+			ULONG Reserved;   // used for NT alignment
+		};
+		LARGE_INTEGER TitleOffset;
+	} Parameters;
+	UCHAR KeyData[0];
+} DVD_COPY_PROTECT_KEY, * PDVD_COPY_PROTECT_KEY;
 
 typedef struct DVD_ASF
 {
-    UCHAR Reserved0[3];
-    UCHAR SuccessFlag:1;
-    UCHAR Reserved1:7;
+	UCHAR Reserved0[3];
+	UCHAR SuccessFlag : 1;
+	UCHAR Reserved1 : 7;
 } DVD_ASF, * PDVD_ASF;
 
 typedef struct DVD_RPC_KEY
 {
-    UCHAR UserResetsAvailable:3;
-    UCHAR ManufacturerResetsAvailable:3;
-    UCHAR TypeCode:2;
-    UCHAR RegionMask;
-    UCHAR RpcScheme;
-    UCHAR Reserved2[1];
+	UCHAR UserResetsAvailable : 3;
+	UCHAR ManufacturerResetsAvailable : 3;
+	UCHAR TypeCode : 2;
+	UCHAR RegionMask;
+	UCHAR RpcScheme;
+	UCHAR Reserved2[1];
 } DVD_RPC_KEY, * PDVD_RPC_KEY;
 
 typedef struct SCSI_PASS_THROUGH_DIRECT
 {
-    USHORT Length;
-    UCHAR ScsiStatus;
-    UCHAR PathId;
-    UCHAR TargetId;
-    UCHAR Lun;
-    UCHAR CdbLength;
-    UCHAR SenseInfoLength;
-    UCHAR DataIn;
-    ULONG DataTransferLength;
-    ULONG TimeOutValue;
-    PVOID DataBuffer;
-    ULONG SenseInfoOffset;
-    UCHAR Cdb[16];
-} SCSI_PASS_THROUGH_DIRECT, *PSCSI_PASS_THROUGH_DIRECT;
+	USHORT Length;
+	UCHAR ScsiStatus;
+	UCHAR PathId;
+	UCHAR TargetId;
+	UCHAR Lun;
+	UCHAR CdbLength;
+	UCHAR SenseInfoLength;
+	UCHAR DataIn;
+	ULONG DataTransferLength;
+	ULONG TimeOutValue;
+	PVOID DataBuffer;
+	ULONG SenseInfoOffset;
+	UCHAR Cdb[16];
+} SCSI_PASS_THROUGH_DIRECT, * PSCSI_PASS_THROUGH_DIRECT;
 
 /*****************************************************************************
  * win32 aspi specific
  *****************************************************************************/
 
-typedef DWORD (CALLBACK *GETASPI32SUPPORTINFO)(VOID);
-typedef DWORD (CALLBACK *SENDASPI32COMMAND)(LPVOID);
+typedef DWORD(CALLBACK* GETASPI32SUPPORTINFO)(VOID);
+typedef DWORD(CALLBACK* SENDASPI32COMMAND)(LPVOID);
 
 #define WIN2K               ( GetVersion() < 0x80000000 )
 #define ASPI_HAID           0
@@ -356,63 +356,63 @@ typedef DWORD (CALLBACK *SENDASPI32COMMAND)(LPVOID);
 
 struct w32_aspidev
 {
-    long  hASPI;
-    short i_sid;
-    int   i_blocks;
-    SENDASPI32COMMAND lpSendCommand;
+	long  hASPI;
+	short i_sid;
+	int   i_blocks;
+	SENDASPI32COMMAND lpSendCommand;
 };
 
 #pragma pack(1)
 
 struct SRB_GetDiskInfo
 {
-    unsigned char   SRB_Cmd;
-    unsigned char   SRB_Status;
-    unsigned char   SRB_HaId;
-    unsigned char   SRB_Flags;
-    unsigned long   SRB_Hdr_Rsvd;
-    unsigned char   SRB_Target;
-    unsigned char   SRB_Lun;
-    unsigned char   SRB_DriveFlags;
-    unsigned char   SRB_Int13HDriveInfo;
-    unsigned char   SRB_Heads;
-    unsigned char   SRB_Sectors;
-    unsigned char   SRB_Rsvd1[22];
+	unsigned char   SRB_Cmd;
+	unsigned char   SRB_Status;
+	unsigned char   SRB_HaId;
+	unsigned char   SRB_Flags;
+	unsigned long   SRB_Hdr_Rsvd;
+	unsigned char   SRB_Target;
+	unsigned char   SRB_Lun;
+	unsigned char   SRB_DriveFlags;
+	unsigned char   SRB_Int13HDriveInfo;
+	unsigned char   SRB_Heads;
+	unsigned char   SRB_Sectors;
+	unsigned char   SRB_Rsvd1[22];
 };
 
 struct SRB_GDEVBlock
 {
-    unsigned char SRB_Cmd;
-    unsigned char SRB_Status;
-    unsigned char SRB_HaId;
-    unsigned char SRB_Flags;
-    unsigned long SRB_Hdr_Rsvd;
-    unsigned char SRB_Target;
-    unsigned char SRB_Lun;
-    unsigned char SRB_DeviceType;
-    unsigned char SRB_Rsvd1;
+	unsigned char SRB_Cmd;
+	unsigned char SRB_Status;
+	unsigned char SRB_HaId;
+	unsigned char SRB_Flags;
+	unsigned long SRB_Hdr_Rsvd;
+	unsigned char SRB_Target;
+	unsigned char SRB_Lun;
+	unsigned char SRB_DeviceType;
+	unsigned char SRB_Rsvd1;
 };
 
 struct SRB_ExecSCSICmd
 {
-    unsigned char   SRB_Cmd;
-    unsigned char   SRB_Status;
-    unsigned char   SRB_HaId;
-    unsigned char   SRB_Flags;
-    unsigned long   SRB_Hdr_Rsvd;
-    unsigned char   SRB_Target;
-    unsigned char   SRB_Lun;
-    unsigned short  SRB_Rsvd1;
-    unsigned long   SRB_BufLen;
-    unsigned char   *SRB_BufPointer;
-    unsigned char   SRB_SenseLen;
-    unsigned char   SRB_CDBLen;
-    unsigned char   SRB_HaStat;
-    unsigned char   SRB_TargStat;
-    unsigned long   *SRB_PostProc;
-    unsigned char   SRB_Rsvd2[20];
-    unsigned char   CDBByte[16];
-    unsigned char   SenseArea[SENSE_LEN+2];
+	unsigned char   SRB_Cmd;
+	unsigned char   SRB_Status;
+	unsigned char   SRB_HaId;
+	unsigned char   SRB_Flags;
+	unsigned long   SRB_Hdr_Rsvd;
+	unsigned char   SRB_Target;
+	unsigned char   SRB_Lun;
+	unsigned short  SRB_Rsvd1;
+	unsigned long   SRB_BufLen;
+	unsigned char* SRB_BufPointer;
+	unsigned char   SRB_SenseLen;
+	unsigned char   SRB_CDBLen;
+	unsigned char   SRB_HaStat;
+	unsigned char   SRB_TargStat;
+	unsigned long* SRB_PostProc;
+	unsigned char   SRB_Rsvd2[20];
+	unsigned char   CDBByte[16];
+	unsigned char   SenseArea[SENSE_LEN + 2];
 };
 
 #pragma pack()
@@ -433,12 +433,11 @@ struct SRB_ExecSCSICmd
 
 struct OS2_ExecSCSICmd
 {
-    unsigned long   id_code;      // 'CD01'
-    unsigned short  data_length;  // length of the Data Packet
-    unsigned short  cmd_length;   // length of the Command Buffer
-    unsigned short  flags;        // flags
-    unsigned char   command[16];  // Command Buffer for SCSI command
-
+	unsigned long   id_code;      // 'CD01'
+	unsigned short  data_length;  // length of the Data Packet
+	unsigned short  cmd_length;   // length of the Command Buffer
+	unsigned short  flags;        // flags
+	unsigned char   command[16];  // Command Buffer for SCSI command
 } OS2_ExecSCSICmd;
 
 #pragma pack()

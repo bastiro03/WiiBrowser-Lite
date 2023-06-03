@@ -28,147 +28,172 @@
 #include "bytestream.h"
 #include "s3tc.h"
 
-typedef struct TXDContext {
-    AVFrame picture;
+typedef struct TXDContext
+{
+	AVFrame picture;
 } TXDContext;
 
-static av_cold int txd_init(AVCodecContext *avctx) {
-    TXDContext *s = avctx->priv_data;
+static av_cold
 
-    avcodec_get_frame_defaults(&s->picture);
-    avctx->coded_frame = &s->picture;
+int txd_init(AVCodecContext* avctx)
+{
+	TXDContext* s = avctx->priv_data;
 
-    return 0;
+	avcodec_get_frame_defaults(&s->picture);
+	avctx->coded_frame = &s->picture;
+
+	return 0;
 }
 
-static int txd_decode_frame(AVCodecContext *avctx, void *data, int *data_size,
-                            AVPacket *avpkt) {
-    TXDContext * const s = avctx->priv_data;
-    GetByteContext gb;
-    AVFrame *picture = data;
-    AVFrame * const p = &s->picture;
-    unsigned int version, w, h, d3d_format, depth, stride, flags;
-    unsigned int y, v;
-    uint8_t *ptr;
-    uint32_t *pal;
+static int txd_decode_frame(AVCodecContext* avctx, void* data, int* data_size,
+                            AVPacket* avpkt)
+{
+	TXDContext* const s = avctx->priv_data;
+	GetByteContext gb;
+	AVFrame* picture = data;
+	AVFrame* const p = &s->picture;
+	unsigned int version, w, h, d3d_format, depth, stride, flags;
+	unsigned int y, v;
+	uint8_t* ptr;
+	uint32_t* pal;
 
-    bytestream2_init(&gb, avpkt->data, avpkt->size);
-    version         = bytestream2_get_le32(&gb);
-    bytestream2_skip(&gb, 72);
-    d3d_format      = bytestream2_get_le32(&gb);
-    w               = bytestream2_get_le16(&gb);
-    h               = bytestream2_get_le16(&gb);
-    depth           = bytestream2_get_byte(&gb);
-    bytestream2_skip(&gb, 2);
-    flags           = bytestream2_get_byte(&gb);
+	bytestream2_init(&gb, avpkt->data, avpkt->size);
+	version = bytestream2_get_le32(&gb);
+	bytestream2_skip(&gb, 72);
+	d3d_format = bytestream2_get_le32(&gb);
+	w = bytestream2_get_le16(&gb);
+	h = bytestream2_get_le16(&gb);
+	depth = bytestream2_get_byte(&gb);
+	bytestream2_skip(&gb, 2);
+	flags = bytestream2_get_byte(&gb);
 
-    if (version < 8 || version > 9) {
-        av_log(avctx, AV_LOG_ERROR, "texture data version %i is unsupported\n",
-                                                                    version);
-        return -1;
-    }
+	if (version < 8 || version > 9)
+	{
+		av_log(avctx, AV_LOG_ERROR, "texture data version %i is unsupported\n",
+		       version);
+		return -1;
+	}
 
-    if (depth == 8) {
-        avctx->pix_fmt = PIX_FMT_PAL8;
-    } else if (depth == 16 || depth == 32) {
-        avctx->pix_fmt = PIX_FMT_RGB32;
-    } else {
-        av_log(avctx, AV_LOG_ERROR, "depth of %i is unsupported\n", depth);
-        return -1;
-    }
+	if (depth == 8)
+	{
+		avctx->pix_fmt = PIX_FMT_PAL8;
+	}
+	else if (depth == 16 || depth == 32)
+	{
+		avctx->pix_fmt = PIX_FMT_RGB32;
+	}
+	else
+	{
+		av_log(avctx, AV_LOG_ERROR, "depth of %i is unsupported\n", depth);
+		return -1;
+	}
 
-    if (p->data[0])
-        avctx->release_buffer(avctx, p);
+	if (p->data[0])
+		avctx->release_buffer(avctx, p);
 
-    if (av_image_check_size(w, h, 0, avctx))
-        return -1;
-    if (w != avctx->width || h != avctx->height)
-        avcodec_set_dimensions(avctx, w, h);
-    if (avctx->get_buffer(avctx, p) < 0) {
-        av_log(avctx, AV_LOG_ERROR, "get_buffer() failed\n");
-        return -1;
-    }
+	if (av_image_check_size(w, h, 0, avctx))
+		return -1;
+	if (w != avctx->width || h != avctx->height)
+		avcodec_set_dimensions(avctx, w, h);
+	if (avctx->get_buffer(avctx, p) < 0)
+	{
+		av_log(avctx, AV_LOG_ERROR, "get_buffer() failed\n");
+		return -1;
+	}
 
-    p->pict_type = AV_PICTURE_TYPE_I;
+	p->pict_type = AV_PICTURE_TYPE_I;
 
-    ptr    = p->data[0];
-    stride = p->linesize[0];
+	ptr = p->data[0];
+	stride = p->linesize[0];
 
-    if (depth == 8) {
-        pal = (uint32_t *) p->data[1];
-        for (y = 0; y < 256; y++) {
-            v = bytestream2_get_be32(&gb);
-            pal[y] = (v >> 8) + (v << 24);
-        }
-        if (bytestream2_get_bytes_left(&gb) < w * h)
-            return AVERROR_INVALIDDATA;
-        bytestream2_skip(&gb, 4);
-        for (y=0; y<h; y++) {
-            bytestream2_get_buffer(&gb, ptr, w);
-            ptr += stride;
-        }
-    } else if (depth == 16) {
-        bytestream2_skip(&gb, 4);
-        switch (d3d_format) {
-        case 0:
-            if (!(flags & 1))
-                goto unsupported;
-        case FF_S3TC_DXT1:
-            if (bytestream2_get_bytes_left(&gb) < (w/4) * (h/4) * 8)
-                return AVERROR_INVALIDDATA;
-            ff_decode_dxt1(&gb, ptr, w, h, stride);
-            break;
-        case FF_S3TC_DXT3:
-            if (bytestream2_get_bytes_left(&gb) < (w/4) * (h/4) * 16)
-                return AVERROR_INVALIDDATA;
-            ff_decode_dxt3(&gb, ptr, w, h, stride);
-            break;
-        default:
-            goto unsupported;
-        }
-    } else if (depth == 32) {
-        switch (d3d_format) {
-        case 0x15:
-        case 0x16:
-            if (bytestream2_get_bytes_left(&gb) < h * w * 4)
-                return AVERROR_INVALIDDATA;
-            for (y=0; y<h; y++) {
-                bytestream2_get_buffer(&gb, ptr, w * 4);
-                ptr += stride;
-            }
-            break;
-        default:
-            goto unsupported;
-        }
-    }
+	if (depth == 8)
+	{
+		pal = (uint32_t*)p->data[1];
+		for (y = 0; y < 256; y++)
+		{
+			v = bytestream2_get_be32(&gb);
+			pal[y] = (v >> 8) + (v << 24);
+		}
+		if (bytestream2_get_bytes_left(&gb) < w * h)
+			return AVERROR_INVALIDDATA;
+		bytestream2_skip(&gb, 4);
+		for (y = 0; y < h; y++)
+		{
+			bytestream2_get_buffer(&gb, ptr, w);
+			ptr += stride;
+		}
+	}
+	else if (depth == 16)
+	{
+		bytestream2_skip(&gb, 4);
+		switch (d3d_format)
+		{
+		case 0:
+			if (!(flags & 1))
+				goto unsupported;
+		case FF_S3TC_DXT1:
+			if (bytestream2_get_bytes_left(&gb) < (w / 4) * (h / 4) * 8)
+				return AVERROR_INVALIDDATA;
+			ff_decode_dxt1(&gb, ptr, w, h, stride);
+			break;
+		case FF_S3TC_DXT3:
+			if (bytestream2_get_bytes_left(&gb) < (w / 4) * (h / 4) * 16)
+				return AVERROR_INVALIDDATA;
+			ff_decode_dxt3(&gb, ptr, w, h, stride);
+			break;
+		default:
+			goto unsupported;
+		}
+	}
+	else if (depth == 32)
+	{
+		switch (d3d_format)
+		{
+		case 0x15:
+		case 0x16:
+			if (bytestream2_get_bytes_left(&gb) < h * w * 4)
+				return AVERROR_INVALIDDATA;
+			for (y = 0; y < h; y++)
+			{
+				bytestream2_get_buffer(&gb, ptr, w * 4);
+				ptr += stride;
+			}
+			break;
+		default:
+			goto unsupported;
+		}
+	}
 
-    *picture   = s->picture;
-    *data_size = sizeof(AVPicture);
+	*picture = s->picture;
+	*data_size = sizeof(AVPicture);
 
-    return avpkt->size;
+	return avpkt->size;
 
 unsupported:
-    av_log(avctx, AV_LOG_ERROR, "unsupported d3d format (%08x)\n", d3d_format);
-    return -1;
+	av_log(avctx, AV_LOG_ERROR, "unsupported d3d format (%08x)\n", d3d_format);
+	return -1;
 }
 
-static av_cold int txd_end(AVCodecContext *avctx) {
-    TXDContext *s = avctx->priv_data;
+static av_cold
 
-    if (s->picture.data[0])
-        avctx->release_buffer(avctx, &s->picture);
+int txd_end(AVCodecContext* avctx)
+{
+	TXDContext* s = avctx->priv_data;
 
-    return 0;
+	if (s->picture.data[0])
+		avctx->release_buffer(avctx, &s->picture);
+
+	return 0;
 }
 
 AVCodec ff_txd_decoder = {
-    .name           = "txd",
-    .type           = AVMEDIA_TYPE_VIDEO,
-    .id             = CODEC_ID_TXD,
-    .priv_data_size = sizeof(TXDContext),
-    .init           = txd_init,
-    .close          = txd_end,
-    .decode         = txd_decode_frame,
-    .capabilities   = CODEC_CAP_DR1,
-    .long_name      = NULL_IF_CONFIG_SMALL("Renderware TXD (TeXture Dictionary) image"),
+	.name = "txd",
+	.type = AVMEDIA_TYPE_VIDEO,
+	.id = CODEC_ID_TXD,
+	.priv_data_size = sizeof(TXDContext),
+	.init = txd_init,
+	.close = txd_end,
+	.decode = txd_decode_frame,
+	.capabilities = CODEC_CAP_DR1,
+	.long_name = NULL_IF_CONFIG_SMALL("Renderware TXD (TeXture Dictionary) image"),
 };

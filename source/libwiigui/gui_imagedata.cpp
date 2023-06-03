@@ -21,25 +21,25 @@
 /**
  * Constructor for the GuiImageData class.
  */
-GuiImageData::GuiImageData(const u8 * i)
+GuiImageData::GuiImageData(const u8* i)
 {
 	data = NULL;
 	width = 0;
 	height = 0;
 	format = GX_TF_RGBA8;
 
-	if(i)
+	if (i)
 		LoadPNG(i);
 }
 
-GuiImageData::GuiImageData(const u8 * i, int s, u8 f)
+GuiImageData::GuiImageData(const u8* i, int s, u8 f)
 {
 	data = NULL;
 	width = 0;
 	height = 0;
 	format = f;
 
-	if(!i || s < 8)
+	if (!i || s < 8)
 		return;
 
 	if (i[0] == 0xFF && i[1] == 0xD8)
@@ -57,21 +57,21 @@ GuiImageData::GuiImageData(const u8 * i, int s, u8 f)
  */
 GuiImageData::~GuiImageData()
 {
-	if(data)
+	if (data)
 	{
-        free(data);
+		free(data);
 		data = NULL;
 	}
 }
 
-void GuiImageData::SetData(u8 * i)
+void GuiImageData::SetData(u8* i)
 {
 	data = i;
 }
 
-void GuiImageData::SetImage(const u8 * i, int s)
+void GuiImageData::SetImage(const u8* i, int s)
 {
-	if(!i)
+	if (!i)
 		return;
 
 	width = 0;
@@ -87,27 +87,27 @@ void GuiImageData::SetImage(const u8 * i, int s)
 		LoadPNG(i);
 }
 
-void GuiImageData::LoadPNG(const u8 *i)
+void GuiImageData::LoadPNG(const u8* i)
 {
 	data = DecodePNG(i, &width, &height, data);
 }
 
-void GuiImageData::LoadJPEG(const u8 *i, int s)
+void GuiImageData::LoadJPEG(const u8* i, int s)
 {
 	data = DecodeJPEG(i, s, &width, &height, data);
 }
 
-void GuiImageData::LoadBMP(const u8 *i, int s)
+void GuiImageData::LoadBMP(const u8* i, int s)
 {
 	data = DecodeBMP(i, s, &width, &height, data);
 }
 
-void GuiImageData::LoadGIF(const u8 *i, int s)
+void GuiImageData::LoadGIF(const u8* i, int s)
 {
 	data = DecodeGIF(i, s, &width, &height, data);
 }
 
-u8 * GuiImageData::GetImage()
+u8* GuiImageData::GetImage()
 {
 	return data;
 }

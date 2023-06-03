@@ -107,7 +107,6 @@
  * @}
  */
 
-
 /**
  * @defgroup preproc_misc Preprocessor String Macros
  *
@@ -211,12 +210,12 @@ unsigned avutil_version(void);
 /**
  * Return the libavutil build-time configuration.
  */
-const char *avutil_configuration(void);
+const char* avutil_configuration(void);
 
 /**
  * Return the libavutil license.
  */
-const char *avutil_license(void);
+const char* avutil_license(void);
 
 /**
  * @}
@@ -227,21 +226,25 @@ const char *avutil_license(void);
  * @brief Media Type
  */
 
-enum AVMediaType {
-    AVMEDIA_TYPE_UNKNOWN = -1,  ///< Usually treated as AVMEDIA_TYPE_DATA
-    AVMEDIA_TYPE_VIDEO,
-    AVMEDIA_TYPE_AUDIO,
-    AVMEDIA_TYPE_DATA,          ///< Opaque data information usually continuous
-    AVMEDIA_TYPE_SUBTITLE,
-    AVMEDIA_TYPE_ATTACHMENT,    ///< Opaque data information usually sparse
-    AVMEDIA_TYPE_NB
+enum AVMediaType
+{
+	AVMEDIA_TYPE_UNKNOWN = -1,
+	///< Usually treated as AVMEDIA_TYPE_DATA
+	AVMEDIA_TYPE_VIDEO,
+	AVMEDIA_TYPE_AUDIO,
+	AVMEDIA_TYPE_DATA,
+	///< Opaque data information usually continuous
+	AVMEDIA_TYPE_SUBTITLE,
+	AVMEDIA_TYPE_ATTACHMENT,
+	///< Opaque data information usually sparse
+	AVMEDIA_TYPE_NB
 };
 
 /**
  * Return a string describing the media_type enum, NULL if media_type
  * is unknown.
  */
-const char *av_get_media_type_string(enum AVMediaType media_type);
+const char* av_get_media_type_string(enum AVMediaType media_type);
 
 /**
  * @defgroup lavu_const Constants
@@ -300,15 +303,24 @@ const char *av_get_media_type_string(enum AVMediaType media_type);
  * @{
  */
 
-enum AVPictureType {
-    AV_PICTURE_TYPE_NONE = 0, ///< Undefined
-    AV_PICTURE_TYPE_I,     ///< Intra
-    AV_PICTURE_TYPE_P,     ///< Predicted
-    AV_PICTURE_TYPE_B,     ///< Bi-dir predicted
-    AV_PICTURE_TYPE_S,     ///< S(GMC)-VOP MPEG4
-    AV_PICTURE_TYPE_SI,    ///< Switching Intra
-    AV_PICTURE_TYPE_SP,    ///< Switching Predicted
-    AV_PICTURE_TYPE_BI,    ///< BI type
+enum AVPictureType
+{
+	AV_PICTURE_TYPE_NONE = 0,
+	///< Undefined
+	AV_PICTURE_TYPE_I,
+	///< Intra
+	AV_PICTURE_TYPE_P,
+	///< Predicted
+	AV_PICTURE_TYPE_B,
+	///< Bi-dir predicted
+	AV_PICTURE_TYPE_S,
+	///< S(GMC)-VOP MPEG4
+	AV_PICTURE_TYPE_SI,
+	///< Switching Intra
+	AV_PICTURE_TYPE_SP,
+	///< Switching Predicted
+	AV_PICTURE_TYPE_BI,
+	///< BI type
 };
 
 /**
@@ -335,9 +347,9 @@ char av_get_picture_type_char(enum AVPictureType pict_type);
 /**
  * Return x default pointer in case p is NULL.
  */
-static inline void *av_x_if_null(const void *p, const void *x)
+static inline void* av_x_if_null(const void* p, const void* x)
 {
-    return (void *)(intptr_t)(p ? p : x);
+	return (void*)(intptr_t)(p ? p : x);
 }
 
 /**

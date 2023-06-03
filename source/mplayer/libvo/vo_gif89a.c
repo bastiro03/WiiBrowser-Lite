@@ -69,7 +69,6 @@ static const vo_info_t info = {
 
 const LIBVO_EXTERN(gif89a)
 
-
 // how many frames per second we are aiming for during output.
 static float target_fps;
 // default value for output fps.
@@ -91,49 +90,53 @@ static float frame_adj;
 static uint32_t img_width;
 static uint32_t img_height;
 // image data for slice rendering
-static uint8_t *slice_data = NULL;
+static uint8_t* slice_data = NULL;
 // reduced image data for flip_page
-static uint8_t *reduce_data = NULL;
+static uint8_t* reduce_data = NULL;
 // reduced color map for flip_page
-static ColorMapObject *reduce_cmap = NULL;
+static ColorMapObject* reduce_cmap = NULL;
 
 // a pointer to the gif structure
-static GifFileType *new_gif = NULL;
+static GifFileType* new_gif = NULL;
 // a string to contain the filename of the output gif
-static char *gif_filename = NULL;
+static char* gif_filename = NULL;
 // the default output filename
 #define DEFAULT_FILE "out.gif"
 
 static const opt_t subopts[] = {
-  {"output",       OPT_ARG_MSTRZ, &gif_filename, NULL},
-  {"fps",          OPT_ARG_FLOAT, &target_fps,   NULL},
-  {NULL, 0, NULL, NULL}
+	{"output", OPT_ARG_MSTRZ, &gif_filename, NULL},
+	{"fps", OPT_ARG_FLOAT, &target_fps, NULL},
+	{NULL, 0, NULL, NULL}
 };
 
-static int preinit(const char *arg)
+static int preinit(const char* arg)
 {
 	target_fps = 0;
 
-	if (subopt_parse(arg, subopts) != 0) {
+	if (subopt_parse(arg, subopts) != 0)
+	{
 		mp_msg(MSGT_VO, MSGL_FATAL,
-			"\n-vo gif89a command line help:\n"
-			"Example: mplayer -vo gif89a:output=file.gif:fps=4.9\n"
-			"\nOptions:\n"
-			"  output=<filename>\n"
-			"    Specify the output file.  The default is out.gif.\n"
-			"  fps=<rate>\n"
-			"    Specify the target framerate.  The default is 5.0.\n"
-			"\n");
+		       "\n-vo gif89a command line help:\n"
+		       "Example: mplayer -vo gif89a:output=file.gif:fps=4.9\n"
+		       "\nOptions:\n"
+		       "  output=<filename>\n"
+		       "    Specify the output file.  The default is out.gif.\n"
+		       "  fps=<rate>\n"
+		       "    Specify the target framerate.  The default is 5.0.\n"
+		       "\n");
 		return -1;
 	}
 
 	if (target_fps > vo_fps)
 		target_fps = vo_fps; // i will not duplicate frames.
 
-	if (target_fps <= 0) {
+	if (target_fps <= 0)
+	{
 		target_fps = default_fps;
 		mp_msg(MSGT_VO, MSGL_V, "GIF89a: default, %.2f fps\n", target_fps);
-	} else {
+	}
+	else
+	{
 		mp_msg(MSGT_VO, MSGL_V, "GIF89a: output fps forced to %.2f\n", target_fps);
 	}
 
@@ -141,10 +144,13 @@ static int preinit(const char *arg)
 	frame_cycle = vo_fps / target_fps;
 	// we make one output frame every (frame_cycle) frames, on average.
 
-	if (gif_filename == NULL) {
+	if (gif_filename == NULL)
+	{
 		gif_filename = strdup(DEFAULT_FILE);
 		mp_msg(MSGT_VO, MSGL_V, "GIF89a: default, file \"%s\"\n", gif_filename);
-	} else {
+	}
+	else
+	{
 		mp_msg(MSGT_VO, MSGL_V, "GIF89a: file forced to \"%s\"\n", gif_filename);
 	}
 
@@ -153,8 +159,8 @@ static int preinit(const char *arg)
 }
 
 static int config(uint32_t s_width, uint32_t s_height, uint32_t d_width,
-		uint32_t d_height, uint32_t flags, char *title,
-		uint32_t format)
+                  uint32_t d_height, uint32_t flags, char* title,
+                  uint32_t format)
 {
 #ifdef CONFIG_GIF_4
 	// these are control blocks for the gif looping extension.
@@ -162,7 +168,7 @@ static int config(uint32_t s_width, uint32_t s_height, uint32_t d_width,
 	char LB2[] = { 1, 0, 0 };
 #endif
 
-	mp_msg(MSGT_VO, MSGL_DBG2, "GIF89a: Config entered [%dx%d]\n", s_width,s_height);
+	mp_msg(MSGT_VO, MSGL_DBG2, "GIF89a: Config entered [%dx%d]\n", s_width, s_height);
 	mp_msg(MSGT_VO, MSGL_DBG2, "GIF89a: With requested format: %s\n", vo_format_name(format));
 
 	// save these for later.
@@ -171,7 +177,8 @@ static int config(uint32_t s_width, uint32_t s_height, uint32_t d_width,
 
 	// multiple configs without uninit are not allowed.
 	// this is because config opens a new gif file.
-	if (vo_config_count > 0) {
+	if (vo_config_count > 0)
+	{
 		mp_msg(MSGT_VO, MSGL_V, "GIF89a: Reconfigure attempted.\n");
 		return 0;
 	}
@@ -180,7 +187,8 @@ static int config(uint32_t s_width, uint32_t s_height, uint32_t d_width,
 	// movies concatenated in one gif file.  the output
 	// gif will have the dimensions of the first movie.
 
-	if (format != IMGFMT_RGB24) {
+	if (format != IMGFMT_RGB24)
+	{
 		mp_msg(MSGT_VO, MSGL_ERR, "GIF89a: Error - given unsupported colorspace.\n");
 		return 1;
 	}
@@ -197,28 +205,35 @@ static int config(uint32_t s_width, uint32_t s_height, uint32_t d_width,
 #endif
 
 	new_gif = EGifOpenFileName(gif_filename, 0);
-	if (new_gif == NULL) {
+	if (new_gif == NULL)
+	{
 		mp_msg(MSGT_VO, MSGL_ERR, "GIF89a: error opening file \"%s\" for output.\n", gif_filename);
 		return 1;
 	}
 
 	slice_data = malloc(img_width * img_height * 3);
-	if (slice_data == NULL) {
+	if (slice_data == NULL)
+	{
 		mp_msg(MSGT_VO, MSGL_ERR, "GIF89a: malloc failed.\n");
 		return 1;
 	}
 
 	reduce_data = malloc(img_width * img_height);
-	if (reduce_data == NULL) {
-		free(slice_data); slice_data = NULL;
+	if (reduce_data == NULL)
+	{
+		free(slice_data);
+		slice_data = NULL;
 		mp_msg(MSGT_VO, MSGL_ERR, "GIF89a: malloc failed.\n");
 		return 1;
 	}
 
 	reduce_cmap = MakeMapObject(256, NULL);
-	if (reduce_cmap == NULL) {
-		free(slice_data); slice_data = NULL;
-		free(reduce_data); reduce_data = NULL;
+	if (reduce_cmap == NULL)
+	{
+		free(slice_data);
+		slice_data = NULL;
+		free(reduce_data);
+		reduce_data = NULL;
 		mp_msg(MSGT_VO, MSGL_ERR, "GIF89a: malloc failed.\n");
 		return 1;
 	}
@@ -244,12 +259,16 @@ static int config(uint32_t s_width, uint32_t s_height, uint32_t d_width,
 }
 
 // we do not draw osd.
-void draw_osd(void) {}
+void draw_osd(void)
+{
+}
 
 // we do not handle events.
-static void check_events(void) {}
+static void check_events(void)
+{
+}
 
-static int gif_reduce(int width, int height, uint8_t *src, uint8_t *dst, GifColorType *colors)
+static int gif_reduce(int width, int height, uint8_t* src, uint8_t* dst, GifColorType* colors)
 {
 	unsigned char Ra[width * height];
 	unsigned char Ga[width * height];
@@ -258,7 +277,9 @@ static int gif_reduce(int width, int height, uint8_t *src, uint8_t *dst, GifColo
 	int size = 256;
 	int i;
 
-	R = Ra; G = Ga; B = Ba;
+	R = Ra;
+	G = Ga;
+	B = Ba;
 	for (i = 0; i < width * height; i++)
 	{
 		*R++ = *src++;
@@ -266,7 +287,9 @@ static int gif_reduce(int width, int height, uint8_t *src, uint8_t *dst, GifColo
 		*B++ = *src++;
 	}
 
-	R = Ra; G = Ga; B = Ba;
+	R = Ra;
+	G = Ga;
+	B = Ba;
 	return QuantizeBuffer(width, height, &size, R, G, B, dst, colors);
 }
 
@@ -282,7 +305,8 @@ static void flip_page(void)
 
 	// quantize the image
 	ret = gif_reduce(img_width, img_height, slice_data, reduce_data, reduce_cmap->Colors);
-	if (ret == GIF_ERROR) {
+	if (ret == GIF_ERROR)
+	{
 		mp_msg(MSGT_VO, MSGL_ERR, "GIF89a: Quantize failed.\n");
 		return;
 	}
@@ -309,18 +333,19 @@ static void flip_page(void)
 	EGifPutLine(new_gif, reduce_data, img_width * img_height);
 }
 
-static int draw_frame(uint8_t *src[])
+static int draw_frame(uint8_t* src[])
 {
 	return 1;
 }
 
-static int draw_slice(uint8_t *src[], int stride[], int w, int h, int x, int y)
+static int draw_slice(uint8_t* src[], int stride[], int w, int h, int x, int y)
 {
 	uint8_t *dst, *frm;
 	int i;
 	dst = slice_data + (img_width * y + x) * 3;
 	frm = src[0];
-	for (i = 0; i < h; i++) {
+	for (i = 0; i < h; i++)
+	{
 		memcpy(dst, frm, w * 3);
 		dst += (img_width * 3);
 		frm += stride[0];
@@ -335,12 +360,14 @@ static int query_format(uint32_t format)
 	return 0;
 }
 
-static int control(uint32_t request, void *data)
+static int control(uint32_t request, void* data)
 {
-	if (request == VOCTRL_QUERY_FORMAT) {
+	if (request == VOCTRL_QUERY_FORMAT)
+	{
 		return query_format(*((uint32_t*)data));
 	}
-	if (request == VOCTRL_DUPLICATE_FRAME) {
+	if (request == VOCTRL_DUPLICATE_FRAME)
+	{
 		flip_page();
 		return VO_TRUE;
 	}
@@ -351,12 +378,13 @@ static void uninit(void)
 {
 	mp_msg(MSGT_VO, MSGL_DBG2, "GIF89a: Uninit entered\n");
 
-	if (new_gif != NULL) {
+	if (new_gif != NULL)
+	{
 		char temp[256];
 		// comment the gif and close it
 		snprintf(temp, 256, "MPlayer gif output v%2.2f-%d (c) %s\r\n",
-			MPLAYER_VERSION, VO_GIF_REVISION,
-			"joey@nicewarrior.org");
+		         MPLAYER_VERSION, VO_GIF_REVISION,
+		         "joey@nicewarrior.org");
 		EGifPutComment(new_gif, temp);
 		EGifCloseFile(new_gif); // also frees gif storage space.
 	}

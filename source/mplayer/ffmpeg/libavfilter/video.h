@@ -18,19 +18,17 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-
 #ifndef AVFILTER_VIDEO_H
 #define AVFILTER_VIDEO_H
 
 #include "avfilter.h"
 
-AVFilterBufferRef *ff_default_get_video_buffer(AVFilterLink *link,
+AVFilterBufferRef* ff_default_get_video_buffer(AVFilterLink* link,
                                                int perms, int w, int h);
-AVFilterBufferRef *ff_null_get_video_buffer(AVFilterLink *link, int perms, int w, int h);
+AVFilterBufferRef* ff_null_get_video_buffer(AVFilterLink* link, int perms, int w, int h);
 
-
-void ff_null_start_frame(AVFilterLink *link, AVFilterBufferRef *picref);
-void ff_null_draw_slice(AVFilterLink *link, int y, int h, int slice_dir);
-void ff_null_end_frame(AVFilterLink *link);
+void ff_null_start_frame(AVFilterLink* link, AVFilterBufferRef* picref);
+void ff_null_draw_slice(AVFilterLink* link, int y, int h, int slice_dir);
+void ff_null_end_frame(AVFilterLink* link);
 
 #endif /* AVFILTER_VIDEO_H */

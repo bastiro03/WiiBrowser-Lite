@@ -32,21 +32,23 @@
 
 #define AAC_CODER_NB 4
 
-typedef struct AACEncOptions {
-    int stereo_mode;
-    int aac_coder;
+typedef struct AACEncOptions
+{
+	int stereo_mode;
+	int aac_coder;
 } AACEncOptions;
 
 struct AACEncContext;
 
-typedef struct AACCoefficientsEncoder {
-    void (*search_for_quantizers)(AVCodecContext *avctx, struct AACEncContext *s,
-                                  SingleChannelElement *sce, const float lambda);
-    void (*encode_window_bands_info)(struct AACEncContext *s, SingleChannelElement *sce,
-                                     int win, int group_len, const float lambda);
-    void (*quantize_and_encode_band)(struct AACEncContext *s, PutBitContext *pb, const float *in, int size,
-                                     int scale_idx, int cb, const float lambda);
-    void (*search_for_ms)(struct AACEncContext *s, ChannelElement *cpe, const float lambda);
+typedef struct AACCoefficientsEncoder
+{
+	void (*search_for_quantizers)(AVCodecContext* avctx, struct AACEncContext* s,
+	                              SingleChannelElement* sce, float lambda);
+	void (*encode_window_bands_info)(struct AACEncContext* s, SingleChannelElement* sce,
+	                                 int win, int group_len, float lambda);
+	void (*quantize_and_encode_band)(struct AACEncContext* s, PutBitContext* pb, const float* in, int size,
+	                                 int scale_idx, int cb, float lambda);
+	void (*search_for_ms)(struct AACEncContext* s, ChannelElement* cpe, float lambda);
 } AACCoefficientsEncoder;
 
 extern AACCoefficientsEncoder ff_aac_coders[];
@@ -54,33 +56,47 @@ extern AACCoefficientsEncoder ff_aac_coders[];
 /**
  * AAC encoder context
  */
-typedef struct AACEncContext {
-    AVClass *av_class;
-    AACEncOptions options;                       ///< encoding options
-    PutBitContext pb;
-    FFTContext mdct1024;                         ///< long (1024 samples) frame transform context
-    FFTContext mdct128;                          ///< short (128 samples) frame transform context
-    DSPContext  dsp;
-    float *planar_samples[6];                    ///< saved preprocessed input
+typedef struct AACEncContext
+{
+	AVClass* av_class;
+	AACEncOptions options; ///< encoding options
+	PutBitContext pb;
+	FFTContext mdct1024; ///< long (1024 samples) frame transform context
+	FFTContext mdct128; ///< short (128 samples) frame transform context
+	DSPContext dsp;
+	float* planar_samples[6]; ///< saved preprocessed input
 
-    int samplerate_index;                        ///< MPEG-4 samplerate index
-    int channels;                                ///< channel count
-    const uint8_t *chan_map;                     ///< channel configuration map
+	int samplerate_index; ///< MPEG-4 samplerate index
+	int channels; ///< channel count
+	const uint8_t* chan_map; ///< channel configuration map
 
-    ChannelElement *cpe;                         ///< channel elements
-    FFPsyContext psy;
-    struct FFPsyPreprocessContext* psypp;
-    AACCoefficientsEncoder *coder;
-    int cur_channel;
-    int last_frame;
-    float lambda;
-    AudioFrameQueue afq;
-    DECLARE_ALIGNED(16, int,   qcoefs)[96];      ///< quantized coefficients
-    DECLARE_ALIGNED(32, float, scoefs)[1024];    ///< scaled coefficients
+	ChannelElement* cpe; ///< channel elements
+	FFPsyContext psy;
+	struct FFPsyPreprocessContext* psypp;
+	AACCoefficientsEncoder* coder;
+	int cur_channel;
+	int last_frame;
+	float lambda;
+	AudioFrameQueue afq;
+	DECLARE_ALIGNED (
+	16
+	,
+	int
+	,
+	qcoefs
+	)[96]; ///< quantized coefficients
+	DECLARE_ALIGNED (
+	32
+	,
+	float
+	,
+	scoefs
+	)[1024]; ///< scaled coefficients
 
-    struct {
-        float *samples;
-    } buffer;
+	struct
+	{
+		float* samples;
+	} buffer;
 } AACEncContext;
 
 extern float ff_aac_pow34sf_tab[428];

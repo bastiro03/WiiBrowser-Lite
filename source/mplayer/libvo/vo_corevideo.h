@@ -28,23 +28,53 @@
 #import <Carbon/Carbon.h>
 
 // MPlayer OS X VO Protocol
-@protocol MPlayerOSXVOProto
-- (int) startWithWidth: (bycopy int)width
-            withHeight: (bycopy int)height
-             withBytes: (bycopy int)bytes
-            withAspect: (bycopy int)aspect;
-- (void) stop;
-- (void) render;
-- (void) toggleFullscreen;
-- (void) ontop;
-@end
+@
+protocol MPlayerOSXVOProto
+-
+(
+int
+)
+startWithWidth: (bycopy int)
 
-@interface MPlayerOpenGLView : NSOpenGLView
-{
-	//Cocoa
-	NSWindow *window;
+width
+withHeight : (bycopy int)
 
-	//CoreVideo
+height
+withBytes : (bycopy int)
+
+bytes
+withAspect : (bycopy int)
+
+aspect;
+-
+(
+void
+)
+stop;
+-
+(
+void
+)
+render;
+-
+(
+void
+)
+toggleFullscreen;
+-
+(
+void
+)
+ontop;
+@
+end
+
+@ interface MPlayerOpenGLView : NSOpenGLView
+	{
+		//Cocoa
+		NSWindow * window;
+
+		//CoreVideo
 	CVPixelBufferRef frameBuffers[2];
 	CVOpenGLTextureCacheRef textureCache;
 	CVOpenGLTextureRef texture;
@@ -57,59 +87,173 @@
 
 	BOOL mouseHide;
 
-	//menu command id
-	NSMenuItem *kHalfScreenCmd;
-	NSMenuItem *kNormalScreenCmd;
-	NSMenuItem *kDoubleScreenCmd;
-	NSMenuItem *kFullScreenCmd;
-	NSMenuItem *kKeepAspectCmd;
-	NSMenuItem *kAspectOrgCmd;
-	NSMenuItem *kAspectFullCmd;
-	NSMenuItem *kAspectWideCmd;
-	NSMenuItem *kPanScanCmd;
+		//menu command id
+		NSMenuItem * kHalfScreenCmd;
+		NSMenuItem * kNormalScreenCmd;
+		NSMenuItem * kDoubleScreenCmd;
+		NSMenuItem * kFullScreenCmd;
+		NSMenuItem * kKeepAspectCmd;
+		NSMenuItem * kAspectOrgCmd;
+		NSMenuItem * kAspectFullCmd;
+		NSMenuItem * kAspectWideCmd;
+		NSMenuItem * kPanScanCmd;
 
-	//timestamps for disabling screensaver and mouse hiding
+		//timestamps for disabling screensaver and mouse hiding
 	int lastMouseHide;
 	int lastScreensaverUpdate;
-@public
-	float winSizeMult;
-}
+		@public
+		float winSizeMult;
 
-- (BOOL) acceptsFirstResponder;
-- (BOOL) becomeFirstResponder;
-- (BOOL) resignFirstResponder;
+	}
+
+-
+(BOOL)acceptsFirstResponder;
+-
+(BOOL)becomeFirstResponder;
+-
+(BOOL)resignFirstResponder;
 
 //window & rendering
-- (void) preinit;
-- (void) config;
-- (void) prepareOpenGL;
-- (void) render;
-- (void) reshape;
-- (void) setCurrentTexture;
-- (void) drawRect: (NSRect *) bounds;
+-
+(
+void
+)
+preinit;
+-
+(
+void
+)
+config;
+-
+(
+void
+)
+prepareOpenGL;
+-
+(
+void
+)
+render;
+-
+(
+void
+)
+reshape;
+-
+(
+void
+)
+setCurrentTexture;
+-
+(
+void
+)
+drawRect: (NSRect *)
+bounds;
 
 //vo control
-- (void) fullscreen: (BOOL) animate;
-- (void) ontop;
-- (void) panscan;
-- (void) rootwin;
+-
+(
+void
+)
+fullscreen: (BOOL)
+animate;
+-
+(
+void
+)
+ontop;
+-
+(
+void
+)
+panscan;
+-
+(
+void
+)
+rootwin;
 
 //menu
-- (void) initMenu;
-- (void) menuAction:(id)sender;
+-
+(
+void
+)
+initMenu;
+-
+(
+void
+)
+menuAction: (id)
+sender;
 
 //event
-- (void) keyDown: (NSEvent *) theEvent;
-- (void) mouseMoved: (NSEvent *) theEvent;
-- (void) mouseDown: (NSEvent *) theEvent;
-- (void) mouseUp: (NSEvent *) theEvent;
-- (void) rightMouseDown: (NSEvent *) theEvent;
-- (void) rightMouseUp: (NSEvent *) theEvent;
-- (void) otherMouseDown: (NSEvent *) theEvent;
-- (void) otherMouseUp: (NSEvent *) theEvent;
-- (void) scrollWheel: (NSEvent *) theEvent;
-- (void) mouseEvent: (NSEvent *) theEvent;
-- (void) check_events;
-@end
+-
+(
+void
+)
+keyDown: (NSEvent *)
+theEvent;
+-
+(
+void
+)
+mouseMoved: (NSEvent *)
+theEvent;
+-
+(
+void
+)
+mouseDown: (NSEvent *)
+theEvent;
+-
+(
+void
+)
+mouseUp: (NSEvent *)
+theEvent;
+-
+(
+void
+)
+rightMouseDown: (NSEvent *)
+theEvent;
+-
+(
+void
+)
+rightMouseUp: (NSEvent *)
+theEvent;
+-
+(
+void
+)
+otherMouseDown: (NSEvent *)
+theEvent;
+-
+(
+void
+)
+otherMouseUp: (NSEvent *)
+theEvent;
+-
+(
+void
+)
+scrollWheel: (NSEvent *)
+theEvent;
+-
+(
+void
+)
+mouseEvent: (NSEvent *)
+theEvent;
+-
+(
+void
+)
+check_events;
+@
+end
 
 #endif /* MPLAYER_VO_COREVIDEO_H */

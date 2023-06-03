@@ -35,18 +35,20 @@
 
 #include "avcodec.h"
 
-typedef struct {
-    int s1,s2;
+typedef struct
+{
+	int s1, s2;
 } ADXChannelState;
 
-typedef struct {
-    AVFrame frame;
-    int channels;
-    ADXChannelState prev[2];
-    int header_parsed;
-    int eof;
-    int cutoff;
-    int coeff[2];
+typedef struct
+{
+	AVFrame frame;
+	int channels;
+	ADXChannelState prev[2];
+	int header_parsed;
+	int eof;
+	int cutoff;
+	int coeff[2];
 } ADXContext;
 
 #define COEFF_BITS  12
@@ -62,7 +64,7 @@ typedef struct {
  * @param bits         number of bits used to quantize coefficients
  * @param[out] coeff   2 quantized LPC coefficients
  */
-void ff_adx_calculate_coeffs(int cutoff, int sample_rate, int bits, int *coeff);
+void ff_adx_calculate_coeffs(int cutoff, int sample_rate, int bits, int* coeff);
 
 /**
  * Decode ADX stream header.
@@ -75,7 +77,7 @@ void ff_adx_calculate_coeffs(int cutoff, int sample_rate, int bits, int *coeff);
  * @param[out] coeff        2 LPC coefficients, can be NULL
  * @return data offset or negative error code if header is invalid
  */
-int avpriv_adx_decode_header(AVCodecContext *avctx, const uint8_t *buf,
-                             int bufsize, int *header_size, int *coeff);
+int avpriv_adx_decode_header(AVCodecContext* avctx, const uint8_t* buf,
+                             int bufsize, int* header_size, int* coeff);
 
 #endif /* AVCODEC_ADX_H */

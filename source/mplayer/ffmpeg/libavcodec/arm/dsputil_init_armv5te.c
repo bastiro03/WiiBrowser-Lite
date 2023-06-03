@@ -21,22 +21,25 @@
 #include "libavcodec/dsputil.h"
 #include "dsputil_arm.h"
 
-void ff_simple_idct_armv5te(DCTELEM *data);
-void ff_simple_idct_put_armv5te(uint8_t *dest, int line_size, DCTELEM *data);
-void ff_simple_idct_add_armv5te(uint8_t *dest, int line_size, DCTELEM *data);
+void ff_simple_idct_armv5te(DCTELEM* data);
+void ff_simple_idct_put_armv5te(uint8_t* dest, int line_size, DCTELEM* data);
+void ff_simple_idct_add_armv5te(uint8_t* dest, int line_size, DCTELEM* data);
 
-void ff_prefetch_arm(void *mem, int stride, int h);
+void ff_prefetch_arm(void* mem, int stride, int h);
 
-av_cold void ff_dsputil_init_armv5te(DSPContext *c, AVCodecContext *avctx)
+av_cold
+
+void ff_dsputil_init_armv5te(DSPContext* c, AVCodecContext* avctx)
 {
-    if (!avctx->lowres && avctx->bits_per_raw_sample <= 8 &&
-        (avctx->idct_algo == FF_IDCT_AUTO ||
-         avctx->idct_algo == FF_IDCT_SIMPLEARMV5TE)) {
-        c->idct_put              = ff_simple_idct_put_armv5te;
-        c->idct_add              = ff_simple_idct_add_armv5te;
-        c->idct                  = ff_simple_idct_armv5te;
-        c->idct_permutation_type = FF_NO_IDCT_PERM;
-    }
+	if (!avctx->lowres && avctx->bits_per_raw_sample <= 8 &&
+		(avctx->idct_algo == FF_IDCT_AUTO ||
+			avctx->idct_algo == FF_IDCT_SIMPLEARMV5TE))
+	{
+		c->idct_put = ff_simple_idct_put_armv5te;
+		c->idct_add = ff_simple_idct_add_armv5te;
+		c->idct = ff_simple_idct_armv5te;
+		c->idct_permutation_type = FF_NO_IDCT_PERM;
+	}
 
-    c->prefetch = ff_prefetch_arm;
+	c->prefetch = ff_prefetch_arm;
 }

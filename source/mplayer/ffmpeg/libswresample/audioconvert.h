@@ -28,22 +28,21 @@
  * Audio format conversion routines
  */
 
-
 #include "swresample_internal.h"
 #include "libavutil/cpu.h"
 #include "libavutil/audioconvert.h"
 
+typedef void (conv_func_type)(uint8_t* po, const uint8_t* pi, int is, int os, uint8_t* end);
+typedef void (simd_func_type)(uint8_t** dst, const uint8_t** src, int len);
 
-typedef void (conv_func_type)(uint8_t *po, const uint8_t *pi, int is, int os, uint8_t *end);
-typedef void (simd_func_type)(uint8_t **dst, const uint8_t **src, int len);
-
-typedef struct AudioConvert {
-    int channels;
-    conv_func_type *conv_f;
-    simd_func_type *simd_f;
-    const int *ch_map;
-    uint8_t silence[8]; ///< silence input sample
-}AudioConvert;
+typedef struct AudioConvert
+{
+	int channels;
+	conv_func_type* conv_f;
+	simd_func_type* simd_f;
+	const int* ch_map;
+	uint8_t silence[8]; ///< silence input sample
+} AudioConvert;
 
 /**
  * Create an audio sample format converter context
@@ -55,16 +54,16 @@ typedef struct AudioConvert {
  *               if all channels must be selected
  * @return NULL on error
  */
-AudioConvert *swri_audio_convert_alloc(enum AVSampleFormat out_fmt,
+AudioConvert* swri_audio_convert_alloc(enum AVSampleFormat out_fmt,
                                        enum AVSampleFormat in_fmt,
-                                       int channels, const int *ch_map,
+                                       int channels, const int* ch_map,
                                        int flags);
 
 /**
  * Free audio sample format converter context.
  * and set the pointer to NULL
  */
-void swri_audio_convert_free(AudioConvert **ctx);
+void swri_audio_convert_free(AudioConvert** ctx);
 
 /**
  * Convert between audio sample formats
@@ -72,6 +71,6 @@ void swri_audio_convert_free(AudioConvert **ctx);
  * @param[in] in array of input buffers for each channel
  * @param len length of audio frame size (measured in samples)
  */
-int swri_audio_convert(AudioConvert *ctx, AudioData *out, AudioData *in, int len);
+int swri_audio_convert(AudioConvert* ctx, AudioData* out, AudioData* in, int len);
 
 #endif /* AUDIOCONVERT_H */

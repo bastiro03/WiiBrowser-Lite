@@ -23,55 +23,58 @@
 #include "ass.h"
 #include "ass_split.h"
 
-static av_cold int ass_decode_init(AVCodecContext *avctx)
+static av_cold
+
+int ass_decode_init(AVCodecContext* avctx)
 {
-    avctx->subtitle_header = av_malloc(avctx->extradata_size);
-    if (!avctx->subtitle_header)
-        return AVERROR(ENOMEM);
-    memcpy(avctx->subtitle_header, avctx->extradata, avctx->extradata_size);
-    avctx->subtitle_header_size = avctx->extradata_size;
-    avctx->priv_data = ff_ass_split(avctx->extradata);
-    if(!avctx->priv_data)
-        return -1;
-    return 0;
+	avctx->subtitle_header = av_malloc(avctx->extradata_size);
+	if (!avctx->subtitle_header)
+		return AVERROR(ENOMEM);
+	memcpy(avctx->subtitle_header, avctx->extradata, avctx->extradata_size);
+	avctx->subtitle_header_size = avctx->extradata_size;
+	avctx->priv_data = ff_ass_split(avctx->extradata);
+	if (!avctx->priv_data)
+		return -1;
+	return 0;
 }
 
-static int ass_decode_frame(AVCodecContext *avctx, void *data, int *got_sub_ptr,
-                            AVPacket *avpkt)
+static int ass_decode_frame(AVCodecContext* avctx, void* data, int* got_sub_ptr,
+                            AVPacket* avpkt)
 {
-    const char *ptr = avpkt->data;
-    int len, size = avpkt->size;
+	const char* ptr = avpkt->data;
+	int len, size = avpkt->size;
 
-    while (size > 0) {
-        int duration;
-        ASSDialog *dialog = ff_ass_split_dialog(avctx->priv_data, ptr, 0, NULL);
-        if (!dialog)
-            return AVERROR_INVALIDDATA;
-        duration = dialog->end - dialog->start;
-        len = ff_ass_add_rect(data, ptr, 0, duration, 1);
-        if (len < 0)
-            return len;
-        ptr  += len;
-        size -= len;
-    }
+	while (size > 0)
+	{
+		int duration;
+		ASSDialog* dialog = ff_ass_split_dialog(avctx->priv_data, ptr, 0, NULL);
+		if (!dialog)
+			return AVERROR_INVALIDDATA;
+		duration = dialog->end - dialog->start;
+		len = ff_ass_add_rect(data, ptr, 0, duration, 1);
+		if (len < 0)
+			return len;
+		ptr += len;
+		size -= len;
+	}
 
-    *got_sub_ptr = avpkt->size > 0;
-    return avpkt->size;
+	*got_sub_ptr = avpkt->size > 0;
+	return avpkt->size;
 }
 
-static int ass_decode_close(AVCodecContext *avctx)
+static int ass_decode_close(AVCodecContext* avctx)
 {
-    ff_ass_split_free(avctx->priv_data);
-    avctx->priv_data = NULL;
-    return 0;
+	ff_ass_split_free(avctx->priv_data);
+	avctx->priv_data = NULL;
+	return 0;
 }
 
 AVCodec ff_ass_decoder = {
-    .name         = "ass",
-    .long_name    = NULL_IF_CONFIG_SMALL("Advanced SubStation Alpha subtitle"),
-    .type         = AVMEDIA_TYPE_SUBTITLE,
-    .id           = CODEC_ID_SSA,
-    .init         = ass_decode_init,
-    .decode       = ass_decode_frame,
-    .close        = ass_decode_close,
+	.name = "ass",
+	.long_name = NULL_IF_CONFIG_SMALL("Advanced SubStation Alpha subtitle"),
+	.type = AVMEDIA_TYPE_SUBTITLE,
+	.id = CODEC_ID_SSA,
+	.init = ass_decode_init,
+	.decode = ass_decode_frame,
+	.close = ass_decode_close,
 };

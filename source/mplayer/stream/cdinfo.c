@@ -36,11 +36,13 @@
  *******************************************************************************************************************/
 
 cd_info_t*
-cd_info_new(void) {
-	cd_info_t *cd_info = NULL;
+cd_info_new(void)
+{
+	cd_info_t* cd_info = NULL;
 
 	cd_info = malloc(sizeof(cd_info_t));
-	if( cd_info==NULL ) {
+	if (cd_info == NULL)
+	{
 		mp_msg(MSGT_DEMUX, MSGL_ERR, MSGTR_MemAllocFailed);
 		return NULL;
 	}
@@ -51,15 +53,17 @@ cd_info_new(void) {
 }
 
 void
-cd_info_free(cd_info_t *cd_info) {
+cd_info_free(cd_info_t* cd_info)
+{
 	cd_track_t *cd_track, *cd_track_next;
-	if( cd_info==NULL ) return;
+	if (cd_info == NULL) return;
 	free(cd_info->artist);
 	free(cd_info->album);
 	free(cd_info->genre);
 
 	cd_track_next = cd_info->first;
-	while( cd_track_next!=NULL ) {
+	while (cd_track_next != NULL)
+	{
 		cd_track = cd_track_next;
 		cd_track_next = cd_track->next;
 		free(cd_track->name);
@@ -68,20 +72,24 @@ cd_info_free(cd_info_t *cd_info) {
 }
 
 cd_track_t*
-cd_info_add_track(cd_info_t *cd_info, char *track_name, unsigned int track_nb, unsigned int min, unsigned int sec, unsigned int msec, unsigned long frame_begin, unsigned long frame_length) {
-	cd_track_t *cd_track;
+cd_info_add_track(cd_info_t* cd_info, char* track_name, unsigned int track_nb, unsigned int min, unsigned int sec,
+                  unsigned int msec, unsigned long frame_begin, unsigned long frame_length)
+{
+	cd_track_t* cd_track;
 
-	if( cd_info==NULL || track_name==NULL ) return NULL;
+	if (cd_info == NULL || track_name == NULL) return NULL;
 
 	cd_track = malloc(sizeof(cd_track_t));
-	if( cd_track==NULL ) {
+	if (cd_track == NULL)
+	{
 		mp_msg(MSGT_DEMUX, MSGL_ERR, MSGTR_MemAllocFailed);
 		return NULL;
 	}
 	memset(cd_track, 0, sizeof(cd_track_t));
 
-	cd_track->name = malloc(strlen(track_name)+1);
-	if( cd_track->name==NULL ) {
+	cd_track->name = malloc(strlen(track_name) + 1);
+	if (cd_track->name == NULL)
+	{
 		mp_msg(MSGT_DEMUX, MSGL_ERR, MSGTR_MemAllocFailed);
 		free(cd_track);
 		return NULL;
@@ -94,10 +102,12 @@ cd_info_add_track(cd_info_t *cd_info, char *track_name, unsigned int track_nb, u
 	cd_track->frame_begin = frame_begin;
 	cd_track->frame_length = frame_length;
 
-	if( cd_info->first==NULL ) {
+	if (cd_info->first == NULL)
+	{
 		cd_info->first = cd_track;
 	}
-	if( cd_info->last!=NULL ) {
+	if (cd_info->last != NULL)
+	{
 		cd_info->last->next = cd_track;
 	}
 
@@ -112,14 +122,17 @@ cd_info_add_track(cd_info_t *cd_info, char *track_name, unsigned int track_nb, u
 }
 
 cd_track_t*
-cd_info_get_track(cd_info_t *cd_info, unsigned int track_nb) {
-	cd_track_t *cd_track=NULL;
+cd_info_get_track(cd_info_t* cd_info, unsigned int track_nb)
+{
+	cd_track_t* cd_track = NULL;
 
-	if( cd_info==NULL ) return NULL;
+	if (cd_info == NULL) return NULL;
 
 	cd_track = cd_info->first;
-	while( cd_track!=NULL ) {
-		if( cd_track->track_nb==track_nb ) {
+	while (cd_track != NULL)
+	{
+		if (cd_track->track_nb == track_nb)
+		{
 			return cd_track;
 		}
 		cd_track = cd_track->next;
@@ -128,10 +141,12 @@ cd_info_get_track(cd_info_t *cd_info, unsigned int track_nb) {
 }
 
 void
-cd_info_debug(cd_info_t *cd_info) {
-	cd_track_t *current_track;
+cd_info_debug(cd_info_t* cd_info)
+{
+	cd_track_t* current_track;
 	mp_msg(MSGT_DEMUX, MSGL_INFO, "================ CD INFO === start =========\n");
-	if( cd_info==NULL ) {
+	if (cd_info == NULL)
+	{
 		mp_msg(MSGT_DEMUX, MSGL_INFO, "cd_info is NULL\n");
 		return;
 	}
@@ -144,14 +159,20 @@ cd_info_debug(cd_info_t *cd_info) {
 	mp_msg(MSGT_IDENTIFY, MSGL_INFO, "ID_CDDB_INFO_ARTIST=%s\n", cd_info->artist);
 	mp_msg(MSGT_IDENTIFY, MSGL_INFO, "ID_CDDB_INFO_ALBUM=%s\n", cd_info->album);
 	mp_msg(MSGT_IDENTIFY, MSGL_INFO, "ID_CDDB_INFO_GENRE=%s\n", cd_info->genre);
-	mp_msg(MSGT_IDENTIFY, MSGL_INFO, "ID_CDDB_INFO_LENGTH_MSF=%02d:%02d.%02d\n", cd_info->min, cd_info->sec, cd_info->msec);
+	mp_msg(MSGT_IDENTIFY, MSGL_INFO, "ID_CDDB_INFO_LENGTH_MSF=%02d:%02d.%02d\n", cd_info->min, cd_info->sec,
+	       cd_info->msec);
 	mp_msg(MSGT_IDENTIFY, MSGL_INFO, "ID_CDDB_INFO_TRACKS=%d\n", cd_info->nb_tracks);
 
 	current_track = cd_info->first;
-	while( current_track!=NULL ) {
-		mp_msg(MSGT_DEMUX, MSGL_INFO, "  #%2d %2d:%02d.%02d @ %7ld\t[%s] \n", current_track->track_nb, current_track->min, current_track->sec, current_track->msec, current_track->frame_begin, current_track->name);
-		mp_msg(MSGT_IDENTIFY, MSGL_INFO, "ID_CDDB_INFO_TRACK_%d_NAME=%s\n", current_track->track_nb, current_track->name);
-		mp_msg(MSGT_IDENTIFY, MSGL_INFO, "ID_CDDB_INFO_TRACK_%d_MSF=%02d:%02d.%02d\n", current_track->track_nb, current_track->min, current_track->sec, current_track->msec);
+	while (current_track != NULL)
+	{
+		mp_msg(MSGT_DEMUX, MSGL_INFO, "  #%2d %2d:%02d.%02d @ %7ld\t[%s] \n", current_track->track_nb,
+		       current_track->min, current_track->sec, current_track->msec, current_track->frame_begin,
+		       current_track->name);
+		mp_msg(MSGT_IDENTIFY, MSGL_INFO, "ID_CDDB_INFO_TRACK_%d_NAME=%s\n", current_track->track_nb,
+		       current_track->name);
+		mp_msg(MSGT_IDENTIFY, MSGL_INFO, "ID_CDDB_INFO_TRACK_%d_MSF=%02d:%02d.%02d\n", current_track->track_nb,
+		       current_track->min, current_track->sec, current_track->msec);
 		current_track = current_track->next;
 	}
 	mp_msg(MSGT_DEMUX, MSGL_INFO, "================ CD INFO ===  end  =========\n");

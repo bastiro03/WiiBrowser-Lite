@@ -18,7 +18,7 @@
 #ifndef _V_BLOCK_H_
 #define _V_BLOCK_H_
 
-void *_vorbis_block_alloc(vorbis_block *vb,long bytes);
-void _vorbis_block_ripcord(vorbis_block *vb);
+void* _vorbis_block_alloc(vorbis_block* vb, long bytes);
+void _vorbis_block_ripcord(vorbis_block* vb);
 
 #endif

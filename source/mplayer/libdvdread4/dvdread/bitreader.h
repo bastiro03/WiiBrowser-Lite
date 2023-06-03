@@ -25,15 +25,16 @@
 extern "C" {
 #endif
 
-typedef struct {
-  uint8_t *start;
-  uint32_t byte_position;
-  uint32_t bit_position;
-  uint8_t byte;
+typedef struct
+{
+	uint8_t* start;
+	uint32_t byte_position;
+	uint32_t bit_position;
+	uint8_t byte;
 } getbits_state_t;
 
-int dvdread_getbits_init(getbits_state_t *state, uint8_t *start);
-uint32_t dvdread_getbits(getbits_state_t *state, uint32_t number_of_bits);
+int dvdread_getbits_init(getbits_state_t* state, uint8_t* start);
+uint32_t dvdread_getbits(getbits_state_t* state, uint32_t number_of_bits);
 
 #ifdef __cplusplus
 };

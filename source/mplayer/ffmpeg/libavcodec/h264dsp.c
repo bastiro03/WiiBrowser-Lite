@@ -41,7 +41,7 @@
 #include "h264dsp_template.c"
 #undef BIT_DEPTH
 
-void ff_h264dsp_init(H264DSPContext *c, const int bit_depth, const int chroma_format_idc)
+void ff_h264dsp_init(H264DSPContext* c, const int bit_depth, const int chroma_format_idc)
 {
 #undef FUNC
 #define FUNC(a, depth) a ## _ ## depth ## _c
@@ -99,19 +99,20 @@ void ff_h264dsp_init(H264DSPContext *c, const int bit_depth, const int chroma_fo
         c->h264_h_loop_filter_chroma_mbaff_intra= FUNC(h264_h_loop_filter_chroma422_mbaff_intra, depth);\
     c->h264_loop_filter_strength= NULL;
 
-    switch (bit_depth) {
-    case 9:
-        H264_DSP(9);
-        break;
-    case 10:
-        H264_DSP(10);
-        break;
-    default:
-        H264_DSP(8);
-        break;
-    }
+	switch (bit_depth)
+	{
+	case 9:
+		H264_DSP(9);
+		break;
+	case 10:
+		H264_DSP(10);
+		break;
+	default:
+		H264_DSP(8);
+		break;
+	}
 
-    if (ARCH_ARM) ff_h264dsp_init_arm(c, bit_depth, chroma_format_idc);
-    if (HAVE_ALTIVEC) ff_h264dsp_init_ppc(c, bit_depth, chroma_format_idc);
-    if (HAVE_MMX) ff_h264dsp_init_x86(c, bit_depth, chroma_format_idc);
+	if (ARCH_ARM) ff_h264dsp_init_arm(c, bit_depth, chroma_format_idc);
+	if (HAVE_ALTIVEC) ff_h264dsp_init_ppc(c, bit_depth, chroma_format_idc);
+	if (HAVE_MMX) ff_h264dsp_init_x86(c, bit_depth, chroma_format_idc);
 }

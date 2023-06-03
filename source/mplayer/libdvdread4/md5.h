@@ -62,8 +62,8 @@ typedef unsigned short md5_uint32;
 #   if ULONG_MAX == UINT_MAX_32_BITS
 typedef unsigned long md5_uint32;
 #   else
-/* The following line is intended to evoke an error.
-   Using #error is not portable enough.  */
+		 /* The following line is intended to evoke an error.
+			Using #error is not portable enough.  */
 "Cannot determine unsigned 32-bit data type."
 #   endif
 #  endif
@@ -80,14 +80,14 @@ typedef unsigned long md5_uint32;
 /* Structure to save state of computation between the single steps.  */
 struct md5_ctx
 {
-  md5_uint32 A;
-  md5_uint32 B;
-  md5_uint32 C;
-  md5_uint32 D;
+	md5_uint32 A;
+	md5_uint32 B;
+	md5_uint32 C;
+	md5_uint32 D;
 
-  md5_uint32 total[2];
-  md5_uint32 buflen;
-  char buffer[128];
+	md5_uint32 total[2];
+	md5_uint32 buflen;
+	char buffer[128];
 };
 
 /*
@@ -97,21 +97,21 @@ struct md5_ctx
 
 /* Initialize structure containing state of computation.
    (RFC 1321, 3.3: Step 3)  */
-extern void md5_init_ctx __P ((struct md5_ctx *ctx));
+extern void md5_init_ctx __P((struct md5_ctx* ctx));
 
 /* Starting with the result of former calls of this function (or the
    initialization function update the context for the next LEN bytes
    starting at BUFFER.
    It is necessary that LEN is a multiple of 64!!! */
-extern void md5_process_block __P ((const void *buffer, size_t len,
-                                    struct md5_ctx *ctx));
+extern void md5_process_block __P((const void* buffer, size_t len,
+	struct md5_ctx* ctx));
 
 /* Starting with the result of former calls of this function (or the
    initialization function update the context for the next LEN bytes
    starting at BUFFER.
    It is NOT required that LEN is a multiple of 64.  */
-extern void md5_process_bytes __P ((const void *buffer, size_t len,
-                                    struct md5_ctx *ctx));
+extern void md5_process_bytes __P((const void* buffer, size_t len,
+	struct md5_ctx* ctx));
 
 /* Process the remaining bytes in the buffer and put result from CTX
    in first 16 bytes following RESBUF.  The result is always in little
@@ -120,8 +120,7 @@ extern void md5_process_bytes __P ((const void *buffer, size_t len,
 
    IMPORTANT: On some systems it is required that RESBUF be correctly
    aligned for a 32 bits value.  */
-extern void *md5_finish_ctx __P ((struct md5_ctx *ctx, void *resbuf));
-
+extern void* md5_finish_ctx __P((struct md5_ctx* ctx, void* resbuf));
 
 /* Put result from CTX in first 16 bytes following RESBUF.  The result is
    always in little endian byte order, so that a byte-wise output yields
@@ -129,19 +128,18 @@ extern void *md5_finish_ctx __P ((struct md5_ctx *ctx, void *resbuf));
 
    IMPORTANT: On some systems it is required that RESBUF is correctly
    aligned for a 32 bits value.  */
-extern void *md5_read_ctx __P ((const struct md5_ctx *ctx, void *resbuf));
-
+extern void* md5_read_ctx __P((const struct md5_ctx* ctx, void* resbuf));
 
 /* Compute MD5 message digest for bytes read from STREAM.  The
    resulting message digest number will be written into the 16 bytes
    beginning at RESBLOCK.  */
-extern int md5_stream __P ((FILE *stream, void *resblock));
+extern int md5_stream __P((FILE* stream, void* resblock));
 
 /* Compute MD5 message digest for LEN bytes beginning at BUFFER.  The
    result is always in little endian byte order, so that a byte-wise
    output yields to the wanted ASCII representation of the message
    digest.  */
-extern void *md5_buffer __P ((const char *buffer, size_t len, void *resblock));
+extern void* md5_buffer __P((const char* buffer, size_t len, void* resblock));
 
 /* The following is from gnupg-1.0.2's cipher/bithelp.h.  */
 /* Rotate a 32 bit integer by n bytes */
@@ -149,10 +147,10 @@ extern void *md5_buffer __P ((const char *buffer, size_t len, void *resblock));
 static inline md5_uint32
 rol(md5_uint32 x, int n)
 {
-  __asm__("roll %%cl,%0"
-          :"=r" (x)
-          :"0" (x),"c" (n));
-  return x;
+	__asm__("roll %%cl,%0"
+		:"=r" (x)
+		: "0" (x), "c" (n));
+	return x;
 }
 #else
 # define rol(x,n) ( ((x) << (n)) | ((x) >> (32-(n))) )

@@ -21,12 +21,13 @@
 
 #include "avfilter.h"
 
-typedef struct AVFilterChannelLayouts {
-    uint64_t *channel_layouts;  ///< list of channel layouts
-    int    nb_channel_layouts;  ///< number of channel layouts
+typedef struct AVFilterChannelLayouts
+{
+	uint64_t* channel_layouts; ///< list of channel layouts
+	int nb_channel_layouts; ///< number of channel layouts
 
-    unsigned refcount;          ///< number of references to this list
-    struct AVFilterChannelLayouts ***refs; ///< references to this list
+	unsigned refcount; ///< number of references to this list
+	struct AVFilterChannelLayouts*** refs; ///< references to this list
 } AVFilterChannelLayouts;
 
 /**
@@ -37,47 +38,46 @@ typedef struct AVFilterChannelLayouts {
  * If a and b do not share any common elements, neither is modified, and NULL
  * is returned.
  */
-AVFilterChannelLayouts *ff_merge_channel_layouts(AVFilterChannelLayouts *a,
-                                                 AVFilterChannelLayouts *b);
-AVFilterFormats *ff_merge_samplerates(AVFilterFormats *a,
-                                      AVFilterFormats *b);
+AVFilterChannelLayouts* ff_merge_channel_layouts(AVFilterChannelLayouts* a,
+                                                 AVFilterChannelLayouts* b);
+AVFilterFormats* ff_merge_samplerates(AVFilterFormats* a,
+                                      AVFilterFormats* b);
 
 /**
  * Construct an empty AVFilterChannelLayouts/AVFilterFormats struct --
  * representing any channel layout/sample rate.
  */
-AVFilterChannelLayouts *ff_all_channel_layouts(void);
-AVFilterFormats *ff_all_samplerates(void);
+AVFilterChannelLayouts* ff_all_channel_layouts(void);
+AVFilterFormats* ff_all_samplerates(void);
 
-AVFilterChannelLayouts *avfilter_make_format64_list(const int64_t *fmts);
-
+AVFilterChannelLayouts* avfilter_make_format64_list(const int64_t* fmts);
 
 /**
  * A helper for query_formats() which sets all links to the same list of channel
  * layouts/sample rates. If there are no links hooked to this filter, the list
  * is freed.
  */
-void ff_set_common_channel_layouts(AVFilterContext *ctx,
-                                   AVFilterChannelLayouts *layouts);
-void ff_set_common_samplerates(AVFilterContext *ctx,
-                               AVFilterFormats *samplerates);
+void ff_set_common_channel_layouts(AVFilterContext* ctx,
+                                   AVFilterChannelLayouts* layouts);
+void ff_set_common_samplerates(AVFilterContext* ctx,
+                               AVFilterFormats* samplerates);
 
-int ff_add_channel_layout(AVFilterChannelLayouts **l, uint64_t channel_layout);
+int ff_add_channel_layout(AVFilterChannelLayouts** l, uint64_t channel_layout);
 
 /**
  * Add *ref as a new reference to f.
  */
-void ff_channel_layouts_ref(AVFilterChannelLayouts *f,
-                            AVFilterChannelLayouts **ref);
+void ff_channel_layouts_ref(AVFilterChannelLayouts* f,
+                            AVFilterChannelLayouts** ref);
 
 /**
  * Remove a reference to a channel layouts list.
  */
-void ff_channel_layouts_unref(AVFilterChannelLayouts **ref);
+void ff_channel_layouts_unref(AVFilterChannelLayouts** ref);
 
-void ff_channel_layouts_changeref(AVFilterChannelLayouts **oldref,
-                                  AVFilterChannelLayouts **newref);
+void ff_channel_layouts_changeref(AVFilterChannelLayouts** oldref,
+                                  AVFilterChannelLayouts** newref);
 
-int ff_default_query_formats(AVFilterContext *ctx);
+int ff_default_query_formats(AVFilterContext* ctx);
 
 #endif // AVFILTER_FORMATS_H

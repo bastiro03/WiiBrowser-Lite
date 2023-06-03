@@ -29,44 +29,43 @@
 
 #include "common.h"
 
-const char *fsdp_error_t_s[] = {
-  "No error",/** FSDPE_OK **/
-  "Illegal character detected",/** FSDPE_ILLEGAL_CHARACTER **/
-  "Missing version item", /** FSDPE_MISSING_VERSION **/
-  "Invalid version item", /** FSDPE_INVALID_VERSION **/
-  "Owner item not present", /** FSDPE_MISSING_OWNER **/
-  "Parse error in owner item", /** FSDPE_INVALID_OWNER **/
-  "Session name not present", /** FSDPE_MISSING_NAME **/
-  "Empty session name item", /** FSDPE_EMPTY_NAME **/
-  "Syntax error in connection item", /** FSDPE_INVALID_CONNECTION **/
-  "Unrecognized address type in connection item", /** FSDPE_INVALID_CONNECTION_ADDRTYPE **/
-  "Unrecognized network type in connection item", /** FSDPE_INVALID_CONNECTION_NETTYPE **/
-  "Parse error in bandwith item", /** FSDPE_INVALID_BANDWIDTH **/
-  "No time period for the session", /** FSDPE_MISSING_TIME **/
-  "Parse error in time item", /** FSDPE_INVALID_TIME **/
-  "Parse error in repeat time item", /** FSDPE_INVALID_REPEAT **/
-  "Parse error in timezone item", /** FSDPE_INVALID_TIMEZONE **/
-  "Unknown encryption method", /** FSDPE_INVALID_ENCRYPTION_METHOD **/
-  "Syntax error in an attribute item", /** FSDPE_INVALID_ATTRIBUTE **/
-  "Syntax error in an rtpmap attribute item", /** FSDPE_INVALID_ATTRIBUTE_RTPMAP **/
-  "Unknown session type in a session-level attribute", /** FSDPE_INVALID_SESSION_TYPE **/
-  "Parse error in media item", /** FSDPE_INVALID_MEDIA **/
-  "Unknown media type in media item", /** FSDPE_UNKNOWN_MEDIA_TYPE **/
-  "Unknown media transport", /** FSDPE_UNKNOWN_MEDIA_TRANSPORT **/
-  "Unknown extra lines in description item", /** FSDPE_OVERFILLED **/
-  "Unknown line found",	/** FSDPE_INVALID_LINE **/
-  "No connection information provided",	/** FSDPE_MISSING_CONNECTION_INFO **/
-  "Description item does not fit in MAXSIZE", /** FSDPE_INVALID_INDEX **/
-  "Internal error", /** FSDPE_INTERNAL_ERROR **/
-  "Invalid function parameters", /** FSDPE_INVALID_PARAMETER **/
-  "Buffer overflow" /** FSDPE_BUFFER_OVERFLOW **/
+const char* fsdp_error_t_s[] = {
+	"No error", /** FSDPE_OK **/
+	"Illegal character detected", /** FSDPE_ILLEGAL_CHARACTER **/
+	"Missing version item", /** FSDPE_MISSING_VERSION **/
+	"Invalid version item", /** FSDPE_INVALID_VERSION **/
+	"Owner item not present", /** FSDPE_MISSING_OWNER **/
+	"Parse error in owner item", /** FSDPE_INVALID_OWNER **/
+	"Session name not present", /** FSDPE_MISSING_NAME **/
+	"Empty session name item", /** FSDPE_EMPTY_NAME **/
+	"Syntax error in connection item", /** FSDPE_INVALID_CONNECTION **/
+	"Unrecognized address type in connection item", /** FSDPE_INVALID_CONNECTION_ADDRTYPE **/
+	"Unrecognized network type in connection item", /** FSDPE_INVALID_CONNECTION_NETTYPE **/
+	"Parse error in bandwith item", /** FSDPE_INVALID_BANDWIDTH **/
+	"No time period for the session", /** FSDPE_MISSING_TIME **/
+	"Parse error in time item", /** FSDPE_INVALID_TIME **/
+	"Parse error in repeat time item", /** FSDPE_INVALID_REPEAT **/
+	"Parse error in timezone item", /** FSDPE_INVALID_TIMEZONE **/
+	"Unknown encryption method", /** FSDPE_INVALID_ENCRYPTION_METHOD **/
+	"Syntax error in an attribute item", /** FSDPE_INVALID_ATTRIBUTE **/
+	"Syntax error in an rtpmap attribute item", /** FSDPE_INVALID_ATTRIBUTE_RTPMAP **/
+	"Unknown session type in a session-level attribute", /** FSDPE_INVALID_SESSION_TYPE **/
+	"Parse error in media item", /** FSDPE_INVALID_MEDIA **/
+	"Unknown media type in media item", /** FSDPE_UNKNOWN_MEDIA_TYPE **/
+	"Unknown media transport", /** FSDPE_UNKNOWN_MEDIA_TRANSPORT **/
+	"Unknown extra lines in description item", /** FSDPE_OVERFILLED **/
+	"Unknown line found", /** FSDPE_INVALID_LINE **/
+	"No connection information provided", /** FSDPE_MISSING_CONNECTION_INFO **/
+	"Description item does not fit in MAXSIZE", /** FSDPE_INVALID_INDEX **/
+	"Internal error", /** FSDPE_INTERNAL_ERROR **/
+	"Invalid function parameters", /** FSDPE_INVALID_PARAMETER **/
+	"Buffer overflow" /** FSDPE_BUFFER_OVERFLOW **/
 };
 
-
-const char *
-fsdp_strerror (fsdp_error_t err_no)
+const char*
+fsdp_strerror(fsdp_error_t err_no)
 {
-  return (fsdp_error_t_s[err_no]);
+	return (fsdp_error_t_s[err_no]);
 }
 
 #endif /* FSDP_ERRORLIST_C */

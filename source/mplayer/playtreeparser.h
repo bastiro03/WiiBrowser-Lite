@@ -27,16 +27,16 @@
 /// The playtree parser allows to read various playlist formats. It reads from
 /// a stream allowing to handle playlists from local files and the network.
 ///@{
-
 /// \file
 
 struct stream;
 
-typedef struct play_tree_parser {
-  struct stream *stream;
-  char *buffer,*iter,*line;
-  int buffer_size , buffer_end;
-  int deep,keep;
+typedef struct play_tree_parser
+{
+	struct stream* stream;
+	char *buffer, *iter, *line;
+	int buffer_size, buffer_end;
+	int deep, keep;
 } play_tree_parser_t;
 
 /// Create a new parser.
@@ -46,7 +46,7 @@ typedef struct play_tree_parser {
  *  \return The new parser.
  */
 play_tree_parser_t*
-play_tree_parser_new(struct stream *stream, int deep);
+play_tree_parser_new(struct stream* stream, int deep);
 
 /// Destroy a parser.
 void

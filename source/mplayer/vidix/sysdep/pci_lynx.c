@@ -31,39 +31,38 @@
 #define GCCUSESGAS
 #endif
 
-/* let's mimick the Linux Alpha stuff for LynxOS so we don't have
- * to change too much code
- */
+ /* let's mimick the Linux Alpha stuff for LynxOS so we don't have
+  * to change too much code
+  */
 #include <smem.h>
 
-static unsigned char *pciConfBase;
+static unsigned char* pciConfBase;
 
 static inline void enable_os_io(void)
 {
-    pciConfBase = (unsigned char *) smem_create("PCI-CONF",
-    	    (char *)0x80800000, 64*1024, SM_READ|SM_WRITE);
-    if (pciConfBase == (void *) -1)
-        exit(1);
+	pciConfBase = (unsigned char*)smem_create("PCI-CONF",
+		(char*)0x80800000, 64 * 1024, SM_READ | SM_WRITE);
+	if (pciConfBase == (void*)-1)
+		exit(1);
 }
 
 static inline void disable_os_io(void)
 {
-    smem_create(NULL, (char *) pciConfBase, 0, SM_DETACH);
-    smem_remove("PCI-CONF");
-    pciConfBase = NULL;
+	smem_create(NULL, (char*)pciConfBase, 0, SM_DETACH);
+	smem_remove("PCI-CONF");
+	pciConfBase = NULL;
 }
 
 #include <smem.h>
 
-static unsigned char *pciConfBase;
+static unsigned char* pciConfBase;
 
 static inline unsigned long
 static swapl(unsigned long val)
 {
-	unsigned char *p = (unsigned char *)&val;
+	unsigned char* p = (unsigned char*)&val;
 	return (p[3] << 24) | (p[2] << 16) | (p[1] << 8) | (p[0] << 0);
 }
-
 
 #define BUS(tag) (((tag)>>16)&0xff)
 #define DFN(tag) (((tag)>>8)&0xff)
@@ -72,21 +71,22 @@ static swapl(unsigned long val)
 #define PCIBIOS_SUCCESSFUL		0x00
 
 static int pciconfig_read(
-          unsigned char bus,
-          unsigned char dev,
-          unsigned char offset,
-          int len,		/* unused, alway 4 */
-          unsigned long *val)
+	unsigned char bus,
+	unsigned char dev,
+	unsigned char offset,
+	int len,		/* unused, alway 4 */
+	unsigned long* val)
 {
 	unsigned long _val;
-	unsigned long *ptr;
+	unsigned long* ptr;
 
 	dev >>= 3;
 	if (bus || dev >= 16) {
 		*val = 0xFFFFFFFF;
 		return PCIBIOS_DEVICE_NOT_FOUND;
-	} else {
-		ptr = (unsigned long *)(pciConfBase + ((1<<dev) | offset));
+	}
+	else {
+		ptr = (unsigned long*)(pciConfBase + ((1 << dev) | offset));
 		_val = swapl(*ptr);
 	}
 	*val = _val;
@@ -94,21 +94,22 @@ static int pciconfig_read(
 }
 
 static int pciconfig_write(
-          unsigned char bus,
-          unsigned char dev,
-          unsigned char offset,
-          int len,		/* unused, alway 4 */
-          unsigned long val)
+	unsigned char bus,
+	unsigned char dev,
+	unsigned char offset,
+	int len,		/* unused, alway 4 */
+	unsigned long val)
 {
 	unsigned long _val;
-	unsigned long *ptr;
+	unsigned long* ptr;
 
 	dev >>= 3;
 	_val = swapl(val);
 	if (bus || dev >= 16) {
 		return PCIBIOS_DEVICE_NOT_FOUND;
-	} else {
-		ptr = (unsigned long *)(pciConfBase + ((1<<dev) | offset));
+	}
+	else {
+		ptr = (unsigned long*)(pciConfBase + ((1 << dev) | offset));
 		*ptr = _val;
 	}
 	return PCIBIOS_SUCCESSFUL;

@@ -24,30 +24,32 @@
 #define MPLAYER_METADATA_H
 
 typedef enum metadata_s metadata_t;
-enum metadata_s {
-  /* common info */
-  META_NAME = 0,
 
-  /* video stream properties */
-  META_VIDEO_CODEC,
-  META_VIDEO_BITRATE,
-  META_VIDEO_RESOLUTION,
+enum metadata_s
+{
+	/* common info */
+	META_NAME = 0,
 
-  /* audio stream properties */
-  META_AUDIO_CODEC,
-  META_AUDIO_BITRATE,
-  META_AUDIO_SAMPLES,
+	/* video stream properties */
+	META_VIDEO_CODEC,
+	META_VIDEO_BITRATE,
+	META_VIDEO_RESOLUTION,
 
-  /* ID3 tags and other stream infos */
-  META_INFO_TITLE,
-  META_INFO_ARTIST,
-  META_INFO_ALBUM,
-  META_INFO_YEAR,
-  META_INFO_COMMENT,
-  META_INFO_TRACK,
-  META_INFO_GENRE
+	/* audio stream properties */
+	META_AUDIO_CODEC,
+	META_AUDIO_BITRATE,
+	META_AUDIO_SAMPLES,
+
+	/* ID3 tags and other stream infos */
+	META_INFO_TITLE,
+	META_INFO_ARTIST,
+	META_INFO_ALBUM,
+	META_INFO_YEAR,
+	META_INFO_COMMENT,
+	META_INFO_TRACK,
+	META_INFO_GENRE
 };
 
-char *get_metadata (metadata_t type);
+char* get_metadata(metadata_t type);
 
 #endif /* MPLAYER_METADATA_H */

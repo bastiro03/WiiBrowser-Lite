@@ -38,16 +38,16 @@
 #include "gui/interface.h"
 #include "gui.h"
 
-static const char gui_configuration[] =  "gui.conf";
+static const char gui_configuration[] = "gui.conf";
 
 /* params */
-int   gtkAONorm = 0;
-int   gtkAOExtraStereo = 0;
+int gtkAONorm = 0;
+int gtkAOExtraStereo = 0;
 float gtkAOExtraStereoMul = 1.0;
-int   gtkCacheOn = 0;
-int   gtkCacheSize = 2048;
-int   gtkAutoSyncOn = 0;
-int   gtkAutoSync = 0;
+int gtkCacheOn = 0;
+int gtkCacheSize = 2048;
+int gtkAutoSyncOn = 0;
+int gtkAutoSync = 0;
 
 int video_window = 1;
 int console = 0;
@@ -58,85 +58,86 @@ int gui_main_pos_y = -2;
 int gui_video_pos_x = -1;
 int gui_video_pos_y = -1;
 
-m_config_t *gui_conf;
+m_config_t* gui_conf;
 static const m_option_t gui_opts[] =
 {
-    {   "priority", &proc_priority, CONF_TYPE_STRING, 0, 0, 0, NULL},
-    {   "vo_driver", &video_driver_list, CONF_TYPE_STRING_LIST, 0, 0, 0, NULL },
-    {   "v_framedrop", &frame_dropping, CONF_TYPE_INT, CONF_RANGE, 0, 2, NULL },
-    {   "vo_doublebuffering", &vo_doublebuffering, CONF_TYPE_FLAG, 0, 0, 1, NULL },
-    {   "vo_direct_render", &vo_directrendering, CONF_TYPE_FLAG, 0, 0, 1, NULL },
-    {   "ao_driver", &audio_driver_list, CONF_TYPE_STRING_LIST, 0, 0, 0, NULL },
-    {   "ao_volnorm", &gtkAONorm, CONF_TYPE_FLAG, 0, 0, 1, NULL },
-    {   "softvol", &soft_vol, CONF_TYPE_FLAG, 0, 0, 1, NULL },
-    {   "ao_extra_stereo", &gtkAOExtraStereo, CONF_TYPE_FLAG, 0, 0, 1, NULL },
-    {   "ao_extra_stereo_coefficient", &gtkAOExtraStereoMul, CONF_TYPE_FLOAT, CONF_RANGE, -10, 10, NULL },
-    {   "delay", &audio_delay, CONF_TYPE_FLOAT, CONF_RANGE, -100.0, 100.0, NULL},
-    {   "osd_level", &osd_level, CONF_TYPE_INT, CONF_RANGE, 0, 3, NULL },
-    {   "cache", &gtkCacheOn, CONF_TYPE_FLAG, 0, 0, 1, NULL },
-    {   "cache_size", &gtkCacheSize, CONF_TYPE_INT, CONF_RANGE, 32, 0x7fffffff, NULL },
-    {   "autosync", &gtkAutoSyncOn, CONF_TYPE_FLAG, 0, 0, 1, NULL },
-    {   "autosync_size", &gtkAutoSync, CONF_TYPE_INT, CONF_RANGE, 0, 10000, NULL },
-    {   "gui_skin", &skinName, CONF_TYPE_STRING, 0, 0, 0, NULL },
-    {   "gui_main_pos_x", &gui_main_pos_x, CONF_TYPE_INT, 0, 0, 0, NULL },
-    {   "gui_main_pos_y", &gui_main_pos_y, CONF_TYPE_INT, 0, 0, 0, NULL },
-    {   "gui_sub_pos_x", &gui_video_pos_x, CONF_TYPE_INT, 0, 0, 0, NULL },
-    {   "gui_sub_pos_y", &gui_video_pos_y, CONF_TYPE_INT, 0, 0, 0, NULL },
-    {   "sub_window", &video_window, CONF_TYPE_FLAG, 0, 0, 1, NULL},
-    {   "console", &console, CONF_TYPE_FLAG, 0, 0, 1, NULL},
-    {   "idle", &player_idle_mode, CONF_TYPE_FLAG, CONF_GLOBAL, 0, 1, NULL},
-    {   NULL, NULL, 0, 0, 0, 0, NULL }
+	{"priority", &proc_priority, CONF_TYPE_STRING, 0, 0, 0, NULL},
+	{"vo_driver", &video_driver_list, CONF_TYPE_STRING_LIST, 0, 0, 0, NULL},
+	{"v_framedrop", &frame_dropping, CONF_TYPE_INT, CONF_RANGE, 0, 2, NULL},
+	{"vo_doublebuffering", &vo_doublebuffering, CONF_TYPE_FLAG, 0, 0, 1, NULL},
+	{"vo_direct_render", &vo_directrendering, CONF_TYPE_FLAG, 0, 0, 1, NULL},
+	{"ao_driver", &audio_driver_list, CONF_TYPE_STRING_LIST, 0, 0, 0, NULL},
+	{"ao_volnorm", &gtkAONorm, CONF_TYPE_FLAG, 0, 0, 1, NULL},
+	{"softvol", &soft_vol, CONF_TYPE_FLAG, 0, 0, 1, NULL},
+	{"ao_extra_stereo", &gtkAOExtraStereo, CONF_TYPE_FLAG, 0, 0, 1, NULL},
+	{"ao_extra_stereo_coefficient", &gtkAOExtraStereoMul, CONF_TYPE_FLOAT, CONF_RANGE, -10, 10, NULL},
+	{"delay", &audio_delay, CONF_TYPE_FLOAT, CONF_RANGE, -100.0, 100.0, NULL},
+	{"osd_level", &osd_level, CONF_TYPE_INT, CONF_RANGE, 0, 3, NULL},
+	{"cache", &gtkCacheOn, CONF_TYPE_FLAG, 0, 0, 1, NULL},
+	{"cache_size", &gtkCacheSize, CONF_TYPE_INT, CONF_RANGE, 32, 0x7fffffff, NULL},
+	{"autosync", &gtkAutoSyncOn, CONF_TYPE_FLAG, 0, 0, 1, NULL},
+	{"autosync_size", &gtkAutoSync, CONF_TYPE_INT, CONF_RANGE, 0, 10000, NULL},
+	{"gui_skin", &skinName, CONF_TYPE_STRING, 0, 0, 0, NULL},
+	{"gui_main_pos_x", &gui_main_pos_x, CONF_TYPE_INT, 0, 0, 0, NULL},
+	{"gui_main_pos_y", &gui_main_pos_y, CONF_TYPE_INT, 0, 0, 0, NULL},
+	{"gui_sub_pos_x", &gui_video_pos_x, CONF_TYPE_INT, 0, 0, 0, NULL},
+	{"gui_sub_pos_y", &gui_video_pos_y, CONF_TYPE_INT, 0, 0, 0, NULL},
+	{"sub_window", &video_window, CONF_TYPE_FLAG, 0, 0, 1, NULL},
+	{"console", &console, CONF_TYPE_FLAG, 0, 0, 1, NULL},
+	{"idle", &player_idle_mode, CONF_TYPE_FLAG, CONF_GLOBAL, 0, 1, NULL},
+	{NULL, NULL, 0, 0, 0, 0, NULL}
 };
 
-int cfg_gui_include(m_option_t *conf, const char *filename)
+int cfg_gui_include(m_option_t* conf, const char* filename)
 {
-    (void)conf;
+	(void)conf;
 
-    return m_config_parse_config_file(gui_conf, filename, 0);
+	return m_config_parse_config_file(gui_conf, filename, 0);
 }
 
 void cfg_read(void)
 {
-    char *cfg = get_path(gui_configuration);
+	char* cfg = get_path(gui_configuration);
 
-    player_idle_mode = 1;   // GUI is in idle mode by default
+	player_idle_mode = 1; // GUI is in idle mode by default
 
-    /* read configuration */
-    mp_msg(MSGT_GPLAYER, MSGL_V, "[GUI] [cfg] reading config file: %s\n", cfg);
-    gui_conf = m_config_new();
-    m_config_register_options(gui_conf, gui_opts);
-    if (m_config_parse_config_file(gui_conf, cfg, 1) < 0)
-        mp_msg(MSGT_GPLAYER, MSGL_ERR, MSGTR_ConfigFileError "\n");
-    free(cfg);
+	/* read configuration */
+	mp_msg(MSGT_GPLAYER, MSGL_V, "[GUI] [cfg] reading config file: %s\n", cfg);
+	gui_conf = m_config_new();
+	m_config_register_options(gui_conf, gui_opts);
+	if (m_config_parse_config_file(gui_conf, cfg, 1) < 0)
+		mp_msg(MSGT_GPLAYER, MSGL_ERR, MSGTR_ConfigFileError "\n");
+	free(cfg);
 }
 
 void cfg_write(void)
 {
-    char *cfg = get_path(gui_configuration);
-    FILE *f;
-    int i;
+	char* cfg = get_path(gui_configuration);
+	FILE* f;
+	int i;
 
-    /* save configuration */
-    if ((f = fopen(cfg, "wt+")))
-    {
-        for (i=0; gui_opts[i].name; i++)
-        {
-            char *v = m_option_print(&gui_opts[i], gui_opts[i].p);
-            if(v == (char *)-1) {
-                mp_msg(MSGT_GPLAYER, MSGL_WARN, MSGTR_UnableToSaveOption, gui_opts[i].name);
-                v = NULL;
-            }
-            if(v)
-            {
-                char delim[] = "\"";
+	/* save configuration */
+	if ((f = fopen(cfg, "wt+")))
+	{
+		for (i = 0; gui_opts[i].name; i++)
+		{
+			char* v = m_option_print(&gui_opts[i], gui_opts[i].p);
+			if (v == (char*)-1)
+			{
+				mp_msg(MSGT_GPLAYER, MSGL_WARN, MSGTR_UnableToSaveOption, gui_opts[i].name);
+				v = NULL;
+			}
+			if (v)
+			{
+				char delim[] = "\"";
 
-                if (!strchr(v, ' ')) *delim = 0;
+				if (!strchr(v, ' ')) *delim = 0;
 
-                fprintf(f, "%s=%s%s%s\n", gui_opts[i].name, delim, v, delim);
-                free(v);
-            }
-        }
-        fclose(f);
-    }
-    free(cfg);
+				fprintf(f, "%s=%s%s%s\n", gui_opts[i].name, delim, v, delim);
+				free(v);
+			}
+		}
+		fclose(f);
+	}
+	free(cfg);
 }

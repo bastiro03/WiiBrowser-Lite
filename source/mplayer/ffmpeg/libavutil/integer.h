@@ -33,8 +33,9 @@
 
 #define AV_INTEGER_SIZE 8
 
-typedef struct AVInteger{
-    uint16_t v[AV_INTEGER_SIZE];
+typedef struct AVInteger
+{
+	uint16_t v[AV_INTEGER_SIZE];
 } AVInteger;
 
 AVInteger av_add_i(AVInteger a, AVInteger b) av_const;
@@ -56,7 +57,7 @@ int av_cmp_i(AVInteger a, AVInteger b) av_const;
 /**
  * bitwise shift
  * @param s the number of bits by which the value should be shifted right,
-            may be negative for shifting left
+			may be negative for shifting left
  */
 AVInteger av_shr_i(AVInteger a, int s) av_const;
 
@@ -64,7 +65,7 @@ AVInteger av_shr_i(AVInteger a, int s) av_const;
  * Return a % b.
  * @param quot a/b will be stored here.
  */
-AVInteger av_mod_i(AVInteger *quot, AVInteger a, AVInteger b);
+AVInteger av_mod_i(AVInteger* quot, AVInteger a, AVInteger b);
 
 /**
  * Return a/b.

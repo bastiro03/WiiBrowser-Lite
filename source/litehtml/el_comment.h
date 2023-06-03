@@ -5,16 +5,17 @@ namespace litehtml
 {
 	class el_comment : public element
 	{
-		std::wstring	m_text;
+		std::wstring m_text;
+
 	public:
-		el_comment(litehtml::document* doc);
-		virtual ~el_comment();
+		el_comment(document* doc);
+		~el_comment() override;
 
-		virtual void				get_text(std::wstring& text);
-		virtual void				set_data(const wchar_t* data);
+		void get_text(std::wstring& text) override;
+		void set_data(const wchar_t* data) override;
 
-		virtual void				apply_stylesheet(const litehtml::css& stylesheet);
-		virtual void				parse_styles(bool is_reparse);
-		virtual int					get_base_line();
+		void apply_stylesheet(const css& stylesheet) override;
+		void parse_styles(bool is_reparse) override;
+		int get_base_line() override;
 	};
 }

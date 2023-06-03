@@ -43,14 +43,14 @@ typedef vector unsigned int vector_u32_t;
 
 #if defined(HAVE_ALTIVEC_H) && !defined(__APPLE_CC__) && (__GNUC__ * 100 + __GNUC_MINOR__ < 303)
 /* work around gcc <3.3 vec_mergel bug */
-static inline vector_s16_t my_vec_mergel (vector_s16_t const A,
-					  vector_s16_t const B)
+static inline vector_s16_t my_vec_mergel(vector_s16_t const A,
+	vector_s16_t const B)
 {
-    static const vector_u8_t mergel = {
+	static const vector_u8_t mergel = {
 	0x08, 0x09, 0x18, 0x19, 0x0a, 0x0b, 0x1a, 0x1b,
 	0x0c, 0x0d, 0x1c, 0x1d, 0x0e, 0x0f, 0x1e, 0x1f
-    };
-    return vec_perm (A, B, mergel);
+	};
+	return vec_perm(A, B, mergel);
 }
 #undef vec_mergel
 #define vec_mergel my_vec_mergel
@@ -63,15 +63,15 @@ static inline vector_s16_t my_vec_mergel (vector_s16_t const A,
 #endif
 
 static const vector_s16_t constants ATTR_ALIGN(16) =
-    VEC_S16 (23170, 13573, 6518, 21895, -23170, -21895, 32, 31);
+VEC_S16(23170, 13573, 6518, 21895, -23170, -21895, 32, 31);
 static const vector_s16_t constants_1 ATTR_ALIGN(16) =
-    VEC_S16 (16384, 22725, 21407, 19266, 16384, 19266, 21407, 22725);
+VEC_S16(16384, 22725, 21407, 19266, 16384, 19266, 21407, 22725);
 static const vector_s16_t constants_2 ATTR_ALIGN(16) =
-    VEC_S16 (16069, 22289, 20995, 18895, 16069, 18895, 20995, 22289);
+VEC_S16(16069, 22289, 20995, 18895, 16069, 18895, 20995, 22289);
 static const vector_s16_t constants_3 ATTR_ALIGN(16) =
-    VEC_S16 (21407, 29692, 27969, 25172, 21407, 25172, 27969, 29692);
+VEC_S16(21407, 29692, 27969, 25172, 21407, 25172, 27969, 29692);
 static const vector_s16_t constants_4 ATTR_ALIGN(16) =
-    VEC_S16 (13623, 18895, 17799, 16019, 13623, 16019, 17799, 18895);
+VEC_S16(13623, 18895, 17799, 16019, 13623, 16019, 17799, 18895);
 
 #define IDCT								\
     vector_s16_t vx0, vx1, vx2, vx3, vx4, vx5, vx6, vx7;		\
@@ -204,49 +204,49 @@ static const vector_s16_t constants_4 ATTR_ALIGN(16) =
     vx6 = vec_sra (vy6, shift);						\
     vx7 = vec_sra (vy7, shift);
 
-void mpeg2_idct_copy_altivec (int16_t * const _block, uint8_t * dest,
-			      const int stride)
+void mpeg2_idct_copy_altivec(int16_t* const _block, uint8_t* dest,
+	const int stride)
 {
-    vector_s16_t * const block = (vector_s16_t *)_block;
-    vector_u8_t tmp;
+	vector_s16_t* const block = (vector_s16_t*)_block;
+	vector_u8_t tmp;
 
-    IDCT
+	IDCT
 
 #define COPY(dest,src)						\
     tmp = vec_packsu (src, src);				\
     vec_ste ((vector_u32_t)tmp, 0, (unsigned int *)dest);	\
     vec_ste ((vector_u32_t)tmp, 4, (unsigned int *)dest);
 
-    COPY (dest, vx0)	dest += stride;
-    COPY (dest, vx1)	dest += stride;
-    COPY (dest, vx2)	dest += stride;
-    COPY (dest, vx3)	dest += stride;
-    COPY (dest, vx4)	dest += stride;
-    COPY (dest, vx5)	dest += stride;
-    COPY (dest, vx6)	dest += stride;
-    COPY (dest, vx7)
+		COPY(dest, vx0)	dest += stride;
+	COPY(dest, vx1)	dest += stride;
+	COPY(dest, vx2)	dest += stride;
+	COPY(dest, vx3)	dest += stride;
+	COPY(dest, vx4)	dest += stride;
+	COPY(dest, vx5)	dest += stride;
+	COPY(dest, vx6)	dest += stride;
+	COPY(dest, vx7)
 
-    block[0] = block[1] = block[2] = block[3] = zero;
-    block[4] = block[5] = block[6] = block[7] = zero;
+		block[0] = block[1] = block[2] = block[3] = zero;
+	block[4] = block[5] = block[6] = block[7] = zero;
 }
 
-void mpeg2_idct_add_altivec (const int last, int16_t * const _block,
-			     uint8_t * dest, const int stride)
+void mpeg2_idct_add_altivec(const int last, int16_t* const _block,
+	uint8_t* dest, const int stride)
 {
-    vector_s16_t * const block = (vector_s16_t *)_block;
-    vector_u8_t tmp;
-    vector_s16_t tmp2, tmp3;
-    vector_u8_t perm0;
-    vector_u8_t perm1;
-    vector_u8_t p0, p1, p;
+	vector_s16_t* const block = (vector_s16_t*)_block;
+	vector_u8_t tmp;
+	vector_s16_t tmp2, tmp3;
+	vector_u8_t perm0;
+	vector_u8_t perm1;
+	vector_u8_t p0, p1, p;
 
-    IDCT
+	IDCT
 
-    p0 = vec_lvsl (0, dest);
-    p1 = vec_lvsl (stride, dest);
-    p = vec_splat_u8 (-1);
-    perm0 = vec_mergeh (p, p0);
-    perm1 = vec_mergeh (p, p1);
+		p0 = vec_lvsl(0, dest);
+	p1 = vec_lvsl(stride, dest);
+	p = vec_splat_u8(-1);
+	perm0 = vec_mergeh(p, p0);
+	perm1 = vec_mergeh(p, p1);
 
 #define ADD(dest,src,perm)						\
     /* *(uint64_t *)&tmp = *(uint64_t *)dest; */			\
@@ -257,30 +257,30 @@ void mpeg2_idct_add_altivec (const int last, int16_t * const _block,
     vec_ste ((vector_u32_t)tmp, 0, (unsigned int *)dest);		\
     vec_ste ((vector_u32_t)tmp, 4, (unsigned int *)dest);
 
-    ADD (dest, vx0, perm0)	dest += stride;
-    ADD (dest, vx1, perm1)	dest += stride;
-    ADD (dest, vx2, perm0)	dest += stride;
-    ADD (dest, vx3, perm1)	dest += stride;
-    ADD (dest, vx4, perm0)	dest += stride;
-    ADD (dest, vx5, perm1)	dest += stride;
-    ADD (dest, vx6, perm0)	dest += stride;
-    ADD (dest, vx7, perm1)
+	ADD(dest, vx0, perm0)	dest += stride;
+	ADD(dest, vx1, perm1)	dest += stride;
+	ADD(dest, vx2, perm0)	dest += stride;
+	ADD(dest, vx3, perm1)	dest += stride;
+	ADD(dest, vx4, perm0)	dest += stride;
+	ADD(dest, vx5, perm1)	dest += stride;
+	ADD(dest, vx6, perm0)	dest += stride;
+	ADD(dest, vx7, perm1)
 
-    block[0] = block[1] = block[2] = block[3] = zero;
-    block[4] = block[5] = block[6] = block[7] = zero;
+		block[0] = block[1] = block[2] = block[3] = zero;
+	block[4] = block[5] = block[6] = block[7] = zero;
 }
 
-void mpeg2_idct_altivec_init (void)
+void mpeg2_idct_altivec_init(void)
 {
-    int i, j;
+	int i, j;
 
-    /* the altivec idct uses a transposed input, so we patch scan tables */
-    for (i = 0; i < 64; i++) {
-	j = mpeg2_scan_norm[i];
-	mpeg2_scan_norm[i] = (j >> 3) | ((j & 7) << 3);
-	j = mpeg2_scan_alt[i];
-	mpeg2_scan_alt[i] = (j >> 3) | ((j & 7) << 3);
-    }
+	/* the altivec idct uses a transposed input, so we patch scan tables */
+	for (i = 0; i < 64; i++) {
+		j = mpeg2_scan_norm[i];
+		mpeg2_scan_norm[i] = (j >> 3) | ((j & 7) << 3);
+		j = mpeg2_scan_alt[i];
+		mpeg2_scan_alt[i] = (j >> 3) | ((j & 7) << 3);
+	}
 }
 
 #endif

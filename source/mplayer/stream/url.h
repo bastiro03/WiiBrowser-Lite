@@ -25,26 +25,27 @@
 
 //#define URL_DEBUG
 
-typedef struct {
-	char *url;
-	char *noauth_url;
-	char *protocol;
-	char *hostname;
-	char *file;
+typedef struct
+{
+	char* url;
+	char* noauth_url;
+	char* protocol;
+	char* hostname;
+	char* file;
 	unsigned int port;
-	char *username;
-	char *password;
+	char* username;
+	char* password;
 } URL_t;
 
-URL_t *url_redirect(URL_t **url, const char *redir);
+URL_t* url_redirect(URL_t** url, const char* redir);
 
-char *get_http_proxy_url(const URL_t *proxy, const char *host_url);
+char* get_http_proxy_url(const URL_t* proxy, const char* host_url);
 
 URL_t* url_new(const char* url);
-void   url_free(URL_t* url);
+void url_free(URL_t* url);
 
-void url_unescape_string(char *outbuf, const char *inbuf);
-void url_escape_string(char *outbuf, const char *inbuf);
+void url_unescape_string(char* outbuf, const char* inbuf);
+void url_escape_string(char* outbuf, const char* inbuf);
 
 #ifdef URL_DEBUG
 void url_debug(const URL_t* url);

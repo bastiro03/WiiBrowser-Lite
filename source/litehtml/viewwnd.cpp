@@ -1,33 +1,33 @@
 #include <wctype.h>
 #include <algorithm>
 
-#include "..\FreeTypeGX.h"
-#include "..\httplib.h"
-#include "..\video.h"
+#include "../FreeTypeGX.h"
+#include "../httplib.h"
+#include "../video.h"
 
 #include "viewwnd.h"
 #include "common.h"
 
-wchar_t *load_text_file( const wchar_t *url, bool use_iconv )
+wchar_t* load_text_file(const wchar_t* url, bool use_iconv)
 {
-    struct block HTML;
-    CURL *curl_upd = curl_easy_init();
+	struct block HTML;
+	CURL* curl_upd = curl_easy_init();
 
-    char *ascii = new char[wcslen(url) + 1];
-    int bt = wcstombs(ascii, url, wcslen(url));
-    ascii[bt] = 0;
+	auto ascii = new char[wcslen(url) + 1];
+	int bt = wcstombs(ascii, url, wcslen(url));
+	ascii[bt] = 0;
 
-    HTML = downloadfile(curl_upd, ascii, NULL);
-    delete(ascii);
-    if(HTML.size == 0)
-        return NULL;
+	HTML = downloadfile(curl_upd, ascii, NULL);
+	delete(ascii);
+	if (HTML.size == 0)
+		return nullptr;
 
 	curl_easy_cleanup(curl_upd);
-	wchar_t *text = NULL;
+	wchar_t* text = nullptr;
 
-	if(use_iconv)
-        text = converIconv(HTML.data, "UTF-8");
-    else text = charToWideChar(HTML.data);
+	if (use_iconv)
+		text = converIconv(HTML.data, "UTF-8");
+	else text = charToWideChar(HTML.data);
 
 	free(HTML.data);
 	return text;
@@ -35,20 +35,20 @@ wchar_t *load_text_file( const wchar_t *url, bool use_iconv )
 
 enum
 {
-    SB_LINEDOWN = 0,
-    SB_PAGEDOWN,
-    SB_LINEUP,
-    SB_PAGEUP,
+	SB_LINEDOWN = 0,
+	SB_PAGEDOWN,
+	SB_LINEUP,
+	SB_PAGEUP,
 };
 
-CHTMLViewWnd::CHTMLViewWnd(litehtml::context* ctx)
+CHTMLViewWnd::CHTMLViewWnd(context* ctx)
 {
-	m_doc		= NULL;
-	m_top		= 0;
-	m_left		= 0;
-	m_max_top	= 0;
-	m_max_left	= 0;
-	m_context	= ctx;
+	m_doc = nullptr;
+	m_top = 0;
+	m_left = 0;
+	m_max_top = 0;
+	m_max_left = 0;
+	m_context = ctx;
 }
 
 CHTMLViewWnd::~CHTMLViewWnd(void)
@@ -57,96 +57,92 @@ CHTMLViewWnd::~CHTMLViewWnd(void)
 
 void CHTMLViewWnd::OnCreate()
 {
-
 }
 
-void CHTMLViewWnd::SetClip( litehtml::position clip )
+void CHTMLViewWnd::SetClip(position clip)
 {
-    m_clip = clip;
+	m_clip = clip;
 }
 
 void CHTMLViewWnd::OnPaint()
 {
-	if(m_doc)
+	if (m_doc)
 	{
 		m_doc->draw(0, -m_left, -m_top, &m_clip);
 	}
 }
 
-void CHTMLViewWnd::OnSize( int width, int height )
+void CHTMLViewWnd::OnSize(int width, int height)
 {
 	render();
 }
 
 void CHTMLViewWnd::OnDestroy()
 {
-
 }
 
-void CHTMLViewWnd::create( void )
+void CHTMLViewWnd::create(void)
 {
-
 }
 
-void CHTMLViewWnd::open( wstring path )
+void CHTMLViewWnd::open(wstring path)
 {
-	if(!m_doc_path.empty())
+	if (!m_doc_path.empty())
 	{
 		m_history_back.push_back(m_doc_path);
 	}
 
-	m_doc_path  = make_url(path, NULL);
-	m_doc		= NULL;
+	m_doc_path = make_url(path, nullptr);
+	m_doc = nullptr;
 	m_base_path = m_doc_path;
 
-	wchar_t *html_text = load_text_file(m_doc_path.c_str(), false);
-	if(html_text)
+	wchar_t* html_text = load_text_file(m_doc_path.c_str(), false);
+	if (html_text)
 	{
-		m_doc = litehtml::document::createFromString(html_text, this, m_context);
+		m_doc = document::createFromString(html_text, this, m_context);
 	}
 
-	m_top	= 0;
-	m_left	= 0;
+	m_top = 0;
+	m_left = 0;
 	render();
 }
 
 void CHTMLViewWnd::render()
 {
-	if(!m_doc)
+	if (!m_doc)
 	{
 		return;
 	}
 
-	litehtml::position rcClient;
+	position rcClient;
 	get_client_rect(rcClient);
 
-	int width	= rcClient.right() - rcClient.left();
-	int height	= rcClient.bottom() - rcClient.top();
+	int width = rcClient.right() - rcClient.left();
+	int height = rcClient.bottom() - rcClient.top();
 
 	m_doc->render(width);
 
 	m_max_top = m_doc->height() - height;
-	if(m_max_top < 0)
-        m_max_top = 0;
+	if (m_max_top < 0)
+		m_max_top = 0;
 
 	m_max_left = m_doc->width() - width;
-	if(m_max_left < 0)
-        m_max_left = 0;
+	if (m_max_left < 0)
+		m_max_left = 0;
 
 	redraw();
 }
 
 void CHTMLViewWnd::redraw()
 {
-
 }
 
-void CHTMLViewWnd::set_base_url( const wchar_t* base_url )
+void CHTMLViewWnd::set_base_url(const wchar_t* base_url)
 {
-	if(base_url && base_url[0])
+	if (base_url && base_url[0])
 	{
-        wstring temp(base_url);
-        m_base_path = make_url(temp, m_base_path.c_str());
+		wstring temp(base_url);
+		m_base_path = make_url(temp, m_base_path.c_str());
 	}
 	else
 	{
@@ -154,21 +150,21 @@ void CHTMLViewWnd::set_base_url( const wchar_t* base_url )
 	}
 }
 
-void CHTMLViewWnd::link( litehtml::document* doc, litehtml::element::ptr el )
+void CHTMLViewWnd::link(document* doc, element::ptr el)
 {
 	const wchar_t* rel = el->get_attr(L"rel");
-	if(rel && !wcscmp(rel, L"stylesheet"))
+	if (rel && !wcscmp(rel, L"stylesheet"))
 	{
 		const wchar_t* media = el->get_attr(L"media", L"screen");
-		if(media && (wcsstr(media, L"screen") || wcsstr(media, L"all")))
+		if (media && (wcsstr(media, L"screen") || wcsstr(media, L"all")))
 		{
 			const wchar_t* href = el->get_attr(L"href");
-			if(href)
+			if (href)
 			{
 				std::wstring url, temp(href);
 				url = make_url(temp, m_base_path.c_str());
-				wchar_t *css = load_text_file(url.c_str(), true);
-				if(css)
+				wchar_t* css = load_text_file(url.c_str(), true);
+				if (css)
 				{
 					doc->add_stylesheet(css, url.c_str());
 					delete css;
@@ -178,71 +174,75 @@ void CHTMLViewWnd::link( litehtml::document* doc, litehtml::element::ptr el )
 	}
 }
 
-wchar_t *wcsndup( const wchar_t *wideString, size_t  length )
+wchar_t* wcsndup(const wchar_t* wideString, size_t length)
 {
-    /* Local variables. */
-    wchar_t  *duplicate ;
+	/* Local variables. */
+	wchar_t* duplicate;
 
-    duplicate = (wchar_t *) calloc (length + 1, sizeof (wchar_t)) ;
-    if (duplicate == NULL) {
-        return (NULL) ;
-    }
+	duplicate = static_cast<wchar_t*>(calloc(length + 1, sizeof(wchar_t)));
+	if (duplicate == nullptr)
+	{
+		return (nullptr);
+	}
 
-    if (wideString == NULL) {
-        duplicate[0] = 0 ;
-    } else {
-        wcsncpy (duplicate, wideString, length) ;
-        duplicate[length] = 0 ;
-    }
+	if (wideString == nullptr)
+	{
+		duplicate[0] = 0;
+	}
+	else
+	{
+		wcsncpy(duplicate, wideString, length);
+		duplicate[length] = 0;
+	}
 
-    return (duplicate) ;
+	return (duplicate);
 }
 
-wchar_t *getHost( wchar_t *url )
+wchar_t* getHost(wchar_t* url)
 {
-    wchar_t *p = wcschr(url, L'/')+2;
-    wchar_t *c = wcschr(p, L'/');
-    if (c != NULL)
-        return wcsndup(url,(c+1)-url);
-    return url;
+	wchar_t* p = wcschr(url, L'/') + 2;
+	wchar_t* c = wcschr(p, L'/');
+	if (c != nullptr)
+		return wcsndup(url, (c + 1) - url);
+	return url;
 }
 
-wstring getRoot( wchar_t *url )
+wstring getRoot(wchar_t* url)
 {
-    wchar_t *i = wcschr(url, L'/');
-    wchar_t *p = wcsrchr(i+2, L'/');
-    wstring root(url);
-    if (p != NULL)
-        root.assign(url,(p+1)-url);
-    else root.append(L"/");
-    return root;
+	wchar_t* i = wcschr(url, L'/');
+	wchar_t* p = wcsrchr(i + 2, L'/');
+	wstring root(url);
+	if (p != nullptr)
+		root.assign(url, (p + 1) - url);
+	else root.append(L"/");
+	return root;
 }
 
-wstring CHTMLViewWnd::make_url( wstring link, const wchar_t* url )
+wstring CHTMLViewWnd::make_url(wstring link, const wchar_t* url)
 {
-    if(!url || !url[0])
-        url = m_base_path.c_str();
+	if (!url || !url[0])
+		url = m_base_path.c_str();
 
-    wstring result;
-    if (link.find(L"http://")==0 || link.find(L"https://")==0)
-        return link;
-    else if (link.at(0) == L'/' && link.at(1) == L'/')
-        result.assign(L"http:"); // https?
-    else if (link.at(0) == L'/')
-    {
-        result = getHost((wchar_t *)url);
-        if (*result.rbegin() == '/')
-            link.erase(link.begin());
-    }
-    else result = getRoot((wchar_t *)url);
-    result.append(link);
-    return result;
+	wstring result;
+	if (link.find(L"http://") == 0 || link.find(L"https://") == 0)
+		return link;
+	if (link.at(0) == L'/' && link.at(1) == L'/')
+		result.assign(L"http:"); // https?
+	else if (link.at(0) == L'/')
+	{
+		result = getHost((wchar_t*)url);
+		if (*result.rbegin() == '/')
+			link.erase(link.begin());
+	}
+	else result = getRoot((wchar_t*)url);
+	result.append(link);
+	return result;
 }
 
-void CHTMLViewWnd::on_anchor_click( const wchar_t* url, litehtml::element::ptr el )
+void CHTMLViewWnd::on_anchor_click(const wchar_t* url, element::ptr el)
 {
-    wstring temp(url);
-    m_anchor = make_url(temp, m_base_path.c_str());
+	wstring temp(url);
+	m_anchor = make_url(temp, m_base_path.c_str());
 }
 
 /*
@@ -257,62 +257,62 @@ void CHTMLViewWnd::update_scroll()
 	if(m_max_top > 0)
 	{
 		ShowScrollBar(m_hWnd, SB_VERT, TRUE);
-    }
+	}
 }
 */
 
-void CHTMLViewWnd::OnVScroll( int pos, int flags )
+void CHTMLViewWnd::OnVScroll(int pos, int flags)
 {
-	litehtml::position rcClient;
+	position rcClient;
 	get_client_rect(rcClient);
 
-	int lineHeight	= 16;
-	int pageHeight	= rcClient.bottom() - rcClient.top() - lineHeight;
+	int lineHeight = 16;
+	int pageHeight = rcClient.bottom() - rcClient.top() - lineHeight;
 
 	int newTop = m_top;
 
-	switch(flags)
+	switch (flags)
 	{
 	case SB_LINEDOWN:
 		newTop = m_top + lineHeight;
-		if(newTop > m_max_top)
+		if (newTop > m_max_top)
 		{
 			newTop = m_max_top;
 		}
 		break;
 	case SB_PAGEDOWN:
 		newTop = m_top + pageHeight;
-		if(newTop > m_max_top)
+		if (newTop > m_max_top)
 		{
 			newTop = m_max_top;
 		}
 		break;
 	case SB_LINEUP:
 		newTop = m_top - lineHeight;
-		if(newTop < 0)
+		if (newTop < 0)
 		{
 			newTop = 0;
 		}
 		break;
 	case SB_PAGEUP:
 		newTop = m_top - pageHeight;
-		if(newTop < 0)
+		if (newTop < 0)
 		{
 			newTop = 0;
 		}
 		break;
 	}
 
-	if(newTop != m_top)
+	if (newTop != m_top)
 	{
-		m_top  = newTop;
+		m_top = newTop;
 		OnPaint();
 	}
 }
 
-void CHTMLViewWnd::OnKeyDown( int vKey )
+void CHTMLViewWnd::OnKeyDown(int vKey)
 {
-	switch(vKey)
+	switch (vKey)
 	{
 	// case VK_F5:
 	default:
@@ -327,14 +327,14 @@ void CHTMLViewWnd::refresh()
 	redraw();
 }
 
-void CHTMLViewWnd::OnMouseMove( int x, int y )
+void CHTMLViewWnd::OnMouseMove(int x, int y)
 {
-	if(m_doc)
+	if (m_doc)
 	{
-		litehtml::position::vector redraw_boxes;
-		if(m_doc->on_mouse_over(x + m_left, y + m_top, redraw_boxes))
+		position::vector redraw_boxes;
+		if (m_doc->on_mouse_over(x + m_left, y + m_top, redraw_boxes))
 		{
-			for(litehtml::position::vector::iterator box = redraw_boxes.begin(); box != redraw_boxes.end(); box++)
+			for (position::vector::iterator box = redraw_boxes.begin(); box != redraw_boxes.end(); box++)
 			{
 				box->x -= m_left;
 				box->y -= m_top;
@@ -346,12 +346,12 @@ void CHTMLViewWnd::OnMouseMove( int x, int y )
 
 void CHTMLViewWnd::OnMouseLeave()
 {
-	if(m_doc)
+	if (m_doc)
 	{
-		litehtml::position::vector redraw_boxes;
-		if(m_doc->on_mouse_leave(redraw_boxes))
+		position::vector redraw_boxes;
+		if (m_doc->on_mouse_leave(redraw_boxes))
 		{
-			for(litehtml::position::vector::iterator box = redraw_boxes.begin(); box != redraw_boxes.end(); box++)
+			for (position::vector::iterator box = redraw_boxes.begin(); box != redraw_boxes.end(); box++)
 			{
 				box->x -= m_left;
 				box->y -= m_top;
@@ -361,14 +361,14 @@ void CHTMLViewWnd::OnMouseLeave()
 	}
 }
 
-void CHTMLViewWnd::OnLButtonDown( int x, int y )
+void CHTMLViewWnd::OnLButtonDown(int x, int y)
 {
-	if(m_doc)
+	if (m_doc)
 	{
-		litehtml::position::vector redraw_boxes;
-		if(m_doc->on_lbutton_down(x + m_left, y + m_top, redraw_boxes))
+		position::vector redraw_boxes;
+		if (m_doc->on_lbutton_down(x + m_left, y + m_top, redraw_boxes))
 		{
-			for(litehtml::position::vector::iterator box = redraw_boxes.begin(); box != redraw_boxes.end(); box++)
+			for (position::vector::iterator box = redraw_boxes.begin(); box != redraw_boxes.end(); box++)
 			{
 				box->x -= m_left;
 				box->y -= m_top;
@@ -378,34 +378,34 @@ void CHTMLViewWnd::OnLButtonDown( int x, int y )
 	}
 }
 
-wchar_t *CHTMLViewWnd::OnLButtonUp( int x, int y )
+wchar_t* CHTMLViewWnd::OnLButtonUp(int x, int y)
 {
-	if(m_doc)
+	if (m_doc)
 	{
 		m_anchor = L"";
-		litehtml::position::vector redraw_boxes;
-		if(m_doc->on_lbutton_up(x + m_left, y + m_top, redraw_boxes))
+		position::vector redraw_boxes;
+		if (m_doc->on_lbutton_up(x + m_left, y + m_top, redraw_boxes))
 		{
-			for(litehtml::position::vector::iterator box = redraw_boxes.begin(); box != redraw_boxes.end(); box++)
+			for (position::vector::iterator box = redraw_boxes.begin(); box != redraw_boxes.end(); box++)
 			{
 				box->x -= m_left;
 				box->y -= m_top;
 				redraw();
 			}
 		}
-		if(!m_anchor.empty())
+		if (!m_anchor.empty())
 		{
-			return (wchar_t *)m_anchor.c_str();
+			return static_cast<wchar_t*>(m_anchor.c_str());
 		}
 	}
-	return NULL;
+	return nullptr;
 }
 
 void CHTMLViewWnd::back()
 {
-	if(!m_history_back.empty())
+	if (!m_history_back.empty())
 	{
-		if(!m_doc_path.empty())
+		if (!m_doc_path.empty())
 		{
 			m_history_forward.push_back(m_doc_path);
 		}
@@ -418,9 +418,9 @@ void CHTMLViewWnd::back()
 
 void CHTMLViewWnd::forward()
 {
-	if(!m_history_forward.empty())
+	if (!m_history_forward.empty())
 	{
-		if(!m_doc_path.empty())
+		if (!m_doc_path.empty())
 		{
 			m_history_back.push_back(m_doc_path);
 		}
@@ -431,14 +431,16 @@ void CHTMLViewWnd::forward()
 	}
 }
 
-void CHTMLViewWnd::import_css( std::wstring& text, const std::wstring& url, std::wstring& baseurl, const string_vector& media )
+void CHTMLViewWnd::import_css(std::wstring& text, const std::wstring& url, std::wstring& baseurl,
+                              const string_vector& media)
 {
-	if(media.empty() || std::find(media.begin(), media.end(), std::wstring(L"all")) != media.end() || std::find(media.begin(), media.end(), std::wstring(L"screen")) != media.end())
+	if (media.empty() || std::find(media.begin(), media.end(), std::wstring(L"all")) != media.end() || std::find(
+		media.begin(), media.end(), std::wstring(L"screen")) != media.end())
 	{
 		std::wstring css_url;
 		css_url = make_url(url, baseurl.c_str());
-		wchar_t *css = load_text_file(css_url.c_str(), true);
-		if(css)
+		wchar_t* css = load_text_file(css_url.c_str(), true);
+		if (css)
 		{
 			baseurl = css_url;
 			text = css;

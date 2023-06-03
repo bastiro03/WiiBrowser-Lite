@@ -50,7 +50,7 @@ typedef struct AVAudioFifo AVAudioFifo;
  *
  * @param af  AVAudioFifo to free
  */
-void av_audio_fifo_free(AVAudioFifo *af);
+void av_audio_fifo_free(AVAudioFifo* af);
 
 /**
  * Allocate an AVAudioFifo.
@@ -60,7 +60,7 @@ void av_audio_fifo_free(AVAudioFifo *af);
  * @param nb_samples  initial allocation size, in samples
  * @return            newly allocated AVAudioFifo, or NULL on error
  */
-AVAudioFifo *av_audio_fifo_alloc(enum AVSampleFormat sample_fmt, int channels,
+AVAudioFifo* av_audio_fifo_alloc(enum AVSampleFormat sample_fmt, int channels,
                                  int nb_samples);
 
 /**
@@ -70,7 +70,7 @@ AVAudioFifo *av_audio_fifo_alloc(enum AVSampleFormat sample_fmt, int channels,
  * @param nb_samples  new allocation size, in samples
  * @return            0 if OK, or negative AVERROR code on failure
  */
-int av_audio_fifo_realloc(AVAudioFifo *af, int nb_samples);
+int av_audio_fifo_realloc(AVAudioFifo* af, int nb_samples);
 
 /**
  * Write data to an AVAudioFifo.
@@ -87,7 +87,7 @@ int av_audio_fifo_realloc(AVAudioFifo *af, int nb_samples);
  * @return            number of samples actually written, or negative AVERROR
  *                    code on failure.
  */
-int av_audio_fifo_write(AVAudioFifo *af, void **data, int nb_samples);
+int av_audio_fifo_write(AVAudioFifo* af, void** data, int nb_samples);
 
 /**
  * Read data from an AVAudioFifo.
@@ -101,7 +101,7 @@ int av_audio_fifo_write(AVAudioFifo *af, void **data, int nb_samples);
  * @return            number of samples actually read, or negative AVERROR code
  *                    on failure.
  */
-int av_audio_fifo_read(AVAudioFifo *af, void **data, int nb_samples);
+int av_audio_fifo_read(AVAudioFifo* af, void** data, int nb_samples);
 
 /**
  * Drain data from an AVAudioFifo.
@@ -112,7 +112,7 @@ int av_audio_fifo_read(AVAudioFifo *af, void **data, int nb_samples);
  * @param nb_samples  number of samples to drain
  * @return            0 if OK, or negative AVERROR code on failure
  */
-int av_audio_fifo_drain(AVAudioFifo *af, int nb_samples);
+int av_audio_fifo_drain(AVAudioFifo* af, int nb_samples);
 
 /**
  * Reset the AVAudioFifo buffer.
@@ -121,7 +121,7 @@ int av_audio_fifo_drain(AVAudioFifo *af, int nb_samples);
  *
  * @param af  AVAudioFifo to reset
  */
-void av_audio_fifo_reset(AVAudioFifo *af);
+void av_audio_fifo_reset(AVAudioFifo* af);
 
 /**
  * Get the current number of samples in the AVAudioFifo available for reading.
@@ -129,7 +129,7 @@ void av_audio_fifo_reset(AVAudioFifo *af);
  * @param af  the AVAudioFifo to query
  * @return    number of samples available for reading
  */
-int av_audio_fifo_size(AVAudioFifo *af);
+int av_audio_fifo_size(AVAudioFifo* af);
 
 /**
  * Get the current number of samples in the AVAudioFifo available for writing.
@@ -137,7 +137,7 @@ int av_audio_fifo_size(AVAudioFifo *af);
  * @param af  the AVAudioFifo to query
  * @return    number of samples available for writing
  */
-int av_audio_fifo_space(AVAudioFifo *af);
+int av_audio_fifo_space(AVAudioFifo* af);
 
 /**
  * @}

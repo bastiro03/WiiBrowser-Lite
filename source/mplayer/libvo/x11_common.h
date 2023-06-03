@@ -45,8 +45,8 @@ extern int vo_wm_type;
 extern int vo_fs_type;
 extern char** vo_fstype_list;
 
-extern char *mDisplayName;
-extern Display *mDisplay;
+extern char* mDisplayName;
+extern Display* mDisplay;
 extern Window mRootWin;
 extern int mScreen;
 extern int mLocalDisplay;
@@ -55,57 +55,54 @@ extern int vo_mouse_autohide;
 
 extern int stop_xscreensaver;
 
-int vo_init( void );
-void vo_uninit( void );
-void vo_x11_decoration( Display * vo_Display,Window w,int d );
-void vo_x11_classhint( Display * display,Window window,const char *name );
+int vo_init(void);
+void vo_uninit(void);
+void vo_x11_decoration(Display* vo_Display, Window w, int d);
+void vo_x11_classhint(Display* display, Window window, const char* name);
 void vo_x11_nofs_sizepos(int x, int y, int width, int height);
-void vo_x11_sizehint( int x, int y, int width, int height, int max );
-int vo_x11_check_events(Display *mydisplay);
-void vo_x11_selectinput_witherr(Display *display, Window w, long event_mask);
+void vo_x11_sizehint(int x, int y, int width, int height, int max);
+int vo_x11_check_events(Display* mydisplay);
+void vo_x11_selectinput_witherr(Display* display, Window w, long event_mask);
 int vo_x11_update_geometry(void);
-void vo_x11_fullscreen( void );
-void vo_x11_setlayer( Display * mDisplay,Window vo_window,int layer );
+void vo_x11_fullscreen(void);
+void vo_x11_setlayer(Display* mDisplay, Window vo_window, int layer);
 void vo_x11_uninit(void);
-Colormap vo_x11_create_colormap(XVisualInfo *vinfo);
-uint32_t vo_x11_set_equalizer(const char *name, int value);
-uint32_t vo_x11_get_equalizer(const char *name, int *value);
+Colormap vo_x11_create_colormap(XVisualInfo* vinfo);
+uint32_t vo_x11_set_equalizer(const char* name, int value);
+uint32_t vo_x11_get_equalizer(const char* name, int* value);
 void fstype_help(void);
-Window vo_x11_create_smooth_window( Display *mDisplay, Window mRoot,
-	Visual *vis, int x, int y, unsigned int width, unsigned int height,
-	int depth, Colormap col_map);
-void vo_x11_create_vo_window(XVisualInfo *vis, int x, int y,
-	unsigned int width, unsigned int height, int flags,
-	Colormap col_map, const char *classname, const char *title);
-void vo_x11_clearwindow_part(Display *mDisplay, Window vo_window,
-	int img_width, int img_height, int use_fs);
-void vo_x11_clearwindow( Display *mDisplay, Window vo_window );
+Window vo_x11_create_smooth_window(Display* mDisplay, Window mRoot,
+                                   Visual* vis, int x, int y, unsigned int width, unsigned int height,
+                                   int depth, Colormap col_map);
+void vo_x11_create_vo_window(XVisualInfo* vis, int x, int y,
+                             unsigned int width, unsigned int height, int flags,
+                             Colormap col_map, const char* classname, const char* title);
+void vo_x11_clearwindow_part(Display* mDisplay, Window vo_window,
+                             int img_width, int img_height, int use_fs);
+void vo_x11_clearwindow(Display* mDisplay, Window vo_window);
 void vo_x11_ontop(void);
 void vo_x11_border(void);
-void vo_x11_ewmh_fullscreen( Window win, int action );
+void vo_x11_ewmh_fullscreen(Window win, int action);
 
-
-extern Window     vo_window;
-extern GC         vo_gc;
+extern Window vo_window;
+extern GC vo_gc;
 extern XSizeHints vo_hint;
-
-
 
 // XVideo related declarations
 extern unsigned int xv_port;
 
-int vo_xv_set_eq(uint32_t xv_port, const char * name, int value);
-int vo_xv_get_eq(uint32_t xv_port, const char * name, int *value);
+int vo_xv_set_eq(uint32_t xv_port, const char* name, int value);
+int vo_xv_get_eq(uint32_t xv_port, const char* name, int* value);
 
 int vo_xv_enable_vsync(void);
 
-void vo_xv_get_max_img_dim( uint32_t * width, uint32_t * height );
+void vo_xv_get_max_img_dim(uint32_t* width, uint32_t* height);
 
 /*** colorkey handling ***/
 typedef struct xv_ck_info_s
 {
-  int method; ///< CK_METHOD_* constants
-  int source; ///< CK_SRC_* constants
+	int method; ///< CK_METHOD_* constants
+	int source; ///< CK_SRC_* constants
 } xv_ck_info_t;
 
 #define CK_METHOD_NONE       0 ///< no colorkey drawing
@@ -121,31 +118,25 @@ extern unsigned long xv_colorkey;
 
 int vo_xv_init_colorkey(void);
 void vo_xv_draw_colorkey(int32_t x, int32_t y, int32_t w, int32_t h);
-void xv_setup_colorkeyhandling(char const * ck_method_str, char const * ck_str);
+void xv_setup_colorkeyhandling(const char* ck_method_str, const char* ck_str);
 
 /*** test functions for common suboptions ***/
-int xv_test_ck( void * arg );
-int xv_test_ckm( void * arg );
+int xv_test_ck(void* arg);
+int xv_test_ckm(void* arg);
 
-
-
-void vo_setwindow( Window w,GC g );
+void vo_setwindow(Window w, GC g);
 void vo_x11_putkey(int key);
 
 void xscreensaver_heartbeat(void);
-void saver_off( Display * );
-void saver_on( Display * );
-
-
+void saver_off(Display*);
+void saver_on(Display*);
 
 // XF86VM-related functions
 void vo_vm_switch(void);
 void vo_vm_close(void);
 
-
-
 void update_xinerama_info(void);
 
-int vo_find_depth_from_visuals(Display *dpy, int screen, Visual **visual_return);
+int vo_find_depth_from_visuals(Display* dpy, int screen, Visual** visual_return);
 
 #endif /* MPLAYER_X11_COMMON_H */

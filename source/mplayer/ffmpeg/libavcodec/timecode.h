@@ -42,11 +42,12 @@
     offsetof(ctx, tc.str),                                               \
     AV_OPT_TYPE_STRING, {.str=NULL}, CHAR_MIN, CHAR_MAX, flags
 
-struct ff_timecode {
-    char *str;       ///< string following the hh:mm:ss[:;.]ff format
-    int start;       ///< timecode frame start
-    int drop;        ///< drop flag (1 if drop, else 0)
-    AVRational rate; ///< Frame rate in rational form
+struct ff_timecode
+{
+	char* str; ///< string following the hh:mm:ss[:;.]ff format
+	int start; ///< timecode frame start
+	int drop; ///< drop flag (1 if drop, else 0)
+	AVRational rate; ///< Frame rate in rational form
 };
 
 /**
@@ -77,14 +78,14 @@ uint32_t avpriv_framenum_to_smpte_timecode(unsigned frame, int fps, int drop);
  * @note  buf must have enough space to store the timecode representation: 16
  *        bytes is the minimum required size.
  */
-char *avpriv_timecode_to_string(char *buf, const struct ff_timecode *tc, unsigned frame);
+char* avpriv_timecode_to_string(char* buf, const struct ff_timecode* tc, unsigned frame);
 
 /**
  * Check if timecode rate is valid and consistent with the drop flag.
  *
  * @return 0 on success, negative value on failure
  */
-int avpriv_check_timecode_rate(void *avcl, AVRational rate, int drop);
+int avpriv_check_timecode_rate(void* avcl, AVRational rate, int drop);
 
 /**
  * Parse SMTPE 12M time representation (hh:mm:ss[:;.]ff). str and rate fields
@@ -96,11 +97,13 @@ int avpriv_check_timecode_rate(void *avcl, AVRational rate, int drop);
  * @return     0 on success, negative value on failure
  * @warning    Adjustement is only valid in NTSC 29.97
  */
-int avpriv_init_smpte_timecode(void *avcl, struct ff_timecode *tc);
+int avpriv_init_smpte_timecode(void* avcl, struct ff_timecode* tc);
 
-attribute_deprecated int ff_framenum_to_drop_timecode(int frame_num);
+attribute_deprecated
+int ff_framenum_to_drop_timecode(int frame_num);
 attribute_deprecated uint32_t ff_framenum_to_smtpe_timecode(unsigned frame, int fps, int drop);
-attribute_deprecated int ff_init_smtpe_timecode(void *avcl, struct ff_timecode *tc);
+attribute_deprecated
+int ff_init_smtpe_timecode(void* avcl, struct ff_timecode* tc);
 #endif
 
 #endif /* AVCODEC_TIMECODE_H */

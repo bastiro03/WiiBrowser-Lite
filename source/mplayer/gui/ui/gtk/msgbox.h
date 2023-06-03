@@ -21,9 +21,9 @@
 
 #include <gtk/gtk.h>
 
-extern GtkWidget * MessageBox;
+extern GtkWidget* MessageBox;
 
-GtkWidget * create_MessageBox( void );
-void ShowMessageBox( const char * msg );
+GtkWidget* create_MessageBox(void);
+void ShowMessageBox(const char* msg);
 
 #endif /* MPLAYER_GUI_MSGBOX_H */

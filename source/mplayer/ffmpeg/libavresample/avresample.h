@@ -38,11 +38,16 @@
 typedef struct AVAudioResampleContext AVAudioResampleContext;
 
 /** Mixing Coefficient Types */
-enum AVMixCoeffType {
-    AV_MIX_COEFF_TYPE_Q8,   /** 16-bit 8.8 fixed-point                      */
-    AV_MIX_COEFF_TYPE_Q15,  /** 32-bit 17.15 fixed-point                    */
-    AV_MIX_COEFF_TYPE_FLT,  /** floating-point                              */
-    AV_MIX_COEFF_TYPE_NB,   /** Number of coeff types. Not part of ABI      */
+enum AVMixCoeffType
+{
+	AV_MIX_COEFF_TYPE_Q8,
+	/** 16-bit 8.8 fixed-point                      */
+	AV_MIX_COEFF_TYPE_Q15,
+	/** 32-bit 17.15 fixed-point                    */
+	AV_MIX_COEFF_TYPE_FLT,
+	/** floating-point                              */
+	AV_MIX_COEFF_TYPE_NB,
+	/** Number of coeff types. Not part of ABI      */
 };
 
 /**
@@ -54,12 +59,12 @@ unsigned avresample_version(void);
  * Return the libavresample build-time configuration.
  * @return  configure string
  */
-const char *avresample_configuration(void);
+const char* avresample_configuration(void);
 
 /**
  * Return the libavresample license.
  */
-const char *avresample_license(void);
+const char* avresample_license(void);
 
 /**
  * Get the AVClass for AVAudioResampleContext.
@@ -71,14 +76,14 @@ const char *avresample_license(void);
  *
  * @return AVClass for AVAudioResampleContext
  */
-const AVClass *avresample_get_class(void);
+const AVClass* avresample_get_class(void);
 
 /**
  * Allocate AVAudioResampleContext and set options.
  *
  * @return  allocated audio resample context, or NULL on failure
  */
-AVAudioResampleContext *avresample_alloc_context(void);
+AVAudioResampleContext* avresample_alloc_context(void);
 
 /**
  * Initialize AVAudioResampleContext.
@@ -86,7 +91,7 @@ AVAudioResampleContext *avresample_alloc_context(void);
  * @param avr  audio resample context
  * @return     0 on success, negative AVERROR code on failure
  */
-int avresample_open(AVAudioResampleContext *avr);
+int avresample_open(AVAudioResampleContext* avr);
 
 /**
  * Close AVAudioResampleContext.
@@ -101,7 +106,7 @@ int avresample_open(AVAudioResampleContext *avr);
  *
  * @param avr  audio resample context
  */
-void avresample_close(AVAudioResampleContext *avr);
+void avresample_close(AVAudioResampleContext* avr);
 
 /**
  * Free AVAudioResampleContext and associated AVOption values.
@@ -110,7 +115,7 @@ void avresample_close(AVAudioResampleContext *avr);
  *
  * @param avr  audio resample context
  */
-void avresample_free(AVAudioResampleContext **avr);
+void avresample_free(AVAudioResampleContext** avr);
 
 /**
  * Generate a channel mixing matrix.
@@ -135,7 +140,7 @@ void avresample_free(AVAudioResampleContext **avr);
  */
 int avresample_build_matrix(uint64_t in_layout, uint64_t out_layout,
                             double center_mix_level, double surround_mix_level,
-                            double lfe_mix_level, int normalize, double *matrix,
+                            double lfe_mix_level, int normalize, double* matrix,
                             int stride);
 
 /**
@@ -147,7 +152,7 @@ int avresample_build_matrix(uint64_t in_layout, uint64_t out_layout,
  * @param stride  distance between adjacent input channels in the matrix array
  * @return        0 on success, negative AVERROR code on failure
  */
-int avresample_get_matrix(AVAudioResampleContext *avr, double *matrix,
+int avresample_get_matrix(AVAudioResampleContext* avr, double* matrix,
                           int stride);
 
 /**
@@ -167,7 +172,7 @@ int avresample_get_matrix(AVAudioResampleContext *avr, double *matrix,
  * @param stride  distance between adjacent input channels in the matrix array
  * @return        0 on success, negative AVERROR code on failure
  */
-int avresample_set_matrix(AVAudioResampleContext *avr, const double *matrix,
+int avresample_set_matrix(AVAudioResampleContext* avr, const double* matrix,
                           int stride);
 
 /**
@@ -184,7 +189,7 @@ int avresample_set_matrix(AVAudioResampleContext *avr, const double *matrix,
  * @param compensation_distance  compensation distance, in samples
  * @return                       0 on success, negative AVERROR code on failure
  */
-int avresample_set_compensation(AVAudioResampleContext *avr, int sample_delta,
+int avresample_set_compensation(AVAudioResampleContext* avr, int sample_delta,
                                 int compensation_distance);
 
 /**
@@ -226,8 +231,8 @@ int avresample_set_compensation(AVAudioResampleContext *avr, int sample_delta,
  *                        not including converted samples added to the internal
  *                        output FIFO
  */
-int avresample_convert(AVAudioResampleContext *avr, void **output,
-                       int out_plane_size, int out_samples, void **input,
+int avresample_convert(AVAudioResampleContext* avr, void** output,
+                       int out_plane_size, int out_samples, void** input,
                        int in_plane_size, int in_samples);
 
 /**
@@ -243,7 +248,7 @@ int avresample_convert(AVAudioResampleContext *avr, void **output,
  * @param avr  audio resample context
  * @return     number of samples currently in the resampling delay buffer
  */
-int avresample_get_delay(AVAudioResampleContext *avr);
+int avresample_get_delay(AVAudioResampleContext* avr);
 
 /**
  * Return the number of available samples in the output FIFO.
@@ -260,7 +265,7 @@ int avresample_get_delay(AVAudioResampleContext *avr);
  * @param avr  audio resample context
  * @return     number of samples available for reading
  */
-int avresample_available(AVAudioResampleContext *avr);
+int avresample_available(AVAudioResampleContext* avr);
 
 /**
  * Read samples from the output FIFO.
@@ -279,6 +284,6 @@ int avresample_available(AVAudioResampleContext *avr);
  * @param nb_samples  number of samples to read from the FIFO
  * @return            the number of samples written to output
  */
-int avresample_read(AVAudioResampleContext *avr, void **output, int nb_samples);
+int avresample_read(AVAudioResampleContext* avr, void** output, int nb_samples);
 
 #endif /* AVRESAMPLE_AVRESAMPLE_H */

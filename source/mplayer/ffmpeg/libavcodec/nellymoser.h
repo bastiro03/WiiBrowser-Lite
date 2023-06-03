@@ -47,11 +47,11 @@
 #define NELLY_BASE_SHIFT  19
 #define NELLY_SAMPLES     (2 * NELLY_BUF_LEN)
 
-extern const float    ff_nelly_dequantization_table[127];
-extern const uint8_t  ff_nelly_band_sizes_table[NELLY_BANDS];
+extern const float ff_nelly_dequantization_table[127];
+extern const uint8_t ff_nelly_band_sizes_table[NELLY_BANDS];
 extern const uint16_t ff_nelly_init_table[64];
-extern const int16_t  ff_nelly_delta_table[32];
+extern const int16_t ff_nelly_delta_table[32];
 
-void ff_nelly_get_sample_bits(const float *buf, int *bits);
+void ff_nelly_get_sample_bits(const float* buf, int* bits);
 
 #endif /* AVCODEC_NELLYMOSER_H */

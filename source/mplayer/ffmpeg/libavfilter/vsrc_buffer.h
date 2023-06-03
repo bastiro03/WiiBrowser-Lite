@@ -48,8 +48,8 @@
  * @deprecated use av_buffersrc_add_ref() instead.
  */
 attribute_deprecated
-int av_vsrc_buffer_add_video_buffer_ref(AVFilterContext *buffer_src,
-                                        AVFilterBufferRef *picref, int flags);
+int av_vsrc_buffer_add_video_buffer_ref(AVFilterContext* buffer_src,
+                                        AVFilterBufferRef* picref, int flags);
 
 /**
  * Get the number of failed requests.
@@ -61,6 +61,6 @@ int av_vsrc_buffer_add_video_buffer_ref(AVFilterContext *buffer_src,
  * @deprecated use av_buffersrc_get_nb_failed_requests() instead.
  */
 attribute_deprecated
-unsigned av_vsrc_buffer_get_nb_failed_requests(AVFilterContext *buffer_src);
+unsigned av_vsrc_buffer_get_nb_failed_requests(AVFilterContext* buffer_src);
 
 #endif /* AVFILTER_VSRC_BUFFER_H */

@@ -28,6 +28,6 @@
 /**
  * Read and parse an APE tag
  */
-void ff_ape_parse_tag(AVFormatContext *s);
+void ff_ape_parse_tag(AVFormatContext* s);
 
 #endif /* AVFORMAT_APETAG_H */

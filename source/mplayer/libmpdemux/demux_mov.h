@@ -19,6 +19,6 @@
 #ifndef MPLAYER_DEMUX_MOV_H
 #define MPLAYER_DEMUX_MOV_H
 
-unsigned int store_ughvlc(unsigned char *s, unsigned int v);
+unsigned int store_ughvlc(unsigned char* s, unsigned int v);
 
 #endif /* MPLAYER_DEMUX_MOV_H */

@@ -32,27 +32,27 @@
  * Function types used in the vbr controler
  *****************************************************************************/
 
-typedef int (vbr_init_function)(void *state);
-typedef vbr_init_function *vbr_init_function_ptr;
+typedef int (vbr_init_function)(void* state);
+typedef vbr_init_function* vbr_init_function_ptr;
 
-typedef int (vbr_get_quant_function)(void *state);
-typedef vbr_get_quant_function *vbr_get_quant_function_ptr;
+typedef int (vbr_get_quant_function)(void* state);
+typedef vbr_get_quant_function* vbr_get_quant_function_ptr;
 
-typedef int (vbr_get_intra_function)(void *state);
-typedef vbr_get_intra_function *vbr_get_intra_function_ptr;
+typedef int (vbr_get_intra_function)(void* state);
+typedef vbr_get_intra_function* vbr_get_intra_function_ptr;
 
-typedef int (vbr_update_function)(void *state,
-				  int quant,
-				  int intra,
-				  int header_bytes,
-				  int total_bytes,
-				  int kblocks,
-				  int mblocks,
-				  int ublocks);
-typedef vbr_update_function *vbr_update_function_ptr;
+typedef int (vbr_update_function)(void* state,
+                                  int quant,
+                                  int intra,
+                                  int header_bytes,
+                                  int total_bytes,
+                                  int kblocks,
+                                  int mblocks,
+                                  int ublocks);
+typedef vbr_update_function* vbr_update_function_ptr;
 
-typedef int (vbr_finish_function)(void *state);
-typedef vbr_finish_function *vbr_finish_function_ptr;
+typedef int (vbr_finish_function)(void* state);
+typedef vbr_finish_function* vbr_finish_function_ptr;
 
 /******************************************************************************
  * The VBR CONTROLER structure - the spin of the library
@@ -60,7 +60,6 @@ typedef vbr_finish_function *vbr_finish_function_ptr;
 
 typedef struct vbr_control_t
 {
-
 	/* All modes - specifies what VBR algorithm has to be used */
 	int mode;
 
@@ -74,7 +73,7 @@ typedef struct vbr_control_t
 	 * For VBR_MODE_2PASS_1/2 - specifies from/to what file the vbr
 	 * controller has to write/read stats
 	 */
-	char *filename;
+	char* filename;
 
 	/* For VBR_MODE_2PASS_2 - Target size */
 	int desired_bitrate;
@@ -132,8 +131,8 @@ typedef struct vbr_control_t
 	int fixed_quant;
 
 	/* ----------- Internal data - Do not modify ----------- */
-	void *debug_file;
-	void *pass1_file;
+	void* debug_file;
+	void* pass1_file;
 
 	long long desired_size;
 
@@ -141,7 +140,7 @@ typedef struct vbr_control_t
 	int nb_frames;
 	int nb_keyframes;
 
-	int *keyframe_locations;
+	int* keyframe_locations;
 	int last_keyframe;
 
 	double credits_start_curve;
@@ -178,13 +177,12 @@ typedef struct vbr_control_t
 	int debug_quant_count[32];
 
 	/* ----------- Internal data - do not modify ----------- */
-	vbr_init_function_ptr      init;
+	vbr_init_function_ptr init;
 	vbr_get_quant_function_ptr getquant;
 	vbr_get_intra_function_ptr getintra;
-	vbr_update_function_ptr    update;
-	vbr_finish_function_ptr    finish;
-
-}vbr_control_t;
+	vbr_update_function_ptr update;
+	vbr_finish_function_ptr finish;
+} vbr_control_t;
 
 /******************************************************************************
  * Constants
@@ -214,18 +212,18 @@ typedef struct vbr_control_t
  * VBR API
  *****************************************************************************/
 
-extern int vbrSetDefaults(vbr_control_t *state);
-extern int vbrInit(vbr_control_t *state);
-extern int vbrGetQuant(vbr_control_t *state);
-extern int vbrGetIntra(vbr_control_t *state);
-extern int vbrUpdate(vbr_control_t *state,
-		     int quant,
-		     int intra,
-		     int header_bytes,
-		     int total_bytes,
-		     int kblocks,
-		     int mblocks,
-		     int ublocks);
-extern int vbrFinish(vbr_control_t *state);
+extern int vbrSetDefaults(vbr_control_t* state);
+extern int vbrInit(vbr_control_t* state);
+extern int vbrGetQuant(vbr_control_t* state);
+extern int vbrGetIntra(vbr_control_t* state);
+extern int vbrUpdate(vbr_control_t* state,
+                     int quant,
+                     int intra,
+                     int header_bytes,
+                     int total_bytes,
+                     int kblocks,
+                     int mblocks,
+                     int ublocks);
+extern int vbrFinish(vbr_control_t* state);
 
 #endif /* MPLAYER_XVID_VBR_H */

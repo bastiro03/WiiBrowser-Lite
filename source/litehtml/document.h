@@ -7,22 +7,24 @@
 
 namespace litehtml
 {
-
-	struct str_istream: public litehtml::instream
+	struct str_istream : public instream
 	{
 		const wchar_t* p;
 		const wchar_t* end;
 
-		str_istream(const wchar_t* src): p(src), end(src + wcslen(src)) {}
-		virtual wchar_t get_char() { return p < end? *p++: 0; }
+		str_istream(const wchar_t* src) : p(src), end(src + wcslen(src))
+		{
+		}
+
+		wchar_t get_char() override { return p < end ? *p++ : 0; }
 	};
 
 	struct css_text
 	{
-		typedef std::vector<css_text>	vector;
+		using vector = std::vector<css_text>;
 
-		std::wstring	text;
-		std::wstring	baseurl;
+		std::wstring text;
+		std::wstring baseurl;
 
 		css_text()
 		{
@@ -30,62 +32,65 @@ namespace litehtml
 
 		css_text(const wchar_t* txt, const wchar_t* url)
 		{
-			text	= txt ? txt : L"";
-			baseurl	= url ? url : L"";
+			text = txt ? txt : L"";
+			baseurl = url ? url : L"";
 		}
 
 		css_text(const css_text& val)
 		{
-			text	= val.text;
-			baseurl	= val.baseurl;
+			text = val.text;
+			baseurl = val.baseurl;
 		}
 	};
-
 
 	class element;
 
 	class document : public object
 	{
 	public:
-		typedef object_ptr<document>	ptr;
+		using ptr = object_ptr<document>;
+
 	private:
-		element::ptr			m_root;
-		document_container*		m_container;
-		fonts_map				m_fonts;
-		css_text::vector		m_css;
-		litehtml::css			m_styles;
-		std::wstring			m_font_name;
-		litehtml::web_color		m_def_color;
-		litehtml::context*		m_context;
+		element::ptr m_root;
+		document_container* m_container;
+		fonts_map m_fonts;
+		css_text::vector m_css;
+		css m_styles;
+		std::wstring m_font_name;
+		litehtml::web_color m_def_color;
+		context* m_context;
 
-		elements_vector			m_parse_stack;
+		elements_vector m_parse_stack;
+
 	public:
-		document(litehtml::document_container* objContainer, litehtml::context* ctx);
-		virtual ~document();
+		document(document_container* objContainer, context* ctx);
+		~document() override;
 
-		litehtml::document_container*	container()	{ return m_container; }
-		uint_ptr						get_font(const wchar_t* name, int size, const wchar_t* weight, const wchar_t* style, const wchar_t* decoration);
-		void							render(int max_width);
-		void							draw(uint_ptr hdc, int x, int y, const position* clip);
-		web_color						get_def_color()	{ return m_def_color; }
-		int								cvt_units(const wchar_t* str, int fontSize, bool* is_percent = 0) const;
-		int								cvt_units(css_length& val, int fontSize) const;
-		int								width() const;
-		int								height() const;
-		void							add_stylesheet(const wchar_t* str, const wchar_t* baseurl);
-		bool							on_mouse_over(int x, int y, position::vector& redraw_boxes);
-		bool							on_lbutton_down(int x, int y, position::vector& redraw_boxes);
-		bool							on_lbutton_up(int x, int y, position::vector& redraw_boxes);
-		bool							on_mouse_leave(position::vector& redraw_boxes);
-		litehtml::element::ptr			create_element(const wchar_t* tag_name);
+		document_container* container() { return m_container; }
+		uint_ptr get_font(const wchar_t* name, int size, const wchar_t* weight, const wchar_t* style,
+		                  const wchar_t* decoration);
+		void render(int max_width);
+		void draw(uint_ptr hdc, int x, int y, const position* clip);
+		web_color get_def_color() { return m_def_color; }
+		int cvt_units(const wchar_t* str, int fontSize, bool* is_percent = nullptr) const;
+		int cvt_units(css_length& val, int fontSize) const;
+		int width() const;
+		int height() const;
+		void add_stylesheet(const wchar_t* str, const wchar_t* baseurl);
+		bool on_mouse_over(int x, int y, position::vector& redraw_boxes);
+		bool on_lbutton_down(int x, int y, position::vector& redraw_boxes);
+		bool on_lbutton_up(int x, int y, position::vector& redraw_boxes);
+		bool on_mouse_leave(position::vector& redraw_boxes);
+		element::ptr create_element(const wchar_t* tag_name);
 
-		static litehtml::document::ptr createFromString(const wchar_t* str, litehtml::document_container* objPainter, litehtml::context* ctx);
+		static ptr createFromString(const wchar_t* str, document_container* objPainter, context* ctx);
 
 	private:
 		//void			load_default_styles();
-		litehtml::element*	add_root();
-		litehtml::element*	add_body();
-		litehtml::uint_ptr	add_font(const wchar_t* name, int size, const wchar_t* weight, const wchar_t* style, const wchar_t* decoration);
+		element* add_root();
+		element* add_body();
+		uint_ptr add_font(const wchar_t* name, int size, const wchar_t* weight, const wchar_t* style,
+		                  const wchar_t* decoration);
 
 		void begin_parse();
 

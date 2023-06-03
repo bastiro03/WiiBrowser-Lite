@@ -21,6 +21,6 @@
 
 #include "ae.h"
 
-int mpae_init_lavc(audio_encoder_t *encoder);
+int mpae_init_lavc(audio_encoder_t* encoder);
 
 #endif /* MPLAYER_AE_LAVC_H */

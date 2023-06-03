@@ -3,12 +3,12 @@
 // Helped by: Jan Knutar <jknutar AT nic DOT fi>
 // ========================= MPlayer hjälp ===========================
 
-static const char help_text[]=
-"Användning:   mplayer [argument] [url|sökväg/]filnamn\n"
-"\n"
-"Grundläggande argument: (komplett lista återfinns i `man mplayer`)\n"
-" -vo <drv[:enhet]>   välj video-ut drivrutin & enhet ('-vo help' för lista)\n"
-" -ao <drv[:enhet]>   välj audio-ut drivrutin & enhet ('-ao help' för lista)\n"
+static const char help_text[] =
+	"Användning:   mplayer [argument] [url|sökväg/]filnamn\n"
+	"\n"
+	"Grundläggande argument: (komplett lista återfinns i `man mplayer`)\n"
+	" -vo <drv[:enhet]>   välj video-ut drivrutin & enhet ('-vo help' för lista)\n"
+	" -ao <drv[:enhet]>   välj audio-ut drivrutin & enhet ('-ao help' för lista)\n"
 #ifdef CONFIG_VCD
 " vcd://<spårnr>      spela (S)VCD (Super Video CD) spår (rå enhet, ingen montering)\n"
 #endif
@@ -16,32 +16,32 @@ static const char help_text[]=
 " dvd://<titlenr>     spela DVD titel från enhet istället för ifrån en enkel fil\n"
 " -alang/-slang       välj DVD audio/textningsspråk (m.h.a. ett 2-teckens landskod)\n"
 #endif
-" -ss <tidpos>        sök till given position (sekunder eller hh:mm:ss)\n"
-" -nosound            spela inte upp ljud\n"
-" -fs                 fullskärmsuppspelning (eller -vm, -zoom, detaljer på manualsidan)\n"
-" -x <x> -y <y>       sätt skärmupplösning (för användning med -vm eller -zoom)\n"
-" -sub <fil>          specifiera textningsfil att använda (se också -subfps, -subdelay)\n"
-" -playlist <fil>     specifiera spellistefil\n"
-" -vid x -aid y       välj video (x) och audio (y) ström att spela\n"
-" -fps x -srate y     ändra video (x fps) och audio (y Hz) frekvens\n"
-" -pp <kvalité>       aktivera postredigeringsfilter (detaljer på manualsidan)\n"
-" -framedrop          aktivera reducering av antalet bildrutor (för långsamma maskiner)\n"
-"\n"
-"Grundläggande navigering: (komplett lista återfinns på manualsidan, läs även input.conf)\n"
-" <-  eller  ->       sök bakåt/framåt 10 sekunder\n"
-" upp eller ner       sök bakåt/framåt 1 minut\n"
-" pgup eller pgdown   sök bakåt/framåt 10 minuter\n"
-" < eller >           stega bakåt/framåt i spellistan\n"
-" p eller SPACE       pausa filmen (tryck på valfri tagent för att fortsätta)\n"
-" q eller ESC         stanna spelningen och avsluta programmet\n"
-" + eller -           ställ in audiofördröjning med ± 0.1 sekund\n"
-" o                   växla OSD läge:  ingen / lägesindikator / lägesindikator + tidtagare\n"
-" * eller /           öka eller sänk PCM-volym\n"
-" z eller x           ställ in textningsfördröjning med ± 0.1 sekund\n"
-" r or t              ställ in textningsposition upp/ner, se också '-vf expand'\n"
-"\n"
-" * * * LÄS MANUALEN FÖR FLER DETALJER, MER AVANCERADE ARGUMENT OCH KOMMANDON * * *\n"
-"\n";
+	" -ss <tidpos>        sök till given position (sekunder eller hh:mm:ss)\n"
+	" -nosound            spela inte upp ljud\n"
+	" -fs                 fullskärmsuppspelning (eller -vm, -zoom, detaljer på manualsidan)\n"
+	" -x <x> -y <y>       sätt skärmupplösning (för användning med -vm eller -zoom)\n"
+	" -sub <fil>          specifiera textningsfil att använda (se också -subfps, -subdelay)\n"
+	" -playlist <fil>     specifiera spellistefil\n"
+	" -vid x -aid y       välj video (x) och audio (y) ström att spela\n"
+	" -fps x -srate y     ändra video (x fps) och audio (y Hz) frekvens\n"
+	" -pp <kvalité>       aktivera postredigeringsfilter (detaljer på manualsidan)\n"
+	" -framedrop          aktivera reducering av antalet bildrutor (för långsamma maskiner)\n"
+	"\n"
+	"Grundläggande navigering: (komplett lista återfinns på manualsidan, läs även input.conf)\n"
+	" <-  eller  ->       sök bakåt/framåt 10 sekunder\n"
+	" upp eller ner       sök bakåt/framåt 1 minut\n"
+	" pgup eller pgdown   sök bakåt/framåt 10 minuter\n"
+	" < eller >           stega bakåt/framåt i spellistan\n"
+	" p eller SPACE       pausa filmen (tryck på valfri tagent för att fortsätta)\n"
+	" q eller ESC         stanna spelningen och avsluta programmet\n"
+	" + eller -           ställ in audiofördröjning med ± 0.1 sekund\n"
+	" o                   växla OSD läge:  ingen / lägesindikator / lägesindikator + tidtagare\n"
+	" * eller /           öka eller sänk PCM-volym\n"
+	" z eller x           ställ in textningsfördröjning med ± 0.1 sekund\n"
+	" r or t              ställ in textningsposition upp/ner, se också '-vf expand'\n"
+	"\n"
+	" * * * LÄS MANUALEN FÖR FLER DETALJER, MER AVANCERADE ARGUMENT OCH KOMMANDON * * *\n"
+	"\n";
 
 // libmpcodecs/ad_dvdpcm.c:
 #define MSGTR_SamplesWanted "Fler exempel på detta format behövs för att vidare öka support. Var vänlig kontakta utvecklarna.\n"
@@ -178,7 +178,6 @@ static const char help_text[]=
 #define MSGTR_EdlBadlyFormattedLine "Dåligt formaterad EDL-rad [%d]. Kastar bort.\n"
 #define MSGTR_EdlBadLineOverlap "Senaste stopposition var [%f] ; nästa start är [%f]. Noteringar måste vara i kronologisk ordning, kan inte lappa över. Kastar bort.\n"
 #define MSGTR_EdlBadLineBadStop "Stopptid måste vara efter starttid.\n"
-
 
 // mencoder.c:
 
@@ -399,6 +398,7 @@ static const char help_text[]=
 #define MSGTR_CodecDefinitionIncorrect "Codec är inte definerad korrekt."
 #define MSGTR_OutdatedCodecsConf "Denna codecs.conf är för gammal och inkompatibel med denna MPlayer version!" // release is more like 'släpp', sounds wrong, using version instead
 
+
 // fifo.c
 #define MSGTR_CannotMakePipe "Kan inte skapa en PIPE!\n" // FIXME make?
 
@@ -410,6 +410,7 @@ static const char help_text[]=
 #define MSGTR_MissingSuboptionParameter "Fel: underalternativ '%s' av '%s' måste ha en parameter!\n"
 #define MSGTR_MissingOptionParameter "Fel: alternativ '%s' måste ha en parameter!\n"
 #define MSGTR_OptionListHeader "\n Namn                 Typ             Min        Max      Global  CL    Cfg\n\n" // TODO why static tabs?
+
 #define MSGTR_TotalOptions "\nTotalt: %d alternativ\n"
 
 // open.c, stream.c:
@@ -441,12 +442,15 @@ static const char help_text[]=
 #define MSGTR_TooManyVideoInBuffer "\nAllt för många videopaket i bufferten: (%d i %d byte).\n"
 #define MSGTR_MaybeNI "Kanske försöker du spela upp en icke-interleaved ström/fil, eller så har decodern falierat?\n" \
                       "För AVI-filer, försök med att forcera icke-interleaved-lägen med -ni argumentet.\n" // FIXME non-interleaved
+
 #define MSGTR_SwitchToNi "\nSvårt interleaved AVI-fil detekterad, går över till '-ni'-läge...\n"
 #define MSGTR_Detected_XXX_FileFormat "%s filformat detekterat.\n"
 #define MSGTR_DetectedAudiofile "Audiofilformat detekterat.\n"
 #define MSGTR_InvalidMPEGES "Icke godkänd 'MPEG-ES'-ström??? Kontakta upphovsmannen, det kanske är en bugg :(\n" //FIXME author???
+
 #define MSGTR_FormatNotRecognized "================ Tyvärr, detta filformat är inte rekogniserbart/stött ==================\n"\
                                   "=== Om denna fil är en AVi, ASF eller MPEG-ström, var vänlig kontakta upphovsmannen! ===\n" //FIXME author???
+
 #define MSGTR_MissingVideoStream "Ingen videoström funnen.\n"
 #define MSGTR_MissingAudioStream "Ingen audioström funnen -> inget ljud.\n"
 #define MSGTR_MissingVideoStreamBug "Saknar videoström!? Kontakta upphovsmannen, det kan vara en bugg :(\n"
@@ -503,6 +507,7 @@ static const char help_text[]=
 #define MSGTR_OpeningVideoDecoder "Öppnar videodecoder: [%s] %s\n"
 #define MSGTR_OpeningAudioDecoder "Öppnar audiodecoder: [%s] %s\n"
 #define MSGTR_VDecoderInitFailed "VDecoder-initiering misslyckades :(\n" // FIXME VDecoder something special or just a shortcut?
+
 #define MSGTR_ADecoderInitFailed "ADecoder-initiering misslyckades :(\n" // -''-
 #define MSGTR_ADecoderPreinitFailed "ADecoder-preinitiering misslyckades :(\n" // -''-
 
@@ -515,6 +520,7 @@ static const char help_text[]=
 #define MSGTR_CouldNotOpenVideoFilter "Kunde inte öppna videofilter '%s'.\n"
 #define MSGTR_OpeningVideoFilter "Öppnar videofilter: "
 #define MSGTR_CannotFindColorspace "Kunde inte hitta matchande färgrymder, t.o.m. vid insättning av 'scale' :(\n" // FIXME colorspace
+
 
 // vd.c
 #define MSGTR_CodecDidNotSet "VDec: Codec satt inte sh->disp_w samt sh->disp_h, försöker gå runt problemet.\n"
@@ -530,7 +536,6 @@ static const char help_text[]=
 
 #define MSGTR_InsertingAfVolume "[Mixer] Ingen hårdvarumixning, lägger till volymfilter.\n"
 #define MSGTR_NoVolume "[Mixer] Ingen volymkontroll tillgänglig.\n"
-
 
 // ====================== GUI messages/buttons ========================
 
@@ -790,13 +795,16 @@ static const char help_text[]=
 
 // vo_yuv4mpeg.c
 #define MSGTR_VO_YUV4MPEG_InterlacedHeightDivisibleBy4 "'Interlaced'-mode kräver bildhöjd som är delbar med 4." // FIXME interlaced?
+
 #define MSGTR_VO_YUV4MPEG_InterlacedLineBufAllocFail "Oförmögen att allokera linjebufferrt för interlaced-mode."
 #define MSGTR_VO_YUV4MPEG_WidthDivisibleBy2 "Bildbredd måste vara delbart med 2."
 #define MSGTR_VO_YUV4MPEG_OutFileOpenError "Kan inte få minnes- eller filhanterare att skriva till \"%s\"!"
 #define MSGTR_VO_YUV4MPEG_OutFileWriteError "Fel vid skrivning av bild till ut!" // FIXME output here?
 #define MSGTR_VO_YUV4MPEG_UnknownSubDev "Okänd subdevice: %s" // FIXME subdevice
 #define MSGTR_VO_YUV4MPEG_InterlacedTFFMode "Använder 'interlaced output mode', övre fältet först." // FIXME top-field first? && 'interlaced output mode'
+
 #define MSGTR_VO_YUV4MPEG_InterlacedBFFMode "Använder 'interlaced output mode',nedre fältet först." // FIXME bottom-field first? && 'interlaced output mode'
+
 
 #define MSGTR_VO_YUV4MPEG_ProgressiveMode "Använder (som standard) progressiv bildramsinställning."
 
@@ -804,7 +812,6 @@ static const char help_text[]=
 
 #define MSGTR_VO_PGM_HasBeenReplaced "pgm-video-ut-drivrutinen har blivit utbytt av '-vo pnm:pgmyuv'.\n"
 #define MSGTR_VO_MD5_HasBeenReplaced "md5-video-ut-drivrutinen har blivit utbytt av '-vo md5sum'.\n"
-
 
 // ======================= AO Audio Output drivers ========================
 
@@ -818,6 +825,7 @@ static const char help_text[]=
 #define MSGTR_AO_OSS_ChanNotFound "[AO OSS] audio_setup: Audiokortsmixer har inte kanal '%s' använder standard.\n"
 #define MSGTR_AO_OSS_CantOpenDev "[AO OSS] audio_setup: Kan inte öppna audioenhet %s: %s\n"
 #define MSGTR_AO_OSS_CantMakeFd "[AO OSS] audio_setup: Kan inte få till 'filedescriptor'sblockning: %s\n" // FIXME filedescriptor
+
 #define MSGTR_AO_OSS_CantSetChans "[AO OSS] audio_setup: Misslyckades att sätta audioenhet till %d kanaler.\n"
 #define MSGTR_AO_OSS_CantUseGetospace "[AO OSS] audio_setup: dirvrutin hanerar ej SNDCTL_DSP_GETOSPACE :-(\n"
 #define MSGTR_AO_OSS_CantUseSelect "[AO OSS]\n   ***  Din audiodrivrutin hanterar inte select()  ***\n Komplilera om med '#undef HAVE_AUDIO_SELECT' i config.h !\n\n"
@@ -848,6 +856,7 @@ static const char help_text[]=
 
 // ao_pcm.c
 #define MSGTR_AO_PCM_FileInfo "[AO PCM] Fil: %s (%s)\nPCM: Samplerate: %iHz Kanaler: %s Format %s\n" // FIXME Samplerate?
+
 #define MSGTR_AO_PCM_HintInfo "[AO PCM] Info: snabbaste dumplning är tillgänglig via -vc null -vo null\nPCM: Info: för att skriva WAVE-filer använd -ao pcm:waveheader (standard).\n"
 #define MSGTR_AO_PCM_CantOpenOutputFile "[AO PCM] Misslyckades att öppna %s för skrivning!\n"
 
@@ -863,6 +872,7 @@ static const char help_text[]=
 #define MSGTR_AO_SGI_InitInfo "[AO SGI] init: Samplerate: %iHz Kanaler: %s Format %s\n" // FIXME Samplerate
 #define MSGTR_AO_SGI_InvalidDevice "[AO SGI] play: icke godkänd enhet.\n"
 #define MSGTR_AO_SGI_CantSetParms_Samplerate "[AO SGI] init: setparams misslyckades: %s\nKunde inte sätta önskad samplerate.\n" // -''-
+
 #define MSGTR_AO_SGI_CantSetAlRate "[AO SGI] init: AL_RATE var inte accepterad på given resurs.\n"
 #define MSGTR_AO_SGI_CantGetParms "[AO SGI] init: getparams misslyckades: %s\n"
 #define MSGTR_AO_SGI_SampleRateInfo "[AO SGI] init: samplerate är nu %f (önskad rate var %f)\n" // -''- also rate?
@@ -878,6 +888,7 @@ static const char help_text[]=
 #define MSGTR_AO_SUN_RtscWriteFailed "[AO SUN] rtsc: skrivning misslyckades."
 #define MSGTR_AO_SUN_CantOpenAudioDev "[AO SUN] Kan inte öppna audioenhet %s, %s  -> inget ljud.\n"
 #define MSGTR_AO_SUN_UnsupSampleRate "[AO SUN] audio_setup: ditt kort hanterar inte %d kanaler, %s, %d Hz samplerate.\n" // FIXME samplerate
+
 #define MSGTR_AO_SUN_CantUseSelect "[AO SUN]\n   ***  Din ljudkortsenhet hanterar inte select()  ***\nKompilera om med '#undef HAVE_AUDIO_SELECT' i config.h !\n\n"
 #define MSGTR_AO_SUN_CantReopenReset "[AO SUN]\nFatalt fel: *** KAN INTE ÅTERÖPPNA / ÅTERSTÄLLA AUDIOENHET (%s) ***\n"
 

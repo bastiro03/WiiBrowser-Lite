@@ -23,62 +23,69 @@
 #include "avcodec.h"
 #include "internal.h"
 
-static av_cold int xbm_encode_init(AVCodecContext *avctx)
-{
-    avctx->coded_frame = avcodec_alloc_frame();
-    if (!avctx->coded_frame)
-        return AVERROR(ENOMEM);
-    avctx->coded_frame->pict_type = AV_PICTURE_TYPE_I;
+static av_cold
 
-    return 0;
+int xbm_encode_init(AVCodecContext* avctx)
+{
+	avctx->coded_frame = avcodec_alloc_frame();
+	if (!avctx->coded_frame)
+		return AVERROR(ENOMEM);
+	avctx->coded_frame->pict_type = AV_PICTURE_TYPE_I;
+
+	return 0;
 }
 
-static int xbm_encode_frame(AVCodecContext *avctx, AVPacket *pkt,
-                            const AVFrame *p, int *got_packet)
+static int xbm_encode_frame(AVCodecContext* avctx, AVPacket* pkt,
+                            const AVFrame* p, int* got_packet)
 {
-    int i, j, ret, size, linesize;
-    uint8_t *ptr, *buf;
+	int i, j, ret, size, linesize;
+	uint8_t *ptr, *buf;
 
-    linesize = (avctx->width + 7) / 8;
-    size     = avctx->height * (linesize * 7 + 2) + 110;
-    if ((ret = ff_alloc_packet2(avctx, pkt, size)) < 0)
-        return ret;
+	linesize = (avctx->width + 7) / 8;
+	size = avctx->height * (linesize * 7 + 2) + 110;
+	if ((ret = ff_alloc_packet2(avctx, pkt, size)) < 0)
+		return ret;
 
-    buf = pkt->data;
-    ptr = p->data[0];
+	buf = pkt->data;
+	ptr = p->data[0];
 
-    buf += snprintf(buf, 32, "#define image_width %u\n", avctx->width);
-    buf += snprintf(buf, 33, "#define image_height %u\n", avctx->height);
-    buf += snprintf(buf, 40, "static unsigned char image_bits[] = {\n");
-    for (i = 0; i < avctx->height; i++) {
-        for (j = 0; j < linesize; j++)
-            buf += snprintf(buf, 7, " 0x%02X,", av_reverse[*ptr++]);
-        ptr += p->linesize[0] - linesize;
-        buf += snprintf(buf, 2, "\n");
-    }
-    buf += snprintf(buf, 5, " };\n");
+	buf += snprintf(buf, 32, "#define image_width %u\n", avctx->width);
+	buf += snprintf(buf, 33, "#define image_height %u\n", avctx->height);
+	buf += snprintf(buf, 40, "static unsigned char image_bits[] = {\n");
+	for (i = 0; i < avctx->height; i++)
+	{
+		for (j = 0; j < linesize; j++)
+			buf += snprintf(buf, 7, " 0x%02X,", av_reverse[*ptr++]);
+		ptr += p->linesize[0] - linesize;
+		buf += snprintf(buf, 2, "\n");
+	}
+	buf += snprintf(buf, 5, " };\n");
 
-    pkt->size   = buf - pkt->data;
-    pkt->flags |= AV_PKT_FLAG_KEY;
-    *got_packet = 1;
-    return 0;
+	pkt->size = buf - pkt->data;
+	pkt->flags |= AV_PKT_FLAG_KEY;
+	*got_packet = 1;
+	return 0;
 }
 
-static av_cold int xbm_encode_close(AVCodecContext *avctx)
-{
-    av_freep(&avctx->coded_frame);
+static av_cold
 
-    return 0;
+int xbm_encode_close(AVCodecContext* avctx)
+{
+	av_freep(&avctx->coded_frame);
+
+	return 0;
 }
 
 AVCodec ff_xbm_encoder = {
-    .name         = "xbm",
-    .type         = AVMEDIA_TYPE_VIDEO,
-    .id           = CODEC_ID_XBM,
-    .init         = xbm_encode_init,
-    .encode2      = xbm_encode_frame,
-    .close        = xbm_encode_close,
-    .pix_fmts     = (const enum PixelFormat[]) { PIX_FMT_MONOWHITE,
-                                                 PIX_FMT_NONE },
-    .long_name    = NULL_IF_CONFIG_SMALL("XBM (X BitMap) image"),
+	.name = "xbm",
+	.type = AVMEDIA_TYPE_VIDEO,
+	.id = CODEC_ID_XBM,
+	.init = xbm_encode_init,
+	.encode2 = xbm_encode_frame,
+	.close = xbm_encode_close,
+	.pix_fmts = (const enum PixelFormat[]){
+		PIX_FMT_MONOWHITE,
+		PIX_FMT_NONE
+	},
+	.long_name = NULL_IF_CONFIG_SMALL("XBM (X BitMap) image"),
 };

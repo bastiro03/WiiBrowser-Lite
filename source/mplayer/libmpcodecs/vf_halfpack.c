@@ -33,18 +33,19 @@
 #include "libswscale/swscale.h"
 #include "fmt-conversion.h"
 
-struct vf_priv_s {
+struct vf_priv_s
+{
 	int field;
-	struct SwsContext *ctx;
+	struct SwsContext* ctx;
 };
 
 #if HAVE_MMX
-static void halfpack_MMX(unsigned char *dst, unsigned char *src[3],
-		     int dststride, int srcstride[3],
-		     int w, int h)
+static void halfpack_MMX(unsigned char* dst, unsigned char* src[3],
+	int dststride, int srcstride[3],
+	int w, int h)
 {
 	int j;
-	unsigned char *y1, *y2, *u, *v;
+	unsigned char* y1, * y2, * u, * v;
 	int dstinc, yinc, uinc, vinc;
 
 	y1 = src[0];
@@ -52,13 +53,13 @@ static void halfpack_MMX(unsigned char *dst, unsigned char *src[3],
 	u = src[1];
 	v = src[2];
 
-	dstinc = dststride - 2*w;
-	yinc = 2*srcstride[0] - w;
-	uinc = srcstride[1] - w/2;
-	vinc = srcstride[2] - w/2;
+	dstinc = dststride - 2 * w;
+	yinc = 2 * srcstride[0] - w;
+	uinc = srcstride[1] - w / 2;
+	vinc = srcstride[2] - w / 2;
 
-	for (h/=2; h; h--) {
-		__asm__ (
+	for (h /= 2; h; h--) {
+		__asm__(
 			"pxor %%mm0, %%mm0 \n\t"
 			ASMALIGN(4)
 			"1: \n\t"
@@ -105,13 +106,13 @@ static void halfpack_MMX(unsigned char *dst, unsigned char *src[3],
 			"decl %9 \n\t"
 			"jnz 1b \n\t"
 			: "=r" (y1), "=r" (y2), "=r" (u), "=r" (v)
-			: "0" (y1), "1" (y2), "2" (u), "3" (v), "r" (dst), "r" (w/8)
+			: "0" (y1), "1" (y2), "2" (u), "3" (v), "r" (dst), "r" (w / 8)
 			: "memory"
 		);
-		for (j = (w&7)/2; j; j--) {
-			*dst++ = (*y1++ + *y2++)/2;
+		for (j = (w & 7) / 2; j; j--) {
+			*dst++ = (*y1++ + *y2++) / 2;
 			*dst++ = *u++;
-			*dst++ = (*y1++ + *y2++)/2;
+			*dst++ = (*y1++ + *y2++) / 2;
 			*dst++ = *v++;
 		}
 		y1 += yinc;
@@ -120,15 +121,13 @@ static void halfpack_MMX(unsigned char *dst, unsigned char *src[3],
 		v += vinc;
 		dst += dstinc;
 	}
-	__asm__ volatile ( "emms \n\t" ::: "memory" );
+	__asm__ volatile ("emms \n\t" ::: "memory");
 }
 #endif
 
-
-
-static void halfpack_C(unsigned char *dst, unsigned char *src[3],
-		     int dststride, int srcstride[3],
-		     int w, int h)
+static void halfpack_C(unsigned char* dst, unsigned char* src[3],
+                       int dststride, int srcstride[3],
+                       int w, int h)
 {
 	int i, j;
 	unsigned char *y1, *y2, *u, *v;
@@ -139,16 +138,18 @@ static void halfpack_C(unsigned char *dst, unsigned char *src[3],
 	u = src[1];
 	v = src[2];
 
-	dstinc = dststride - 2*w;
-	yinc = 2*srcstride[0] - w;
-	uinc = srcstride[1] - w/2;
-	vinc = srcstride[2] - w/2;
+	dstinc = dststride - 2 * w;
+	yinc = 2 * srcstride[0] - w;
+	uinc = srcstride[1] - w / 2;
+	vinc = srcstride[2] - w / 2;
 
-	for (i = h/2; i; i--) {
-		for (j = w/2; j; j--) {
-			*dst++ = (*y1++ + *y2++)>>1;
+	for (i = h / 2; i; i--)
+	{
+		for (j = w / 2; j; j--)
+		{
+			*dst++ = (*y1++ + *y2++) >> 1;
 			*dst++ = *u++;
-			*dst++ = (*y1++ + *y2++)>>1;
+			*dst++ = (*y1++ + *y2++) >> 1;
 			*dst++ = *v++;
 		}
 		y1 += yinc;
@@ -159,42 +160,44 @@ static void halfpack_C(unsigned char *dst, unsigned char *src[3],
 	}
 }
 
-static void (*halfpack)(unsigned char *dst, unsigned char *src[3],
-	int dststride, int srcstride[3], int w, int h);
+static void (*halfpack)(unsigned char* dst, unsigned char* src[3],
+                        int dststride, int srcstride[3], int w, int h);
 
-
-static int put_image(struct vf_instance *vf, mp_image_t *mpi, double pts)
+static int put_image(struct vf_instance* vf, mp_image_t* mpi, double pts)
 {
-	const uint8_t *src[MP_MAX_PLANES] = {
-		mpi->planes[0] + mpi->stride[0]*vf->priv->field,
-		mpi->planes[1], mpi->planes[2], NULL};
-	int src_stride[MP_MAX_PLANES] = {mpi->stride[0]*2, mpi->stride[1], mpi->stride[2], 0};
-	mp_image_t *dmpi;
+	const uint8_t* src[MP_MAX_PLANES] = {
+		mpi->planes[0] + mpi->stride[0] * vf->priv->field,
+		mpi->planes[1], mpi->planes[2], NULL
+	};
+	int src_stride[MP_MAX_PLANES] = {mpi->stride[0] * 2, mpi->stride[1], mpi->stride[2], 0};
+	mp_image_t* dmpi;
 
 	// hope we'll get DR buffer:
-	dmpi=vf_get_image(vf->next, IMGFMT_YUY2,
-			  MP_IMGTYPE_TEMP, MP_IMGFLAG_ACCEPT_STRIDE,
-			  mpi->w, mpi->h/2);
+	dmpi = vf_get_image(vf->next, IMGFMT_YUY2,
+	                    MP_IMGTYPE_TEMP, MP_IMGFLAG_ACCEPT_STRIDE,
+	                    mpi->w, mpi->h / 2);
 
-	switch(vf->priv->field) {
+	switch (vf->priv->field)
+	{
 	case 0:
 	case 1:
 		sws_scale(vf->priv->ctx, src, src_stride,
-		          0, mpi->h/2, dmpi->planes, dmpi->stride);
+		          0, mpi->h / 2, dmpi->planes, dmpi->stride);
 		break;
 	default:
 		halfpack(dmpi->planes[0], mpi->planes, dmpi->stride[0],
-			mpi->stride, mpi->w, mpi->h);
+		         mpi->stride, mpi->w, mpi->h);
 	}
 
-	return vf_next_put_image(vf,dmpi, pts);
+	return vf_next_put_image(vf, dmpi, pts);
 }
 
-static int config(struct vf_instance *vf,
-		  int width, int height, int d_width, int d_height,
-		  unsigned int flags, unsigned int outfmt)
+static int config(struct vf_instance* vf,
+                  int width, int height, int d_width, int d_height,
+                  unsigned int flags, unsigned int outfmt)
 {
-	if (vf->priv->field < 2) {
+	if (vf->priv->field < 2)
+	{
 		sws_freeContext(vf->priv->ctx);
 		// get unscaled 422p -> yuy2 conversion
 		vf->priv->ctx =
@@ -204,42 +207,42 @@ static int config(struct vf_instance *vf,
 			               NULL, NULL, NULL);
 	}
 	/* FIXME - also support UYVY output? */
-	return vf_next_config(vf, width, height/2, d_width, d_height, flags, IMGFMT_YUY2);
+	return vf_next_config(vf, width, height / 2, d_width, d_height, flags, IMGFMT_YUY2);
 }
 
-
-static int query_format(struct vf_instance *vf, unsigned int fmt)
+static int query_format(struct vf_instance* vf, unsigned int fmt)
 {
 	/* FIXME - really any YUV 4:2:0 input format should work */
-	switch (fmt) {
+	switch (fmt)
+	{
 	case IMGFMT_YV12:
 	case IMGFMT_IYUV:
 	case IMGFMT_I420:
-		return vf_next_query_format(vf,IMGFMT_YUY2);
+		return vf_next_query_format(vf, IMGFMT_YUY2);
 	}
 	return 0;
 }
 
-static void uninit(struct vf_instance *vf)
+static void uninit(struct vf_instance* vf)
 {
 	sws_freeContext(vf->priv->ctx);
 	free(vf->priv);
 }
 
-static int vf_open(vf_instance_t *vf, char *args)
+static int vf_open(vf_instance_t* vf, char* args)
 {
-	vf->config=config;
-	vf->query_format=query_format;
-	vf->put_image=put_image;
-	vf->uninit=uninit;
+	vf->config = config;
+	vf->query_format = query_format;
+	vf->put_image = put_image;
+	vf->uninit = uninit;
 
-	vf->priv = calloc(1, sizeof (struct vf_priv_s));
+	vf->priv = calloc(1, sizeof(struct vf_priv_s));
 	vf->priv->field = 2;
 	if (args) sscanf(args, "%d", &vf->priv->field);
 
 	halfpack = halfpack_C;
 #if HAVE_MMX
-	if(gCpuCaps.hasMMX) halfpack = halfpack_MMX;
+	if (gCpuCaps.hasMMX) halfpack = halfpack_MMX;
 #endif
 	return 1;
 }

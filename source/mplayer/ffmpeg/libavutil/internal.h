@@ -40,13 +40,14 @@
 #include "cpu.h"
 #include "dict.h"
 
-struct AVDictionary {
-    int count;
-    AVDictionaryEntry *elems;
+struct AVDictionary
+{
+	int count;
+	AVDictionaryEntry* elems;
 };
 
 #ifndef attribute_align_arg
-#if ARCH_X86_32 && AV_GCC_VERSION_AT_LEAST(4,2)
+#if ARCH_X86_32 && AV_GCC_VERSION_AT_LEAST(4, 2)
 #    define attribute_align_arg __attribute__((force_align_arg_pointer))
 #else
 #    define attribute_align_arg
@@ -232,15 +233,15 @@ struct AVDictionary {
 #endif
 
 #if HAVE_MMX
-/**
- * Empty mmx state.
- * this must be called between any dsp function and float/double code.
- * for example sin(); dsp->idct_put(); emms_c(); cos()
- */
+   /**
+	* Empty mmx state.
+	* this must be called between any dsp function and float/double code.
+	* for example sin(); dsp->idct_put(); emms_c(); cos()
+	*/
 static av_always_inline void emms_c(void)
 {
-    if(av_get_cpu_flags() & AV_CPU_FLAG_MMX)
-        __asm__ volatile ("emms" ::: "memory");
+	if (av_get_cpu_flags() & AV_CPU_FLAG_MMX)
+		__asm__ volatile ("emms" ::: "memory");
 }
 #else /* HAVE_MMX */
 #define emms_c()

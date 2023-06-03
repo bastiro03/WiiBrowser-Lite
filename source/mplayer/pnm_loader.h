@@ -46,7 +46,7 @@
  *                              width*height*bytes_per_pixel bytes,
  *                              or NULL in case of error.
  */
-uint8_t *read_pnm(FILE *f, int *width, int *height,
-                  int *bytes_per_pixel, int *maxval);
+uint8_t* read_pnm(FILE* f, int* width, int* height,
+                  int* bytes_per_pixel, int* maxval);
 
 #endif /* MPLAYER_PNM_LOADER_H */

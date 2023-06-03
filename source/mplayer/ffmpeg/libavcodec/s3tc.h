@@ -37,9 +37,9 @@
  * @param h height of output image
  * @param stride line size of output image
  */
-void ff_decode_dxt1(GetByteContext *gb, uint8_t *dst,
-                    const unsigned int w, const unsigned int h,
-                    const unsigned int stride);
+void ff_decode_dxt1(GetByteContext* gb, uint8_t* dst,
+                    unsigned int w, unsigned int h,
+                    unsigned int stride);
 /**
  * Decode DXT3 encoded data to RGB32
  * @param gb GetByteContext
@@ -48,8 +48,8 @@ void ff_decode_dxt1(GetByteContext *gb, uint8_t *dst,
  * @param h height of output image
  * @param stride line size of output image
  */
-void ff_decode_dxt3(GetByteContext *gb, uint8_t *dst,
-                    const unsigned int w, const unsigned int h,
-                    const unsigned int stride);
+void ff_decode_dxt3(GetByteContext* gb, uint8_t* dst,
+                    unsigned int w, unsigned int h,
+                    unsigned int stride);
 
 #endif /* AVCODEC_S3TC_H */

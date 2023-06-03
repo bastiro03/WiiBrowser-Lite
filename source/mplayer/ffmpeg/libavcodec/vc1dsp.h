@@ -30,46 +30,47 @@
 
 #include "dsputil.h"
 
-typedef struct VC1DSPContext {
-    /* vc1 functions */
-    void (*vc1_inv_trans_8x8)(DCTELEM *b);
-    void (*vc1_inv_trans_8x4)(uint8_t *dest, int line_size, DCTELEM *block);
-    void (*vc1_inv_trans_4x8)(uint8_t *dest, int line_size, DCTELEM *block);
-    void (*vc1_inv_trans_4x4)(uint8_t *dest, int line_size, DCTELEM *block);
-    void (*vc1_inv_trans_8x8_dc)(uint8_t *dest, int line_size, DCTELEM *block);
-    void (*vc1_inv_trans_8x4_dc)(uint8_t *dest, int line_size, DCTELEM *block);
-    void (*vc1_inv_trans_4x8_dc)(uint8_t *dest, int line_size, DCTELEM *block);
-    void (*vc1_inv_trans_4x4_dc)(uint8_t *dest, int line_size, DCTELEM *block);
-    void (*vc1_v_overlap)(uint8_t *src, int stride);
-    void (*vc1_h_overlap)(uint8_t *src, int stride);
-    void (*vc1_v_s_overlap)(DCTELEM *top,  DCTELEM *bottom);
-    void (*vc1_h_s_overlap)(DCTELEM *left, DCTELEM *right);
-    void (*vc1_v_loop_filter4)(uint8_t *src, int stride, int pq);
-    void (*vc1_h_loop_filter4)(uint8_t *src, int stride, int pq);
-    void (*vc1_v_loop_filter8)(uint8_t *src, int stride, int pq);
-    void (*vc1_h_loop_filter8)(uint8_t *src, int stride, int pq);
-    void (*vc1_v_loop_filter16)(uint8_t *src, int stride, int pq);
-    void (*vc1_h_loop_filter16)(uint8_t *src, int stride, int pq);
+typedef struct VC1DSPContext
+{
+	/* vc1 functions */
+	void (*vc1_inv_trans_8x8)(DCTELEM* b);
+	void (*vc1_inv_trans_8x4)(uint8_t* dest, int line_size, DCTELEM* block);
+	void (*vc1_inv_trans_4x8)(uint8_t* dest, int line_size, DCTELEM* block);
+	void (*vc1_inv_trans_4x4)(uint8_t* dest, int line_size, DCTELEM* block);
+	void (*vc1_inv_trans_8x8_dc)(uint8_t* dest, int line_size, DCTELEM* block);
+	void (*vc1_inv_trans_8x4_dc)(uint8_t* dest, int line_size, DCTELEM* block);
+	void (*vc1_inv_trans_4x8_dc)(uint8_t* dest, int line_size, DCTELEM* block);
+	void (*vc1_inv_trans_4x4_dc)(uint8_t* dest, int line_size, DCTELEM* block);
+	void (*vc1_v_overlap)(uint8_t* src, int stride);
+	void (*vc1_h_overlap)(uint8_t* src, int stride);
+	void (*vc1_v_s_overlap)(DCTELEM* top, DCTELEM* bottom);
+	void (*vc1_h_s_overlap)(DCTELEM* left, DCTELEM* right);
+	void (*vc1_v_loop_filter4)(uint8_t* src, int stride, int pq);
+	void (*vc1_h_loop_filter4)(uint8_t* src, int stride, int pq);
+	void (*vc1_v_loop_filter8)(uint8_t* src, int stride, int pq);
+	void (*vc1_h_loop_filter8)(uint8_t* src, int stride, int pq);
+	void (*vc1_v_loop_filter16)(uint8_t* src, int stride, int pq);
+	void (*vc1_h_loop_filter16)(uint8_t* src, int stride, int pq);
 
-    /* put 8x8 block with bicubic interpolation and quarterpel precision
-     * last argument is actually round value instead of height
-     */
-    op_pixels_func put_vc1_mspel_pixels_tab[16];
-    op_pixels_func avg_vc1_mspel_pixels_tab[16];
+	/* put 8x8 block with bicubic interpolation and quarterpel precision
+	 * last argument is actually round value instead of height
+	 */
+	op_pixels_func put_vc1_mspel_pixels_tab[16];
+	op_pixels_func avg_vc1_mspel_pixels_tab[16];
 
-    /* This is really one func used in VC-1 decoding */
-    h264_chroma_mc_func put_no_rnd_vc1_chroma_pixels_tab[3];
-    h264_chroma_mc_func avg_no_rnd_vc1_chroma_pixels_tab[3];
+	/* This is really one func used in VC-1 decoding */
+	h264_chroma_mc_func put_no_rnd_vc1_chroma_pixels_tab[3];
+	h264_chroma_mc_func avg_no_rnd_vc1_chroma_pixels_tab[3];
 
-    /* Windows Media Image functions */
-    void (*sprite_h)(uint8_t *dst, const uint8_t *src, int offset, int advance, int count);
-    void (*sprite_v_single)(uint8_t *dst, const uint8_t *src1a, const uint8_t *src1b, int offset, int width);
-    void (*sprite_v_double_noscale)(uint8_t *dst, const uint8_t *src1a, const uint8_t *src2a, int alpha, int width);
-    void (*sprite_v_double_onescale)(uint8_t *dst, const uint8_t *src1a, const uint8_t *src1b, int offset1,
-                                                   const uint8_t *src2a, int alpha, int width);
-    void (*sprite_v_double_twoscale)(uint8_t *dst, const uint8_t *src1a, const uint8_t *src1b, int offset1,
-                                                   const uint8_t *src2a, const uint8_t *src2b, int offset2,
-                                     int alpha, int width);
+	/* Windows Media Image functions */
+	void (*sprite_h)(uint8_t* dst, const uint8_t* src, int offset, int advance, int count);
+	void (*sprite_v_single)(uint8_t* dst, const uint8_t* src1a, const uint8_t* src1b, int offset, int width);
+	void (*sprite_v_double_noscale)(uint8_t* dst, const uint8_t* src1a, const uint8_t* src2a, int alpha, int width);
+	void (*sprite_v_double_onescale)(uint8_t* dst, const uint8_t* src1a, const uint8_t* src1b, int offset1,
+	                                 const uint8_t* src2a, int alpha, int width);
+	void (*sprite_v_double_twoscale)(uint8_t* dst, const uint8_t* src1a, const uint8_t* src1b, int offset1,
+	                                 const uint8_t* src2a, const uint8_t* src2b, int offset2,
+	                                 int alpha, int width);
 } VC1DSPContext;
 
 void ff_vc1dsp_init(VC1DSPContext* c);

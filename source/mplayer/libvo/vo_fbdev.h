@@ -19,7 +19,7 @@
 #ifndef MPLAYER_VO_FBDEV_H
 #define MPLAYER_VO_FBDEV_H
 
-extern char *fb_mode_cfgfile;
-extern char *fb_mode_name;
+extern char* fb_mode_cfgfile;
+extern char* fb_mode_name;
 
 #endif /* MPLAYER_VO_FBDEV_H */

@@ -46,10 +46,10 @@ typedef struct AudioConvert AudioConvert;
  * @param descr          function type description (e.g. "C" or "SSE")
  * @param conv           conversion function pointer
  */
-void ff_audio_convert_set_func(AudioConvert *ac, enum AVSampleFormat out_fmt,
+void ff_audio_convert_set_func(AudioConvert* ac, enum AVSampleFormat out_fmt,
                                enum AVSampleFormat in_fmt, int channels,
                                int ptr_align, int samples_align,
-                               const char *descr, void *conv);
+                               const char* descr, void* conv);
 
 /**
  * Allocate and initialize AudioConvert context for sample format conversion.
@@ -60,7 +60,7 @@ void ff_audio_convert_set_func(AudioConvert *ac, enum AVSampleFormat out_fmt,
  * @param channels number of channels
  * @return         newly-allocated AudioConvert context
  */
-AudioConvert *ff_audio_convert_alloc(AVAudioResampleContext *avr,
+AudioConvert* ff_audio_convert_alloc(AVAudioResampleContext* avr,
                                      enum AVSampleFormat out_fmt,
                                      enum AVSampleFormat in_fmt,
                                      int channels);
@@ -78,10 +78,10 @@ AudioConvert *ff_audio_convert_alloc(AVAudioResampleContext *avr,
  * @param len    number of samples to convert
  * @return       0 on success, negative AVERROR code on failure
  */
-int ff_audio_convert(AudioConvert *ac, AudioData *out, AudioData *in, int len);
+int ff_audio_convert(AudioConvert* ac, AudioData* out, AudioData* in, int len);
 
 /* arch-specific initialization functions */
 
-void ff_audio_convert_init_x86(AudioConvert *ac);
+void ff_audio_convert_init_x86(AudioConvert* ac);
 
 #endif /* AVRESAMPLE_AUDIO_CONVERT_H */

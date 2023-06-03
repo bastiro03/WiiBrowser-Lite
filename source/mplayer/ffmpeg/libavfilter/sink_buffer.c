@@ -29,270 +29,283 @@
 #include "buffersink.h"
 #include "internal.h"
 
-AVBufferSinkParams *av_buffersink_params_alloc(void)
+AVBufferSinkParams* av_buffersink_params_alloc(void)
 {
-    static const int pixel_fmts[] = { -1 };
-    AVBufferSinkParams *params = av_malloc(sizeof(AVBufferSinkParams));
-    if (!params)
-        return NULL;
+	static const int pixel_fmts[] = {-1};
+	AVBufferSinkParams* params = av_malloc(sizeof(AVBufferSinkParams));
+	if (!params)
+		return NULL;
 
-    params->pixel_fmts = pixel_fmts;
-    return params;
+	params->pixel_fmts = pixel_fmts;
+	return params;
 }
 
-AVABufferSinkParams *av_abuffersink_params_alloc(void)
+AVABufferSinkParams* av_abuffersink_params_alloc(void)
 {
-    static const int sample_fmts[] = { -1 };
-    static const int64_t channel_layouts[] = { -1 };
-    AVABufferSinkParams *params = av_malloc(sizeof(AVABufferSinkParams));
+	static const int sample_fmts[] = {-1};
+	static const int64_t channel_layouts[] = {-1};
+	AVABufferSinkParams* params = av_malloc(sizeof(AVABufferSinkParams));
 
-    if (!params)
-        return NULL;
+	if (!params)
+		return NULL;
 
-    params->sample_fmts = sample_fmts;
-    params->channel_layouts = channel_layouts;
-    return params;
+	params->sample_fmts = sample_fmts;
+	params->channel_layouts = channel_layouts;
+	return params;
 }
 
-typedef struct {
-    AVFifoBuffer *fifo;                      ///< FIFO buffer of video frame references
+typedef struct
+{
+	AVFifoBuffer* fifo; ///< FIFO buffer of video frame references
 
-    /* only used for video */
-    enum PixelFormat *pixel_fmts;           ///< list of accepted pixel formats, must be terminated with -1
+	/* only used for video */
+	enum PixelFormat* pixel_fmts; ///< list of accepted pixel formats, must be terminated with -1
 
-    /* only used for audio */
-    enum AVSampleFormat *sample_fmts;       ///< list of accepted sample formats, terminated by AV_SAMPLE_FMT_NONE
-    int64_t *channel_layouts;               ///< list of accepted channel layouts, terminated by -1
+	/* only used for audio */
+	enum AVSampleFormat* sample_fmts; ///< list of accepted sample formats, terminated by AV_SAMPLE_FMT_NONE
+	int64_t* channel_layouts; ///< list of accepted channel layouts, terminated by -1
 } BufferSinkContext;
 
 #define FIFO_INIT_SIZE 8
 
-static av_cold int common_init(AVFilterContext *ctx)
-{
-    BufferSinkContext *buf = ctx->priv;
+static av_cold
 
-    buf->fifo = av_fifo_alloc(FIFO_INIT_SIZE*sizeof(AVFilterBufferRef *));
-    if (!buf->fifo) {
-        av_log(ctx, AV_LOG_ERROR, "Failed to allocate fifo\n");
-        return AVERROR(ENOMEM);
-    }
-    return 0;
+int common_init(AVFilterContext* ctx)
+{
+	BufferSinkContext* buf = ctx->priv;
+
+	buf->fifo = av_fifo_alloc(FIFO_INIT_SIZE * sizeof(AVFilterBufferRef*));
+	if (!buf->fifo)
+	{
+		av_log(ctx, AV_LOG_ERROR, "Failed to allocate fifo\n");
+		return AVERROR(ENOMEM);
+	}
+	return 0;
 }
 
-static av_cold void common_uninit(AVFilterContext *ctx)
-{
-    BufferSinkContext *buf = ctx->priv;
-    AVFilterBufferRef *picref;
+static av_cold
 
-    if (buf->fifo) {
-        while (av_fifo_size(buf->fifo) >= sizeof(AVFilterBufferRef *)) {
-            av_fifo_generic_read(buf->fifo, &picref, sizeof(picref), NULL);
-            avfilter_unref_buffer(picref);
-        }
-        av_fifo_free(buf->fifo);
-        buf->fifo = NULL;
-    }
+void common_uninit(AVFilterContext* ctx)
+{
+	BufferSinkContext* buf = ctx->priv;
+	AVFilterBufferRef* picref;
+
+	if (buf->fifo)
+	{
+		while (av_fifo_size(buf->fifo) >= sizeof(AVFilterBufferRef*))
+		{
+			av_fifo_generic_read(buf->fifo, &picref, sizeof(picref), NULL);
+			avfilter_unref_buffer(picref);
+		}
+		av_fifo_free(buf->fifo);
+		buf->fifo = NULL;
+	}
 }
 
-static void end_frame(AVFilterLink *inlink)
+static void end_frame(AVFilterLink* inlink)
 {
-    AVFilterContext *ctx = inlink->dst;
-    BufferSinkContext *buf = inlink->dst->priv;
+	AVFilterContext* ctx = inlink->dst;
+	BufferSinkContext* buf = inlink->dst->priv;
 
-    av_assert1(inlink->cur_buf);
-    if (av_fifo_space(buf->fifo) < sizeof(AVFilterBufferRef *)) {
-        /* realloc fifo size */
-        if (av_fifo_realloc2(buf->fifo, av_fifo_size(buf->fifo) * 2) < 0) {
-            av_log(ctx, AV_LOG_ERROR,
-                   "Cannot buffer more frames. Consume some available frames "
-                   "before adding new ones.\n");
-            return;
-        }
-    }
+	av_assert1(inlink->cur_buf);
+	if (av_fifo_space(buf->fifo) < sizeof(AVFilterBufferRef*))
+	{
+		/* realloc fifo size */
+		if (av_fifo_realloc2(buf->fifo, av_fifo_size(buf->fifo) * 2) < 0)
+		{
+			av_log(ctx, AV_LOG_ERROR,
+			       "Cannot buffer more frames. Consume some available frames "
+			       "before adding new ones.\n");
+			return;
+		}
+	}
 
-    /* cache frame */
-    av_fifo_generic_write(buf->fifo,
-                          &inlink->cur_buf, sizeof(AVFilterBufferRef *), NULL);
+	/* cache frame */
+	av_fifo_generic_write(buf->fifo,
+	                      &inlink->cur_buf, sizeof(AVFilterBufferRef*), NULL);
 }
 
-int av_buffersink_get_buffer_ref(AVFilterContext *ctx,
-                                  AVFilterBufferRef **bufref, int flags)
+int av_buffersink_get_buffer_ref(AVFilterContext* ctx,
+                                 AVFilterBufferRef** bufref, int flags)
 {
-    BufferSinkContext *buf = ctx->priv;
-    AVFilterLink *inlink = ctx->inputs[0];
-    int ret;
-    *bufref = NULL;
+	BufferSinkContext* buf = ctx->priv;
+	AVFilterLink* inlink = ctx->inputs[0];
+	int ret;
+	*bufref = NULL;
 
-    /* no picref available, fetch it from the filterchain */
-    if (!av_fifo_size(buf->fifo)) {
-        if (flags & AV_BUFFERSINK_FLAG_NO_REQUEST)
-            return AVERROR(EAGAIN);
-        if ((ret = avfilter_request_frame(inlink)) < 0)
-            return ret;
-    }
+	/* no picref available, fetch it from the filterchain */
+	if (!av_fifo_size(buf->fifo))
+	{
+		if (flags & AV_BUFFERSINK_FLAG_NO_REQUEST)
+			return AVERROR(EAGAIN);
+		if ((ret = avfilter_request_frame(inlink)) < 0)
+			return ret;
+	}
 
-    if (!av_fifo_size(buf->fifo))
-        return AVERROR(EINVAL);
+	if (!av_fifo_size(buf->fifo))
+		return AVERROR(EINVAL);
 
-    if (flags & AV_BUFFERSINK_FLAG_PEEK)
-        *bufref = *((AVFilterBufferRef **)av_fifo_peek2(buf->fifo, 0));
-    else
-        av_fifo_generic_read(buf->fifo, bufref, sizeof(*bufref), NULL);
+	if (flags & AV_BUFFERSINK_FLAG_PEEK)
+		*bufref = *((AVFilterBufferRef**)av_fifo_peek2(buf->fifo, 0));
+	else
+		av_fifo_generic_read(buf->fifo, bufref, sizeof(*bufref), NULL);
 
-    return 0;
+	return 0;
 }
 
-int av_buffersink_poll_frame(AVFilterContext *ctx)
+int av_buffersink_poll_frame(AVFilterContext* ctx)
 {
-    BufferSinkContext *buf = ctx->priv;
-    AVFilterLink *inlink = ctx->inputs[0];
+	BufferSinkContext* buf = ctx->priv;
+	AVFilterLink* inlink = ctx->inputs[0];
 
-    return av_fifo_size(buf->fifo)/sizeof(AVFilterBufferRef *) + avfilter_poll_frame(inlink);
+	return av_fifo_size(buf->fifo) / sizeof(AVFilterBufferRef*) + avfilter_poll_frame(inlink);
 }
 
 #if FF_API_OLD_VSINK_API
-int av_vsink_buffer_get_video_buffer_ref(AVFilterContext *ctx,
-                                         AVFilterBufferRef **picref, int flags)
+int av_vsink_buffer_get_video_buffer_ref(AVFilterContext* ctx,
+                                         AVFilterBufferRef** picref, int flags)
 {
-    return av_buffersink_get_buffer_ref(ctx, picref, flags);
+	return av_buffersink_get_buffer_ref(ctx, picref, flags);
 }
 #endif
 
 #if CONFIG_BUFFERSINK_FILTER
 
-static av_cold int vsink_init(AVFilterContext *ctx, const char *args, void *opaque)
+static av_cold int vsink_init(AVFilterContext* ctx, const char* args, void* opaque)
 {
-    BufferSinkContext *buf = ctx->priv;
-    av_unused AVBufferSinkParams *params;
+	BufferSinkContext* buf = ctx->priv;
+	av_unused AVBufferSinkParams* params;
 
-    if (!opaque) {
-        av_log(ctx, AV_LOG_WARNING,
-               "No opaque field provided\n");
-        buf->pixel_fmts = NULL;
-    } else {
+	if (!opaque) {
+		av_log(ctx, AV_LOG_WARNING,
+			"No opaque field provided\n");
+		buf->pixel_fmts = NULL;
+	}
+	else {
 #if FF_API_OLD_VSINK_API
-        const int *pixel_fmts = (const enum PixelFormat *)opaque;
+		const int* pixel_fmts = (const enum PixelFormat*)opaque;
 #else
-        params = (AVBufferSinkParams *)opaque;
-        const int *pixel_fmts = params->pixel_fmts;
+		params = (AVBufferSinkParams*)opaque;
+		const int* pixel_fmts = params->pixel_fmts;
 #endif
-        buf->pixel_fmts = ff_copy_int_list(pixel_fmts);
-        if (!buf->pixel_fmts)
-            return AVERROR(ENOMEM);
-    }
+		buf->pixel_fmts = ff_copy_int_list(pixel_fmts);
+		if (!buf->pixel_fmts)
+			return AVERROR(ENOMEM);
+	}
 
-    return common_init(ctx);
+	return common_init(ctx);
 }
 
-static av_cold void vsink_uninit(AVFilterContext *ctx)
+static av_cold void vsink_uninit(AVFilterContext* ctx)
 {
-    BufferSinkContext *buf = ctx->priv;
-    av_freep(&buf->pixel_fmts);
-    return common_uninit(ctx);
+	BufferSinkContext* buf = ctx->priv;
+	av_freep(&buf->pixel_fmts);
+	return common_uninit(ctx);
 }
 
-static int vsink_query_formats(AVFilterContext *ctx)
+static int vsink_query_formats(AVFilterContext* ctx)
 {
-    BufferSinkContext *buf = ctx->priv;
+	BufferSinkContext* buf = ctx->priv;
 
-    if (buf->pixel_fmts)
-        avfilter_set_common_pixel_formats(ctx, avfilter_make_format_list(buf->pixel_fmts));
-    else
-        avfilter_default_query_formats(ctx);
+	if (buf->pixel_fmts)
+		avfilter_set_common_pixel_formats(ctx, avfilter_make_format_list(buf->pixel_fmts));
+	else
+		avfilter_default_query_formats(ctx);
 
-    return 0;
+	return 0;
 }
 
 AVFilter avfilter_vsink_buffersink = {
-    .name      = "buffersink",
-    .description = NULL_IF_CONFIG_SMALL("Buffer video frames, and make them available to the end of the filter graph."),
-    .priv_size = sizeof(BufferSinkContext),
-    .init      = vsink_init,
-    .uninit    = vsink_uninit,
+	.name = "buffersink",
+	.description = NULL_IF_CONFIG_SMALL("Buffer video frames, and make them available to the end of the filter graph."),
+	.priv_size = sizeof(BufferSinkContext),
+	.init = vsink_init,
+	.uninit = vsink_uninit,
 
-    .query_formats = vsink_query_formats,
+	.query_formats = vsink_query_formats,
 
-    .inputs    = (const AVFilterPad[]) {{ .name    = "default",
-                                    .type          = AVMEDIA_TYPE_VIDEO,
-                                    .end_frame     = end_frame,
-                                    .min_perms     = AV_PERM_READ, },
-                                  { .name = NULL }},
-    .outputs   = (const AVFilterPad[]) {{ .name = NULL }},
+	.inputs = (const AVFilterPad[]) {{.name = "default",
+									.type = AVMEDIA_TYPE_VIDEO,
+									.end_frame = end_frame,
+									.min_perms = AV_PERM_READ, },
+								  {.name = NULL }},
+	.outputs = (const AVFilterPad[]) {{.name = NULL }},
 };
 
 #endif /* CONFIG_BUFFERSINK_FILTER */
 
 #if CONFIG_ABUFFERSINK_FILTER
 
-static void filter_samples(AVFilterLink *link, AVFilterBufferRef *samplesref)
+static void filter_samples(AVFilterLink* link, AVFilterBufferRef* samplesref)
 {
-    end_frame(link);
+	end_frame(link);
 }
 
-static av_cold int asink_init(AVFilterContext *ctx, const char *args, void *opaque)
+static av_cold int asink_init(AVFilterContext* ctx, const char* args, void* opaque)
 {
-    BufferSinkContext *buf = ctx->priv;
-    AVABufferSinkParams *params;
+	BufferSinkContext* buf = ctx->priv;
+	AVABufferSinkParams* params;
 
-    if (!opaque) {
-        av_log(ctx, AV_LOG_ERROR,
-               "No opaque field provided, an AVABufferSinkParams struct is required\n");
-        return AVERROR(EINVAL);
-    } else
-        params = (AVABufferSinkParams *)opaque;
+	if (!opaque) {
+		av_log(ctx, AV_LOG_ERROR,
+			"No opaque field provided, an AVABufferSinkParams struct is required\n");
+		return AVERROR(EINVAL);
+	}
+	else
+		params = (AVABufferSinkParams*)opaque;
 
-    buf->sample_fmts     = ff_copy_int_list  (params->sample_fmts);
-    buf->channel_layouts = ff_copy_int64_list(params->channel_layouts);
-    if (!buf->sample_fmts || !buf->channel_layouts) {
-        av_freep(&buf->sample_fmts);
-        av_freep(&buf->channel_layouts);
-        return AVERROR(ENOMEM);
-    }
+	buf->sample_fmts = ff_copy_int_list(params->sample_fmts);
+	buf->channel_layouts = ff_copy_int64_list(params->channel_layouts);
+	if (!buf->sample_fmts || !buf->channel_layouts) {
+		av_freep(&buf->sample_fmts);
+		av_freep(&buf->channel_layouts);
+		return AVERROR(ENOMEM);
+	}
 
-    return common_init(ctx);
+	return common_init(ctx);
 }
 
-static av_cold void asink_uninit(AVFilterContext *ctx)
+static av_cold void asink_uninit(AVFilterContext* ctx)
 {
-    BufferSinkContext *buf = ctx->priv;
+	BufferSinkContext* buf = ctx->priv;
 
-    av_freep(&buf->sample_fmts);
-    av_freep(&buf->channel_layouts);
-    return common_uninit(ctx);
+	av_freep(&buf->sample_fmts);
+	av_freep(&buf->channel_layouts);
+	return common_uninit(ctx);
 }
 
-static int asink_query_formats(AVFilterContext *ctx)
+static int asink_query_formats(AVFilterContext* ctx)
 {
-    BufferSinkContext *buf = ctx->priv;
-    AVFilterFormats *formats = NULL;
-    AVFilterChannelLayouts *layouts = NULL;
+	BufferSinkContext* buf = ctx->priv;
+	AVFilterFormats* formats = NULL;
+	AVFilterChannelLayouts* layouts = NULL;
 
-    if (!(formats = avfilter_make_format_list(buf->sample_fmts)))
-        return AVERROR(ENOMEM);
-    avfilter_set_common_sample_formats(ctx, formats);
+	if (!(formats = avfilter_make_format_list(buf->sample_fmts)))
+		return AVERROR(ENOMEM);
+	avfilter_set_common_sample_formats(ctx, formats);
 
-    if (!(layouts = avfilter_make_format64_list(buf->channel_layouts)))
-        return AVERROR(ENOMEM);
-    ff_set_common_channel_layouts(ctx, layouts);
-    ff_set_common_samplerates          (ctx, ff_all_samplerates());
+	if (!(layouts = avfilter_make_format64_list(buf->channel_layouts)))
+		return AVERROR(ENOMEM);
+	ff_set_common_channel_layouts(ctx, layouts);
+	ff_set_common_samplerates(ctx, ff_all_samplerates());
 
-    return 0;
+	return 0;
 }
 
 AVFilter avfilter_asink_abuffersink = {
-    .name      = "abuffersink",
-    .description = NULL_IF_CONFIG_SMALL("Buffer audio frames, and make them available to the end of the filter graph."),
-    .init      = asink_init,
-    .uninit    = asink_uninit,
-    .priv_size = sizeof(BufferSinkContext),
-    .query_formats = asink_query_formats,
+	.name = "abuffersink",
+	.description = NULL_IF_CONFIG_SMALL("Buffer audio frames, and make them available to the end of the filter graph."),
+	.init = asink_init,
+	.uninit = asink_uninit,
+	.priv_size = sizeof(BufferSinkContext),
+	.query_formats = asink_query_formats,
 
-    .inputs    = (const AVFilterPad[]) {{ .name     = "default",
-                                    .type           = AVMEDIA_TYPE_AUDIO,
-                                    .filter_samples = filter_samples,
-                                    .min_perms      = AV_PERM_READ, },
-                                  { .name = NULL }},
-    .outputs   = (const AVFilterPad[]) {{ .name = NULL }},
+	.inputs = (const AVFilterPad[]) {{.name = "default",
+									.type = AVMEDIA_TYPE_AUDIO,
+									.filter_samples = filter_samples,
+									.min_perms = AV_PERM_READ, },
+								  {.name = NULL }},
+	.outputs = (const AVFilterPad[]) {{.name = NULL }},
 };
 
 #endif /* CONFIG_ABUFFERSINK_FILTER */

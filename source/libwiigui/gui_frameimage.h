@@ -21,45 +21,80 @@
 
 class GuiFrameImage : public GuiElement
 {
-	public:
-		//!Constructor
-		//!\param w Width of window
-		//!\param h Height of window
-		GuiFrameImage(int w, int h);
-		//!Destructor
-		virtual ~GuiFrameImage();
-		//!Draw image process
-		virtual void Draw();
-		//! Set colors
-		void SetColorUpperQuadUpper(const GXColor &c) { UpperQuadUpper = c; oldX = 0; }
-		void SetColorMainQuadUpper(const GXColor &c) { MainQuadUpper = c; oldX = 0; }
-		void SetColorMainQuadLower(const GXColor &c) { MainQuadLower = c; oldX = 0; }
-		void SetColorSideQuadUpper(const GXColor &c) { SideQuadUpper = c; oldX = 0; }
-		void SetColorSideQuadLower(const GXColor &c) { SideQuadLower = c; oldX = 0; }
-		void SetColorShadowUpper(const GXColor &c) { ShadowUpper = c; oldX = 0; }
-		void SetColorShadowLower(const GXColor &c) { ShadowLower = c; oldX = 0; }
-	private:
-		//!Create the gx draw list
-		void CreateDrawList();
+public:
+	//!Constructor
+	//!\param w Width of window
+	//!\param h Height of window
+	GuiFrameImage(int w, int h);
+	//!Destructor
+	virtual ~GuiFrameImage();
+	//!Draw image process
+	virtual void Draw();
+	//! Set colors
+	void SetColorUpperQuadUpper(const GXColor& c)
+	{
+		UpperQuadUpper = c;
+		oldX = 0;
+	}
 
-		int Precision;
-		f32 Margin;
-		f32 ShadowWidth;
-		u8 *DrawList;
-		u32 DrawListSize;
+	void SetColorMainQuadUpper(const GXColor& c)
+	{
+		MainQuadUpper = c;
+		oldX = 0;
+	}
 
-		GXColor UpperQuadUpper;
-		GXColor MainQuadUpper;
-		GXColor MainQuadLower;
-		GXColor SideQuadUpper;
-		GXColor SideQuadLower;
-		GXColor ShadowUpper;
-		GXColor ShadowLower;
+	void SetColorMainQuadLower(const GXColor& c)
+	{
+		MainQuadLower = c;
+		oldX = 0;
+	}
 
-		//! Re-Init on variable change
-		int oldX, oldY, oldZ;
-		int oldWidth, oldHeight;
-		int oldAlpha;
+	void SetColorSideQuadUpper(const GXColor& c)
+	{
+		SideQuadUpper = c;
+		oldX = 0;
+	}
+
+	void SetColorSideQuadLower(const GXColor& c)
+	{
+		SideQuadLower = c;
+		oldX = 0;
+	}
+
+	void SetColorShadowUpper(const GXColor& c)
+	{
+		ShadowUpper = c;
+		oldX = 0;
+	}
+
+	void SetColorShadowLower(const GXColor& c)
+	{
+		ShadowLower = c;
+		oldX = 0;
+	}
+
+private:
+	//!Create the gx draw list
+	void CreateDrawList();
+
+	int Precision;
+	f32 Margin;
+	f32 ShadowWidth;
+	u8* DrawList;
+	u32 DrawListSize;
+
+	GXColor UpperQuadUpper;
+	GXColor MainQuadUpper;
+	GXColor MainQuadLower;
+	GXColor SideQuadUpper;
+	GXColor SideQuadLower;
+	GXColor ShadowUpper;
+	GXColor ShadowLower;
+
+	//! Re-Init on variable change
+	int oldX, oldY, oldZ;
+	int oldWidth, oldHeight;
+	int oldAlpha;
 };
 
 #endif

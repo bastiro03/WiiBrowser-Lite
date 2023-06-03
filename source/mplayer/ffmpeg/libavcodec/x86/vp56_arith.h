@@ -26,28 +26,28 @@
 
 #if HAVE_FAST_CMOV
 #define vp56_rac_get_prob vp56_rac_get_prob
-static av_always_inline int vp56_rac_get_prob(VP56RangeCoder *c, uint8_t prob)
+static av_always_inline int vp56_rac_get_prob(VP56RangeCoder* c, uint8_t prob)
 {
-    unsigned int code_word = vp56_rac_renorm(c);
-    unsigned int high = c->high;
-    unsigned int low = 1 + (((high - 1) * prob) >> 8);
-    unsigned int low_shift = low << 16;
-    int bit = 0;
+	unsigned int code_word = vp56_rac_renorm(c);
+	unsigned int high = c->high;
+	unsigned int low = 1 + (((high - 1) * prob) >> 8);
+	unsigned int low_shift = low << 16;
+	int bit = 0;
 
-    __asm__(
-        "subl  %4, %1      \n\t"
-        "subl  %3, %2      \n\t"
-        "leal (%2, %3), %3 \n\t"
-        "setae %b0         \n\t"
-        "cmovb %4, %1      \n\t"
-        "cmovb %3, %2      \n\t"
-        : "+q"(bit), "+r"(high), "+r"(code_word), "+r"(low_shift)
-        : "r"(low)
-    );
+	__asm__(
+		"subl  %4, %1      \n\t"
+		"subl  %3, %2      \n\t"
+		"leal (%2, %3), %3 \n\t"
+		"setae %b0         \n\t"
+		"cmovb %4, %1      \n\t"
+		"cmovb %3, %2      \n\t"
+		: "+q"(bit), "+r"(high), "+r"(code_word), "+r"(low_shift)
+		: "r"(low)
+	);
 
-    c->high      = high;
-    c->code_word = code_word;
-    return bit;
+	c->high = high;
+	c->code_word = code_word;
+	return bit;
 }
 #endif
 

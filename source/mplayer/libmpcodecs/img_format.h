@@ -103,7 +103,6 @@
 #define IMGFMT_RGB_DEPTH(fmt) ((fmt)&0x7F)
 #define IMGFMT_BGR_DEPTH(fmt) ((fmt)&0x7F)
 
-
 /* Planar YUV Formats */
 
 #define IMGFMT_YVU9 0x39555659
@@ -230,14 +229,15 @@
 
 #define IMGFMT_IS_HWACCEL(fmt) (IMGFMT_IS_VDPAU(fmt) || IMGFMT_IS_XVMC(fmt))
 
-typedef struct {
-    void* data;
-    int size;
-    int id;        // stream id. usually 0x1E0
-    int timestamp; // pts, 90000 Hz counter based
+typedef struct
+{
+	void* data;
+	int size;
+	int id; // stream id. usually 0x1E0
+	int timestamp; // pts, 90000 Hz counter based
 } vo_mpegpes_t;
 
-const char *vo_format_name(int format);
+const char* vo_format_name(int format);
 
 /**
  * Calculates the scale shifts for the chroma planes for planar YUV
@@ -245,6 +245,6 @@ const char *vo_format_name(int format);
  * \param component_bits bits per component
  * \return bits-per-pixel for format if successful (i.e. format is 3 or 4-planes planar YUV), 0 otherwise
  */
-int mp_get_chroma_shift(int format, int *x_shift, int *y_shift, int *component_bits);
+int mp_get_chroma_shift(int format, int* x_shift, int* y_shift, int* component_bits);
 
 #endif /* MPLAYER_IMG_FORMAT_H */

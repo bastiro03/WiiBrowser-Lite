@@ -63,143 +63,150 @@ static const vo_info_t info =
 	""
 };
 
-
-const LIBVO_EXTERN (tga)
+const LIBVO_EXTERN(tga)
 
 /* locals vars */
-static int      frame_num = 0;
+static int frame_num = 0;
 
-static void tga_make_header(uint8_t *h, int dx, int dy, int bpp)
+static void tga_make_header(uint8_t* h, int dx, int dy, int bpp)
 {
+	int i;
 
-    int  i;
+	for (i = 0; i < 18; i++)
+	{
+		switch (i)
+		{
+		case 2:
+			*h = 0x02;
+			break;
 
-    for(i = 0; i < 18; i++) {
-        switch (i) {
-        case 2:
-            *h = 0x02;
-            break;
+		case 12:
+			*h = dx & 0xff;
+			break;
 
-        case 12:
-            *h = dx & 0xff;
-            break;
+		case 13:
+			*h = (dx >> 8) & 0xff;
+			break;
 
-        case 13:
-            *h = (dx >> 8) & 0xff;
-            break;
+		case 14:
+			*h = dy & 0xff;
+			break;
 
-        case 14:
-            *h = dy & 0xff;
-            break;
+		case 15:
+			*h = (dy >> 8) & 0xff;
+			break;
 
-        case 15:
-            *h = (dy >> 8) & 0xff;
-            break;
+		case 16:
+			*h = bpp;
+			break;
 
-        case 16:
-            *h = bpp;
-            break;
+		case 17:
+			*h = 0x20;
+			break;
 
-        case 17:
-            *h = 0x20;
-            break;
-
-        default:
-            *h = 0;
-        }
-        ++h;
-    }
-
+		default:
+			*h = 0;
+		}
+		++h;
+	}
 }
 
-static int write_tga( char *file, int bpp, int dx, int dy, uint8_t *buf, int stride)
+static int write_tga(char* file, int bpp, int dx, int dy, uint8_t* buf, int stride)
 {
-    int   er;
-    FILE  *fo;
+	int er;
+	FILE* fo;
 
-    fo = fopen(file, "wb");
-    if (fo != NULL) {
-        uint8_t hdr[18];
+	fo = fopen(file, "wb");
+	if (fo != NULL)
+	{
+		uint8_t hdr[18];
 
-        er = 0;
-        tga_make_header(hdr, dx, dy, bpp);
-        if (fwrite(hdr, sizeof(hdr), 1, fo) == 1) {
-            int    wb;
+		er = 0;
+		tga_make_header(hdr, dx, dy, bpp);
+		if (fwrite(hdr, sizeof(hdr), 1, fo) == 1)
+		{
+			int wb;
 
-            wb = ((bpp + 7) / 8) * dx;
-                while (dy-- > 0) {
-                    if (fwrite(buf, wb, 1, fo) != 1) {
-                        er = 4;
-                        break;
-                    }
-                    buf += stride;
-                }
-        }
-        else {
-            er = 2;
-        }
+			wb = ((bpp + 7) / 8) * dx;
+			while (dy-- > 0)
+			{
+				if (fwrite(buf, wb, 1, fo) != 1)
+				{
+					er = 4;
+					break;
+				}
+				buf += stride;
+			}
+		}
+		else
+		{
+			er = 2;
+		}
 
-        fclose(fo);
-    }
-    else {
-        er = 1;
-    }
+		fclose(fo);
+	}
+	else
+	{
+		er = 1;
+	}
 
-    if (er) {
-        fprintf(stderr, "Error writing file [%s]\n", file);
-    }
-    return er;
+	if (er)
+	{
+		fprintf(stderr, "Error writing file [%s]\n", file);
+	}
+	return er;
 }
 
 static uint32_t draw_image(mp_image_t* mpi)
 {
-    char    file[20 + 1];
+	char file[20 + 1];
 
-    snprintf (file, 20, "%08d.tga", ++frame_num);
+	snprintf(file, 20, "%08d.tga", ++frame_num);
 
-    write_tga( file,
-               mpi->bpp,
-               mpi->w,
-               mpi->h,
-               mpi->planes[0],
-               mpi->stride[0]);
+	write_tga(file,
+	          mpi->bpp,
+	          mpi->w,
+	          mpi->h,
+	          mpi->planes[0],
+	          mpi->stride[0]);
 
-    return VO_TRUE;
+	return VO_TRUE;
 }
 
-static int config(uint32_t width, uint32_t height, uint32_t d_width, uint32_t d_height, uint32_t flags, char *title, uint32_t format)
+static int config(uint32_t width, uint32_t height, uint32_t d_width, uint32_t d_height, uint32_t flags, char* title,
+                  uint32_t format)
 {
-    return 0;
+	return 0;
 }
 
 static void draw_osd(void)
 {
 }
 
-static void flip_page (void)
+static void flip_page(void)
 {
-    return;
 }
 
-static int draw_slice(uint8_t *srcimg[], int stride[], int w,int h,int x,int y)
+static int draw_slice(uint8_t* srcimg[], int stride[], int w, int h, int x, int y)
 {
-    return -1;
+	return -1;
 }
 
-static int draw_frame(uint8_t * src[])
+static int draw_frame(uint8_t* src[])
 {
-    return -1;
+	return -1;
 }
 
 static int query_format(uint32_t format)
 {
-    switch(format){
-        case IMGFMT_BGR15LE:
-        case IMGFMT_BGR24:
-        case IMGFMT_BGRA:
-            return VFCAP_CSP_SUPPORTED | VFCAP_CSP_SUPPORTED_BY_HW;
-    }
-    return 0;
+	switch (format)
+	{
+	case IMGFMT_BGR15LE:
+	case IMGFMT_BGR24:
+	case IMGFMT_BGRA:
+		return VFCAP_CSP_SUPPORTED | VFCAP_CSP_SUPPORTED_BY_HW;
+	}
+	return 0;
 }
 
 static void uninit(void)
@@ -210,23 +217,25 @@ static void check_events(void)
 {
 }
 
-static int preinit(const char *arg)
+static int preinit(const char* arg)
 {
-    if(arg) {
-	mp_msg(MSGT_VO,MSGL_WARN, MSGTR_LIBVO_TGA_UnknownSubdevice,arg);
-	return ENOSYS;
-    }
-    return 0;
+	if (arg)
+	{
+		mp_msg(MSGT_VO, MSGL_WARN, MSGTR_LIBVO_TGA_UnknownSubdevice, arg);
+		return ENOSYS;
+	}
+	return 0;
 }
 
-static int control(uint32_t request, void *data)
+static int control(uint32_t request, void* data)
 {
-  switch (request) {
-      case VOCTRL_DRAW_IMAGE:
-          return draw_image(data);
+	switch (request)
+	{
+	case VOCTRL_DRAW_IMAGE:
+		return draw_image(data);
 
-      case VOCTRL_QUERY_FORMAT:
-          return query_format(*((uint32_t*)data));
-  }
-  return VO_NOTIMPL;
+	case VOCTRL_QUERY_FORMAT:
+		return query_format(*((uint32_t*)data));
+	}
+	return VO_NOTIMPL;
 }

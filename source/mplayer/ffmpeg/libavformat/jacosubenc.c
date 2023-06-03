@@ -19,24 +19,25 @@
 #include "avformat.h"
 #include "rawenc.h"
 
-static int jacosub_write_header(AVFormatContext *s)
+static int jacosub_write_header(AVFormatContext* s)
 {
-    const AVCodecContext *avctx = s->streams[0]->codec;
+	const AVCodecContext* avctx = s->streams[0]->codec;
 
-    if (avctx->extradata_size) {
-        avio_write(s->pb, avctx->extradata, avctx->extradata_size - 1);
-        avio_flush(s->pb);
-    }
-    return 0;
+	if (avctx->extradata_size)
+	{
+		avio_write(s->pb, avctx->extradata, avctx->extradata_size - 1);
+		avio_flush(s->pb);
+	}
+	return 0;
 }
 
 AVOutputFormat ff_jacosub_muxer = {
-    .name           = "jacosub",
-    .long_name      = NULL_IF_CONFIG_SMALL("JACOsub subtitle format"),
-    .mime_type      = "text/x-jacosub",
-    .extensions     = "jss,js",
-    .write_header   = jacosub_write_header,
-    .write_packet   = ff_raw_write_packet,
-    .flags          = AVFMT_TS_NONSTRICT,
-    .subtitle_codec = CODEC_ID_JACOSUB,
+	.name = "jacosub",
+	.long_name = NULL_IF_CONFIG_SMALL("JACOsub subtitle format"),
+	.mime_type = "text/x-jacosub",
+	.extensions = "jss,js",
+	.write_header = jacosub_write_header,
+	.write_packet = ff_raw_write_packet,
+	.flags = AVFMT_TS_NONSTRICT,
+	.subtitle_codec = CODEC_ID_JACOSUB,
 };

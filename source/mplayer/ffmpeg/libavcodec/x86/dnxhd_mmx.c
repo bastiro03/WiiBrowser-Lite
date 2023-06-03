@@ -24,36 +24,40 @@
 #include "libavutil/x86_cpu.h"
 #include "libavcodec/dnxhdenc.h"
 
-static void get_pixels_8x4_sym_sse2(DCTELEM *block, const uint8_t *pixels, int line_size)
+static void get_pixels_8x4_sym_sse2(DCTELEM* block, const uint8_t* pixels, int line_size)
 {
-    __asm__ volatile(
-        "pxor %%xmm5,      %%xmm5       \n\t"
-        "movq (%0),        %%xmm0       \n\t"
-        "add  %2,          %0           \n\t"
-        "movq (%0),        %%xmm1       \n\t"
-        "movq (%0, %2),    %%xmm2       \n\t"
-        "movq (%0, %2,2),  %%xmm3       \n\t"
-        "punpcklbw %%xmm5, %%xmm0       \n\t"
-        "punpcklbw %%xmm5, %%xmm1       \n\t"
-        "punpcklbw %%xmm5, %%xmm2       \n\t"
-        "punpcklbw %%xmm5, %%xmm3       \n\t"
-        "movdqa %%xmm0,      (%1)       \n\t"
-        "movdqa %%xmm1,    16(%1)       \n\t"
-        "movdqa %%xmm2,    32(%1)       \n\t"
-        "movdqa %%xmm3,    48(%1)       \n\t"
-        "movdqa %%xmm3 ,   64(%1)       \n\t"
-        "movdqa %%xmm2 ,   80(%1)       \n\t"
-        "movdqa %%xmm1 ,   96(%1)       \n\t"
-        "movdqa %%xmm0,   112(%1)       \n\t"
-        : "+r" (pixels)
-        : "r" (block), "r" ((x86_reg)line_size)
-    );
+	volatile __asm__ (
+		
+	"pxor %%xmm5,      %%xmm5       \n\t"
+		"movq (%0),        %%xmm0       \n\t"
+		"add  %2,          %0           \n\t"
+		"movq (%0),        %%xmm1       \n\t"
+		"movq (%0, %2),    %%xmm2       \n\t"
+		"movq (%0, %2,2),  %%xmm3       \n\t"
+		"punpcklbw %%xmm5, %%xmm0       \n\t"
+		"punpcklbw %%xmm5, %%xmm1       \n\t"
+		"punpcklbw %%xmm5, %%xmm2       \n\t"
+		"punpcklbw %%xmm5, %%xmm3       \n\t"
+		"movdqa %%xmm0,      (%1)       \n\t"
+		"movdqa %%xmm1,    16(%1)       \n\t"
+		"movdqa %%xmm2,    32(%1)       \n\t"
+		"movdqa %%xmm3,    48(%1)       \n\t"
+		"movdqa %%xmm3 ,   64(%1)       \n\t"
+		"movdqa %%xmm2 ,   80(%1)       \n\t"
+		"movdqa %%xmm1 ,   96(%1)       \n\t"
+		"movdqa %%xmm0,   112(%1)       \n\t"
+	:
+	"+r"(pixels)
+	:
+	"r"(block), "r"((x86_reg)line_size)
+	)
 }
 
-void ff_dnxhd_init_mmx(DNXHDEncContext *ctx)
+void ff_dnxhd_init_mmx(DNXHDEncContext* ctx)
 {
-    if (av_get_cpu_flags() & AV_CPU_FLAG_SSE2) {
-        if (ctx->cid_table->bit_depth == 8)
-            ctx->get_pixels_8x4_sym = get_pixels_8x4_sym_sse2;
-    }
+	if (av_get_cpu_flags() & AV_CPU_FLAG_SSE2)
+	{
+		if (ctx->cid_table->bit_depth == 8)
+			ctx->get_pixels_8x4_sym = get_pixels_8x4_sym_sse2;
+	}
 }

@@ -45,12 +45,10 @@
 #define INITIALIZED_SUBS    4096
 #define INITIALIZED_ALL     0xFFFF
 
-
 #define SUB_SOURCE_SUBS 0
 #define SUB_SOURCE_VOBSUB 1
 #define SUB_SOURCE_DEMUX 2
 #define SUB_SOURCES 3
-
 
 #define PT_NEXT_ENTRY 1
 #define PT_PREV_ENTRY -1
@@ -60,101 +58,101 @@
 #define PT_UP_PREV -3
 #define PT_STOP 4
 
-enum exit_reason {
-  EXIT_NONE,
-  EXIT_QUIT,
-  EXIT_EOF,
-  EXIT_ERROR
+enum exit_reason
+{
+	EXIT_NONE,
+	EXIT_QUIT,
+	EXIT_EOF,
+	EXIT_ERROR
 };
 
-typedef struct MPContext {
-    int osd_show_percentage;
-    int osd_function;
-    const ao_functions_t *audio_out;
-    play_tree_t *playtree;
-    play_tree_iter_t *playtree_iter;
-    int eof;
-    int play_tree_step;
-    int loop_times;
+typedef struct MPContext
+{
+	int osd_show_percentage;
+	int osd_function;
+	const ao_functions_t* audio_out;
+	play_tree_t* playtree;
+	play_tree_iter_t* playtree_iter;
+	int eof;
+	int play_tree_step;
+	int loop_times;
 
-    stream_t *stream;
-    demuxer_t *demuxer;
-    sh_audio_t *sh_audio;
-    sh_video_t *sh_video;
-    demux_stream_t *d_audio;
-    demux_stream_t *d_video;
-    demux_stream_t *d_sub;
-    mixer_t mixer;
-    const vo_functions_t *video_out;
-    // Frames buffered in the vo ready to flip. Currently always 0 or 1.
-    // This is really a vo variable but currently there's no suitable vo
-    // struct.
-    int num_buffered_frames;
+	stream_t* stream;
+	demuxer_t* demuxer;
+	sh_audio_t* sh_audio;
+	sh_video_t* sh_video;
+	demux_stream_t* d_audio;
+	demux_stream_t* d_video;
+	demux_stream_t* d_sub;
+	mixer_t mixer;
+	const vo_functions_t* video_out;
+	// Frames buffered in the vo ready to flip. Currently always 0 or 1.
+	// This is really a vo variable but currently there's no suitable vo
+	// struct.
+	int num_buffered_frames;
 
-    // used to retry decoding after startup/seeking to compensate for codec delay
-    int startup_decode_retry;
-    // how long until we need to display the "current" frame
-    float time_frame;
+	// used to retry decoding after startup/seeking to compensate for codec delay
+	int startup_decode_retry;
+	// how long until we need to display the "current" frame
+	float time_frame;
 
-    // AV sync: the next frame should be shown when the audio out has this
-    // much (in seconds) buffered data left. Increased when more data is
-    // written to the ao, decreased when moving to the next frame.
-    // In the audio-only case used as a timer since the last seek
-    // by the audio CPU usage meter.
-    double delay;
+	// AV sync: the next frame should be shown when the audio out has this
+	// much (in seconds) buffered data left. Increased when more data is
+	// written to the ao, decreased when moving to the next frame.
+	// In the audio-only case used as a timer since the last seek
+	// by the audio CPU usage meter.
+	double delay;
 
-    float begin_skip; ///< start time of the current skip while on edlout mode
-    // audio is muted if either EDL or user activates mute
-    short edl_muted; ///< Stores whether EDL is currently in muted mode.
-    short user_muted; ///< Stores whether user wanted muted mode.
+	float begin_skip; ///< start time of the current skip while on edlout mode
+	// audio is muted if either EDL or user activates mute
+	short edl_muted; ///< Stores whether EDL is currently in muted mode.
+	short user_muted; ///< Stores whether user wanted muted mode.
 
-    int global_sub_size; // this encompasses all subtitle sources
-    int global_sub_pos; // this encompasses all subtitle sources
-    int set_of_sub_pos;
-    int set_of_sub_size;
-    int sub_counts[SUB_SOURCES];
+	int global_sub_size; // this encompasses all subtitle sources
+	int global_sub_pos; // this encompasses all subtitle sources
+	int set_of_sub_pos;
+	int set_of_sub_size;
+	int sub_counts[SUB_SOURCES];
 #ifdef CONFIG_ASS
-    // set_of_ass_tracks[i] contains subtitles from set_of_subtitles[i]
-    // parsed by libass or NULL if format unsupported
-    ASS_Track* set_of_ass_tracks[MAX_SUBTITLE_FILES];
+	// set_of_ass_tracks[i] contains subtitles from set_of_subtitles[i]
+	// parsed by libass or NULL if format unsupported
+	ASS_Track* set_of_ass_tracks[MAX_SUBTITLE_FILES];
 #endif
-    sub_data* set_of_subtitles[MAX_SUBTITLE_FILES];
+	sub_data* set_of_subtitles[MAX_SUBTITLE_FILES];
 
-    int file_format;
+	int file_format;
 
 #ifdef CONFIG_DVBIN
-    int last_dvb_step;
-    int dvbin_reopen;
+	int last_dvb_step;
+	int dvbin_reopen;
 #endif
 
-    int was_paused;
+	int was_paused;
 
 #ifdef CONFIG_DVDNAV
-    struct mp_image *nav_smpi;   ///< last decoded dvdnav video image
-    unsigned char *nav_buffer;   ///< last read dvdnav video frame
-    unsigned char *nav_start;    ///< pointer to last read video buffer
-    int            nav_in_size;  ///< last read size
+	struct mp_image* nav_smpi; ///< last decoded dvdnav video image
+	unsigned char* nav_buffer; ///< last read dvdnav video frame
+	unsigned char* nav_start; ///< pointer to last read video buffer
+	int nav_in_size; ///< last read size
 #endif
 } MPContext;
-
 
 // Most of these should not be globals
 extern int abs_seek_pos;
 extern float rel_seek_secs;
-extern FILE *edl_fd;
+extern FILE* edl_fd;
 extern int file_filter;
 // These appear in options list
 extern float playback_speed;
 extern int fixed_vo;
 
-
 void uninit_player(unsigned int mask);
 void reinit_audio_chain(void);
-double playing_audio_pts(sh_audio_t *sh_audio, demux_stream_t *d_audio,
-			 const ao_functions_t *audio_out);
+double playing_audio_pts(sh_audio_t* sh_audio, demux_stream_t* d_audio,
+                         const ao_functions_t* audio_out);
 void exit_player(enum exit_reason how);
 void exit_player_with_rc(enum exit_reason how, int rc);
-void add_subtitles(char *filename, float fps, int noerr);
+void add_subtitles(char* filename, float fps, int noerr);
 int reinit_video_chain(void);
 
 #endif /* MPLAYER_MP_CORE_H */

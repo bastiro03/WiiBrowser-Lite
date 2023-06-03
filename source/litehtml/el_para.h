@@ -6,10 +6,9 @@ namespace litehtml
 	class el_para : public element
 	{
 	public:
-		el_para(litehtml::document* doc);
-		virtual ~el_para();
+		el_para(document* doc);
+		~el_para() override;
 
-		virtual void	parse_styles(bool is_reparse = false);
-
+		void parse_styles(bool is_reparse = false) override;
 	};
 }

@@ -23,7 +23,6 @@
 #ifndef MPLAYER_RADEON_H
 #define MPLAYER_RADEON_H
 
-
 /* radeon PCI ids */
 #define PCI_DEVICE_ID_RADEON_QD         0x5144
 #define PCI_DEVICE_ID_RADEON_QE         0x5145
@@ -39,7 +38,6 @@
 #define PCI_DEVICE_ID_R200_BB           0x4242
 
 #define RADEON_REGSIZE                  0x4000
-
 
 #define MM_INDEX                        0x0000
 /* MM_INDEX bit constants */
@@ -678,7 +676,7 @@
 #       define COLOUR_CNTL_BRIGHTNESS           0x0000007F
 #       define COLOUR_CNTL_SATURATION           0x001F1F00
 #else
-/* NB: radeons have no COLOUR_CNTL register */
+   /* NB: radeons have no COLOUR_CNTL register */
 #define OV0_SLICE_CNTL                          0x04E0
 #       define SLICE_CNTL_DISABLE               0x40000000
 #endif
@@ -1174,7 +1172,6 @@
 #define RADEON_BIOS_6_SCRATCH                   0x0028
 #define RADEON_BIOS_7_SCRATCH                   0x002c
 
-
 #define CLK_PIN_CNTL                            0x0001
 #define PPLL_CNTL                               0x0002
 #       define PPLL_RESET                       (1 <<  0)
@@ -1514,7 +1511,7 @@
 #define extNTSC_443                             0x0900
 #define extPAL_BGHI                             0x0A00
 #define extPAL_60                               0x0B00
- /* these are used in MSP3430 */
+/* these are used in MSP3430 */
 #define extPAL_DK1                              0x0C00
 #define extPAL_AUTO                             0x0D00
 
@@ -1729,6 +1726,7 @@
 #define RT_SECAM_VBI_PEAKWHITE                  0xC6 /* instead of 0x000000C7 - Ivo */
 #define RT_SECAM_WPA_THRESHOLD                  0x57A /* instead of 0x6A4, instead of 0x0000059C is Ivo's value , -eric*/
 
+
 #define RT_SECAM_WPA_TRIGGER_LO                 0x96 /* instead of 0x0000026B - eric */
 #define RT_SECAM_WPA_TRIGGER_HIGH               0x000001C2
 #define RT_SECAM_LP_LOCKOUT_START               0x263 /* instead of 0x0000026B - eric */
@@ -1801,6 +1799,7 @@
 #define RT_NTSCM_H_IN_START                     0x70
 #define RT_PAL_H_IN_START                       154 /* instead of 144 - Ivo */
 #define RT_SECAM_H_IN_START                     0x91 /* instead of 0x9A, Ivo value is 154, instead of 144 - Volodya, - eric */
+
 #define RT_NTSC_H_ACTIVE_SIZE                   744
 #define RT_PAL_H_ACTIVE_SIZE                    928 /* instead of 927 - Ivo */
 #define RT_SECAM_H_ACTIVE_SIZE                  932 /* instead of 928, instead of 927 - Ivo, - eric */

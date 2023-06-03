@@ -28,20 +28,20 @@
 
 #if HAVE_YASM
 
-void ff_int32_to_float_fmul_scalar_sse (float *dst, const int *src, float mul, int len);
-void ff_int32_to_float_fmul_scalar_sse2(float *dst, const int *src, float mul, int len);
+void ff_int32_to_float_fmul_scalar_sse(float* dst, const int* src, float mul, int len);
+void ff_int32_to_float_fmul_scalar_sse2(float* dst, const int* src, float mul, int len);
 
-void ff_float_to_int16_3dnow(int16_t *dst, const float *src, long len);
-void ff_float_to_int16_sse  (int16_t *dst, const float *src, long len);
-void ff_float_to_int16_sse2 (int16_t *dst, const float *src, long len);
+void ff_float_to_int16_3dnow(int16_t* dst, const float* src, long len);
+void ff_float_to_int16_sse(int16_t* dst, const float* src, long len);
+void ff_float_to_int16_sse2(int16_t* dst, const float* src, long len);
 
-void ff_float_to_int16_interleave2_3dnow(int16_t *dst, const float **src, long len);
-void ff_float_to_int16_interleave2_sse  (int16_t *dst, const float **src, long len);
-void ff_float_to_int16_interleave2_sse2 (int16_t *dst, const float **src, long len);
+void ff_float_to_int16_interleave2_3dnow(int16_t* dst, const float** src, long len);
+void ff_float_to_int16_interleave2_sse(int16_t* dst, const float** src, long len);
+void ff_float_to_int16_interleave2_sse2(int16_t* dst, const float** src, long len);
 
-void ff_float_to_int16_interleave6_sse(int16_t *dst, const float **src, int len);
-void ff_float_to_int16_interleave6_3dnow(int16_t *dst, const float **src, int len);
-void ff_float_to_int16_interleave6_3dn2(int16_t *dst, const float **src, int len);
+void ff_float_to_int16_interleave6_sse(int16_t* dst, const float** src, int len);
+void ff_float_to_int16_interleave6_3dnow(int16_t* dst, const float** src, int len);
+void ff_float_to_int16_interleave6_3dn2(int16_t* dst, const float** src, int len);
 
 #define ff_float_to_int16_interleave6_sse2 ff_float_to_int16_interleave6_sse
 
@@ -72,72 +72,74 @@ FLOAT_TO_INT16_INTERLEAVE(3dnow)
 FLOAT_TO_INT16_INTERLEAVE(sse)
 FLOAT_TO_INT16_INTERLEAVE(sse2)
 
-static void float_to_int16_interleave_3dn2(int16_t *dst, const float **src, long len, int channels){
-    if(channels==6)
-        ff_float_to_int16_interleave6_3dn2(dst, src, len);
-    else
-        float_to_int16_interleave_3dnow(dst, src, len, channels);
+static void float_to_int16_interleave_3dn2(int16_t* dst, const float** src, long len, int channels) {
+	if (channels == 6)
+		ff_float_to_int16_interleave6_3dn2(dst, src, len);
+	else
+		float_to_int16_interleave_3dnow(dst, src, len, channels);
 }
 
-void ff_float_interleave2_mmx(float *dst, const float **src, unsigned int len);
-void ff_float_interleave2_sse(float *dst, const float **src, unsigned int len);
+void ff_float_interleave2_mmx(float* dst, const float** src, unsigned int len);
+void ff_float_interleave2_sse(float* dst, const float** src, unsigned int len);
 
-void ff_float_interleave6_mmx(float *dst, const float **src, unsigned int len);
-void ff_float_interleave6_sse(float *dst, const float **src, unsigned int len);
+void ff_float_interleave6_mmx(float* dst, const float** src, unsigned int len);
+void ff_float_interleave6_sse(float* dst, const float** src, unsigned int len);
 
-static void float_interleave_mmx(float *dst, const float **src,
-                                 unsigned int len, int channels)
+static void float_interleave_mmx(float* dst, const float** src,
+	unsigned int len, int channels)
 {
-    if (channels == 2) {
-        ff_float_interleave2_mmx(dst, src, len);
-    } else if (channels == 6)
-        ff_float_interleave6_mmx(dst, src, len);
-    else
-        ff_float_interleave_c(dst, src, len, channels);
+	if (channels == 2) {
+		ff_float_interleave2_mmx(dst, src, len);
+	}
+	else if (channels == 6)
+		ff_float_interleave6_mmx(dst, src, len);
+	else
+		ff_float_interleave_c(dst, src, len, channels);
 }
 
-static void float_interleave_sse(float *dst, const float **src,
-                                 unsigned int len, int channels)
+static void float_interleave_sse(float* dst, const float** src,
+	unsigned int len, int channels)
 {
-    if (channels == 2) {
-        ff_float_interleave2_sse(dst, src, len);
-    } else if (channels == 6)
-        ff_float_interleave6_sse(dst, src, len);
-    else
-        ff_float_interleave_c(dst, src, len, channels);
+	if (channels == 2) {
+		ff_float_interleave2_sse(dst, src, len);
+	}
+	else if (channels == 6)
+		ff_float_interleave6_sse(dst, src, len);
+	else
+		ff_float_interleave_c(dst, src, len, channels);
 }
 #endif
 
-void ff_fmt_convert_init_x86(FmtConvertContext *c, AVCodecContext *avctx)
+void ff_fmt_convert_init_x86(FmtConvertContext* c, AVCodecContext* avctx)
 {
 #if HAVE_YASM
-    int mm_flags = av_get_cpu_flags();
+	int mm_flags = av_get_cpu_flags();
 
-    if (mm_flags & AV_CPU_FLAG_MMX) {
-        c->float_interleave = float_interleave_mmx;
+	if (mm_flags & AV_CPU_FLAG_MMX) {
+		c->float_interleave = float_interleave_mmx;
 
-        if (HAVE_AMD3DNOW && mm_flags & AV_CPU_FLAG_3DNOW) {
-            if(!(avctx->flags & CODEC_FLAG_BITEXACT)){
-                c->float_to_int16 = ff_float_to_int16_3dnow;
-                c->float_to_int16_interleave = float_to_int16_interleave_3dnow;
-            }
-        }
-        if (HAVE_AMD3DNOWEXT && mm_flags & AV_CPU_FLAG_3DNOWEXT) {
-            if(!(avctx->flags & CODEC_FLAG_BITEXACT)){
-                c->float_to_int16_interleave = float_to_int16_interleave_3dn2;
-            }
-        }
-        if (HAVE_SSE && mm_flags & AV_CPU_FLAG_SSE) {
-            c->int32_to_float_fmul_scalar = ff_int32_to_float_fmul_scalar_sse;
-            c->float_to_int16 = ff_float_to_int16_sse;
-            c->float_to_int16_interleave = float_to_int16_interleave_sse;
-            c->float_interleave = float_interleave_sse;
-        }
-        if (HAVE_SSE && mm_flags & AV_CPU_FLAG_SSE2) {
-            c->int32_to_float_fmul_scalar = ff_int32_to_float_fmul_scalar_sse2;
-            c->float_to_int16 = ff_float_to_int16_sse2;
-            c->float_to_int16_interleave = float_to_int16_interleave_sse2;
-        }
-    }
+		if (HAVE_AMD3DNOW && mm_flags & AV_CPU_FLAG_3DNOW) {
+			if (!(avctx->flags & CODEC_FLAG_BITEXACT)) {
+				c->float_to_int16 = ff_float_to_int16_3dnow;
+				c->float_to_int16_interleave = float_to_int16_interleave_3dnow;
+			}
+		}
+		if (HAVE_AMD3DNOWEXT && mm_flags & AV_CPU_FLAG_3DNOWEXT) {
+			if (!(avctx->flags & CODEC_FLAG_BITEXACT)) {
+				c->float_to_int16_interleave = float_to_int16_interleave_3dn2;
+			}
+		}
+		if (HAVE_SSE && mm_flags & AV_CPU_FLAG_SSE) {
+			c->int32_to_float_fmul_scalar = ff_int32_to_float_fmul_scalar_sse;
+			c->float_to_int16 = ff_float_to_int16_sse;
+			c->float_to_int16_interleave = float_to_int16_interleave_sse;
+			c->float_interleave = float_interleave_sse;
+		}
+		if (HAVE_SSE && mm_flags & AV_CPU_FLAG_SSE2) {
+			c->int32_to_float_fmul_scalar = ff_int32_to_float_fmul_scalar_sse2;
+			c->float_to_int16 = ff_float_to_int16_sse2;
+			c->float_to_int16_interleave = float_to_int16_interleave_sse2;
+		}
+	}
 #endif
 }

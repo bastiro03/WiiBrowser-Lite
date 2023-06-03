@@ -47,7 +47,7 @@
  * for each plane which has the max pixel step. May be NULL.
  */
 void av_image_fill_max_pixsteps(int max_pixsteps[4], int max_pixstep_comps[4],
-                                const AVPixFmtDescriptor *pixdesc);
+                                const AVPixFmtDescriptor* pixdesc);
 
 /**
  * Compute the size of an image line with format pix_fmt and width
@@ -77,8 +77,8 @@ int av_image_fill_linesizes(int linesizes[4], enum PixelFormat pix_fmt, int widt
  * @return the size in bytes required for the image buffer, a negative
  * error code in case of failure
  */
-int av_image_fill_pointers(uint8_t *data[4], enum PixelFormat pix_fmt, int height,
-                           uint8_t *ptr, const int linesizes[4]);
+int av_image_fill_pointers(uint8_t* data[4], enum PixelFormat pix_fmt, int height,
+                           uint8_t* ptr, const int linesizes[4]);
 
 /**
  * Allocate an image with size w and h and pixel format pix_fmt, and
@@ -90,7 +90,7 @@ int av_image_fill_pointers(uint8_t *data[4], enum PixelFormat pix_fmt, int heigh
  * @return the size in bytes required for the image buffer, a negative
  * error code in case of failure
  */
-int av_image_alloc(uint8_t *pointers[4], int linesizes[4],
+int av_image_alloc(uint8_t* pointers[4], int linesizes[4],
                    int w, int h, enum PixelFormat pix_fmt, int align);
 
 /**
@@ -102,8 +102,8 @@ int av_image_alloc(uint8_t *pointers[4], int linesizes[4],
  * @param dst_linesize linesize for the image plane in dst
  * @param src_linesize linesize for the image plane in src
  */
-void av_image_copy_plane(uint8_t       *dst, int dst_linesize,
-                         const uint8_t *src, int src_linesize,
+void av_image_copy_plane(uint8_t* dst, int dst_linesize,
+                         const uint8_t* src, int src_linesize,
                          int bytewidth, int height);
 
 /**
@@ -112,8 +112,8 @@ void av_image_copy_plane(uint8_t       *dst, int dst_linesize,
  * @param dst_linesizes linesizes for the image in dst_data
  * @param src_linesizes linesizes for the image in src_data
  */
-void av_image_copy(uint8_t *dst_data[4], int dst_linesizes[4],
-                   const uint8_t *src_data[4], const int src_linesizes[4],
+void av_image_copy(uint8_t* dst_data[4], int dst_linesizes[4],
+                   const uint8_t* src_data[4], const int src_linesizes[4],
                    enum PixelFormat pix_fmt, int width, int height);
 
 /**
@@ -126,13 +126,12 @@ void av_image_copy(uint8_t *dst_data[4], int dst_linesizes[4],
  * @param log_ctx the parent logging context, it may be NULL
  * @return >= 0 if valid, a negative error code otherwise
  */
-int av_image_check_size(unsigned int w, unsigned int h, int log_offset, void *log_ctx);
+int av_image_check_size(unsigned int w, unsigned int h, int log_offset, void* log_ctx);
 
 int ff_set_systematic_pal2(uint32_t pal[256], enum PixelFormat pix_fmt);
 
 /**
  * @}
  */
-
 
 #endif /* AVUTIL_IMGUTILS_H */

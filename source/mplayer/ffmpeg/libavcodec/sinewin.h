@@ -38,23 +38,23 @@
  * @param   window  pointer to half window
  * @param   n       size of half window
  */
-void ff_sine_window_init(float *window, int n);
+void ff_sine_window_init(float* window, int n);
 
 /**
  * initialize the specified entry of ff_sine_windows
  */
 void ff_init_ff_sine_windows(int index);
 
-extern SINETABLE(  32);
-extern SINETABLE(  64);
-extern SINETABLE( 128);
-extern SINETABLE( 256);
-extern SINETABLE( 512);
+extern SINETABLE(32);
+extern SINETABLE(64);
+extern SINETABLE(128);
+extern SINETABLE(256);
+extern SINETABLE(512);
 extern SINETABLE(1024);
 extern SINETABLE(2048);
 extern SINETABLE(4096);
 extern SINETABLE(8192);
 
-extern SINETABLE_CONST float * const ff_sine_windows[14];
+extern SINETABLE_CONST float* const ff_sine_windows[14];
 
 #endif /* AVCODEC_SINEWIN_H */

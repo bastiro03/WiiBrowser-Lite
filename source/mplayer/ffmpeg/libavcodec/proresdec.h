@@ -25,29 +25,31 @@
 #include "dsputil.h"
 #include "proresdsp.h"
 
-typedef struct {
-    const uint8_t *data;
-    unsigned mb_x;
-    unsigned mb_y;
-    unsigned mb_count;
-    unsigned data_size;
+typedef struct
+{
+	const uint8_t* data;
+	unsigned mb_x;
+	unsigned mb_y;
+	unsigned mb_count;
+	unsigned data_size;
 } SliceContext;
 
-typedef struct {
-    DSPContext dsp;
-    ProresDSPContext prodsp;
-    AVFrame frame;
-    int frame_type;              ///< 0 = progressive, 1 = tff, 2 = bff
-    uint8_t qmat_luma[64];
-    uint8_t qmat_chroma[64];
-    SliceContext *slices;
-    int slice_count;             ///< number of slices in the current picture
-    unsigned mb_width;           ///< width of the current picture in mb
-    unsigned mb_height;          ///< height of the current picture in mb
-    uint8_t progressive_scan[64];
-    uint8_t interlaced_scan[64];
-    const uint8_t *scan;
-    int first_field;
+typedef struct
+{
+	DSPContext dsp;
+	ProresDSPContext prodsp;
+	AVFrame frame;
+	int frame_type; ///< 0 = progressive, 1 = tff, 2 = bff
+	uint8_t qmat_luma[64];
+	uint8_t qmat_chroma[64];
+	SliceContext* slices;
+	int slice_count; ///< number of slices in the current picture
+	unsigned mb_width; ///< width of the current picture in mb
+	unsigned mb_height; ///< height of the current picture in mb
+	uint8_t progressive_scan[64];
+	uint8_t interlaced_scan[64];
+	const uint8_t* scan;
+	int first_field;
 } ProresContext;
 
 #endif /* AVCODEC_PRORESDEC_H */

@@ -24,7 +24,7 @@
 #include "config.h"
 
 #ifndef HAVE_STRSEP
-char *strsep(char **stringp, const char *delim);
+char* strsep(char** stringp, const char* delim);
 #endif
 
 #endif /* MPLAYER_STRSEP_H */

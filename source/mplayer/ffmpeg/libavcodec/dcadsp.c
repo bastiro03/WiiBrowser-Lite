@@ -22,30 +22,32 @@
 #include "config.h"
 #include "dcadsp.h"
 
-static void dca_lfe_fir_c(float *out, const float *in, const float *coefs,
+static void dca_lfe_fir_c(float* out, const float* in, const float* coefs,
                           int decifactor, float scale)
 {
-    float *out2 = out + decifactor;
-    const float *cf0 = coefs;
-    const float *cf1 = coefs + 256;
-    int j, k;
+	float* out2 = out + decifactor;
+	const float* cf0 = coefs;
+	const float* cf1 = coefs + 256;
+	int j, k;
 
-    /* One decimated sample generates 2*decifactor interpolated ones */
-    for (k = 0; k < decifactor; k++) {
-        float v0 = 0.0;
-        float v1 = 0.0;
-        for (j = 0; j < 256 / decifactor; j++) {
-            float s = in[-j];
-            v0 += s * *cf0++;
-            v1 += s * *--cf1;
-        }
-        *out++  = v0 * scale;
-        *out2++ = v1 * scale;
-    }
+	/* One decimated sample generates 2*decifactor interpolated ones */
+	for (k = 0; k < decifactor; k++)
+	{
+		float v0 = 0.0;
+		float v1 = 0.0;
+		for (j = 0; j < 256 / decifactor; j++)
+		{
+			float s = in[-j];
+			v0 += s * *cf0++;
+			v1 += s * *--cf1;
+		}
+		*out++ = v0 * scale;
+		*out2++ = v1 * scale;
+	}
 }
 
-void ff_dcadsp_init(DCADSPContext *s)
+void ff_dcadsp_init(DCADSPContext* s)
 {
-    s->lfe_fir = dca_lfe_fir_c;
-    if (ARCH_ARM) ff_dcadsp_init_arm(s);
+	s->lfe_fir = dca_lfe_fir_c;
+	if (ARCH_ARM) ff_dcadsp_init_arm(s);
 }

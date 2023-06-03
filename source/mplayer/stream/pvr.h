@@ -30,9 +30,9 @@
 #include "stream.h"
 #include "tv.h"
 
-extern char *pvr_param_audio_mode;
-extern char *pvr_param_bitrate_mode;
-extern char *pvr_param_stream_type;
+extern char* pvr_param_audio_mode;
+extern char* pvr_param_bitrate_mode;
+extern char* pvr_param_stream_type;
 
 extern int pvr_param_aspect_ratio;
 extern int pvr_param_audio_bitrate;
@@ -46,20 +46,20 @@ extern int pvr_param_sample_rate;
  *        The pointer is valid, till the stream is closed.
  * @return The stream's station name
  */
-const char *pvr_get_current_stationname (stream_t *stream);
+const char* pvr_get_current_stationname(stream_t* stream);
 
 /**
  * @brief Get the current channel name.
  *        The pointer is valid, till the stream is closed.
  * @return The stream's channel name
  */
-const char *pvr_get_current_channelname (stream_t *stream);
+const char* pvr_get_current_channelname(stream_t* stream);
 
 /**
  * @brief Get the current frequency.
  * @return frequency
  */
-int pvr_get_current_frequency (stream_t *stream);
+int pvr_get_current_frequency(stream_t* stream);
 
 /**
  * @brief Set the current station using the channel name.
@@ -67,13 +67,13 @@ int pvr_get_current_frequency (stream_t *stream);
  *        if the channel does not exist, or the station is not enabled
  * @return 0 if the station is available, otherwise -1
  */
-int pvr_set_channel (stream_t *stream, const char *channel);
+int pvr_set_channel(stream_t* stream, const char* channel);
 
 /**
  * @brief Set the current station using to the last set channel
  * @return 0 if the station is available, otherwise -1
  */
-int pvr_set_lastchannel (stream_t *stream);
+int pvr_set_lastchannel(stream_t* stream);
 
 /**
  * @brief Set the current channel using the frequency.
@@ -81,7 +81,7 @@ int pvr_set_lastchannel (stream_t *stream);
  *        if the frequency does not exist, or the station is not enabled
  * @return 0 if the station is available, otherwise -1
  */
-int pvr_set_freq (stream_t *stream, int freq);
+int pvr_set_freq(stream_t* stream, int freq);
 
 /**
  * @brief Set the current station while stepping.
@@ -89,7 +89,7 @@ int pvr_set_freq (stream_t *stream, int freq);
  *        if the station does not exist, or the station is not enabled
  * @return 0 if the station is available, otherwise -1
  */
-int pvr_set_channel_step (stream_t *stream, int step);
+int pvr_set_channel_step(stream_t* stream, int step);
 
 /**
  * @brief Set the current frequency while stepping
@@ -97,6 +97,6 @@ int pvr_set_channel_step (stream_t *stream, int step);
  *        if the frequency is invalid, i.e. <0
  * @return 0 if success, otherwise -1
  */
-int pvr_force_freq_step (stream_t *stream, int step);
+int pvr_force_freq_step(stream_t* stream, int step);
 
 #endif /* MPLAYER_PVR_H */

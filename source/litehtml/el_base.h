@@ -6,9 +6,9 @@ namespace litehtml
 	class el_base : public element
 	{
 	public:
-		el_base(litehtml::document* doc);
-		virtual ~el_base();
+		el_base(document* doc);
+		~el_base() override;
 
-		virtual void	finish();
+		void finish() override;
 	};
 }

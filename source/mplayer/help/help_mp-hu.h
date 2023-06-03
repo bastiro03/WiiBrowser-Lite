@@ -5,48 +5,47 @@
 // Updated by: Gabrov <gabrov@freemail.hu>
 // Sync'ed with help_mp-en.h r32066 (2010. 09. 26.)
 
-
 // ========================= MPlayer help ===========================
 
-static const char help_text[]=
-"Indítás:   mplayer [opciók] [url|útvonal/]fájlnév\n"
-"\n"
-"Alapvető opciók: (az összes opció listájához lásd a man lapot)\n"
-" -vo <drv>        kimeneti videó meghajtó kiválasztása (lista: '-vo help')\n"
-" -ao <drv>        kimeneti audió meghajtó kiválasztása (lista: '-ao help')\n"
+static const char help_text[] =
+	"Indítás:   mplayer [opciók] [url|útvonal/]fájlnév\n"
+	"\n"
+	"Alapvető opciók: (az összes opció listájához lásd a man lapot)\n"
+	" -vo <drv>        kimeneti videó meghajtó kiválasztása (lista: '-vo help')\n"
+	" -ao <drv>        kimeneti audió meghajtó kiválasztása (lista: '-ao help')\n"
 #ifdef CONFIG_VCD
 " vcd://<sávszám>  (S)VCD (Super Video CD) sáv lejátszás (nyers, nincs mount)\n"
 #endif
 #ifdef CONFIG_DVDREAD
 " dvd://<titleno>  a megadott DVD sáv lejátszása, fájl helyett\n"
 #endif
-" -alang/-slang    DVD audio/felirat nyelv kiválasztása (2 betűs országkóddal)\n"
-" -ss <pozíció>    a megadott (másodperc v. óra:perc:mperc) pozícióra tekerés\n"
-" -nosound         hanglejátszás kikapcsolása\n"
-" -fs              teljesképernyős lejátszás (vagy -vm, -zoom, lásd man lapot)\n"
-" -x <x> -y <y>    felbontás beállítása (-vm vagy -zoom használata esetén)\n"
-" -sub <fájl>      használandó felirat-fájl megadása (lásd -subfps, -subdelay)\n"
-" -playlist <fájl> lejátszási lista fájl megadása\n"
-" -vid x -aid y    lejátszandó video- (x) és audio- (y) streamek kiválasztása\n"
-" -fps x -srate y  video (x képkocka/mp) és audio (y Hz) ráta megadása\n"
-" -pp <minőség>    képjavítás fokozatainak beállítása (lásd a man lapot)\n"
-" -framedrop       képkockák eldobásának engedélyezése (lassú gépekhez)\n"
-"\n"
-"Fontosabb billentyűk: (teljes lista a man-ban és nézd meg az input.conf fájlt)\n"
-" <-  vagy  ->     10 másodperces hátra/előre ugrás\n"
-" le vagy fel      1 percnyi hátra/előre ugrás\n"
-" pgdown v. pgup   10 percnyi hátra/előre ugrás\n"
-" < vagy >         1 fájllal előre/hátra lépés a lejátszási listában\n"
-" p vagy SPACE     pillanatállj (bármely billentyűre továbbmegy)\n"
-" q vagy ESC       lejátszás vége és kilépés\n"
-" + vagy -         audio késleltetése ± 0.1 másodperccel\n"
-" o                OSD-mód váltása:  nincs / keresősáv / keresősáv + idő\n"
-" * vagy /         hangerő fel/le\n"
-" x vagy z         felirat késleltetése ± 0.1 másodperccel\n"
-" r vagy t         felirat pozíciójának megváltoztatása, lásd -vf expand-ot is\n"
-"\n"
-" * * * A MANPAGE TOV�?BBI RÉSZLETEKET, OPCIÓKAT, BILLENTYŰKET TARTALMAZ! * * *\n"
-"\n";
+	" -alang/-slang    DVD audio/felirat nyelv kiválasztása (2 betűs országkóddal)\n"
+	" -ss <pozíció>    a megadott (másodperc v. óra:perc:mperc) pozícióra tekerés\n"
+	" -nosound         hanglejátszás kikapcsolása\n"
+	" -fs              teljesképernyős lejátszás (vagy -vm, -zoom, lásd man lapot)\n"
+	" -x <x> -y <y>    felbontás beállítása (-vm vagy -zoom használata esetén)\n"
+	" -sub <fájl>      használandó felirat-fájl megadása (lásd -subfps, -subdelay)\n"
+	" -playlist <fájl> lejátszási lista fájl megadása\n"
+	" -vid x -aid y    lejátszandó video- (x) és audio- (y) streamek kiválasztása\n"
+	" -fps x -srate y  video (x képkocka/mp) és audio (y Hz) ráta megadása\n"
+	" -pp <minőség>    képjavítás fokozatainak beállítása (lásd a man lapot)\n"
+	" -framedrop       képkockák eldobásának engedélyezése (lassú gépekhez)\n"
+	"\n"
+	"Fontosabb billentyűk: (teljes lista a man-ban és nézd meg az input.conf fájlt)\n"
+	" <-  vagy  ->     10 másodperces hátra/előre ugrás\n"
+	" le vagy fel      1 percnyi hátra/előre ugrás\n"
+	" pgdown v. pgup   10 percnyi hátra/előre ugrás\n"
+	" < vagy >         1 fájllal előre/hátra lépés a lejátszási listában\n"
+	" p vagy SPACE     pillanatállj (bármely billentyűre továbbmegy)\n"
+	" q vagy ESC       lejátszás vége és kilépés\n"
+	" + vagy -         audio késleltetése ± 0.1 másodperccel\n"
+	" o                OSD-mód váltása:  nincs / keresősáv / keresősáv + idő\n"
+	" * vagy /         hangerő fel/le\n"
+	" x vagy z         felirat késleltetése ± 0.1 másodperccel\n"
+	" r vagy t         felirat pozíciójának megváltoztatása, lásd -vf expand-ot is\n"
+	"\n"
+	" * * * A MANPAGE TOV�?BBI RÉSZLETEKET, OPCIÓKAT, BILLENTYŰKET TARTALMAZ! * * *\n"
+	"\n";
 
 // ========================= MPlayer messages ===========================
 
@@ -174,7 +173,6 @@ static const char help_text[]=
 #define MSGTR_MasterQuit "-udp_slave kapcsoló: kilépés, mivel a mester kilépett\n"
 #define MSGTR_InvalidIP "-udp-ip kapcsoló: helytelen IP cím\n"
 
-
 // --- edit decision lists
 #define MSGTR_EdlOutOfMem "Nem lehet elegendő memóriát foglalni az EDL adatoknak.\n"
 #define MSGTR_EdlOutOfMemFile "Nem foglalható le elegendő memória az EDL fájl nevének [%s].\n"
@@ -227,7 +225,7 @@ static const char help_text[]=
 #define MSGTR_Brightness "Fényerő"
 #define MSGTR_Contrast "Kontraszt"
 #define MSGTR_Saturation "Telítettség"
-#define MSGTR_Hue "�?rnyalat"
+#define MSGTR_Hue "�?rnyalat"
 #define MSGTR_Balance "Egyensúly"
 
 // property state
@@ -257,8 +255,8 @@ static const char help_text[]=
 #define MSGTR_NoVideoEncoderSelected "\nNem választottál ki video enkódert (-ovc)! Válassz egyet (lásd -ovc help)!\n"
 #define MSGTR_CannotOpenOutputFile "Nem tudom a kimeneti fájlt (%s) megnyitni.\n"
 #define MSGTR_EncoderOpenFailed "Enkóder hívása sikertelen.\n"
-#define MSGTR_MencoderWrongFormatAVI "\nFIGYELEM: A KIMENETI F�?JL FORM�?TUM _AVI_. Lásd -of help.\n"
-#define MSGTR_MencoderWrongFormatMPG "\nFIGYELEM: A KIMENETI F�?JL FORM�?TUM _MPEG_. Lásd -of help.\n"
+#define MSGTR_MencoderWrongFormatAVI "\nFIGYELEM: A KIMENETI F�?JL FORM�?TUM _AVI_. Lásd -of help.\n"
+#define MSGTR_MencoderWrongFormatMPG "\nFIGYELEM: A KIMENETI F�?JL FORM�?TUM _MPEG_. Lásd -of help.\n"
 #define MSGTR_MissingOutputFilename "Nincs kimeneti fájl megadva, lásd a -o kapcsolót."
 #define MSGTR_ForcingOutputFourcc "Kimeneti fourcc kényszerítése: %x [%.4s].\n"
 #define MSGTR_ForcingOutputAudiofmtTag "Audió formátum tag kényszerítése: 0x%x.\n"
@@ -517,8 +515,7 @@ static const char help_text[]=
 #define MSGTR_TotalProperties "\nÖsszesen: %d tulajdonság\n"
 
 // loader/ldt_keeper.c
-#define MSGTR_LOADER_DYLD_Warning "FIGYELMEZTETÉS: DLL codec-ek használatának kísérlete, de a\n         DYLD_BIND_AT_LAUNCH környezeti változó nincs beállítva. �?gy ez összeomlást okoz.\n"
-
+#define MSGTR_LOADER_DYLD_Warning "FIGYELMEZTETÉS: DLL codec-ek használatának kísérlete, de a\n         DYLD_BIND_AT_LAUNCH környezeti változó nincs beállítva. �?gy ez összeomlást okoz.\n"
 
 // ====================== GUI messages/buttons ========================
 
@@ -591,7 +588,7 @@ static const char help_text[]=
 #define MSGTR_MENU_Playing "Lejátszás"
 #define MSGTR_MENU_Play "Lejátszás"
 #define MSGTR_MENU_Pause "Pillanatállj"
-#define MSGTR_MENU_Stop "�?llj"
+#define MSGTR_MENU_Stop "�?llj"
 #define MSGTR_MENU_NextStream "Következő fájl"
 #define MSGTR_MENU_PrevStream "Előző fájl"
 #define MSGTR_MENU_Size "Méret"
@@ -829,7 +826,7 @@ static const char help_text[]=
 #define MSGTR_VO_SUB_Seekbar "Keresősáv"
 #define MSGTR_VO_SUB_Play "Lejátszás"
 #define MSGTR_VO_SUB_Pause "Pillanat állj"
-#define MSGTR_VO_SUB_Stop "�?llj"
+#define MSGTR_VO_SUB_Stop "�?llj"
 #define MSGTR_VO_SUB_Rewind "Vissza"
 #define MSGTR_VO_SUB_Forward "Előre"
 #define MSGTR_VO_SUB_Clock "Óra"
@@ -876,7 +873,7 @@ static const char help_text[]=
 #define MSGTR_LIBVO_DXR3_FailedRestoringTVNorm "[VO_DXR3] Sikertelen a TV norma visszaállítása!\n"
 #define MSGTR_LIBVO_DXR3_EnablingPrebuffering "[VO_DXR3] Előbufferelés engedélyezése.\n"
 #define MSGTR_LIBVO_DXR3_UsingNewSyncEngine "[VO_DXR3] Új sync motor használata.\n"
-#define MSGTR_LIBVO_DXR3_UsingOverlay "[VO_DXR3] �?tlapolás használata.\n"
+#define MSGTR_LIBVO_DXR3_UsingOverlay "[VO_DXR3] �?tlapolás használata.\n"
 #define MSGTR_LIBVO_DXR3_ErrorYouNeedToCompileMplayerWithX11 "[VO_DXR3] Hiba: Az átlapoláshoz telepített lib-ek/fejléc fájlok mellett kell fordítani az MPlayert.\n"
 #define MSGTR_LIBVO_DXR3_WillSetTVNormTo "[VO_DXR3] TV norma beállítása erre: "
 #define MSGTR_LIBVO_DXR3_AutoAdjustToMovieFrameRatePALPAL60 "automatikus beállítás a film frame rátájára (PAL/PAL-60)"
@@ -976,11 +973,11 @@ static const char help_text[]=
 #define MSGTR_LIBVO_TDFXVID_BlitFailed "[VO_TDFXVID] Blit sikertelen.\n"
 #define MSGTR_LIBVO_TDFXVID_NonNativeOverlayFormatNeedConversion "[VO_TDFXVID] Nem-natív átlapolási formátumhoz konverzió kell.\n"
 #define MSGTR_LIBVO_TDFXVID_UnsupportedInputFormat "[VO_TDFXVID] Nem támogatott bemeneti formátum 0x%x.\n"
-#define MSGTR_LIBVO_TDFXVID_OverlaySetupFailed "[VO_TDFXVID] �?tlapolás beállítása sikertelen.\n"
-#define MSGTR_LIBVO_TDFXVID_OverlayOnFailed "[VO_TDFXVID] �?tlapolás bekapcsolása sikertelen.\n"
-#define MSGTR_LIBVO_TDFXVID_OverlayReady "[VO_TDFXVID] �?tlapolás kész: %d(%d) x %d @ %d => %d(%d) x %d @ %d.\n"
+#define MSGTR_LIBVO_TDFXVID_OverlaySetupFailed "[VO_TDFXVID] �?tlapolás beállítása sikertelen.\n"
+#define MSGTR_LIBVO_TDFXVID_OverlayOnFailed "[VO_TDFXVID] �?tlapolás bekapcsolása sikertelen.\n"
+#define MSGTR_LIBVO_TDFXVID_OverlayReady "[VO_TDFXVID] �?tlapolás kész: %d(%d) x %d @ %d => %d(%d) x %d @ %d.\n"
 #define MSGTR_LIBVO_TDFXVID_TextureBlitReady "[VO_TDFXVID] Textúra blit kész: %d(%d) x %d @ %d => %d(%d) x %d @ %d.\n"
-#define MSGTR_LIBVO_TDFXVID_OverlayOffFailed "[VO_TDFXVID] �?tlapolás kikapcsolása sikertelen\n"
+#define MSGTR_LIBVO_TDFXVID_OverlayOffFailed "[VO_TDFXVID] �?tlapolás kikapcsolása sikertelen\n"
 #define MSGTR_LIBVO_TDFXVID_CantOpen "[VO_TDFXVID] Nem nyitható meg %s: %s.\n"
 #define MSGTR_LIBVO_TDFXVID_CantGetCurrentCfg "[VO_TDFXVID] Nem található az aktuális konfiguráció: %s.\n"
 #define MSGTR_LIBVO_TDFXVID_MemmapFailed "[VO_TDFXVID] Memmap sikertelen !!!!!\n"
@@ -1113,7 +1110,6 @@ static const char help_text[]=
 #define MSGTR_VO_PGM_HasBeenReplaced "A pgm video kimeneti vezérlőt lecserélte a -vo pnm:pgmyuv.\n"
 #define MSGTR_VO_MD5_HasBeenReplaced "Az md5 video kimeneti vezérlőt lecserélte a -vo md5sum.\n"
 
-
 // ======================= audio output drivers ========================
 
 // audio_out.c
@@ -1130,7 +1126,7 @@ static const char help_text[]=
 #define MSGTR_AO_OSS_CantSetChans "[AO OSS] audio_setup: Nem sikerült az audio eszközt %d csatornára állítani.\n"
 #define MSGTR_AO_OSS_CantUseGetospace "[AO OSS] audio_setup: a vezérlő nem támogatja a SNDCTL_DSP_GETOSPACE-t :-(\n"
 #define MSGTR_AO_OSS_CantUseSelect "[AO OSS]\n   ***  Az audio vezérlőd NEM támogatja a select() -et ***\n Fordítsd újra az MPlayer-t az #undef HAVE_AUDIO_SELECT sorral a config.h-ban!\n\n"
-#define MSGTR_AO_OSS_CantReopen "[AO OSS]\nVégzetes hiba: *** NEM LEHET ÚJRA MEGNYITNI / BE�?LL�?TANI AZ AUDIO ESZKÖZT *** %s\n"
+#define MSGTR_AO_OSS_CantReopen "[AO OSS]\nVégzetes hiba: *** NEM LEHET ÚJRA MEGNYITNI / BE�?LL�?TANI AZ AUDIO ESZKÖZT *** %s\n"
 #define MSGTR_AO_OSS_UnknownUnsupportedFormat "[AO OSS] Ismeretlen/Nem támogatott OSS formátum: %x.\n"
 
 // ao_arts.c
@@ -1186,7 +1182,7 @@ static const char help_text[]=
 #define MSGTR_AO_SUN_CantOpenAudioDev "[AO SUN] %s audio eszköz nem elérhető, %s  -> nincs hang.\n"
 #define MSGTR_AO_SUN_UnsupSampleRate "[AO SUN] audio_setup: a kártyád nem támogat %d csatornát, %s, %d Hz samplerate-t.\n"
 #define MSGTR_AO_SUN_CantUseSelect "[AO SUN]\n   ***  A hangkártyád NEM támogatja a select()-et ***\nFordítsd újra az MPlayer-t az #undef HAVE_AUDIO_SELECT sorral a config.h-ban !\n\n"
-#define MSGTR_AO_SUN_CantReopenReset "[AO SUN]\nVégzetes hiba: *** NEM LEHET ÚJRA MEGNYITNI / BE�?LL�?TANI AZ AUDIO ESZKÖZT (%s) ***\n"
+#define MSGTR_AO_SUN_CantReopenReset "[AO SUN]\nVégzetes hiba: *** NEM LEHET ÚJRA MEGNYITNI / BE�?LL�?TANI AZ AUDIO ESZKÖZT (%s) ***\n"
 
 // ao_alsa.c
 #define MSGTR_AO_ALSA_InvalidMixerIndexDefaultingToZero "[AO_ALSA] Hibás mixer index. Alapértelmezés 0-ra.\n"
@@ -1235,13 +1231,12 @@ static const char help_text[]=
 #define MSGTR_AO_ALSA_PcmResumeError "[AO_ALSA] pcm folytatás hiba: %s\n"
 #define MSGTR_AO_ALSA_DeviceConfigurationError "[AO_ALSA] Eszköz konfigurációs hiba."
 #define MSGTR_AO_ALSA_PcmInSuspendModeTryingResume "[AO_ALSA] A pcm pihenő módban van, megpróbálom folytatni.\n"
-#define MSGTR_AO_ALSA_WriteError "[AO_ALSA] �?rási hiba: %s\n"
+#define MSGTR_AO_ALSA_WriteError "[AO_ALSA] �?rási hiba: %s\n"
 #define MSGTR_AO_ALSA_TryingToResetSoundcard "[AO_ALSA] Hangkártya resetelése.\n"
 #define MSGTR_AO_ALSA_CannotGetPcmStatus "[AO_ALSA] A pcm állapot nem kérdezhető le: %s\n"
 
 // ao_plugin.c
 #define MSGTR_AO_PLUGIN_InvalidPlugin "[AO PLUGIN] hibás plugin: %s\n"
-
 
 // ======================= audio filters ================================
 
@@ -1266,7 +1261,6 @@ static const char help_text[]=
 
 // format.c
 #define MSGTR_AF_FORMAT_UnknownFormat "ismeretlen formátum "
-
 
 // ========================== INPUT =========================================
 
@@ -1311,7 +1305,6 @@ static const char help_text[]=
 #define MSGTR_LIRCopenfailed "Nem tudtam megnyitni a lirc támogatást. Nem fogod tudni használni a távirányítót.\n"
 #define MSGTR_LIRCcfgerr "Nem tudom olvasni a LIRC konfigurációs fájlt: %s \n"
 
-
 // ========================== LIBMPDEMUX ===================================
 
 // muxer.c, muxer_*.c
@@ -1347,7 +1340,7 @@ static const char help_text[]=
 #define MSGTR_CannotInitializeMuxer "A muxer nem inicializálható."
 #define MSGTR_MissingVideoStream "Nincs képfolyam!\n"
 #define MSGTR_MissingAudioStream "Nincs hangfolyam... -> hang nélkül\n"
-#define MSGTR_MissingVideoStreamBug "Nincs képfolyam?! �?rj a szerzőnek, lehet hogy hiba :(\n"
+#define MSGTR_MissingVideoStreamBug "Nincs képfolyam?! �?rj a szerzőnek, lehet hogy hiba :(\n"
 
 #define MSGTR_DoesntContainSelectedStream "demux: a fájl nem tartalmazza a kért hang vagy kép folyamot\n"
 
@@ -1447,7 +1440,6 @@ static const char help_text[]=
 #define MSGTR_MPDEMUX_XMMS_ClosingPlugin "Plugin lezárása: %s.\n"
 #define MSGTR_MPDEMUX_XMMS_WaitForStart "Várakozás a(z) '%s' XMMS plugin általi lejátszására...\n"
 
-
 // ========================== LIBMENU ===================================
 
 // common
@@ -1504,7 +1496,6 @@ static const char help_text[]=
 // libmenu/vf_menu.c
 #define MSGTR_LIBMENU_UnknownMenuCommand "[MENU] Ismeretlen parancs: '%s'.\n"
 #define MSGTR_LIBMENU_FailedToOpenMenu "[MENU] Sikertelen a menü megnyitása: '%s'.\n"
-
 
 // ========================== LIBMPCODECS ===================================
 
@@ -1609,7 +1600,6 @@ static const char help_text[]=
 
 // libmpcodecs/vf_test.c, vf_yuy2.c, vf_yvu9.c
 #define MSGTR_MPCODECS_WarnNextFilterDoesntSupport "%s nem támogatott a következő szűrőben/vo-ban :(\n"
-
 
 // ================================== LIBASS ====================================
 
@@ -1924,7 +1914,7 @@ static const char help_text[]=
 #define MSGTR_TV_NoVideoInputPresent "Hiba: Nincs videó bemenet!\n"
 #define MSGTR_TV_UnknownImageFormat ""\
 "==================================================================\n"\
-" FIGYELEM: NEM TESZTELT VAGY ISMERETLEN KIMENETI KÉPFORM�?TUM (0x%x)\n"\
+" FIGYELEM: NEM TESZTELT VAGY ISMERETLEN KIMENETI KÉPFORM�?TUM (0x%x)\n"\
 " Ez hibás lejátszást vagy összeomlást okozhat! A hibajelentéseket\n"\
 " figyelmen kívül hagyjuk! Próbáld újra YV12-vel (az alapértelmezett\n"\
 " színtérrel) és olvasd el a dokumentációt!\n"\
@@ -2008,4 +1998,3 @@ static const char help_text[]=
 
 // feliratok
 #define MSGTR_SUBTITLES_SubRip_UnknownFontColor "SubRip: ismeretlen betű szín a feliratban: %s\n"
-

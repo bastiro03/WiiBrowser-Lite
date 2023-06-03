@@ -21,6 +21,6 @@
 
 #include <stdint.h>
 
-int aac_parse_frame(uint8_t *buf, int *srate, int *num);
+int aac_parse_frame(uint8_t* buf, int* srate, int* num);
 
 #endif /* MPLAYER_AAC_HDR_H */

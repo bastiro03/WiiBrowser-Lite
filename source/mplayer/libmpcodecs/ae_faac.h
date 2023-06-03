@@ -25,6 +25,6 @@
 
 extern const m_option_t faacopts_conf[];
 
-int mpae_init_faac(audio_encoder_t *encoder);
+int mpae_init_faac(audio_encoder_t* encoder);
 
 #endif /* MPLAYER_AE_FAAC_H */

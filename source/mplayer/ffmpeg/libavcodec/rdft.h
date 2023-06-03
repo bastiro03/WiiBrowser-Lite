@@ -48,16 +48,17 @@ extern SINTABLE(16384);
 extern SINTABLE(32768);
 extern SINTABLE(65536);
 
-struct RDFTContext {
-    int nbits;
-    int inverse;
-    int sign_convention;
+struct RDFTContext
+{
+	int nbits;
+	int inverse;
+	int sign_convention;
 
-    /* pre/post rotation tables */
-    const FFTSample *tcos;
-    SINTABLE_CONST FFTSample *tsin;
-    FFTContext fft;
-    void (*rdft_calc)(struct RDFTContext *s, FFTSample *z);
+	/* pre/post rotation tables */
+	const FFTSample* tcos;
+	SINTABLE_CONST FFTSample* tsin;
+	FFTContext fft;
+	void (*rdft_calc)(struct RDFTContext* s, FFTSample* z);
 };
 
 /**
@@ -65,10 +66,9 @@ struct RDFTContext {
  * @param nbits           log2 of the length of the input array
  * @param trans           the type of transform
  */
-int ff_rdft_init(RDFTContext *s, int nbits, enum RDFTransformType trans);
-void ff_rdft_end(RDFTContext *s);
+int ff_rdft_init(RDFTContext* s, int nbits, enum RDFTransformType trans);
+void ff_rdft_end(RDFTContext* s);
 
-void ff_rdft_init_arm(RDFTContext *s);
-
+void ff_rdft_init_arm(RDFTContext* s);
 
 #endif /* AVCODEC_RDFT_H */

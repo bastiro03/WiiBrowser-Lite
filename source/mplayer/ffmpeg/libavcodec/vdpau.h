@@ -30,7 +30,6 @@
  * Public libavcodec VDPAU header.
  */
 
-
 /**
  * @defgroup lavc_codec_hwaccel_vdpau VDPAU Decoder and Renderer
  * @ingroup lavc_codec_hwaccel
@@ -68,25 +67,27 @@
  * picture parameter, bitstream information etc which are passed
  * between the FFmpeg decoder and its clients.
  */
-struct vdpau_render_state {
-    VdpVideoSurface surface; ///< Used as rendered surface, never changed.
+struct vdpau_render_state
+{
+	VdpVideoSurface surface; ///< Used as rendered surface, never changed.
 
-    int state; ///< Holds FF_VDPAU_STATE_* values.
+	int state; ///< Holds FF_VDPAU_STATE_* values.
 
-    /** Describe size/location of the compressed video data.
-        Set to 0 when freeing bitstream_buffers. */
-    int bitstream_buffers_allocated;
-    int bitstream_buffers_used;
-    /** The user is responsible for freeing this buffer using av_freep(). */
-    VdpBitstreamBuffer *bitstream_buffers;
+	/** Describe size/location of the compressed video data.
+		Set to 0 when freeing bitstream_buffers. */
+	int bitstream_buffers_allocated;
+	int bitstream_buffers_used;
+	/** The user is responsible for freeing this buffer using av_freep(). */
+	VdpBitstreamBuffer* bitstream_buffers;
 
-    /** picture parameter information for all supported codecs */
-    union VdpPictureInfo {
-        VdpPictureInfoH264        h264;
-        VdpPictureInfoMPEG1Or2    mpeg;
-        VdpPictureInfoVC1          vc1;
-        VdpPictureInfoMPEG4Part2 mpeg4;
-    } info;
+	/** picture parameter information for all supported codecs */
+	union VdpPictureInfo
+	{
+		VdpPictureInfoH264 h264;
+		VdpPictureInfoMPEG1Or2 mpeg;
+		VdpPictureInfoVC1 vc1;
+		VdpPictureInfoMPEG4Part2 mpeg4;
+	} info;
 };
 
 /* @}*/

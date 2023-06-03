@@ -35,11 +35,11 @@
 
 typedef struct rtsp_session_s rtsp_session_t;
 
-rtsp_session_t *rtsp_session_start(int fd, char **mrl, char *path, char *host,
-  int port, int *redir, uint32_t bandwidth, char *user, char *pass);
+rtsp_session_t* rtsp_session_start(int fd, char** mrl, char* path, char* host,
+                                   int port, int* redir, uint32_t bandwidth, char* user, char* pass);
 
-int rtsp_session_read(rtsp_session_t *session, char *data, int len);
+int rtsp_session_read(rtsp_session_t* session, char* data, int len);
 
-void rtsp_session_end(rtsp_session_t *session);
+void rtsp_session_end(rtsp_session_t* session);
 
 #endif /* MPLAYER_RTSP_SESSION_H */

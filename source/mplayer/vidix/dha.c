@@ -89,98 +89,97 @@
 
 static int mem_fd = -1;
 
-void *map_phys_mem(unsigned long base, unsigned long size)
+void* map_phys_mem(unsigned long base, unsigned long size)
 {
 #if ARCH_ALPHA
-/* TODO: move it into sysdep */
-  base += bus_base();
+	/* TODO: move it into sysdep */
+	base += bus_base();
 #endif
 
 #ifdef CONFIG_SVGAHELPER
-  if ( (mem_fd = open(DEV_SVGA,O_RDWR)) == -1) {
-      perror("libdha: SVGAlib kernelhelper failed");
+	if ((mem_fd = open(DEV_SVGA, O_RDWR)) == -1) {
+		perror("libdha: SVGAlib kernelhelper failed");
 #ifdef CONFIG_DHAHELPER
-      goto dha_helper_way;
+		goto dha_helper_way;
 #else
-      goto dev_mem_way;
+		goto dev_mem_way;
 #endif
-  }
-  else
-      goto mmap;
+	}
+	else
+		goto mmap;
 #endif
 
 #ifdef CONFIG_DHAHELPER
 #ifdef CONFIG_SVGAHELPER
-dha_helper_way:
+	dha_helper_way :
 #endif
-  if ( (mem_fd = open("/dev/dhahelper",O_RDWR)) < 0)
-  {
-      perror("libdha: DHA kernelhelper failed");
-      goto dev_mem_way;
-  }
-  else
-  {
-    dhahelper_memory_t mem_req;
+	if ((mem_fd = open("/dev/dhahelper", O_RDWR)) < 0)
+	{
+		perror("libdha: DHA kernelhelper failed");
+		goto dev_mem_way;
+	}
+	else
+	{
+		dhahelper_memory_t mem_req;
 
-    mem_req.operation = MEMORY_OP_MAP;
-    mem_req.start = base;
-    mem_req.offset = 0;
-    mem_req.size = size;
+		mem_req.operation = MEMORY_OP_MAP;
+		mem_req.start = base;
+		mem_req.offset = 0;
+		mem_req.size = size;
 
-    if (ioctl(mem_fd, DHAHELPER_MEMORY, &mem_req) < 0)
-    {
-	perror("libdha: DHA kernelhelper failed");
-	close(mem_fd);
-	goto dev_mem_way;
-    }
-    else
-	goto mmap;
-  }
+		if (ioctl(mem_fd, DHAHELPER_MEMORY, &mem_req) < 0)
+		{
+			perror("libdha: DHA kernelhelper failed");
+			close(mem_fd);
+			goto dev_mem_way;
+		}
+		else
+			goto mmap;
+	}
 #endif
 
 #if defined(CONFIG_DHAHELPER) || defined (CONFIG_SVGAHELPER)
-dev_mem_way:
+	dev_mem_way:
 #endif
 #ifdef DEV_APERTURE
-  if ((mem_fd = open(DEV_APERTURE, O_RDWR)) == -1)
-	perror("libdha: opening aperture failed");
-  else {
-	void *p = mmap(0,size,PROT_READ|PROT_WRITE,MAP_SHARED,mem_fd,base);
+	if ((mem_fd = open(DEV_APERTURE, O_RDWR)) == -1)
+		perror("libdha: opening aperture failed");
+	else {
+		void* p = mmap(0, size, PROT_READ | PROT_WRITE, MAP_SHARED, mem_fd, base);
 
-	if (p == MAP_FAILED) {
-	    perror("libdha: mapping aperture failed");
-	    close(mem_fd);
-	} else
-	    return p;
-  }
+		if (p == MAP_FAILED) {
+			perror("libdha: mapping aperture failed");
+			close(mem_fd);
+		}
+		else
+			return p;
+	}
 #endif
 
-  if ( (mem_fd = open(DEV_MEM,O_RDWR)) == -1)
-  {
-    perror("libdha: opening /dev/mem failed");
-    return MAP_FAILED;
-  }
+	if ((mem_fd = open(DEV_MEM, O_RDWR)) == -1)
+	{
+		perror("libdha: opening /dev/mem failed");
+		return MAP_FAILED;
+	}
 
 #if defined(CONFIG_DHAHELPER) || defined (CONFIG_SVGAHELPER)
-mmap:
+	mmap:
 #endif
-  return mmap(0,size,PROT_READ|PROT_WRITE,MAP_SHARED,mem_fd,base);
+	return mmap(0, size, PROT_READ | PROT_WRITE, MAP_SHARED, mem_fd, base);
 }
 
-void unmap_phys_mem(void *ptr, unsigned long size)
+void unmap_phys_mem(void* ptr, unsigned long size)
 {
-  int res = munmap(ptr,size);
+	int res = munmap(ptr, size);
 
-  if (res == -1)
-  {
-      perror("libdha: unmapping memory failed");
-      return;
-  }
+	if (res == -1)
+	{
+		perror("libdha: unmapping memory failed");
+		return;
+	}
 
-  close(mem_fd);
-  mem_fd = -1;
-
-  return;
+	close(mem_fd);
+	mem_fd = -1;
 }
 
 #endif /* Generic mmap (not win32, nor os2) */
@@ -188,31 +187,31 @@ void unmap_phys_mem(void *ptr, unsigned long size)
 #if !defined(__alpha__) && !defined(__powerpc__) && !defined(__sh__)
 unsigned char INPORT8(unsigned idx)
 {
-  return inb(idx);
+	return inb(idx);
 }
 
 unsigned short INPORT16(unsigned idx)
 {
-  return inw(idx);
+	return inw(idx);
 }
 
 unsigned INPORT32(unsigned idx)
 {
-  return inl(idx);
+	return inl(idx);
 }
 
-void OUTPORT8(unsigned idx,unsigned char val)
+void OUTPORT8(unsigned idx, unsigned char val)
 {
-  outb(idx,val);
+	outb(idx, val);
 }
 
-void OUTPORT16(unsigned idx,unsigned short val)
+void OUTPORT16(unsigned idx, unsigned short val)
 {
-  outw(idx,val);
+	outw(idx, val);
 }
 
-void OUTPORT32(unsigned idx,unsigned val)
+void OUTPORT32(unsigned idx, unsigned val)
 {
-  outl(idx,val);
+	outl(idx, val);
 }
 #endif

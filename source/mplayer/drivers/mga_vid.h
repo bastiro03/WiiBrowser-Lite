@@ -28,23 +28,23 @@
 
 typedef struct mga_vid_config_s
 {
-uint16_t version;
-uint16_t card_type;
-uint32_t ram_size;
-uint32_t src_width;
-uint32_t src_height;
-uint32_t dest_width;
-uint32_t dest_height;
-uint32_t x_org;
-uint32_t y_org;
-uint8_t  colkey_on;
-uint8_t  colkey_red;
-uint8_t  colkey_green;
-uint8_t  colkey_blue;
-uint32_t format;
-uint32_t frame_size;
-uint32_t num_frames;
-uint32_t capabilities;
+	uint16_t version;
+	uint16_t card_type;
+	uint32_t ram_size;
+	uint32_t src_width;
+	uint32_t src_height;
+	uint32_t dest_width;
+	uint32_t dest_height;
+	uint32_t x_org;
+	uint32_t y_org;
+	uint8_t colkey_on;
+	uint8_t colkey_red;
+	uint8_t colkey_green;
+	uint8_t colkey_blue;
+	uint32_t format;
+	uint32_t frame_size;
+	uint32_t num_frames;
+	uint32_t capabilities;
 } mga_vid_config_t;
 
 /* supported FOURCCs */

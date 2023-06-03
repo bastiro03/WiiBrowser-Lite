@@ -24,9 +24,9 @@
 
 #include "vidix.h"
 
-void vidix_register_all_drivers (void);
+void vidix_register_all_drivers(void);
 
-int vidix_find_driver (VDXContext *ctx, const char *name,
-                       unsigned int cap, int verbose);
+int vidix_find_driver(VDXContext* ctx, const char* name,
+                      unsigned int cap, int verbose);
 
 #endif /* MPLAYER_DRIVERS_H */

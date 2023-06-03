@@ -5,7 +5,7 @@
 namespace litehtml
 {
 #if defined(_WIN64)
-	typedef unsigned __int64 uint_ptr;
+	using uint_ptr = unsigned __int64;
 #else
 	typedef unsigned int uint_ptr;
 #endif
@@ -13,23 +13,23 @@ namespace litehtml
 	class document;
 	class element;
 
-	typedef std::map<std::wstring, std::wstring>			string_map;
-	typedef std::map<std::wstring, uint_ptr>				fonts_map;
-	typedef std::vector<litehtml::object_ptr<litehtml::element>>	elements_vector;
-	typedef std::vector<int>								int_vector;
-	typedef std::vector<std::wstring>						string_vector;
+	using string_map = std::map<std::wstring, std::wstring>;
+	using fonts_map = std::map<std::wstring, uint_ptr>;
+	using elements_vector = std::vector<object_ptr<element>>;
+	using int_vector = std::vector<int>;
+	using string_vector = std::vector<std::wstring>;
 
-	const unsigned int font_decoration_none			= 0x00;
-	const unsigned int font_decoration_underline	= 0x01;
-	const unsigned int font_decoration_linethrough	= 0x02;
-	const unsigned int font_decoration_overline		= 0x04;
+	const unsigned int font_decoration_none = 0x00;
+	const unsigned int font_decoration_underline = 0x01;
+	const unsigned int font_decoration_linethrough = 0x02;
+	const unsigned int font_decoration_overline = 0x04;
 
-	typedef unsigned char	byte;
+	using byte = unsigned char;
 
 	struct margins
 	{
-		int	left;
-		int	right;
+		int left;
+		int right;
 		int top;
 		int bottom;
 
@@ -38,30 +38,30 @@ namespace litehtml
 			left = right = top = bottom = 0;
 		}
 
-		int width()		const	{ return left + right; } 
-		int height()	const	{ return top + bottom; } 
+		int width() const { return left + right; }
+		int height() const { return top + bottom; }
 	};
 
 	struct size
 	{
-		int		width;
-		int		height;
+		int width;
+		int height;
 
 		size()
 		{
-			width	= 0;
-			height	= 0;
+			width = 0;
+			height = 0;
 		}
 	};
 
 	struct position
 	{
-		typedef std::vector<position>	vector;
+		using vector = std::vector<position>;
 
-		int	x;
-		int	y;
-		int	width;
-		int	height;
+		int x;
+		int y;
+		int width;
+		int height;
 
 		position()
 		{
@@ -70,30 +70,31 @@ namespace litehtml
 
 		position(int x, int y, int width, int height)
 		{
-			this->x			= x;
-			this->y			= y;
-			this->width		= width;
-			this->height	= height;
+			this->x = x;
+			this->y = y;
+			this->width = width;
+			this->height = height;
 		}
 
-		int right()		const		{ return x + width;		}
-		int bottom()	const		{ return y + height;	}
-		int left()		const		{ return x;				}
-		int top()		const		{ return y;				}
+		int right() const { return x + width; }
+		int bottom() const { return y + height; }
+		int left() const { return x; }
+		int top() const { return y; }
 
 		void operator+=(const margins& mg)
 		{
-			x		-= mg.left;
-			y		-= mg.top;
-			width	+= mg.left + mg.right;
-			height	+= mg.top + mg.bottom;
+			x -= mg.left;
+			y -= mg.top;
+			width += mg.left + mg.right;
+			height += mg.top + mg.bottom;
 		}
+
 		void operator-=(const margins& mg)
 		{
-			x		+= mg.left;
-			y		+= mg.top;
-			width	-= mg.left + mg.right;
-			height	-= mg.top + mg.bottom;
+			x += mg.left;
+			y += mg.top;
+			width -= mg.left + mg.right;
+			height -= mg.top + mg.bottom;
 		}
 
 		void clear()
@@ -103,8 +104,8 @@ namespace litehtml
 
 		void operator=(const size& sz)
 		{
-			width	= sz.width;
-			height	= sz.height;
+			width = sz.width;
+			height = sz.height;
 		}
 
 		void move_to(int x, int y)
@@ -115,23 +116,23 @@ namespace litehtml
 
 		bool does_intersect(const position* val) const
 		{
-			if(!val) return true;
+			if (!val) return true;
 
 			return (
-				left()			<= val->right()		&& 
-				right()			>= val->left()		&& 
-				bottom()		>= val->top()		&& 
-				top()			<= val->bottom()	)
+					left() <= val->right() &&
+					right() >= val->left() &&
+					bottom() >= val->top() &&
+					top() <= val->bottom())
 				|| (
-				val->left()		<= right()			&& 
-				val->right()	>= left()			&& 
-				val->bottom()	>= top()			&& 
-				val->top()		<= bottom()			);
+					val->left() <= right() &&
+					val->right() >= left() &&
+					val->bottom() >= top() &&
+					val->top() <= bottom());
 		}
 
 		bool empty() const
 		{
-			if(!width && !height)
+			if (!width && !height)
 			{
 				return true;
 			}
@@ -140,7 +141,7 @@ namespace litehtml
 
 		bool is_point_inside(int x, int y) const
 		{
-			if(x >= left() && x <= right() && y >= top() && y <= bottom())
+			if (x >= left() && x <= right() && y >= top() && y <= bottom())
 			{
 				return true;
 			}
@@ -399,5 +400,4 @@ namespace litehtml
 		overflow_no_display,
 		overflow_no_content
 	};
-
 }

@@ -82,122 +82,134 @@ const LIBVO_EXTERN(tdfxfb)
 
 /* Stepping between the different YUV plane registers */
 #define YUV_STRIDE 1024
-struct YUV_plane {
-  char Y[0x0100000];
-  char U[0x0100000];
-  char V[0x0100000];
+
+struct YUV_plane
+{
+	char Y[0x0100000];
+	char U[0x0100000];
+	char V[0x0100000];
 };
 
 static int fd = -1;
 static struct fb_fix_screeninfo fb_finfo;
 static struct fb_var_screeninfo fb_vinfo;
 static uint32_t in_width, in_height, in_format, in_depth, in_voodoo_format,
-	screenwidth, screenheight, screendepth, vidwidth, vidheight, vidx, vidy,
-	vid_voodoo_format, *vidpage, *hidpage, *inpage, vidpageoffset,
-	hidpageoffset, inpageoffset, *memBase0 = NULL, *memBase1 = NULL, r_width, r_height;
-static volatile voodoo_io_reg *reg_IO;
-static volatile voodoo_2d_reg *reg_2d;
-static voodoo_yuv_reg *reg_YUV;
-static struct YUV_plane *YUV;
+                screenwidth, screenheight, screendepth, vidwidth, vidheight, vidx, vidy,
+                vid_voodoo_format, *vidpage, *hidpage, *inpage, vidpageoffset,
+                hidpageoffset, inpageoffset, *memBase0 = NULL, *memBase1 = NULL, r_width, r_height;
+static volatile voodoo_io_reg* reg_IO;
+static volatile voodoo_2d_reg* reg_2d;
+static voodoo_yuv_reg* reg_YUV;
+static struct YUV_plane* YUV;
 static void (*alpha_func)(int, int, unsigned char*, unsigned char*, int, unsigned char*, int),
-    (*alpha_func_double)(int, int, unsigned char*, unsigned char*, int, unsigned char*, int);
+            (*alpha_func_double)(int, int, unsigned char*, unsigned char*, int, unsigned char*, int);
 
-static int preinit(const char *arg)
+static int preinit(const char* arg)
 {
-	char *name;
+	char* name;
 
-	if(arg)
-	  name = (char*)arg;
-	else if(!(name = getenv("FRAMEBUFFER")))
+	if (arg)
+		name = (char*)arg;
+	else if (!(name = getenv("FRAMEBUFFER")))
 		name = "/dev/fb0";
 
-	if((fd = open(name, O_RDWR)) == -1) {
-		mp_msg(MSGT_VO,MSGL_ERR, MSGTR_LIBVO_TDFXFB_CantOpen, name, strerror(errno));
+	if ((fd = open(name, O_RDWR)) == -1)
+	{
+		mp_msg(MSGT_VO, MSGL_ERR, MSGTR_LIBVO_TDFXFB_CantOpen, name, strerror(errno));
 		return -1;
 	}
 
-	if(ioctl(fd, FBIOGET_FSCREENINFO, &fb_finfo)) {
-		mp_msg(MSGT_VO,MSGL_ERR, MSGTR_LIBVO_TDFXFB_ProblemWithFbitgetFscreenInfo,
-				strerror(errno));
+	if (ioctl(fd, FBIOGET_FSCREENINFO, &fb_finfo))
+	{
+		mp_msg(MSGT_VO, MSGL_ERR, MSGTR_LIBVO_TDFXFB_ProblemWithFbitgetFscreenInfo,
+		       strerror(errno));
 		close(fd);
 		fd = -1;
 		return -1;
 	}
 
-	if(ioctl(fd, FBIOGET_VSCREENINFO, &fb_vinfo)) {
-		mp_msg(MSGT_VO,MSGL_ERR, MSGTR_LIBVO_TDFXFB_ProblemWithFbitgetVscreenInfo,
-				strerror(errno));
+	if (ioctl(fd, FBIOGET_VSCREENINFO, &fb_vinfo))
+	{
+		mp_msg(MSGT_VO, MSGL_ERR, MSGTR_LIBVO_TDFXFB_ProblemWithFbitgetVscreenInfo,
+		       strerror(errno));
 		close(fd);
 		fd = -1;
 		return -1;
 	}
 
 	/* BANSHEE means any of the series aparently */
-	if (fb_finfo.accel != FB_ACCEL_3DFX_BANSHEE) {
-		mp_msg(MSGT_VO,MSGL_ERR, MSGTR_LIBVO_TDFXFB_ThisDriverOnlySupports);
+	if (fb_finfo.accel != FB_ACCEL_3DFX_BANSHEE)
+	{
+		mp_msg(MSGT_VO, MSGL_ERR, MSGTR_LIBVO_TDFXFB_ThisDriverOnlySupports);
 		close(fd);
 		fd = -1;
 		return -1;
 	}
 
 	// Check the depth now as config() musn't fail
-	switch(fb_vinfo.bits_per_pixel) {
+	switch (fb_vinfo.bits_per_pixel)
+	{
 	case 16:
 	case 24:
 	case 32:
-	  break; // Ok
+		break; // Ok
 	default:
-	  mp_msg(MSGT_VO,MSGL_ERR, MSGTR_LIBVO_TDFXFB_OutputIsNotSupported, fb_vinfo.bits_per_pixel);
-	  close(fd);
-	  fd = -1;
-	  return -1;
+		mp_msg(MSGT_VO, MSGL_ERR, MSGTR_LIBVO_TDFXFB_OutputIsNotSupported, fb_vinfo.bits_per_pixel);
+		close(fd);
+		fd = -1;
+		return -1;
 	}
 
 	/* Open up a window to the hardware */
 	memBase1 = mmap(0, fb_finfo.smem_len, PROT_READ | PROT_WRITE,
-					MAP_SHARED, fd, 0);
+	                MAP_SHARED, fd, 0);
 	memBase0 = mmap(0, fb_finfo.mmio_len, PROT_READ | PROT_WRITE,
-					MAP_SHARED, fd, fb_finfo.smem_len);
+	                MAP_SHARED, fd, fb_finfo.smem_len);
 
-	if((long)memBase0 == -1 || (long)memBase1 == -1) {
-		mp_msg(MSGT_VO,MSGL_ERR, MSGTR_LIBVO_TDFXFB_CouldntMapMemoryAreas, strerror(errno));
-		if((long)memBase0 != -1)
-		  munmap(memBase0, fb_finfo.smem_len);
-		if((long)memBase1 != -1)
-		  munmap(memBase1, fb_finfo.smem_len);
+	if ((long)memBase0 == -1 || (long)memBase1 == -1)
+	{
+		mp_msg(MSGT_VO, MSGL_ERR, MSGTR_LIBVO_TDFXFB_CouldntMapMemoryAreas, strerror(errno));
+		if ((long)memBase0 != -1)
+			munmap(memBase0, fb_finfo.smem_len);
+		if ((long)memBase1 != -1)
+			munmap(memBase1, fb_finfo.smem_len);
 		memBase0 = memBase1 = NULL;
 		return -1;
 	}
 
 	/* Set up global pointers to the voodoo's regs */
-	reg_IO = (void *)memBase0 + VOODOO_IO_REG_OFFSET;
-	reg_2d = (void *)memBase0 + VOODOO_2D_REG_OFFSET;
-	reg_YUV = (void *)memBase0 + VOODOO_YUV_REG_OFFSET;
-	YUV = (void *)memBase0 + VOODOO_YUV_PLANE_OFFSET;
+	reg_IO = (void*)memBase0 + VOODOO_IO_REG_OFFSET;
+	reg_2d = (void*)memBase0 + VOODOO_2D_REG_OFFSET;
+	reg_YUV = (void*)memBase0 + VOODOO_YUV_REG_OFFSET;
+	YUV = (void*)memBase0 + VOODOO_YUV_PLANE_OFFSET;
 
 	return 0;
 }
 
 static void uninit(void)
 {
-	if(reg_IO) {
+	if (reg_IO)
+	{
 		/* Restore the screen (Linux lives at 0) */
 		reg_IO->vidDesktopStartAddr = 0;
 		reg_IO = NULL;
 	}
 
 	/* And close our mess */
-	if(memBase1) {
+	if (memBase1)
+	{
 		munmap(memBase1, fb_finfo.smem_len);
 		memBase1 = NULL;
 	}
 
-	if(memBase0) {
+	if (memBase0)
+	{
 		munmap(memBase0, fb_finfo.mmio_len);
 		memBase0 = NULL;
 	}
 
-	if(fd != -1) {
+	if (fd != -1)
+	{
 		close(fd);
 		fd = -1;
 	}
@@ -211,10 +223,14 @@ static void clear_screen(void)
 	 * work, but this made more sense since it actually checks the status of
 	 * the card.
 	 */
-	if(vo_doublebuffering) {
+	if (vo_doublebuffering)
+	{
 		/* first wait for the card to be ready, do not try to write
 		 * every time - alex */
-		do {} while((reg_IO->status & 0x1f) < 1);
+		do
+		{
+		}
+		while ((reg_IO->status & 0x1f) < 1);
 		memset(vidpage, 0, screenwidth * screenheight * screendepth);
 		memset(hidpage, 0, screenwidth * screenheight * screendepth);
 	}
@@ -231,23 +247,24 @@ static void setup_screen(uint32_t full)
 }
 
 static int config(uint32_t width, uint32_t height, uint32_t d_width, uint32_t d_height,
-		uint32_t flags, char *title, uint32_t format)
+                  uint32_t flags, char* title, uint32_t format)
 {
 	screenwidth = fb_vinfo.xres;
 	screenheight = fb_vinfo.yres;
-	aspect_save_screenres(fb_vinfo.xres,fb_vinfo.yres);
+	aspect_save_screenres(fb_vinfo.xres, fb_vinfo.yres);
 
 	in_width = width;
 	in_height = height;
 	in_format = format;
-	aspect_save_orig(width,height);
+	aspect_save_orig(width, height);
 
 	r_width = d_width;
 	r_height = d_height;
-	aspect_save_prescale(d_width,d_height);
+	aspect_save_prescale(d_width, d_height);
 
 	/* Setup the screen for rendering to */
-	switch(fb_vinfo.bits_per_pixel) {
+	switch (fb_vinfo.bits_per_pixel)
+	{
 	case 16:
 		screendepth = 2;
 		vid_voodoo_format = VOODOO_BLT_FORMAT_16;
@@ -278,7 +295,8 @@ static int config(uint32_t width, uint32_t height, uint32_t d_width, uint32_t d_
 	in_depth = 2;
 	alpha_func = vo_draw_alpha_yuy2;
 
-	switch(in_format) {
+	switch (in_format)
+	{
 	case IMGFMT_YV12:
 	case IMGFMT_I420:
 	case IMGFMT_IYUV:
@@ -305,75 +323,78 @@ static int config(uint32_t width, uint32_t height, uint32_t d_width, uint32_t d_
 		break;
 
 	default:
-		mp_msg(MSGT_VO,MSGL_ERR, MSGTR_LIBVO_TDFXFB_SomethingIsWrongWithControl);
+		mp_msg(MSGT_VO, MSGL_ERR, MSGTR_LIBVO_TDFXFB_SomethingIsWrongWithControl);
 		return -1;
 	}
 
 	in_voodoo_format |= in_width * in_depth;
 
 	/* Linux lives in the first frame */
-	if(vo_doublebuffering) {
+	if (vo_doublebuffering)
+	{
 		vidpageoffset = screenwidth * screenheight * screendepth;
 		hidpageoffset = vidpageoffset + screenwidth * screenheight * screendepth;
-	} else
-		vidpageoffset = hidpageoffset = 0;              /* Console background */
-
+	}
+	else
+		vidpageoffset = hidpageoffset = 0; /* Console background */
 
 	inpageoffset = hidpageoffset + screenwidth * screenheight * screendepth;
 
-	if(inpageoffset + in_width * in_depth * in_height > fb_finfo.smem_len) {
-		mp_msg(MSGT_VO,MSGL_ERR, MSGTR_LIBVO_TDFXFB_NotEnoughVideoMemoryToPlay);
+	if (inpageoffset + in_width * in_depth * in_height > fb_finfo.smem_len)
+	{
+		mp_msg(MSGT_VO, MSGL_ERR, MSGTR_LIBVO_TDFXFB_NotEnoughVideoMemoryToPlay);
 		return -1;
 	}
 
-	vidpage = (void *)memBase1 + (unsigned long)vidpageoffset;
-	hidpage = (void *)memBase1 + (unsigned long)hidpageoffset;
-	inpage = (void *)memBase1 + (unsigned long)inpageoffset;
+	vidpage = (void*)memBase1 + (unsigned long)vidpageoffset;
+	hidpage = (void*)memBase1 + (unsigned long)hidpageoffset;
+	inpage = (void*)memBase1 + (unsigned long)inpageoffset;
 
 	setup_screen(flags & VOFLAG_FULLSCREEN);
 
 	memset(inpage, 0, in_width * in_height * in_depth);
 
-	mp_msg(MSGT_VO,MSGL_INFO, MSGTR_LIBVO_TDFXFB_ScreenIs,
-			screenwidth, screenheight, screendepth * 8,
-			in_width, in_height, in_depth * 8,
-			d_width, d_height);
+	mp_msg(MSGT_VO, MSGL_INFO, MSGTR_LIBVO_TDFXFB_ScreenIs,
+	       screenwidth, screenheight, screendepth * 8,
+	       in_width, in_height, in_depth * 8,
+	       d_width, d_height);
 
 	return 0;
 }
 
 /* Double-buffering draw_alpha */
-static void draw_alpha_double(int x, int y, int w, int h, unsigned char *src,
-		unsigned char *srca, int stride)
+static void draw_alpha_double(int x, int y, int w, int h, unsigned char* src,
+                              unsigned char* srca, int stride)
 {
-	char *dst = (char *)vidpage + ((y + vidy) * screenwidth + x + vidx) * screendepth;
+	char* dst = (char*)vidpage + ((y + vidy) * screenwidth + x + vidx) * screendepth;
 	alpha_func_double(w, h, src, srca, stride, dst, screenwidth * screendepth);
 }
 
 /* Single-buffering draw_alpha */
-static void draw_alpha(int x, int y, int w, int h, unsigned char *src,
-		unsigned char *srca, int stride)
+static void draw_alpha(int x, int y, int w, int h, unsigned char* src,
+                       unsigned char* srca, int stride)
 {
-	char *dst = (char *)inpage + (y * in_width + x) * in_depth;
+	char* dst = (char*)inpage + (y * in_width + x) * in_depth;
 	alpha_func(w, h, src, srca, stride, dst, in_width * in_depth);
 }
 
 static void draw_osd(void)
 {
-	if(!vo_doublebuffering)
+	if (!vo_doublebuffering)
 		vo_draw_text(in_width, in_height, draw_alpha);
 }
 
 /* Render onto the screen */
 static void flip_page(void)
 {
-	voodoo_2d_reg regs = *reg_2d;		/* Copy the regs */
+	voodoo_2d_reg regs = *reg_2d; /* Copy the regs */
 	int i = 0;
 
-	if(vo_doublebuffering) {
+	if (vo_doublebuffering)
+	{
 		/* Flip to an offscreen buffer for rendering */
 		uint32_t t = vidpageoffset;
-		void *j = vidpage;
+		void* j = vidpage;
 
 		vidpage = hidpage;
 		hidpage = j;
@@ -398,13 +419,13 @@ static void flip_page(void)
 
 	/* Wait for the command to finish (If we don't do this, we get wierd
 	 * sound corruption... */
-	while((reg_IO->status & 0x1f) < 1)
+	while ((reg_IO->status & 0x1f) < 1)
 		/* Wait */;
 
-	*((volatile uint32_t *)((uint32_t *)reg_IO + COMMAND_3D)) = COMMAND_3D_NOP;
+	*((volatile uint32_t*)((uint32_t*)reg_IO + COMMAND_3D)) = COMMAND_3D_NOP;
 
-	while(i < 3)
-		if(!(reg_IO->status & STATUS_BUSY))
+	while (i < 3)
+		if (!(reg_IO->status & STATUS_BUSY))
 			i++;
 
 	/* Restore the old regs now */
@@ -425,20 +446,20 @@ static void flip_page(void)
 	reg_2d->command = 0;
 
 	/* Render any text onto this buffer */
-	if(vo_doublebuffering)
+	if (vo_doublebuffering)
 		vo_draw_text(vidwidth, vidheight, draw_alpha_double);
 
 	/* And flip to the new buffer! */
 	reg_IO->vidDesktopStartAddr = vidpageoffset;
 }
 
-static int draw_frame(uint8_t *src[])
+static int draw_frame(uint8_t* src[])
 {
 	mem2agpcpy(inpage, src[0], in_width * in_depth * in_height);
 	return 0;
 }
 
-static int draw_slice(uint8_t *i[], int s[], int w, int h, int x, int y)
+static int draw_slice(uint8_t* i[], int s[], int w, int h, int x, int y)
 {
 	/* We want to render to the YUV to the input page + the location
 	 * of the stripes we're doing */
@@ -447,37 +468,37 @@ static int draw_slice(uint8_t *i[], int s[], int w, int h, int x, int y)
 
 	/* Put the YUV channels into the voodoos internal combiner unit
 	 * thingie */
-	mem2agpcpy_pic(YUV->Y, i[0], s[0], h    , YUV_STRIDE, s[0]);
+	mem2agpcpy_pic(YUV->Y, i[0], s[0], h, YUV_STRIDE, s[0]);
 	mem2agpcpy_pic(YUV->U, i[1], s[1], h / 2, YUV_STRIDE, s[1]);
 	mem2agpcpy_pic(YUV->V, i[2], s[2], h / 2, YUV_STRIDE, s[2]);
 	return 0;
 }
 
 /* Attempt to start doing DR */
-static uint32_t get_image(mp_image_t *mpi)
+static uint32_t get_image(mp_image_t* mpi)
 {
-
-	if(mpi->flags & MP_IMGFLAG_READABLE)
+	if (mpi->flags & MP_IMGFLAG_READABLE)
 		return VO_FALSE;
-	if(mpi->type == MP_IMGTYPE_STATIC && vo_doublebuffering)
+	if (mpi->type == MP_IMGTYPE_STATIC && vo_doublebuffering)
 		return VO_FALSE;
-	if(mpi->type > MP_IMGTYPE_TEMP)
+	if (mpi->type > MP_IMGTYPE_TEMP)
 		return VO_FALSE; // TODO ??
 
-	switch(in_format) {
+	switch (in_format)
+	{
 	case IMGFMT_YUY2:
 	case IMGFMT_BGR16:
 	case IMGFMT_BGR24:
 	case IMGFMT_BGR32:
 	case IMGFMT_UYVY:
-		mpi->planes[0] = (char *)inpage;
+		mpi->planes[0] = (char*)inpage;
 		mpi->stride[0] = in_width * in_depth;
 		break;
 
 	case IMGFMT_YV12:
 	case IMGFMT_I420:
 	case IMGFMT_IYUV:
-		if(!(mpi->flags & MP_IMGFLAG_ACCEPT_STRIDE) && mpi->w != YUV_STRIDE)
+		if (!(mpi->flags & MP_IMGFLAG_ACCEPT_STRIDE) && mpi->w != YUV_STRIDE)
 			return VO_FALSE;
 		mpi->planes[0] = YUV->Y;
 		mpi->planes[1] = YUV->U;
@@ -497,14 +518,16 @@ static uint32_t get_image(mp_image_t *mpi)
 	return VO_TRUE;
 }
 
-static int control(uint32_t request, void *data)
+static int control(uint32_t request, void* data)
 {
-	switch(request) {
+	switch (request)
+	{
 	case VOCTRL_GET_IMAGE:
 		return get_image(data);
 
 	case VOCTRL_QUERY_FORMAT:
-		switch(*((uint32_t*)data)) {
+		switch (*((uint32_t*)data))
+		{
 		case IMGFMT_YV12:
 		case IMGFMT_I420:
 		case IMGFMT_IYUV:
@@ -517,7 +540,7 @@ static int control(uint32_t request, void *data)
 				VFCAP_OSD | VFCAP_HWSCALE_UP | VFCAP_HWSCALE_DOWN;
 		}
 
-		return 0;		/* Not supported */
+		return 0; /* Not supported */
 
 	case VOCTRL_FULLSCREEN:
 		setup_screen(!vo_fs);
@@ -528,4 +551,6 @@ static int control(uint32_t request, void *data)
 }
 
 /* Dummy funcs */
-static void check_events(void) {}
+static void check_events(void)
+{
+}

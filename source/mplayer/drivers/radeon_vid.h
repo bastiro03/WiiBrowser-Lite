@@ -29,22 +29,22 @@
 
 typedef struct mga_vid_config_s
 {
-uint16_t version;
-uint16_t card_type;
-uint32_t ram_size;
-uint32_t src_width;
-uint32_t src_height;
-uint32_t dest_width;
-uint32_t dest_height;
-uint32_t x_org;          /* dest x */
-uint32_t y_org;          /* dest y */
-uint8_t  colkey_on;
-uint8_t  colkey_red;
-uint8_t  colkey_green;
-uint8_t  colkey_blue;
-uint32_t format;
-uint32_t frame_size;
-uint32_t num_frames;
+	uint16_t version;
+	uint16_t card_type;
+	uint32_t ram_size;
+	uint32_t src_width;
+	uint32_t src_height;
+	uint32_t dest_width;
+	uint32_t dest_height;
+	uint32_t x_org; /* dest x */
+	uint32_t y_org; /* dest y */
+	uint8_t colkey_on;
+	uint8_t colkey_red;
+	uint8_t colkey_green;
+	uint8_t colkey_blue;
+	uint32_t format;
+	uint32_t frame_size;
+	uint32_t num_frames;
 } mga_vid_config_t;
 
 #define IMGFMT_RGB_MASK 0xFFFFFF00
@@ -68,7 +68,6 @@ uint32_t num_frames;
 
 #define IMGFMT_RGB_DEPTH(fmt) ((fmt)&~IMGFMT_RGB)
 #define IMGFMT_BGR_DEPTH(fmt) ((fmt)&~IMGFMT_BGR)
-
 
 /* Planar YUV Formats */
 
@@ -116,7 +115,6 @@ uint32_t num_frames;
 
 /* Compressed Formats. MPlayer's extensions!!! */
 #define IMGFMT_MPEGPES (('M'<<24)|('P'<<16)|('E'<<8)|('S'))
-
 
 #define MGA_VID_CONFIG    _IOR('J', 1, mga_vid_config_t)
 #define MGA_VID_ON        _IO ('J', 2)

@@ -46,14 +46,14 @@
 #include "actions.h"
 #include "gtk/fileselect.h"
 
-GtkWidget *PopUpMenu = NULL;
+GtkWidget* PopUpMenu = NULL;
 
-GtkWidget *WarningPixmap;
-GtkWidget *ErrorPixmap;
+GtkWidget* WarningPixmap;
+GtkWidget* ErrorPixmap;
 
-int gtkPopupMenu      = 0;
+int gtkPopupMenu = 0;
 int gtkPopupMenuParam = 0;
-int gtkInitialized    = 0;
+int gtkInitialized = 0;
 
 #include "gtk/skinbrowser.h"
 #include "gtk/playlist.h"
@@ -67,269 +67,285 @@ int gtkInitialized    = 0;
 static const char gui_icon_name[] = "mplayer";
 
 #define THRESHOLD 128   // transparency values equal to or above this will become
-                        // opaque, all values below this will become transparent
+// opaque, all values below this will become transparent
 
 /* init & close gtk */
 
 guiIcon_t guiIcon;
 
-static int gtkLoadIcon(GtkIconTheme *theme, gint size, GdkPixmap **gdkIcon, GdkBitmap **gdkIconMask)
+static int gtkLoadIcon(GtkIconTheme* theme, gint size, GdkPixmap** gdkIcon, GdkBitmap** gdkIconMask)
 {
-    GdkPixbuf *pixbuf;
-    guchar *data;
-    int csize, i;
+	GdkPixbuf* pixbuf;
+	guchar* data;
+	int csize, i;
 
-    pixbuf = gtk_icon_theme_load_icon(theme, gui_icon_name, size, 0, NULL);
+	pixbuf = gtk_icon_theme_load_icon(theme, gui_icon_name, size, 0, NULL);
 
-    if (pixbuf)
-        gdk_pixbuf_render_pixmap_and_mask_for_colormap(pixbuf, gdk_colormap_get_system(), gdkIcon, gdkIconMask, THRESHOLD);
+	if (pixbuf)
+		gdk_pixbuf_render_pixmap_and_mask_for_colormap(pixbuf, gdk_colormap_get_system(), gdkIcon, gdkIconMask,
+		                                               THRESHOLD);
 
-    if (pixbuf &&
-        gdk_pixbuf_get_colorspace(pixbuf) == GDK_COLORSPACE_RGB &&
-        gdk_pixbuf_get_n_channels(pixbuf) == 4 &&
-        gdk_pixbuf_get_bits_per_sample(pixbuf) == 8) {
-        csize = guiIcon.collection_size;
-        guiIcon.collection_size += 2 + gdk_pixbuf_get_width(pixbuf) * gdk_pixbuf_get_height(pixbuf);
+	if (pixbuf &&
+		gdk_pixbuf_get_colorspace(pixbuf) == GDK_COLORSPACE_RGB &&
+		gdk_pixbuf_get_n_channels(pixbuf) == 4 &&
+		gdk_pixbuf_get_bits_per_sample(pixbuf) == 8)
+	{
+		csize = guiIcon.collection_size;
+		guiIcon.collection_size += 2 + gdk_pixbuf_get_width(pixbuf) * gdk_pixbuf_get_height(pixbuf);
 
-        guiIcon.collection = realloc(guiIcon.collection, guiIcon.collection_size * sizeof(*guiIcon.collection));
+		guiIcon.collection = realloc(guiIcon.collection, guiIcon.collection_size * sizeof(*guiIcon.collection));
 
-        if (guiIcon.collection) {
-            guiIcon.collection[csize++] = gdk_pixbuf_get_width(pixbuf);
-            guiIcon.collection[csize++] = gdk_pixbuf_get_height(pixbuf);
+		if (guiIcon.collection)
+		{
+			guiIcon.collection[csize++] = gdk_pixbuf_get_width(pixbuf);
+			guiIcon.collection[csize++] = gdk_pixbuf_get_height(pixbuf);
 
-            data = gdk_pixbuf_get_pixels(pixbuf);
+			data = gdk_pixbuf_get_pixels(pixbuf);
 
-            for (i = csize; i < guiIcon.collection_size; data += 4, i++)
-                guiIcon.collection[i] = (data[3] << 24) | AV_RB24(data);  // RGBA -> ARGB
-        }
+			for (i = csize; i < guiIcon.collection_size; data += 4, i++)
+				guiIcon.collection[i] = (data[3] << 24) | AV_RB24(data); // RGBA -> ARGB
+		}
 
-        g_object_unref(pixbuf);
-    } else
-        mp_msg(MSGT_GPLAYER, MSGL_WARN, MSGTR_ICONERROR, gui_icon_name, size);
+		g_object_unref(pixbuf);
+	}
+	else
+		mp_msg(MSGT_GPLAYER, MSGL_WARN, MSGTR_ICONERROR, gui_icon_name, size);
 
-    /* start up GTK which realizes the pixmaps */
-    gtk_main_iteration_do(FALSE);
+	/* start up GTK which realizes the pixmaps */
+	gtk_main_iteration_do(FALSE);
 
-    return (pixbuf != NULL);
+	return (pixbuf != NULL);
 }
 
 void gtkInit(void)
 {
-    int argc = 0;
-    char *arg[3], **argv = arg;
-    GtkIconTheme *theme;
-    GdkPixmap *gdkIcon;
-    GdkBitmap *gdkIconMask;
+	int argc = 0;
+	char *arg[3], **argv = arg;
+	GtkIconTheme* theme;
+	GdkPixmap* gdkIcon;
+	GdkBitmap* gdkIconMask;
 
-    mp_msg(MSGT_GPLAYER, MSGL_V, "GTK init.\n");
+	mp_msg(MSGT_GPLAYER, MSGL_V, "GTK init.\n");
 
-    arg[argc++] = GMPlayer;
+	arg[argc++] = GMPlayer;
 
-    if (mDisplayName) {            // MPlayer option '-display' was given
-        arg[argc++] = "--display"; // Pass corresponding command line arguments to GTK,
-        arg[argc++] = mDisplayName; // to open the requested display for the GUI, too.
-    }
+	if (mDisplayName)
+	{
+		// MPlayer option '-display' was given
+		arg[argc++] = "--display"; // Pass corresponding command line arguments to GTK,
+		arg[argc++] = mDisplayName; // to open the requested display for the GUI, too.
+	}
 
 #ifdef CONFIG_GTK2
-    gtk_disable_setlocale();
+	gtk_disable_setlocale();
 #endif
 
-    gtk_init(&argc, &argv);
+	gtk_init(&argc, &argv);
 
-    theme = gtk_icon_theme_get_default();
+	theme = gtk_icon_theme_get_default();
 
-    if (gtkLoadIcon(theme, 16, &gdkIcon, &gdkIconMask)) {
-        guiIcon.small      = GDK_PIXMAP_XID(gdkIcon);
-        guiIcon.small_mask = GDK_PIXMAP_XID(gdkIconMask);
-    }
+	if (gtkLoadIcon(theme, 16, &gdkIcon, &gdkIconMask))
+	{
+		guiIcon.small = GDK_PIXMAP_XID(gdkIcon);
+		guiIcon.small_mask = GDK_PIXMAP_XID(gdkIconMask);
+	}
 
-    if (gtkLoadIcon(theme, 32, &gdkIcon, &gdkIconMask)) {
-        guiIcon.normal      = GDK_PIXMAP_XID(gdkIcon);
-        guiIcon.normal_mask = GDK_PIXMAP_XID(gdkIconMask);
-    }
+	if (gtkLoadIcon(theme, 32, &gdkIcon, &gdkIconMask))
+	{
+		guiIcon.normal = GDK_PIXMAP_XID(gdkIcon);
+		guiIcon.normal_mask = GDK_PIXMAP_XID(gdkIconMask);
+	}
 
-    gtkLoadIcon(theme, 48, &gdkIcon, &gdkIconMask);
+	gtkLoadIcon(theme, 48, &gdkIcon, &gdkIconMask);
 
-    gtkInitialized = 1;
+	gtkInitialized = 1;
 }
 
-void gtkAddIcon(GtkWidget *window)
+void gtkAddIcon(GtkWidget* window)
 {
-    wsSetIcon(gdk_display, GDK_WINDOW_XWINDOW(window->window), &guiIcon);
+	wsSetIcon(gdk_display, GDK_WINDOW_XWINDOW(window->window), &guiIcon);
 }
 
-void gtkClearList(GtkWidget *list)
+void gtkClearList(GtkWidget* list)
 {
-    gtk_clist_clear(GTK_CLIST(list));
+	gtk_clist_clear(GTK_CLIST(list));
 }
 
-int gtkFindCList(GtkWidget *list, char *item)
+int gtkFindCList(GtkWidget* list, char* item)
 {
-    gint j;
-    gchar *tmpstr;
+	gint j;
+	gchar* tmpstr;
 
-    for (j = 0; j < GTK_CLIST(list)->rows; j++) {
-        gtk_clist_get_text(GTK_CLIST(list), j, 0, &tmpstr);
+	for (j = 0; j < GTK_CLIST(list)->rows; j++)
+	{
+		gtk_clist_get_text(GTK_CLIST(list), j, 0, &tmpstr);
 
-        if (!strcmp(tmpstr, item))
-            return j;
-    }
+		if (!strcmp(tmpstr, item))
+			return j;
+	}
 
-    return -1;
+	return -1;
 }
 
-void gtkSetDefaultToCList(GtkWidget *list, char *item)
+void gtkSetDefaultToCList(GtkWidget* list, char* item)
 {
-    gint i;
+	gint i;
 
-    if ((i = gtkFindCList(list, item)) > -1)
-        gtk_clist_select_row(GTK_CLIST(list), i, 0);
+	if ((i = gtkFindCList(list, item)) > -1)
+		gtk_clist_select_row(GTK_CLIST(list), i, 0);
 }
 
 void gtkEventHandling(void)
 {
-    int i;
+	int i;
 
-    for (i = 0; i < 25; i++)
-        gtk_main_iteration_do(0);
+	for (i = 0; i < 25; i++)
+		gtk_main_iteration_do(0);
 }
 
 /* funcs */
 
-void gtkMessageBox(int type, const gchar *str)
+void gtkMessageBox(int type, const gchar* str)
 {
-    if (!gtkInitialized)
-        return;
+	if (!gtkInitialized)
+		return;
 
-    ShowMessageBox(str);
-    gtk_label_set_text(GTK_LABEL(gtkMessageBoxText), str);
+	ShowMessageBox(str);
+	gtk_label_set_text(GTK_LABEL(gtkMessageBoxText), str);
 
-    /* enable linewrapping by alex */
-// GTK_LABEL(gtkMessageBoxText)->max_width = 80;
-    if (strlen(str) > 80)
-        gtk_label_set_line_wrap(GTK_LABEL(gtkMessageBoxText), TRUE);
-    else
-        gtk_label_set_line_wrap(GTK_LABEL(gtkMessageBoxText), FALSE);
+	/* enable linewrapping by alex */
+	// GTK_LABEL(gtkMessageBoxText)->max_width = 80;
+	if (strlen(str) > 80)
+		gtk_label_set_line_wrap(GTK_LABEL(gtkMessageBoxText), TRUE);
+	else
+		gtk_label_set_line_wrap(GTK_LABEL(gtkMessageBoxText), FALSE);
 
-    switch (type) {
-    case GTK_MB_FATAL:
-        gtk_window_set_title(GTK_WINDOW(MessageBox), MSGTR_MSGBOX_LABEL_FatalError);
-        gtk_widget_hide(WarningPixmap);
-        gtk_widget_show(ErrorPixmap);
-        break;
+	switch (type)
+	{
+	case GTK_MB_FATAL:
+		gtk_window_set_title(GTK_WINDOW(MessageBox), MSGTR_MSGBOX_LABEL_FatalError);
+		gtk_widget_hide(WarningPixmap);
+		gtk_widget_show(ErrorPixmap);
+		break;
 
-    case GTK_MB_ERROR:
-        gtk_window_set_title(GTK_WINDOW(MessageBox), MSGTR_MSGBOX_LABEL_Error);
-        gtk_widget_hide(WarningPixmap);
-        gtk_widget_show(ErrorPixmap);
-        break;
+	case GTK_MB_ERROR:
+		gtk_window_set_title(GTK_WINDOW(MessageBox), MSGTR_MSGBOX_LABEL_Error);
+		gtk_widget_hide(WarningPixmap);
+		gtk_widget_show(ErrorPixmap);
+		break;
 
-    case GTK_MB_WARNING:
-        gtk_window_set_title(GTK_WINDOW(MessageBox), MSGTR_MSGBOX_LABEL_Warning);
-        gtk_widget_show(WarningPixmap);
-        gtk_widget_hide(ErrorPixmap);
-        break;
-    }
+	case GTK_MB_WARNING:
+		gtk_window_set_title(GTK_WINDOW(MessageBox), MSGTR_MSGBOX_LABEL_Warning);
+		gtk_widget_show(WarningPixmap);
+		gtk_widget_hide(ErrorPixmap);
+		break;
+	}
 
-    gtk_widget_show(MessageBox);
-    gtkSetLayer(MessageBox);
+	gtk_widget_show(MessageBox);
+	gtkSetLayer(MessageBox);
 
-    if (type == GTK_MB_FATAL)
-        while (MessageBox)
-            gtk_main_iteration_do(0);
+	if (type == GTK_MB_FATAL)
+		while (MessageBox)
+			gtk_main_iteration_do(0);
 }
 
-void gtkSetLayer(GtkWidget *wdg)
+void gtkSetLayer(GtkWidget* wdg)
 {
-    wsSetLayer(gdk_display, GDK_WINDOW_XWINDOW(wdg->window), guiApp.videoWindow.isFullScreen);
-    gtkActive(wdg);
+	wsSetLayer(gdk_display, GDK_WINDOW_XWINDOW(wdg->window), guiApp.videoWindow.isFullScreen);
+	gtkActive(wdg);
 }
 
-void gtkActive(GtkWidget *wdg)
+void gtkActive(GtkWidget* wdg)
 {
-    wsRaiseWindowTop(gdk_display, GDK_WINDOW_XWINDOW(wdg->window));
+	wsRaiseWindowTop(gdk_display, GDK_WINDOW_XWINDOW(wdg->window));
 }
 
-void gtkShow(int type, char *param)
+void gtkShow(int type, char* param)
 {
-    switch (type) {
-    case evEqualizer:
-        ShowEqualizer();
-        gtkSetLayer(Equalizer);
-        break;
+	switch (type)
+	{
+	case evEqualizer:
+		ShowEqualizer();
+		gtkSetLayer(Equalizer);
+		break;
 
-    case evSkinBrowser:
-        ShowSkinBrowser();
+	case evSkinBrowser:
+		ShowSkinBrowser();
 
-//        gtkClearList( SkinList );
-        if (gtkFillSkinList(sbMPlayerPrefixDir) &&
-            gtkFillSkinList(sbMPlayerDirInHome)) {
-            gtkSetDefaultToCList(SkinList, param);
-            gtk_clist_sort(GTK_CLIST(SkinList));
-            gtk_widget_show(SkinBrowser);
-            gtkSetLayer(SkinBrowser);
-        } else {
-            gtk_widget_destroy(SkinBrowser);
-            gtkMessageBox(GTK_MB_ERROR, "Skin dirs not found ... Please install skins.");
-        }
+	//        gtkClearList( SkinList );
+		if (gtkFillSkinList(sbMPlayerPrefixDir) &&
+			gtkFillSkinList(sbMPlayerDirInHome))
+		{
+			gtkSetDefaultToCList(SkinList, param);
+			gtk_clist_sort(GTK_CLIST(SkinList));
+			gtk_widget_show(SkinBrowser);
+			gtkSetLayer(SkinBrowser);
+		}
+		else
+		{
+			gtk_widget_destroy(SkinBrowser);
+			gtkMessageBox(GTK_MB_ERROR, "Skin dirs not found ... Please install skins.");
+		}
 
-        break;
+		break;
 
-    case evPreferences:
-        ShowPreferences();
-        break;
+	case evPreferences:
+		ShowPreferences();
+		break;
 
-    case evPlaylist:
-        ShowPlayList();
-        gtkSetLayer(PlayList);
-        break;
+	case evPlaylist:
+		ShowPlayList();
+		gtkSetLayer(PlayList);
+		break;
 
-    case evLoad:
-        ShowFileSelect(fsVideoSelector, 0);
-        gtkSetLayer(fsFileSelect);
-        break;
+	case evLoad:
+		ShowFileSelect(fsVideoSelector, 0);
+		gtkSetLayer(fsFileSelect);
+		break;
 
-    case evLoadSubtitle:
-        ShowFileSelect(fsSubtitleSelector, 0);
-        gtkSetLayer(fsFileSelect);
-        break;
+	case evLoadSubtitle:
+		ShowFileSelect(fsSubtitleSelector, 0);
+		gtkSetLayer(fsFileSelect);
+		break;
 
-    case evLoadAudioFile:
-        ShowFileSelect(fsAudioSelector, 0);
-        gtkSetLayer(fsFileSelect);
-        break;
+	case evLoadAudioFile:
+		ShowFileSelect(fsAudioSelector, 0);
+		gtkSetLayer(fsFileSelect);
+		break;
 
-    case evAbout:
-        ShowAboutBox();
-        gtkSetLayer(About);
-        break;
+	case evAbout:
+		ShowAboutBox();
+		gtkSetLayer(About);
+		break;
 
-    case ivShowPopUpMenu:
-        gtkPopupMenu      = evNone;
-        gtkPopupMenuParam = 0;
+	case ivShowPopUpMenu:
+		gtkPopupMenu = evNone;
+		gtkPopupMenuParam = 0;
 
-        if (PopUpMenu) {
-            gtk_widget_hide(PopUpMenu);
-            gtk_widget_destroy(PopUpMenu);
-        }
+		if (PopUpMenu)
+		{
+			gtk_widget_hide(PopUpMenu);
+			gtk_widget_destroy(PopUpMenu);
+		}
 
-        PopUpMenu = create_PopUpMenu();
-        gtk_menu_popup(GTK_MENU(PopUpMenu), NULL, NULL, NULL, NULL, 0, 0);
-        break;
+		PopUpMenu = create_PopUpMenu();
+		gtk_menu_popup(GTK_MENU(PopUpMenu), NULL, NULL, NULL, NULL, 0, 0);
+		break;
 
-    case ivHidePopUpMenu:
+	case ivHidePopUpMenu:
 
-        if (PopUpMenu) {
-            gtk_widget_hide(PopUpMenu);
-            gtk_widget_destroy(PopUpMenu);
-            PopUpMenu = NULL;
-        }
+		if (PopUpMenu)
+		{
+			gtk_widget_hide(PopUpMenu);
+			gtk_widget_destroy(PopUpMenu);
+			PopUpMenu = NULL;
+		}
 
-        break;
+		break;
 
-    case evLoadURL:
-        ShowURLDialogBox();
-        gtkSetLayer(URL);
-        break;
-    }
+	case evLoadURL:
+		ShowURLDialogBox();
+		gtkSetLayer(URL);
+		break;
+	}
 }

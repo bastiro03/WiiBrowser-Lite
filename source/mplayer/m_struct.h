@@ -23,26 +23,25 @@
 /// \ingroup Options
 /// An API to manipulate structs using m_option.
 ///@{
-
 /// \file
 
 struct m_option;
 
 /// Struct definition
-typedef struct m_struct_st {
-  /// For error messages and debugging
-  const char* name;
-  /// size of the whole struct
-  unsigned int size;
-  /// Pointer to a struct filled with the default settings
-  const void* defaults;
-  /// Field list.
-  /** The p field of the \ref m_option struct must contain the offset
-   *  of the member in the struct (use M_ST_OFF macro for this).
-   */
-  const struct m_option* fields;
+typedef struct m_struct_st
+{
+	/// For error messages and debugging
+	const char* name;
+	/// size of the whole struct
+	unsigned int size;
+	/// Pointer to a struct filled with the default settings
+	const void* defaults;
+	/// Field list.
+	/** The p field of the \ref m_option struct must contain the offset
+	 *  of the member in the struct (use M_ST_OFF macro for this).
+	 */
+	const struct m_option* fields;
 } m_struct_t;
-
 
 // From glib.h (modified ;-)
 
@@ -70,8 +69,6 @@ typedef struct m_struct_st {
  */
 #define M_ST_MB(member_type, struct_p, struct_offset)   \
     (*(member_type*) M_ST_MB_P ((struct_p), (struct_offset)))
-
-
 
 /// Allocate the struct and set it to the defaults.
 /** \param st Struct definition.
@@ -119,7 +116,7 @@ m_struct_free(const m_struct_t* st, void* obj);
  *  \return The \ref m_option struct describing the field or NULL if not found.
  */
 const struct m_option*
-m_struct_get_field(const m_struct_t* st,const char* f);
+m_struct_get_field(const m_struct_t* st, const char* f);
 
 ///@}
 

@@ -26,54 +26,56 @@
 #define CDG_COMMAND        0x09
 #define CDG_MASK           0x3F
 
-static int read_header(AVFormatContext *s)
+static int read_header(AVFormatContext* s)
 {
-    AVStream *vst;
-    int ret;
+	AVStream* vst;
+	int ret;
 
-    vst = avformat_new_stream(s, NULL);
-    if (!vst)
-        return AVERROR(ENOMEM);
+	vst = avformat_new_stream(s, NULL);
+	if (!vst)
+		return AVERROR(ENOMEM);
 
-    vst->codec->codec_type = AVMEDIA_TYPE_VIDEO;
-    vst->codec->codec_id   = CODEC_ID_CDGRAPHICS;
+	vst->codec->codec_type = AVMEDIA_TYPE_VIDEO;
+	vst->codec->codec_id = CODEC_ID_CDGRAPHICS;
 
-    /// 75 sectors/sec * 4 packets/sector = 300 packets/sec
-    avpriv_set_pts_info(vst, 32, 1, 300);
+	/// 75 sectors/sec * 4 packets/sector = 300 packets/sec
+	avpriv_set_pts_info(vst, 32, 1, 300);
 
-    ret = avio_size(s->pb);
-    if (ret > 0)
-        vst->duration = (ret * vst->time_base.den) / (CDG_PACKET_SIZE * 300);
+	ret = avio_size(s->pb);
+	if (ret > 0)
+		vst->duration = (ret * vst->time_base.den) / (CDG_PACKET_SIZE * 300);
 
-    return 0;
+	return 0;
 }
 
-static int read_packet(AVFormatContext *s, AVPacket *pkt)
+static int read_packet(AVFormatContext* s, AVPacket* pkt)
 {
-    int ret;
+	int ret;
 
-    while (1) {
-        ret = av_get_packet(s->pb, pkt, CDG_PACKET_SIZE);
-        if (ret < 1 || (pkt->data[0] & CDG_MASK) == CDG_COMMAND)
-            break;
-        av_free_packet(pkt);
-    }
+	while (1)
+	{
+		ret = av_get_packet(s->pb, pkt, CDG_PACKET_SIZE);
+		if (ret < 1 || (pkt->data[0] & CDG_MASK) == CDG_COMMAND)
+			break;
+		av_free_packet(pkt);
+	}
 
-    pkt->stream_index = 0;
-    pkt->dts=
-    pkt->pts= pkt->pos / CDG_PACKET_SIZE;
+	pkt->stream_index = 0;
+	pkt->dts =
+		pkt->pts = pkt->pos / CDG_PACKET_SIZE;
 
-    if(ret>5 && (pkt->data[0]&0x3F) == 9 && (pkt->data[1]&0x3F)==1 && !(pkt->data[2+2+1] & 0x0F)){
-        pkt->flags = AV_PKT_FLAG_KEY;
-    }
-    return ret;
+	if (ret > 5 && (pkt->data[0] & 0x3F) == 9 && (pkt->data[1] & 0x3F) == 1 && !(pkt->data[2 + 2 + 1] & 0x0F))
+	{
+		pkt->flags = AV_PKT_FLAG_KEY;
+	}
+	return ret;
 }
 
 AVInputFormat ff_cdg_demuxer = {
-    .name           = "cdg",
-    .long_name      = NULL_IF_CONFIG_SMALL("CD Graphics Format"),
-    .read_header    = read_header,
-    .read_packet    = read_packet,
-    .flags          = AVFMT_GENERIC_INDEX,
-    .extensions     = "cdg",
+	.name = "cdg",
+	.long_name = NULL_IF_CONFIG_SMALL("CD Graphics Format"),
+	.read_header = read_header,
+	.read_packet = read_packet,
+	.flags = AVFMT_GENERIC_INDEX,
+	.extensions = "cdg",
 };

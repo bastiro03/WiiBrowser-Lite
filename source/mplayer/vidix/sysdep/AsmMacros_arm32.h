@@ -62,42 +62,42 @@
 #ifndef MPLAYER_ASMMACROS_ARM32_H
 #define MPLAYER_ASMMACROS_ARM32_H
 
-unsigned int IOPortBase;  /* Memory mapped I/O port area */
+unsigned int IOPortBase; /* Memory mapped I/O port area */
 
 static inline void outb(short port, char val)
 {
-	 if ((unsigned short)port >= 0x400) return;
-	*(volatile unsigned char*)(((unsigned short)(port))+IOPortBase) = val;
+	if (static_cast<unsigned short>(port) >= 0x400) return;
+	*(volatile unsigned char*)(static_cast<unsigned short>(port) + IOPortBase) = val;
 }
 
 static inline void outw(short port, short val)
 {
-	 if ((unsigned short)port >= 0x400) return;
-	*(volatile unsigned short*)(((unsigned short)(port))+IOPortBase) = val;
+	if (static_cast<unsigned short>(port) >= 0x400) return;
+	*(volatile unsigned short*)(static_cast<unsigned short>(port) + IOPortBase) = val;
 }
 
 static inline void outl(short port, int val)
 {
-	 if ((unsigned short)port >= 0x400) return;
-	*(volatile unsigned long*)(((unsigned short)(port))+IOPortBase) = val;
+	if (static_cast<unsigned short>(port) >= 0x400) return;
+	*(volatile unsigned long*)(static_cast<unsigned short>(port) + IOPortBase) = val;
 }
 
 static inline unsigned int inb(short port)
 {
-	if ((unsigned short)port >= 0x400) return (unsigned int)-1;
-	return *(volatile unsigned char*)(((unsigned short)(port))+IOPortBase);
+	if (static_cast<unsigned short>(port) >= 0x400) return static_cast<unsigned int>(-1);
+	return *(volatile unsigned char*)(static_cast<unsigned short>(port) + IOPortBase);
 }
 
 static inline unsigned int inw(short port)
 {
-	if ((unsigned short)port >= 0x400) return (unsigned int)-1;
-	return *(volatile unsigned short*)(((unsigned short)(port))+IOPortBase);
+	if (static_cast<unsigned short>(port) >= 0x400) return static_cast<unsigned int>(-1);
+	return *(volatile unsigned short*)(static_cast<unsigned short>(port) + IOPortBase);
 }
 
 static inline unsigned int inl(short port)
 {
-	if ((unsigned short)port >= 0x400) return (unsigned int)-1;
-	return *(volatile unsigned long*)(((unsigned short)(port))+IOPortBase);
+	if (static_cast<unsigned short>(port) >= 0x400) return static_cast<unsigned int>(-1);
+	return *(volatile unsigned long*)(static_cast<unsigned short>(port) + IOPortBase);
 }
 
 #define intr_disable()

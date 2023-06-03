@@ -29,20 +29,20 @@ typedef int FriBidiStrIndex;
 #endif
 #include "ass_render.h"
 
-void ass_shaper_info(ASS_Library *lib);
-ASS_Shaper *ass_shaper_new(size_t prealloc);
-void ass_shaper_free(ASS_Shaper *shaper);
-void ass_shaper_set_kerning(ASS_Shaper *shaper, int kern);
-void ass_shaper_find_runs(ASS_Shaper *shaper, ASS_Renderer *render_priv,
-                          GlyphInfo *glyphs, size_t len);
-void ass_shaper_set_base_direction(ASS_Shaper *shaper, FriBidiParType dir);
-void ass_shaper_set_language(ASS_Shaper *shaper, const char *code);
-void ass_shaper_set_level(ASS_Shaper *shaper, ASS_ShapingLevel level);
-void ass_shaper_shape(ASS_Shaper *shaper, TextInfo *text_info);
-void ass_shaper_cleanup(ASS_Shaper *shaper, TextInfo *text_info);
-FriBidiStrIndex *ass_shaper_reorder(ASS_Shaper *shaper, TextInfo *text_info);
+void ass_shaper_info(ASS_Library* lib);
+ASS_Shaper* ass_shaper_new(size_t prealloc);
+void ass_shaper_free(ASS_Shaper* shaper);
+void ass_shaper_set_kerning(ASS_Shaper* shaper, int kern);
+void ass_shaper_find_runs(ASS_Shaper* shaper, ASS_Renderer* render_priv,
+                          GlyphInfo* glyphs, size_t len);
+void ass_shaper_set_base_direction(ASS_Shaper* shaper, FriBidiParType dir);
+void ass_shaper_set_language(ASS_Shaper* shaper, const char* code);
+void ass_shaper_set_level(ASS_Shaper* shaper, ASS_ShapingLevel level);
+void ass_shaper_shape(ASS_Shaper* shaper, TextInfo* text_info);
+void ass_shaper_cleanup(ASS_Shaper* shaper, TextInfo* text_info);
+FriBidiStrIndex* ass_shaper_reorder(ASS_Shaper* shaper, TextInfo* text_info);
 FriBidiParType resolve_base_direction(int font_encoding);
 
-void ass_shaper_font_data_free(ASS_ShaperFontData *priv);
+void ass_shaper_font_data_free(ASS_ShaperFontData* priv);
 
 #endif

@@ -21,11 +21,11 @@
    low level assembler interface wrapper
 
 DEFUN(put_pixels_clamped,mL1,
-        (DCTELEM *block, uint8_t *dest, int line_size)):
+		(DCTELEM *block, uint8_t *dest, int line_size)):
 
-      body
+	  body
 
-      rts;
+	  rts;
 */
 
 #ifndef AVCODEC_BFIN_CONFIG_BFIN_H

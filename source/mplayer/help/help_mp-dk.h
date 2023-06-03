@@ -3,15 +3,14 @@
 //                 Dan Christiansen <danchr@daimi.au.dk>
 // Sync'ed with help_mp-en.h 1.105
 
-
 // ========================= MPlayer help ===========================
 
-static const char help_text[]=
-"Benyt:   mplayer [indstillinger] [URL|sti/]filnavn\n"
-"\n"
-"Basale indstillinger (se manualen for en komplet liste):\n"
-" -vo <drv[:enhed]> vælg videodriver og enhed (detaljer, se '-vo help')\n"
-" -ao <drv[:enhed]> vælg lyddriver og enhed (detaljer, se '-ao help')\n"
+static const char help_text[] =
+	"Benyt:   mplayer [indstillinger] [URL|sti/]filnavn\n"
+	"\n"
+	"Basale indstillinger (se manualen for en komplet liste):\n"
+	" -vo <drv[:enhed]> vælg videodriver og enhed (detaljer, se '-vo help')\n"
+	" -ao <drv[:enhed]> vælg lyddriver og enhed (detaljer, se '-ao help')\n"
 #ifdef CONFIG_VCD
 " vcd://<spor>  afspil et VCD (Video CD) spor fra et drev i stedet for en fil\n"
 #endif
@@ -19,32 +18,32 @@ static const char help_text[]=
 " dvd://<titelnr> afspil DVD titel fra et drev i stedet for en fil\n"
 " -alang/-slang   vælg sprog til lyd og undertekster (vha. landekode på 2 tegn)\n"
 #endif
-" -ss <tidspos>   søg til en given position (sekund eller hh:mm:ss)\n"
-" -nosound        slå lyd fra\n"
-" -fs             afspil i fuldskærm (el. -vm, -zoom, se manualen)\n"
-" -x <x> -y <y>   skærmopløsning til -vm eller -zoom)\n"
-" -sub <fil>      angiv fil med undertekster (se også -subfps, -subdelay)\n"
-" -playlist <fil> angiv afspilningsliste\n"
-" -vid x -aid y   vælg filmspor (x) og lydspor (y)\n"
-" -fps x -srate y sæt billedfrekvensen til x billeder pr. sekund og lydfrekvensen til y Hz\n"
-" -pp <kvalitet>  benyt efterbehandlingsfiltre (detaljer, se manualen)\n"
-" -framedrop      spring enkelte billeder over hvis nødvendigt (til langsomme maskiner)\n"
-"\n"
-"Basale taster: (se manualen for en fuldstændig liste, check også input.conf)\n"
-" <-  eller  ->   søg 10 sekunder frem eller tilbage\n"
-" up eller down   søg 1 minut frem eller tilbage \n"
-" pgup el. pgdown søg 10 minutter frem eller tilbage\n"
-" < eller >       søg frem eller tilbage i afspilningslisten\n"
-" p eller SPACE   pause filmen (starter igen ved tryk på en vilkårlig tast)\n"
-" q eller ESC     stop afspilning og afslut program\n"
-" + eller -       juster lydens forsinkelse med +/- 0.1 sekundt\n"
-" o               vælg OSD type:  ingen / søgebjælke / søgebjælke+tid\n"
-" * eller /       juster lydstyrken op og ned\n"
-" z eller x       tilpas underteksters forsinkelse med +/- 0.1 sekund\n"
-" r eller t       tilpas underteksters position op/ned, se også -vf expand\n"
-"\n"
-" * * * SE MANUALEN FOR DETALJER, FLERE (AVANCEREDE) MULIGHEDER OG TASTER * * *\n"
-"\n";
+	" -ss <tidspos>   søg til en given position (sekund eller hh:mm:ss)\n"
+	" -nosound        slå lyd fra\n"
+	" -fs             afspil i fuldskærm (el. -vm, -zoom, se manualen)\n"
+	" -x <x> -y <y>   skærmopløsning til -vm eller -zoom)\n"
+	" -sub <fil>      angiv fil med undertekster (se også -subfps, -subdelay)\n"
+	" -playlist <fil> angiv afspilningsliste\n"
+	" -vid x -aid y   vælg filmspor (x) og lydspor (y)\n"
+	" -fps x -srate y sæt billedfrekvensen til x billeder pr. sekund og lydfrekvensen til y Hz\n"
+	" -pp <kvalitet>  benyt efterbehandlingsfiltre (detaljer, se manualen)\n"
+	" -framedrop      spring enkelte billeder over hvis nødvendigt (til langsomme maskiner)\n"
+	"\n"
+	"Basale taster: (se manualen for en fuldstændig liste, check også input.conf)\n"
+	" <-  eller  ->   søg 10 sekunder frem eller tilbage\n"
+	" up eller down   søg 1 minut frem eller tilbage \n"
+	" pgup el. pgdown søg 10 minutter frem eller tilbage\n"
+	" < eller >       søg frem eller tilbage i afspilningslisten\n"
+	" p eller SPACE   pause filmen (starter igen ved tryk på en vilkårlig tast)\n"
+	" q eller ESC     stop afspilning og afslut program\n"
+	" + eller -       juster lydens forsinkelse med +/- 0.1 sekundt\n"
+	" o               vælg OSD type:  ingen / søgebjælke / søgebjælke+tid\n"
+	" * eller /       juster lydstyrken op og ned\n"
+	" z eller x       tilpas underteksters forsinkelse med +/- 0.1 sekund\n"
+	" r eller t       tilpas underteksters position op/ned, se også -vf expand\n"
+	"\n"
+	" * * * SE MANUALEN FOR DETALJER, FLERE (AVANCEREDE) MULIGHEDER OG TASTER * * *\n"
+	"\n";
 
 // ========================= MPlayer messages ===========================
 
@@ -135,7 +134,6 @@ static const char help_text[]=
 "  venligst DOCS/HTML/en/bugreports.html og følg instruktionerne der. Vi kan ikke \n"\
 "  og vil ikke hjælpe medmindre du følger instruktionerne når du rapporterer \n"\
 "  en mulig fejl.\n"
-
 
 // mencoder.c:
 
@@ -266,7 +264,6 @@ static const char help_text[]=
 #define MSGTR_OpeningSubtitlesDemuxerFailed "Kunne ikke åbne undertekstsdemuxer: %s\n"
 #define MSGTR_TVInputNotSeekable "TV input er ikke søgbart! (Kunne være du skulle skifte kanal ;)\n"
 #define MSGTR_ClipInfo "Klip info: \n"
-
 
 // dec_video.c & dec_audio.c:
 #define MSGTR_CantOpenCodec "kunne ikke åbne codec\n"

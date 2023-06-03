@@ -33,10 +33,10 @@
  * @{
  */
 
-
 /* error handling */
 #if EDOM > 0
 #define AVERROR(e) (-(e))   ///< Returns a negative error code from a POSIX error code, to return from library functions.
+
 #define AVUNERROR(e) (-(e)) ///< Returns a POSIX error code from a library function error return value.
 #else
 /* Some platforms have E* and errno already negated. */
@@ -53,6 +53,7 @@
 #define AVERROR_ENCODER_NOT_FOUND  FFERRTAG(0xF8,'E','N','C') ///< Encoder not found
 #define AVERROR_EOF                FFERRTAG( 'E','O','F',' ') ///< End of file
 #define AVERROR_EXIT               FFERRTAG( 'E','X','I','T') ///< Immediate exit was requested; the called function should not be restarted
+
 #define AVERROR_FILTER_NOT_FOUND   FFERRTAG(0xF8,'F','I','L') ///< Filter not found
 #define AVERROR_INVALIDDATA        FFERRTAG( 'I','N','D','A') ///< Invalid data found when processing input
 #define AVERROR_MUXER_NOT_FOUND    FFERRTAG(0xF8,'M','U','X') ///< Muxer not found
@@ -80,7 +81,7 @@
  * @return 0 on success, a negative value if a description for errnum
  * cannot be found
  */
-int av_strerror(int errnum, char *errbuf, size_t errbuf_size);
+int av_strerror(int errnum, char* errbuf, size_t errbuf_size);
 
 /**
  * @}

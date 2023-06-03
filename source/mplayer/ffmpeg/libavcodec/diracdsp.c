@@ -28,26 +28,27 @@
       +3*((src)[-2*stride] + (src)[3*stride])                   \
       -1*((src)[-3*stride] + (src)[4*stride]) + 16) >> 5)
 
-static void dirac_hpel_filter(uint8_t *dsth, uint8_t *dstv, uint8_t *dstc, const uint8_t *src,
+static void dirac_hpel_filter(uint8_t* dsth, uint8_t* dstv, uint8_t* dstc, const uint8_t* src,
                               int stride, int width, int height)
 {
-    int x, y;
+	int x, y;
 
-    for (y = 0; y < height; y++) {
-        for (x = -3; x < width+5; x++)
-            dstv[x] = av_clip_uint8(FILTER(src+x, stride));
+	for (y = 0; y < height; y++)
+	{
+		for (x = -3; x < width + 5; x++)
+			dstv[x] = av_clip_uint8(FILTER(src + x, stride));
 
-        for (x = 0; x < width; x++)
-            dstc[x] = av_clip_uint8(FILTER(dstv+x, 1));
+		for (x = 0; x < width; x++)
+			dstc[x] = av_clip_uint8(FILTER(dstv + x, 1));
 
-        for (x = 0; x < width; x++)
-            dsth[x] = av_clip_uint8(FILTER(src+x, 1));
+		for (x = 0; x < width; x++)
+			dsth[x] = av_clip_uint8(FILTER(src + x, 1));
 
-        src  += stride;
-        dsth += stride;
-        dstv += stride;
-        dstc += stride;
-    }
+		src += stride;
+		dsth += stride;
+		dstv += stride;
+		dstc += stride;
+	}
 }
 
 #define PIXOP_BILINEAR(PFX, OP, WIDTH)                                  \
@@ -135,36 +136,41 @@ ADD_OBMC(8)
 ADD_OBMC(16)
 ADD_OBMC(32)
 
-static void put_signed_rect_clamped_c(uint8_t *dst, int dst_stride, const int16_t *src, int src_stride, int width, int height)
+static void put_signed_rect_clamped_c(uint8_t* dst, int dst_stride, const int16_t* src, int src_stride, int width,
+                                      int height)
 {
-    int x, y;
-    for (y = 0; y < height; y++) {
-        for (x = 0; x < width; x+=4) {
-            dst[x  ] = av_clip_uint8(src[x  ] + 128);
-            dst[x+1] = av_clip_uint8(src[x+1] + 128);
-            dst[x+2] = av_clip_uint8(src[x+2] + 128);
-            dst[x+3] = av_clip_uint8(src[x+3] + 128);
-        }
-        dst += dst_stride;
-        src += src_stride;
-    }
+	int x, y;
+	for (y = 0; y < height; y++)
+	{
+		for (x = 0; x < width; x += 4)
+		{
+			dst[x] = av_clip_uint8(src[x] + 128);
+			dst[x + 1] = av_clip_uint8(src[x + 1] + 128);
+			dst[x + 2] = av_clip_uint8(src[x + 2] + 128);
+			dst[x + 3] = av_clip_uint8(src[x + 3] + 128);
+		}
+		dst += dst_stride;
+		src += src_stride;
+	}
 }
 
-static void add_rect_clamped_c(uint8_t *dst, const uint16_t *src, int stride,
-                               const int16_t *idwt, int idwt_stride,
+static void add_rect_clamped_c(uint8_t* dst, const uint16_t* src, int stride,
+                               const int16_t* idwt, int idwt_stride,
                                int width, int height)
 {
-    int x, y;
+	int x, y;
 
-    for (y = 0; y < height; y++) {
-        for (x = 0; x < width; x+=2) {
-            dst[x  ] = av_clip_uint8(((src[x  ]+32)>>6) + idwt[x  ]);
-            dst[x+1] = av_clip_uint8(((src[x+1]+32)>>6) + idwt[x+1]);
-        }
-        dst += stride;
-        src += stride;
-        idwt += idwt_stride;
-    }
+	for (y = 0; y < height; y++)
+	{
+		for (x = 0; x < width; x += 2)
+		{
+			dst[x] = av_clip_uint8(((src[x] + 32) >> 6) + idwt[x]);
+			dst[x + 1] = av_clip_uint8(((src[x + 1] + 32) >> 6) + idwt[x + 1]);
+		}
+		dst += stride;
+		src += stride;
+		idwt += idwt_stride;
+	}
 }
 
 #define PIXFUNC(PFX, WIDTH)                                             \
@@ -173,29 +179,29 @@ static void add_rect_clamped_c(uint8_t *dst, const uint16_t *src, int stride,
     c->PFX ## _dirac_pixels_tab[WIDTH>>4][2] = ff_ ## PFX ## _dirac_pixels ## WIDTH ## _l4_c; \
     c->PFX ## _dirac_pixels_tab[WIDTH>>4][3] = ff_ ## PFX ## _dirac_pixels ## WIDTH ## _bilinear_c
 
-void ff_diracdsp_init(DiracDSPContext *c)
+void ff_diracdsp_init(DiracDSPContext* c)
 {
-    c->dirac_hpel_filter = dirac_hpel_filter;
-    c->add_rect_clamped = add_rect_clamped_c;
-    c->put_signed_rect_clamped = put_signed_rect_clamped_c;
+	c->dirac_hpel_filter = dirac_hpel_filter;
+	c->add_rect_clamped = add_rect_clamped_c;
+	c->put_signed_rect_clamped = put_signed_rect_clamped_c;
 
-    c->add_dirac_obmc[0] = add_obmc8_c;
-    c->add_dirac_obmc[1] = add_obmc16_c;
-    c->add_dirac_obmc[2] = add_obmc32_c;
+	c->add_dirac_obmc[0] = add_obmc8_c;
+	c->add_dirac_obmc[1] = add_obmc16_c;
+	c->add_dirac_obmc[2] = add_obmc32_c;
 
-    c->weight_dirac_pixels_tab[0] = weight_dirac_pixels8_c;
-    c->weight_dirac_pixels_tab[1] = weight_dirac_pixels16_c;
-    c->weight_dirac_pixels_tab[2] = weight_dirac_pixels32_c;
-    c->biweight_dirac_pixels_tab[0] = biweight_dirac_pixels8_c;
-    c->biweight_dirac_pixels_tab[1] = biweight_dirac_pixels16_c;
-    c->biweight_dirac_pixels_tab[2] = biweight_dirac_pixels32_c;
+	c->weight_dirac_pixels_tab[0] = weight_dirac_pixels8_c;
+	c->weight_dirac_pixels_tab[1] = weight_dirac_pixels16_c;
+	c->weight_dirac_pixels_tab[2] = weight_dirac_pixels32_c;
+	c->biweight_dirac_pixels_tab[0] = biweight_dirac_pixels8_c;
+	c->biweight_dirac_pixels_tab[1] = biweight_dirac_pixels16_c;
+	c->biweight_dirac_pixels_tab[2] = biweight_dirac_pixels32_c;
 
-    PIXFUNC(put, 8);
-    PIXFUNC(put, 16);
-    PIXFUNC(put, 32);
-    PIXFUNC(avg, 8);
-    PIXFUNC(avg, 16);
-    PIXFUNC(avg, 32);
+	PIXFUNC(put, 8);
+	PIXFUNC(put, 16);
+	PIXFUNC(put, 32);
+	PIXFUNC(avg, 8);
+	PIXFUNC(avg, 16);
+	PIXFUNC(avg, 32);
 
-    if (HAVE_MMX && HAVE_YASM) ff_diracdsp_init_mmx(c);
+	if (HAVE_MMX && HAVE_YASM) ff_diracdsp_init_mmx(c);
 }

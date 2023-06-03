@@ -42,7 +42,6 @@
     }                                                                   \
 } while (0)
 
-
 /**
  * assert() equivalent, that does not lie in speed critical code.
  * These asserts() thus can be enabled without fearing speedloss.
@@ -52,7 +51,6 @@
 #else
 #define av_assert1(cond) ((void)0)
 #endif
-
 
 /**
  * assert() equivalent, that does lie in speed critical code.

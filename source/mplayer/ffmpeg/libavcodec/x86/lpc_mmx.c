@@ -23,22 +23,27 @@
 #include "libavutil/cpu.h"
 #include "libavcodec/lpc.h"
 
-static void lpc_apply_welch_window_sse2(const int32_t *data, int len,
-                                        double *w_data)
+static void lpc_apply_welch_window_sse2(const int32_t* data, int len,
+                                        double* w_data)
 {
-    double c = 2.0 / (len-1.0);
-    int n2 = len>>1;
-    x86_reg i = -n2*sizeof(int32_t);
-    x86_reg j =  n2*sizeof(int32_t);
-    __asm__ volatile(
-        "movsd   %4,     %%xmm7                \n\t"
-        "movapd  "MANGLE(ff_pd_1)", %%xmm6     \n\t"
-        "movapd  "MANGLE(ff_pd_2)", %%xmm5     \n\t"
-        "movlhps %%xmm7, %%xmm7                \n\t"
-        "subpd   %%xmm5, %%xmm7                \n\t"
-        "addsd   %%xmm6, %%xmm7                \n\t"
-        "test    $1,     %5                    \n\t"
-        "jz      2f                            \n\t"
+	double c = 2.0 / (len - 1.0);
+	int n2 = len >> 1;
+	x86_reg i = -n2 * sizeof(int32_t);
+	x86_reg j = n2 * sizeof(int32_t);
+	volatile __asm__ (
+		
+	"movsd   %4,     %%xmm7                \n\t"
+		"movapd  "
+	MANGLE(ff_pd_1)
+	", %%xmm6     \n\t"
+		"movapd  "
+	MANGLE(ff_pd_2)
+	", %%xmm5     \n\t"
+		"movlhps %%xmm7, %%xmm7                \n\t"
+		"subpd   %%xmm5, %%xmm7                \n\t"
+		"addsd   %%xmm6, %%xmm7                \n\t"
+		"test    $1,     %5                    \n\t"
+		"jz      2f                            \n\t"
 #define WELCH(MOVPD, offset)\
         "1:                                    \n\t"\
         "movapd   %%xmm7,  %%xmm1              \n\t"\
@@ -55,93 +60,118 @@ static void lpc_apply_welch_window_sse2(const int32_t *data, int len,
         "subpd    %%xmm5,  %%xmm7              \n\t"\
         "sub      $8,      %1                  \n\t"\
         "add      $8,      %0                  \n\t"\
-        "jl 1b                                 \n\t"\
-
-        WELCH("movupd", -1)
-        "jmp 3f                                \n\t"
-        "2:                                    \n\t"
-        WELCH("movapd", -2)
-        "3:                                    \n\t"
-        :"+&r"(i), "+&r"(j)
-        :"r"(w_data+n2), "r"(data+n2), "m"(c), "r"(len)
-         XMM_CLOBBERS_ONLY("%xmm0", "%xmm1", "%xmm2", "%xmm3",
-                                    "%xmm5", "%xmm6", "%xmm7")
-    );
+        "jl 1b                                 \n\t"
+		WELCH("movupd", -1)
+		"jmp 3f                                \n\t"
+		"2:                                    \n\t"
+		WELCH("movapd", -2)
+		"3:                                    \n\t"
+	:
+	"+&r"(i), "+&r"(j)
+	:
+	"r"(w_data + n2), "r"(data + n2), "m"(c), "r"(len)
+	XMM_CLOBBERS_ONLY("%xmm0", "%xmm1", "%xmm2", "%xmm3",
+	                  "%xmm5", "%xmm6", "%xmm7")
+	)
 #undef WELCH
 }
 
-static void lpc_compute_autocorr_sse2(const double *data, int len, int lag,
-                                      double *autoc)
+static void lpc_compute_autocorr_sse2(const double* data, int len, int lag,
+                                      double* autoc)
 {
-    int j;
+	int j;
 
-    if((x86_reg)data & 15)
-        data++;
+	if ((x86_reg)data & 15)
+		data++;
 
-    for(j=0; j<lag; j+=2){
-        x86_reg i = -len*sizeof(double);
-        if(j == lag-2) {
-            __asm__ volatile(
-                "movsd    "MANGLE(ff_pd_1)", %%xmm0 \n\t"
-                "movsd    "MANGLE(ff_pd_1)", %%xmm1 \n\t"
-                "movsd    "MANGLE(ff_pd_1)", %%xmm2 \n\t"
-                "1:                                 \n\t"
-                "movapd   (%2,%0), %%xmm3           \n\t"
-                "movupd -8(%3,%0), %%xmm4           \n\t"
-                "movapd   (%3,%0), %%xmm5           \n\t"
-                "mulpd     %%xmm3, %%xmm4           \n\t"
-                "mulpd     %%xmm3, %%xmm5           \n\t"
-                "mulpd -16(%3,%0), %%xmm3           \n\t"
-                "addpd     %%xmm4, %%xmm1           \n\t"
-                "addpd     %%xmm5, %%xmm0           \n\t"
-                "addpd     %%xmm3, %%xmm2           \n\t"
-                "add       $16,    %0               \n\t"
-                "jl 1b                              \n\t"
-                "movhlps   %%xmm0, %%xmm3           \n\t"
-                "movhlps   %%xmm1, %%xmm4           \n\t"
-                "movhlps   %%xmm2, %%xmm5           \n\t"
-                "addsd     %%xmm3, %%xmm0           \n\t"
-                "addsd     %%xmm4, %%xmm1           \n\t"
-                "addsd     %%xmm5, %%xmm2           \n\t"
-                "movsd     %%xmm0,   (%1)           \n\t"
-                "movsd     %%xmm1,  8(%1)           \n\t"
-                "movsd     %%xmm2, 16(%1)           \n\t"
-                :"+&r"(i)
-                :"r"(autoc+j), "r"(data+len), "r"(data+len-j)
-                :"memory"
-            );
-        } else {
-            __asm__ volatile(
-                "movsd    "MANGLE(ff_pd_1)", %%xmm0 \n\t"
-                "movsd    "MANGLE(ff_pd_1)", %%xmm1 \n\t"
-                "1:                                 \n\t"
-                "movapd   (%3,%0), %%xmm3           \n\t"
-                "movupd -8(%4,%0), %%xmm4           \n\t"
-                "mulpd     %%xmm3, %%xmm4           \n\t"
-                "mulpd    (%4,%0), %%xmm3           \n\t"
-                "addpd     %%xmm4, %%xmm1           \n\t"
-                "addpd     %%xmm3, %%xmm0           \n\t"
-                "add       $16,    %0               \n\t"
-                "jl 1b                              \n\t"
-                "movhlps   %%xmm0, %%xmm3           \n\t"
-                "movhlps   %%xmm1, %%xmm4           \n\t"
-                "addsd     %%xmm3, %%xmm0           \n\t"
-                "addsd     %%xmm4, %%xmm1           \n\t"
-                "movsd     %%xmm0, %1               \n\t"
-                "movsd     %%xmm1, %2               \n\t"
-                :"+&r"(i), "=m"(autoc[j]), "=m"(autoc[j+1])
-                :"r"(data+len), "r"(data+len-j)
-            );
-        }
-    }
+	for (j = 0; j < lag; j += 2)
+	{
+		x86_reg i = -len * sizeof(double);
+		if (j == lag - 2)
+		{
+			volatile __asm__ (
+				
+			"movsd    "
+			MANGLE(ff_pd_1)
+			", %%xmm0 \n\t"
+				"movsd    "
+			MANGLE(ff_pd_1)
+			", %%xmm1 \n\t"
+				"movsd    "
+			MANGLE(ff_pd_1)
+			", %%xmm2 \n\t"
+				"1:                                 \n\t"
+				"movapd   (%2,%0), %%xmm3           \n\t"
+				"movupd -8(%3,%0), %%xmm4           \n\t"
+				"movapd   (%3,%0), %%xmm5           \n\t"
+				"mulpd     %%xmm3, %%xmm4           \n\t"
+				"mulpd     %%xmm3, %%xmm5           \n\t"
+				"mulpd -16(%3,%0), %%xmm3           \n\t"
+				"addpd     %%xmm4, %%xmm1           \n\t"
+				"addpd     %%xmm5, %%xmm0           \n\t"
+				"addpd     %%xmm3, %%xmm2           \n\t"
+				"add       $16,    %0               \n\t"
+				"jl 1b                              \n\t"
+				"movhlps   %%xmm0, %%xmm3           \n\t"
+				"movhlps   %%xmm1, %%xmm4           \n\t"
+				"movhlps   %%xmm2, %%xmm5           \n\t"
+				"addsd     %%xmm3, %%xmm0           \n\t"
+				"addsd     %%xmm4, %%xmm1           \n\t"
+				"addsd     %%xmm5, %%xmm2           \n\t"
+				"movsd     %%xmm0,   (%1)           \n\t"
+				"movsd     %%xmm1,  8(%1)           \n\t"
+				"movsd     %%xmm2, 16(%1)           \n\t"
+			:
+			"+&r"(i)
+			:
+			"r"(autoc + j), "r"(data + len), "r"(data + len - j)
+			:
+			"memory"
+			)
+		}
+		else
+		{
+			volatile __asm__ (
+				
+			"movsd    "
+			MANGLE(ff_pd_1)
+			", %%xmm0 \n\t"
+				"movsd    "
+			MANGLE(ff_pd_1)
+			", %%xmm1 \n\t"
+				"1:                                 \n\t"
+				"movapd   (%3,%0), %%xmm3           \n\t"
+				"movupd -8(%4,%0), %%xmm4           \n\t"
+				"mulpd     %%xmm3, %%xmm4           \n\t"
+				"mulpd    (%4,%0), %%xmm3           \n\t"
+				"addpd     %%xmm4, %%xmm1           \n\t"
+				"addpd     %%xmm3, %%xmm0           \n\t"
+				"add       $16,    %0               \n\t"
+				"jl 1b                              \n\t"
+				"movhlps   %%xmm0, %%xmm3           \n\t"
+				"movhlps   %%xmm1, %%xmm4           \n\t"
+				"addsd     %%xmm3, %%xmm0           \n\t"
+				"addsd     %%xmm4, %%xmm1           \n\t"
+				"movsd     %%xmm0, %1               \n\t"
+				"movsd     %%xmm1, %2               \n\t"
+			:
+			"+&r"(i), "=m"(autoc[j]), "=m"(autoc[j + 1])
+			:
+			"r"(data + len), "r"(data + len - j)
+			)
+		}
+	}
 }
 
-av_cold void ff_lpc_init_x86(LPCContext *c)
-{
-    int mm_flags = av_get_cpu_flags();
+av_cold
 
-    if (mm_flags & (AV_CPU_FLAG_SSE2|AV_CPU_FLAG_SSE2SLOW)) {
-        c->lpc_apply_welch_window = lpc_apply_welch_window_sse2;
-        c->lpc_compute_autocorr   = lpc_compute_autocorr_sse2;
-    }
+void ff_lpc_init_x86(LPCContext* c)
+{
+	int mm_flags = av_get_cpu_flags();
+
+	if (mm_flags & (AV_CPU_FLAG_SSE2 | AV_CPU_FLAG_SSE2SLOW))
+	{
+		c->lpc_apply_welch_window = lpc_apply_welch_window_sse2;
+		c->lpc_compute_autocorr = lpc_compute_autocorr_sse2;
+	}
 }

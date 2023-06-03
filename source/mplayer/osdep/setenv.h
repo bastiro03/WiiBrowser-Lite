@@ -22,7 +22,7 @@
 #include "config.h"
 
 #if !HAVE_SETENV
-int setenv(const char *name, const char *val, int overwrite);
+int setenv(const char* name, const char* val, int overwrite);
 #endif
 
 #endif /* MPLAYER_SETENV_H */

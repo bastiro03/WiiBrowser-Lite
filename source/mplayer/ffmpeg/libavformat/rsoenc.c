@@ -25,89 +25,96 @@
 #include "riff.h"
 #include "rso.h"
 
-static int rso_write_header(AVFormatContext *s)
+static int rso_write_header(AVFormatContext* s)
 {
-    AVIOContext  *pb  = s->pb;
-    AVCodecContext *enc = s->streams[0]->codec;
+	AVIOContext* pb = s->pb;
+	AVCodecContext* enc = s->streams[0]->codec;
 
-    if (!enc->codec_tag)
-        return AVERROR_INVALIDDATA;
+	if (!enc->codec_tag)
+		return AVERROR_INVALIDDATA;
 
-    if (enc->channels != 1) {
-        av_log(s, AV_LOG_ERROR, "RSO only supports mono\n");
-        return AVERROR_INVALIDDATA;
-    }
+	if (enc->channels != 1)
+	{
+		av_log(s, AV_LOG_ERROR, "RSO only supports mono\n");
+		return AVERROR_INVALIDDATA;
+	}
 
-    if (!s->pb->seekable) {
-        av_log(s, AV_LOG_ERROR, "muxer does not support non seekable output\n");
-        return AVERROR_INVALIDDATA;
-    }
+	if (!s->pb->seekable)
+	{
+		av_log(s, AV_LOG_ERROR, "muxer does not support non seekable output\n");
+		return AVERROR_INVALIDDATA;
+	}
 
-    /* XXX: find legal sample rates (if any) */
-    if (enc->sample_rate >= 1u<<16) {
-        av_log(s, AV_LOG_ERROR, "Sample rate must be < 65536\n");
-        return AVERROR_INVALIDDATA;
-    }
+	/* XXX: find legal sample rates (if any) */
+	if (enc->sample_rate >= 1u << 16)
+	{
+		av_log(s, AV_LOG_ERROR, "Sample rate must be < 65536\n");
+		return AVERROR_INVALIDDATA;
+	}
 
-    if (enc->codec_id == CODEC_ID_ADPCM_IMA_WAV) {
-        av_log(s, AV_LOG_ERROR, "ADPCM in RSO not implemented\n");
-        return AVERROR_PATCHWELCOME;
-    }
+	if (enc->codec_id == CODEC_ID_ADPCM_IMA_WAV)
+	{
+		av_log(s, AV_LOG_ERROR, "ADPCM in RSO not implemented\n");
+		return AVERROR_PATCHWELCOME;
+	}
 
-    /* format header */
-    avio_wb16(pb, enc->codec_tag);   /* codec ID */
-    avio_wb16(pb, 0);                /* data size, will be written at EOF */
-    avio_wb16(pb, enc->sample_rate);
-    avio_wb16(pb, 0x0000);           /* play mode ? (0x0000 = don't loop) */
+	/* format header */
+	avio_wb16(pb, enc->codec_tag); /* codec ID */
+	avio_wb16(pb, 0); /* data size, will be written at EOF */
+	avio_wb16(pb, enc->sample_rate);
+	avio_wb16(pb, 0x0000); /* play mode ? (0x0000 = don't loop) */
 
-    avio_flush(pb);
+	avio_flush(pb);
 
-    return 0;
+	return 0;
 }
 
-static int rso_write_packet(AVFormatContext *s, AVPacket *pkt)
+static int rso_write_packet(AVFormatContext* s, AVPacket* pkt)
 {
-    avio_write(s->pb, pkt->data, pkt->size);
-    return 0;
+	avio_write(s->pb, pkt->data, pkt->size);
+	return 0;
 }
 
-static int rso_write_trailer(AVFormatContext *s)
+static int rso_write_trailer(AVFormatContext* s)
 {
-    AVIOContext *pb = s->pb;
-    int64_t file_size;
-    uint16_t coded_file_size;
+	AVIOContext* pb = s->pb;
+	int64_t file_size;
+	uint16_t coded_file_size;
 
-    file_size = avio_tell(pb);
+	file_size = avio_tell(pb);
 
-    if (file_size < 0)
-        return file_size;
+	if (file_size < 0)
+		return file_size;
 
-    if (file_size > 0xffff + RSO_HEADER_SIZE) {
-        av_log(s, AV_LOG_WARNING,
-               "Output file is too big (%"PRId64" bytes >= 64kB)\n", file_size);
-        coded_file_size = 0xffff;
-    } else {
-        coded_file_size = file_size - RSO_HEADER_SIZE;
-    }
+	if (file_size > 0xffff + RSO_HEADER_SIZE)
+	{
+		av_log(s, AV_LOG_WARNING,
+		       "Output file is too big (%"PRId64" bytes >= 64kB)\n", file_size);
+		coded_file_size = 0xffff;
+	}
+	else
+	{
+		coded_file_size = file_size - RSO_HEADER_SIZE;
+	}
 
-    /* update file size */
-    avio_seek(pb, 2, SEEK_SET);
-    avio_wb16(pb, coded_file_size);
-    avio_seek(pb, file_size, SEEK_SET);
+	/* update file size */
+	avio_seek(pb, 2, SEEK_SET);
+	avio_wb16(pb, coded_file_size);
+	avio_seek(pb, file_size, SEEK_SET);
 
-    avio_flush(pb);
+	avio_flush(pb);
 
-    return 0;
+	return 0;
 }
 
 AVOutputFormat ff_rso_muxer = {
-    .name           =   "rso",
-    .long_name      =   NULL_IF_CONFIG_SMALL("Lego Mindstorms RSO format"),
-    .extensions     =   "rso",
-    .audio_codec    =   CODEC_ID_PCM_U8,
-    .video_codec    =   CODEC_ID_NONE,
-    .write_header   =   rso_write_header,
-    .write_packet   =   rso_write_packet,
-    .write_trailer  =   rso_write_trailer,
-    .codec_tag      =   (const AVCodecTag* const []){ff_codec_rso_tags, 0},
+	.name = "rso",
+	.long_name = NULL_IF_CONFIG_SMALL("Lego Mindstorms RSO format"),
+	.extensions = "rso",
+	.audio_codec = CODEC_ID_PCM_U8,
+	.video_codec = CODEC_ID_NONE,
+	.write_header = rso_write_header,
+	.write_packet = rso_write_packet,
+	.write_trailer = rso_write_trailer,
+	.codec_tag = (const AVCodecTag* const[]){ff_codec_rso_tags, 0},
 };

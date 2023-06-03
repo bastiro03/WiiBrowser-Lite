@@ -31,7 +31,7 @@
  * @param codec The context of the codec
  * @return The payload type (the 'PT' field in the RTP header).
  */
-int ff_rtp_get_payload_type(AVFormatContext *fmt, AVCodecContext *codec);
+int ff_rtp_get_payload_type(AVFormatContext* fmt, AVCodecContext* codec);
 
 /**
  * Initialize a codec context based on the payload type.
@@ -45,7 +45,7 @@ int ff_rtp_get_payload_type(AVFormatContext *fmt, AVCodecContext *codec);
  * @return In case of unknown payload type or dynamic payload type, a
  * negative value is returned; otherwise, 0 is returned
  */
-int ff_rtp_get_codec_info(AVCodecContext *codec, int payload_type);
+int ff_rtp_get_codec_info(AVCodecContext* codec, int payload_type);
 
 /**
  * Return the encoding name (as defined in
@@ -56,7 +56,7 @@ int ff_rtp_get_codec_info(AVCodecContext *codec, int payload_type);
  * to an empty string is returned; otherwise, a pointer to a string containing
  * the encoding name is returned
  */
-const char *ff_rtp_enc_name(int payload_type);
+const char* ff_rtp_enc_name(int payload_type);
 
 /**
  * Return the codec id for the given encoding name and codec type.
@@ -66,7 +66,7 @@ const char *ff_rtp_enc_name(int payload_type);
  * @return In case of unknown encoding name, CODEC_ID_NONE is returned;
  * otherwise, the codec id is returned
  */
-enum CodecID ff_rtp_codec_id(const char *buf, enum AVMediaType codec_type);
+enum CodecID ff_rtp_codec_id(const char* buf, enum AVMediaType codec_type);
 
 #define RTP_PT_PRIVATE 96
 #define RTP_VERSION 2
@@ -83,12 +83,16 @@ enum CodecID ff_rtp_codec_id(const char *buf, enum AVMediaType codec_type);
 #define RTP_XIPH_IDENT 0xfecdba
 
 /* RTCP packet types */
-enum RTCPType {
-    RTCP_SR     = 200,
-    RTCP_RR,   // 201
-    RTCP_SDES, // 202
-    RTCP_BYE,  // 203
-    RTCP_APP   // 204
+enum RTCPType
+{
+	RTCP_SR = 200,
+	RTCP_RR,
+	// 201
+	RTCP_SDES,
+	// 202
+	RTCP_BYE,
+	// 203
+	RTCP_APP // 204
 };
 
 #define RTP_PT_IS_RTCP(x) ((x) >= RTCP_SR && (x) <= RTCP_APP)

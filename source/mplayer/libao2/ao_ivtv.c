@@ -45,118 +45,118 @@ static int freq = 0;
 
 static const ao_info_t info =
 {
-  "IVTV MPEG Audio Decoder output",
-  "ivtv",
-  "Benjamin Zores",
-  ""
+	"IVTV MPEG Audio Decoder output",
+	"ivtv",
+	"Benjamin Zores",
+	""
 };
 
 LIBAO_EXTERN(ivtv)
 
 /* to set/get/query special features/parameters */
 static int
-control (int cmd,void *arg)
+control(int cmd, void* arg)
 {
-  return CONTROL_UNKNOWN;
+	return CONTROL_UNKNOWN;
 }
 
 /* open & setup audio device */
 static int
-init (int rate, int channels, int format, int flags)
+init(int rate, int channels, int format, int flags)
 {
-  if (ivtv_fd < 0)
-    return 0;
+	if (ivtv_fd < 0)
+		return 0;
 
-  if (format != AF_FORMAT_MPEG2)
-  {
-    mp_msg (MSGT_AO, MSGL_FATAL,
-            "AO: [ivtv] can only handle MPEG audio streams.\n");
-    return 0;
-  }
+	if (format != AF_FORMAT_MPEG2)
+	{
+		mp_msg(MSGT_AO, MSGL_FATAL,
+		       "AO: [ivtv] can only handle MPEG audio streams.\n");
+		return 0;
+	}
 
-  ao_data.outburst = 2048;
-  ao_data.samplerate = rate;
-  ao_data.channels = channels;
-  ao_data.format = AF_FORMAT_MPEG2;
-  ao_data.buffersize = 2048;
-  ao_data.bps = rate * 2 * 2;
-  ao_data.pts = 0;
-  freq = rate;
+	ao_data.outburst = 2048;
+	ao_data.samplerate = rate;
+	ao_data.channels = channels;
+	ao_data.format = AF_FORMAT_MPEG2;
+	ao_data.buffersize = 2048;
+	ao_data.bps = rate * 2 * 2;
+	ao_data.pts = 0;
+	freq = rate;
 
-  /* check for supported audio rate */
-  if (rate != 32000 || rate != 41000 || rate != 48000)
-  {
-    mp_msg (MSGT_AO, MSGL_ERR, MSGTR_AO_MPEGPES_UnsupSamplerate, rate);
-    rate = 48000;
-  }
+	/* check for supported audio rate */
+	if (rate != 32000 || rate != 41000 || rate != 48000)
+	{
+		mp_msg(MSGT_AO, MSGL_ERR, MSGTR_AO_MPEGPES_UnsupSamplerate, rate);
+		rate = 48000;
+	}
 
-  return 1;
+	return 1;
 }
 
 /* close audio device */
 static void
-uninit (int immed)
+uninit(int immed)
 {
-  /* nothing to do */
+	/* nothing to do */
 }
 
 /* stop playing and empty buffers (for seeking/pause) */
 static void
-reset (void)
+reset(void)
 {
-  /* nothing to do */
+	/* nothing to do */
 }
 
 /* stop playing, keep buffers (for pause) */
 static void
-audio_pause (void)
+audio_pause(void)
 {
-  reset ();
+	reset();
 }
 
 /* resume playing, after audio_pause() */
 static void
-audio_resume (void)
+audio_resume(void)
 {
-  /* nothing to do */
+	/* nothing to do */
 }
 
 /* how many bytes can be played without blocking */
 static int
-get_space (void)
+get_space(void)
 {
-  float x;
-  int y;
+	float x;
+	int y;
 
-  x = (float) (vo_pts - ao_data.pts) / 90000.0;
-  if (x <= 0)
-    return 0;
+	x = (float)(vo_pts - ao_data.pts) / 90000.0;
+	if (x <= 0)
+		return 0;
 
-  y  = freq * 4 * x;
-  y /= ao_data.outburst;
-  y *= ao_data.outburst;
+	y = freq * 4 * x;
+	y /= ao_data.outburst;
+	y *= ao_data.outburst;
 
-  if (y > 32000)
-    y = 32000;
+	if (y > 32000)
+		y = 32000;
 
-  return y;
+	return y;
 }
 
 /* number of bytes played */
 static int
-play (void *data, int len, int flags)
+play(void* data, int len, int flags)
 {
-  if (ao_data.format != AF_FORMAT_MPEG2)
-    return 0;
+	if (ao_data.format != AF_FORMAT_MPEG2)
+		return 0;
 
-  send_mpeg_pes_packet (data, len, MPEG_AUDIO_ID, ao_data.pts, 2, ivtv_write);
+	send_mpeg_pes_packet(data, len, MPEG_AUDIO_ID, ao_data.pts, 2, ivtv_write);
 
-  return len;
+	return len;
 }
 
 /* delay in seconds between first and last sample in buffer */
 static float
-get_delay (void)
+get_delay(void)
 {
-  return 0.0;
+	return 0.0;
 }

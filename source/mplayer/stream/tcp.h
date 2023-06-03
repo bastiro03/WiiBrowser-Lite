@@ -28,7 +28,7 @@
 extern int network_prefer_ipv4;
 
 /* Connect to a server using a TCP connection */
-int connect2Server (char *host, int port, int verb);
+int connect2Server(char* host, int port, int verb);
 
 #define TCP_ERROR_TIMEOUT -3     /* connection timeout */
 #define TCP_ERROR_FATAL   -2     /* unable to resolve name */

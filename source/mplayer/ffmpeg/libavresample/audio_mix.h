@@ -27,30 +27,31 @@
 #include "avresample.h"
 #include "audio_data.h"
 
-typedef void (mix_func)(uint8_t **src, void **matrix, int len, int out_ch,
+typedef void (mix_func)(uint8_t** src, void** matrix, int len, int out_ch,
                         int in_ch);
 
-typedef struct AudioMix {
-    AVAudioResampleContext *avr;
-    enum AVSampleFormat fmt;
-    enum AVMixCoeffType coeff_type;
-    uint64_t in_layout;
-    uint64_t out_layout;
-    int in_channels;
-    int out_channels;
+typedef struct AudioMix
+{
+	AVAudioResampleContext* avr;
+	enum AVSampleFormat fmt;
+	enum AVMixCoeffType coeff_type;
+	uint64_t in_layout;
+	uint64_t out_layout;
+	int in_channels;
+	int out_channels;
 
-    int ptr_align;
-    int samples_align;
-    int has_optimized_func;
-    const char *func_descr;
-    const char *func_descr_generic;
-    mix_func *mix;
-    mix_func *mix_generic;
+	int ptr_align;
+	int samples_align;
+	int has_optimized_func;
+	const char* func_descr;
+	const char* func_descr_generic;
+	mix_func* mix;
+	mix_func* mix_generic;
 
-    int16_t *matrix_q8[AVRESAMPLE_MAX_CHANNELS];
-    int32_t *matrix_q15[AVRESAMPLE_MAX_CHANNELS];
-    float   *matrix_flt[AVRESAMPLE_MAX_CHANNELS];
-    void   **matrix;
+	int16_t* matrix_q8[AVRESAMPLE_MAX_CHANNELS];
+	int32_t* matrix_q15[AVRESAMPLE_MAX_CHANNELS];
+	float* matrix_flt[AVRESAMPLE_MAX_CHANNELS];
+	void** matrix;
 } AudioMix;
 
 /**
@@ -73,10 +74,10 @@ typedef struct AudioMix {
  * @param descr          function type description (e.g. "C" or "SSE")
  * @param mix_func       mixing function pointer
  */
-void ff_audio_mix_set_func(AudioMix *am, enum AVSampleFormat fmt,
+void ff_audio_mix_set_func(AudioMix* am, enum AVSampleFormat fmt,
                            enum AVMixCoeffType coeff_type, int in_channels,
                            int out_channels, int ptr_align, int samples_align,
-                           const char *descr, void *mix_func);
+                           const char* descr, void* mix_func);
 
 /**
  * Initialize the AudioMix context in the AVAudioResampleContext.
@@ -87,22 +88,22 @@ void ff_audio_mix_set_func(AudioMix *am, enum AVSampleFormat fmt,
  * @param avr  AVAudioResampleContext
  * @return     0 on success, negative AVERROR code on failure
  */
-int ff_audio_mix_init(AVAudioResampleContext *avr);
+int ff_audio_mix_init(AVAudioResampleContext* avr);
 
 /**
  * Close an AudioMix context.
  *
  * This clears and frees the mixing matrix arrays.
  */
-void ff_audio_mix_close(AudioMix *am);
+void ff_audio_mix_close(AudioMix* am);
 
 /**
  * Apply channel mixing to audio data using the current mixing matrix.
  */
-int ff_audio_mix(AudioMix *am, AudioData *src);
+int ff_audio_mix(AudioMix* am, AudioData* src);
 
 /* arch-specific initialization functions */
 
-void ff_audio_mix_init_x86(AudioMix *am);
+void ff_audio_mix_init_x86(AudioMix* am);
 
 #endif /* AVRESAMPLE_AUDIO_MIX_H */

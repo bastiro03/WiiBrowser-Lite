@@ -28,21 +28,22 @@
 #include "libavutil/log.h"
 #include "avdevice.h"
 
-typedef struct {
-    AVClass *class;
-    struct sio_hdl *hdl;
-    enum CodecID codec_id;
-    int64_t hwpos;
-    int64_t softpos;
-    uint8_t *buffer;
-    int bps;
-    int buffer_size;
-    int buffer_offset;
-    int channels;
-    int sample_rate;
+typedef struct
+{
+	AVClass* class;
+	struct sio_hdl* hdl;
+	enum CodecID codec_id;
+	int64_t hwpos;
+	int64_t softpos;
+	uint8_t* buffer;
+	int bps;
+	int buffer_size;
+	int buffer_offset;
+	int channels;
+	int sample_rate;
 } SndioData;
 
-int ff_sndio_open(AVFormatContext *s1, int is_output, const char *audio_device);
-int ff_sndio_close(SndioData *s);
+int ff_sndio_open(AVFormatContext* s1, int is_output, const char* audio_device);
+int ff_sndio_close(SndioData* s);
 
 #endif /* AVDEVICE_SNDIO_COMMON_H */

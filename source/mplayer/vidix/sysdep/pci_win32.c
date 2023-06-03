@@ -35,23 +35,27 @@ static HANDLE hDriver;
 
 static inline int enable_os_io(void)
 {
-    if(IsWinNT()){
-      DWORD dwBytesReturned;
-      hDriver = CreateFile("\\\\.\\DHAHELPER",GENERIC_READ | GENERIC_WRITE,0,NULL,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,NULL);
-      if(!DeviceIoControl(hDriver, IOCTL_DHAHELPER_ENABLEDIRECTIO, NULL,0, NULL, 0, &dwBytesReturned, NULL)){
-        fprintf(stderr,"Unable to enable directio please install dhahelper.sys.\n");
-        return 1;
-      }
-    }
-    return 0;
+	if (IsWinNT())
+	{
+		DWORD dwBytesReturned;
+		hDriver = CreateFile("\\\\.\\DHAHELPER", GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING,
+		                     FILE_ATTRIBUTE_NORMAL, NULL);
+		if (!DeviceIoControl(hDriver, IOCTL_DHAHELPER_ENABLEDIRECTIO, NULL, 0, NULL, 0, &dwBytesReturned, NULL))
+		{
+			fprintf(stderr, "Unable to enable directio please install dhahelper.sys.\n");
+			return 1;
+		}
+	}
+	return 0;
 }
 
 static inline int disable_os_io(void)
 {
-    if(IsWinNT()){
-      DWORD dwBytesReturned;
-      DeviceIoControl(hDriver, IOCTL_DHAHELPER_DISABLEDIRECTIO, NULL,0, NULL, 0, &dwBytesReturned, NULL);
-      CloseHandle(hDriver);
-    }
-    return 0;
+	if (IsWinNT())
+	{
+		DWORD dwBytesReturned;
+		DeviceIoControl(hDriver, IOCTL_DHAHELPER_DISABLEDIRECTIO, NULL, 0, NULL, 0, &dwBytesReturned, NULL);
+		CloseHandle(hDriver);
+	}
+	return 0;
 }

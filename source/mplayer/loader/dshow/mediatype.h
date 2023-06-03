@@ -1,6 +1,6 @@
 /*
 -------------------------------------------------------------------
-    AM_MEDIA_TYPE service functions declarations
+	AM_MEDIA_TYPE service functions declarations
 -------------------------------------------------------------------
 */
 
@@ -9,18 +9,20 @@
 
 #include "guids.h"
 
-typedef struct __attribute__((__packed__)) MediaType
+typedef struct __attribute__ ((__packed__)) MediaType
 {
-    GUID	majortype;		//0x0
-    GUID	subtype;		//0x10
-    int		bFixedSizeSamples;	//0x20
-    int		bTemporalCompression;	//0x24
-    unsigned long lSampleSize;		//0x28
-    GUID	formattype;		//0x2c
-    IUnknown*	pUnk;			//0x3c
-    unsigned long cbFormat;		//0x40
-    char*	pbFormat;		//0x44
-} AM_MEDIA_TYPE;
+	GUID majortype; //0x0
+	GUID subtype; //0x10
+	int bFixedSizeSamples; //0x20
+	int bTemporalCompression; //0x24
+	unsigned long lSampleSize; //0x28
+	GUID formattype; //0x2c
+	IUnknown* pUnk; //0x3c
+	unsigned long cbFormat; //0x40
+	char* pbFormat; //0x44
+}
+
+AM_MEDIA_TYPE;
 
 /**
  * \brief print info from AM_MEDIA_TYPE structure
@@ -30,7 +32,7 @@ typedef struct __attribute__((__packed__)) MediaType
  * routine used for debug purposes
  *
  */
-void DisplayMediaType(const char * label,const AM_MEDIA_TYPE* pmt);
+void DisplayMediaType(const char* label, const AM_MEDIA_TYPE* pmt);
 /**
  * \brief frees memory, pointed by pbFormat and pUnk members of AM_MEDIA_TYPE structure
  *
@@ -69,7 +71,7 @@ void DeleteMediaType(AM_MEDIA_TYPE* pmt);
  * - if pDst->pbFormat!=NULL this will cause memory leak (as described in Directshow SDK)!
  *
  */
-HRESULT CopyMediaType(AM_MEDIA_TYPE* pDst,const AM_MEDIA_TYPE* pSrc);
+HRESULT CopyMediaType(AM_MEDIA_TYPE* pDst, const AM_MEDIA_TYPE* pSrc);
 /**
  * \brief allocates new AM_MEDIA_TYPE structure and fills it with info from given one
  *
@@ -91,6 +93,6 @@ AM_MEDIA_TYPE* CreateMediaType(const AM_MEDIA_TYPE* pSrc);
  * \return 0 if structures are not compatible
  *
  */
-int CompareMediaTypes(const AM_MEDIA_TYPE * pmt1, const AM_MEDIA_TYPE * pmt2, int bWildcards);
+int CompareMediaTypes(const AM_MEDIA_TYPE* pmt1, const AM_MEDIA_TYPE* pmt2, int bWildcards);
 
 #endif /* MPLAYER_MEDIA_TYPE_H */

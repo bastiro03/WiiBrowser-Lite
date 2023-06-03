@@ -26,91 +26,92 @@
 
 typedef struct
 {
-    char *name;                  /* image name */
-    int size;                    /* image data size in bytes */
-    int width;                   /* image width */
-    int height;                  /* image height */
-    char *data;                  /* pointer to image data */
+	char* name; /* image name */
+	int size; /* image data size in bytes */
+	int width; /* image width */
+	int height; /* image height */
+	char* data; /* pointer to image data */
 } image;
 
 typedef struct
 {
-    char c;
-    int x;
-    int y;
-    int width;
-    int height;
+	char c;
+	int x;
+	int y;
+	int width;
+	int height;
 } char_t;
 
 typedef struct
 {
-    char *name;
-    char *id;
-    image *image;
-    unsigned int charcount;
-    char_t **chars;
+	char* name;
+	char* id;
+	image* image;
+	unsigned int charcount;
+	char_t** chars;
 } font_t;
 
 typedef struct
 {
-    int id;                         /* widget id */
-    int type;                       /* widget type */
-    int window;                     /* the window it belongs to */
-    // ---
-    int x, y;                       /* x and y position the button */
-    int wx, wy;                     /* x and y postion of the widget */
-    int width, height;              /* width and height of the button */
-    int wwidth, wheight;            /* width and height of the widget */
-    // ---
-    // ---
-    int msg, msg2;
-    int pressed, tmp;
-    int key, key2;
-    int phases;
-    float value;
-    image *bitmap[2];               /* Associated image(s) in imagepool */
-    // ---
-    font_t *font;
-    int length;
-    int align;
-    char *label;
-    // ---
-    int event;
+	int id; /* widget id */
+	int type; /* widget type */
+	int window; /* the window it belongs to */
+	// ---
+	int x, y; /* x and y position the button */
+	int wx, wy; /* x and y postion of the widget */
+	int width, height; /* width and height of the button */
+	int wwidth, wheight; /* width and height of the widget */
+	// ---
+	// ---
+	int msg, msg2;
+	int pressed, tmp;
+	int key, key2;
+	int phases;
+	float value;
+	image* bitmap[2]; /* Associated image(s) in imagepool */
+	// ---
+	font_t* font;
+	int length;
+	int align;
+	char* label;
+	// ---
+	int event;
 } widget;
 
 typedef struct
 {
-    char *name;
-    int decoration;
-    int type;
-    widget *base;
-    int backgroundcolor[3];
-    void *priv;
+	char* name;
+	int decoration;
+	int type;
+	widget* base;
+	int backgroundcolor[3];
+	void* priv;
 } window;
 
 typedef struct skin_t skin_t;
+
 struct skin_t
 {
-    char *skindir;
-    unsigned int widgetcount;       /* number of widgets */
-    unsigned int lastusedid;        /* which widget id was used last */
-    widget **widgets;               /* widget handle */
-    unsigned int imagecount;        /* number of images */
-    image **images;                 /* image handle */
-    int desktopbpp;                 /* image format of those images */
-    unsigned int fontcount;
-    font_t **fonts;
+	char* skindir;
+	unsigned int widgetcount; /* number of widgets */
+	unsigned int lastusedid; /* which widget id was used last */
+	widget** widgets; /* widget handle */
+	unsigned int imagecount; /* number of images */
+	image** images; /* image handle */
+	int desktopbpp; /* image format of those images */
+	unsigned int fontcount;
+	font_t** fonts;
 
-    unsigned int windowcount;       /* number of windows */
-    window **windows;
-    void (*freeskin)(skin_t* skin);
-    void (*addwidget)(skin_t *skin, window *win, const char *desc);
-    void (*removewidget)(skin_t *skin, int id);
-    char *(*geteventname)(int event);
-    image *(*pngRead)(skin_t *skin, const char *fname);
+	unsigned int windowcount; /* number of windows */
+	window** windows;
+	void (*freeskin)(skin_t* skin);
+	void (*addwidget)(skin_t* skin, window* win, const char* desc);
+	void (*removewidget)(skin_t* skin, int id);
+	char* (*geteventname)(int event);
+	image* (*pngRead)(skin_t* skin, const char* fname);
 };
 
-skin_t *loadskin(char *skindir, int desktopbpp);
+skin_t* loadskin(char* skindir, int desktopbpp);
 
 /* --- Widget types --- */
 

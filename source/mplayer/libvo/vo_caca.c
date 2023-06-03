@@ -45,22 +45,22 @@
 #include "mp_fifo.h"
 
 static const vo_info_t info = {
-    "libcaca",
-    "caca",
-    "Pigeon <pigeon@pigeond.net>",
-    ""
+	"libcaca",
+	"caca",
+	"Pigeon <pigeon@pigeond.net>",
+	""
 };
 
 const LIBVO_EXTERN(caca)
 
 /* caca stuff */
-static caca_canvas_t  *canvas;
-static caca_display_t *display;
-static caca_dither_t  *dither           = NULL;
-static const char     *dither_antialias = "default";
-static const char     *dither_charset   = "default";
-static const char     *dither_color     = "default";
-static const char     *dither_algo      = "none";
+static caca_canvas_t* canvas;
+static caca_display_t* display;
+static caca_dither_t* dither = NULL;
+static const char* dither_antialias = "default";
+static const char* dither_charset = "default";
+static const char* dither_color = "default";
+static const char* dither_algo = "none";
 
 /* image infos */
 static int image_format;
@@ -70,7 +70,7 @@ static int image_height;
 static int screen_w, screen_h;
 
 /* We want 24bpp always for now */
-static unsigned int bpp   = 24;
+static unsigned int bpp = 24;
 static unsigned int depth = 3;
 static unsigned int rmask = 0xff0000;
 static unsigned int gmask = 0x00ff00;
@@ -80,7 +80,7 @@ static unsigned int amask = 0;
 #define MESSAGE_SIZE     512
 #define MESSAGE_DURATION   5
 
-static time_t stoposd     = 0;
+static time_t stoposd = 0;
 static int showosdmessage = 0;
 static char osdmessagetext[MESSAGE_SIZE];
 static char posbar[MESSAGE_SIZE];
@@ -88,288 +88,301 @@ static char posbar[MESSAGE_SIZE];
 static int osdx = 0, osdy = 0;
 static int posbary = 2;
 
-static void osdmessage(int duration, const char *fmt, ...)
+static void osdmessage(int duration, const char* fmt, ...)
 {
-    /* for outputting a centered string at the window bottom for a while */
-    va_list ar;
-    char m[MESSAGE_SIZE];
+	/* for outputting a centered string at the window bottom for a while */
+	va_list ar;
+	char m[MESSAGE_SIZE];
 
-    va_start(ar, fmt);
-    vsprintf(m, fmt, ar);
-    va_end(ar);
-    strcpy(osdmessagetext, m);
+	va_start(ar, fmt);
+	vsprintf(m, fmt, ar);
+	va_end(ar);
+	strcpy(osdmessagetext, m);
 
-    showosdmessage = 1;
-    stoposd        = time(NULL) + duration;
-    osdx           = (screen_w - strlen(osdmessagetext)) / 2;
-    posbar[0]      = '\0';
+	showosdmessage = 1;
+	stoposd = time(NULL) + duration;
+	osdx = (screen_w - strlen(osdmessagetext)) / 2;
+	posbar[0] = '\0';
 }
 
 static void osdpercent(int duration, int min, int max, int val,
-                       const char *desc, const char *unit)
+                       const char* desc, const char* unit)
 {
-    /* prints a bar for setting values */
-    float step;
-    int where, i;
+	/* prints a bar for setting values */
+	float step;
+	int where, i;
 
-    step  = (float)screen_w / (float)(max - min);
-    where = (val - min) * step;
-    osdmessage(duration, "%s: %i%s", desc, val, unit);
-    posbar[0]            = '|';
-    posbar[screen_w - 1] = '|';
+	step = (float)screen_w / (float)(max - min);
+	where = (val - min) * step;
+	osdmessage(duration, "%s: %i%s", desc, val, unit);
+	posbar[0] = '|';
+	posbar[screen_w - 1] = '|';
 
-    for (i = 0; i < screen_w; i++) {
-        if (i == where)
-            posbar[i] = '#';
-        else
-            posbar[i] = '-';
-    }
+	for (i = 0; i < screen_w; i++)
+	{
+		if (i == where)
+			posbar[i] = '#';
+		else
+			posbar[i] = '-';
+	}
 
-    if (where != 0)
-        posbar[0] = '|';
+	if (where != 0)
+		posbar[0] = '|';
 
-    if (where != (screen_w - 1))
-        posbar[screen_w - 1] = '|';
+	if (where != (screen_w - 1))
+		posbar[screen_w - 1] = '|';
 
-    posbar[screen_w] = '\0';
+	posbar[screen_w] = '\0';
 }
 
 static int resize(void)
 {
-    screen_w = caca_get_canvas_width(canvas);
-    screen_h = caca_get_canvas_height(canvas);
+	screen_w = caca_get_canvas_width(canvas);
+	screen_h = caca_get_canvas_height(canvas);
 
-    caca_free_dither(dither);
+	caca_free_dither(dither);
 
-    dither = caca_create_dither(bpp, image_width, image_height,
-                                depth * image_width,
-                                rmask, gmask, bmask, amask);
-    if (dither == NULL) {
-        mp_msg(MSGT_VO, MSGL_FATAL, "vo_caca: caca_create_dither failed!\n");
-        return ENOSYS;
-    }
+	dither = caca_create_dither(bpp, image_width, image_height,
+	                            depth * image_width,
+	                            rmask, gmask, bmask, amask);
+	if (dither == NULL)
+	{
+		mp_msg(MSGT_VO, MSGL_FATAL, "vo_caca: caca_create_dither failed!\n");
+		return ENOSYS;
+	}
 
-    /* Default libcaca features */
-    caca_set_dither_antialias(dither, dither_antialias);
-    caca_set_dither_charset(dither, dither_charset);
-    caca_set_dither_color(dither, dither_color);
-    caca_set_dither_algorithm(dither, dither_algo);
+	/* Default libcaca features */
+	caca_set_dither_antialias(dither, dither_antialias);
+	caca_set_dither_charset(dither, dither_charset);
+	caca_set_dither_color(dither, dither_color);
+	caca_set_dither_algorithm(dither, dither_algo);
 
-    return 0;
+	return 0;
 }
 
 static int config(uint32_t width, uint32_t height, uint32_t d_width,
-                  uint32_t d_height, uint32_t flags, char *title,
+                  uint32_t d_height, uint32_t flags, char* title,
                   uint32_t format)
 {
-    image_height = height;
-    image_width  = width;
-    image_format = format;
+	image_height = height;
+	image_width = width;
+	image_format = format;
 
-    showosdmessage = 0;
-    posbar[0]      = '\0';
+	showosdmessage = 0;
+	posbar[0] = '\0';
 
-    return resize();
+	return resize();
 }
 
-static int draw_frame(uint8_t *src[])
+static int draw_frame(uint8_t* src[])
 {
-    caca_dither_bitmap(canvas, 0, 0, screen_w, screen_h, dither, src[0]);
-    return 0;
+	caca_dither_bitmap(canvas, 0, 0, screen_w, screen_h, dither, src[0]);
+	return 0;
 }
 
-static int draw_slice(uint8_t *src[], int stride[], int w, int h, int x, int y)
+static int draw_slice(uint8_t* src[], int stride[], int w, int h, int x, int y)
 {
-    return 0;
+	return 0;
 }
 
 static void flip_page(void)
 {
-    if (showosdmessage) {
-        if (time(NULL) >= stoposd) {
-            showosdmessage = 0;
-            if (*posbar)
-                posbar[0] = '\0';
-        } else {
-            caca_put_str(canvas, osdx, osdy, osdmessagetext);
-            if (*posbar)
-                caca_put_str(canvas, 0, posbary, posbar);
-        }
-    }
+	if (showosdmessage)
+	{
+		if (time(NULL) >= stoposd)
+		{
+			showosdmessage = 0;
+			if (*posbar)
+				posbar[0] = '\0';
+		}
+		else
+		{
+			caca_put_str(canvas, osdx, osdy, osdmessagetext);
+			if (*posbar)
+				caca_put_str(canvas, 0, posbary, posbar);
+		}
+	}
 
-    caca_refresh_display(display);
+	caca_refresh_display(display);
 }
 
-static void set_next_str(const char * const *list, const char **str,
-                         const char **msg)
+static void set_next_str(const char* const* list, const char** str,
+                         const char** msg)
 {
-    int ind;
-    for (ind = 0; list[ind]; ind += 2) {
-        if (strcmp(list[ind], *str) == 0) {
-            if (list[ind + 2] == NULL)
-                ind = -2;
-            *str = list[ind + 2];
-            *msg = list[ind + 3];
-            return;
-        }
-    }
+	int ind;
+	for (ind = 0; list[ind]; ind += 2)
+	{
+		if (strcmp(list[ind], *str) == 0)
+		{
+			if (list[ind + 2] == NULL)
+				ind = -2;
+			*str = list[ind + 2];
+			*msg = list[ind + 3];
+			return;
+		}
+	}
 
-    *str = list[0];
-    *msg = list[1];
+	*str = list[0];
+	*msg = list[1];
 }
 
 static const struct mp_keymap keysym_map[] = {
-    {CACA_KEY_RETURN, KEY_ENTER}, {CACA_KEY_ESCAPE, KEY_ESC},
-    {CACA_KEY_UP, KEY_DOWN}, {CACA_KEY_DOWN, KEY_DOWN},
-    {CACA_KEY_LEFT, KEY_LEFT}, {CACA_KEY_RIGHT, KEY_RIGHT},
-    {CACA_KEY_PAGEUP, KEY_PAGE_UP}, {CACA_KEY_PAGEDOWN, KEY_PAGE_DOWN},
-    {CACA_KEY_HOME, KEY_HOME}, {CACA_KEY_END, KEY_END},
-    {CACA_KEY_INSERT, KEY_INSERT}, {CACA_KEY_DELETE, KEY_DELETE},
-    {CACA_KEY_BACKSPACE, KEY_BACKSPACE}, {CACA_KEY_TAB, KEY_TAB},
-    {CACA_KEY_PAUSE, KEY_PAUSE},
-    {CACA_KEY_F1, KEY_F+1}, {CACA_KEY_F2, KEY_F+2},
-    {CACA_KEY_F3, KEY_F+3}, {CACA_KEY_F4, KEY_F+4},
-    {CACA_KEY_F5, KEY_F+5}, {CACA_KEY_F6, KEY_F+6},
-    {CACA_KEY_F7, KEY_F+7}, {CACA_KEY_F8, KEY_F+8},
-    {CACA_KEY_F9, KEY_F+9}, {CACA_KEY_F10, KEY_F+10},
-    {CACA_KEY_F11, KEY_F+11}, {CACA_KEY_F12, KEY_F+12},
-    {CACA_KEY_F13, KEY_F+13}, {CACA_KEY_F14, KEY_F+14},
-    {CACA_KEY_F15, KEY_F+15},
-    {0, 0}
+	{CACA_KEY_RETURN, KEY_ENTER}, {CACA_KEY_ESCAPE, KEY_ESC},
+	{CACA_KEY_UP, KEY_DOWN}, {CACA_KEY_DOWN, KEY_DOWN},
+	{CACA_KEY_LEFT, KEY_LEFT}, {CACA_KEY_RIGHT, KEY_RIGHT},
+	{CACA_KEY_PAGEUP, KEY_PAGE_UP}, {CACA_KEY_PAGEDOWN, KEY_PAGE_DOWN},
+	{CACA_KEY_HOME, KEY_HOME}, {CACA_KEY_END, KEY_END},
+	{CACA_KEY_INSERT, KEY_INSERT}, {CACA_KEY_DELETE, KEY_DELETE},
+	{CACA_KEY_BACKSPACE, KEY_BACKSPACE}, {CACA_KEY_TAB, KEY_TAB},
+	{CACA_KEY_PAUSE, KEY_PAUSE},
+	{CACA_KEY_F1, KEY_F + 1}, {CACA_KEY_F2, KEY_F + 2},
+	{CACA_KEY_F3, KEY_F + 3}, {CACA_KEY_F4, KEY_F + 4},
+	{CACA_KEY_F5, KEY_F + 5}, {CACA_KEY_F6, KEY_F + 6},
+	{CACA_KEY_F7, KEY_F + 7}, {CACA_KEY_F8, KEY_F + 8},
+	{CACA_KEY_F9, KEY_F + 9}, {CACA_KEY_F10, KEY_F + 10},
+	{CACA_KEY_F11, KEY_F + 11}, {CACA_KEY_F12, KEY_F + 12},
+	{CACA_KEY_F13, KEY_F + 13}, {CACA_KEY_F14, KEY_F + 14},
+	{CACA_KEY_F15, KEY_F + 15},
+	{0, 0}
 };
 
 static void check_events(void)
 {
-    caca_event_t cev;
-    while (caca_get_event(display, CACA_EVENT_ANY, &cev, 0)) {
+	caca_event_t cev;
+	while (caca_get_event(display, CACA_EVENT_ANY, &cev, 0))
+	{
+		switch (cev.type)
+		{
+		case CACA_EVENT_RESIZE:
+			caca_refresh_display(display);
+			resize();
+			break;
+		case CACA_EVENT_QUIT:
+			mplayer_put_key(KEY_CLOSE_WIN);
+			break;
+		case CACA_EVENT_MOUSE_MOTION:
+			vo_mouse_movement(cev.data.mouse.x, cev.data.mouse.y);
+			break;
+		case CACA_EVENT_MOUSE_PRESS:
+			if (!vo_nomouse_input)
+				mplayer_put_key((MOUSE_BTN0 + cev.data.mouse.button - 1) | MP_KEY_DOWN);
+			break;
+		case CACA_EVENT_MOUSE_RELEASE:
+			if (!vo_nomouse_input)
+				mplayer_put_key(MOUSE_BTN0 + cev.data.mouse.button - 1);
+			break;
+		case CACA_EVENT_KEY_PRESS:
+			{
+				int key = cev.data.key.ch;
+				int mpkey = lookup_keymap_table(keysym_map, key);
+				const char* msg_name;
 
-        switch (cev.type) {
-        case CACA_EVENT_RESIZE:
-            caca_refresh_display(display);
-            resize();
-            break;
-        case CACA_EVENT_QUIT:
-            mplayer_put_key(KEY_CLOSE_WIN);
-            break;
-        case CACA_EVENT_MOUSE_MOTION:
-            vo_mouse_movement(cev.data.mouse.x, cev.data.mouse.y);
-            break;
-        case CACA_EVENT_MOUSE_PRESS:
-            if (!vo_nomouse_input)
-                mplayer_put_key((MOUSE_BTN0 + cev.data.mouse.button - 1) | MP_KEY_DOWN);
-            break;
-        case CACA_EVENT_MOUSE_RELEASE:
-            if (!vo_nomouse_input)
-                mplayer_put_key(MOUSE_BTN0 + cev.data.mouse.button - 1);
-            break;
-        case CACA_EVENT_KEY_PRESS:
-        {
-            int key = cev.data.key.ch;
-            int mpkey = lookup_keymap_table(keysym_map, key);
-            const char *msg_name;
+				if (mpkey)
+					mplayer_put_key(mpkey);
+				else
+					switch (key)
+					{
+					case 'd':
+					case 'D':
+						/* Toggle dithering algorithm */
+						set_next_str(caca_get_dither_algorithm_list(dither), &dither_algo, &msg_name);
+						caca_set_dither_algorithm(dither, dither_algo);
+						osdmessage(MESSAGE_DURATION, "Using %s", msg_name);
+						break;
 
-            if (mpkey)
-                mplayer_put_key(mpkey);
-            else
-            switch (key) {
-            case 'd':
-            case 'D':
-                /* Toggle dithering algorithm */
-                set_next_str(caca_get_dither_algorithm_list(dither), &dither_algo, &msg_name);
-                caca_set_dither_algorithm(dither, dither_algo);
-                osdmessage(MESSAGE_DURATION, "Using %s", msg_name);
-                break;
+					case 'a':
+					case 'A':
+						/* Toggle antialiasing method */
+						set_next_str(caca_get_dither_antialias_list(dither), &dither_antialias, &msg_name);
+						caca_set_dither_antialias(dither, dither_antialias);
+						osdmessage(MESSAGE_DURATION, "Using %s", msg_name);
+						break;
 
-            case 'a':
-            case 'A':
-                /* Toggle antialiasing method */
-                set_next_str(caca_get_dither_antialias_list(dither), &dither_antialias, &msg_name);
-                caca_set_dither_antialias(dither, dither_antialias);
-                osdmessage(MESSAGE_DURATION, "Using %s", msg_name);
-                break;
+					case 'h':
+					case 'H':
+						/* Toggle charset method */
+						set_next_str(caca_get_dither_charset_list(dither), &dither_charset, &msg_name);
+						caca_set_dither_charset(dither, dither_charset);
+						osdmessage(MESSAGE_DURATION, "Using %s", msg_name);
+						break;
 
-            case 'h':
-            case 'H':
-                /* Toggle charset method */
-                set_next_str(caca_get_dither_charset_list(dither), &dither_charset, &msg_name);
-                caca_set_dither_charset(dither, dither_charset);
-                osdmessage(MESSAGE_DURATION, "Using %s", msg_name);
-                break;
+					case 'c':
+					case 'C':
+						/* Toggle color method */
+						set_next_str(caca_get_dither_color_list(dither), &dither_color, &msg_name);
+						caca_set_dither_color(dither, dither_color);
+						osdmessage(MESSAGE_DURATION, "Using %s", msg_name);
+						break;
 
-            case 'c':
-            case 'C':
-                /* Toggle color method */
-                set_next_str(caca_get_dither_color_list(dither), &dither_color, &msg_name);
-                caca_set_dither_color(dither, dither_color);
-                osdmessage(MESSAGE_DURATION, "Using %s", msg_name);
-                break;
-
-            default:
-                if (key <= 255)
-                    mplayer_put_key(key);
-                break;
-            }
-        }
-        }
-    }
+					default:
+						if (key <= 255)
+							mplayer_put_key(key);
+						break;
+					}
+			}
+		}
+	}
 }
 
 static void uninit(void)
 {
-    caca_free_dither(dither);
-    dither = NULL;
-    caca_free_display(display);
-    caca_free_canvas(canvas);
+	caca_free_dither(dither);
+	dither = NULL;
+	caca_free_display(display);
+	caca_free_canvas(canvas);
 }
-
 
 static void draw_osd(void)
 {
-    if (vo_osd_progbar_type != -1)
-        osdpercent(MESSAGE_DURATION, 0, 255, vo_osd_progbar_value,
-                   sub_osd_names[vo_osd_progbar_type], "");
+	if (vo_osd_progbar_type != -1)
+		osdpercent(MESSAGE_DURATION, 0, 255, vo_osd_progbar_value,
+		           sub_osd_names[vo_osd_progbar_type], "");
 }
 
-static int preinit(const char *arg)
+static int preinit(const char* arg)
 {
-    if (arg) {
-        mp_msg(MSGT_VO, MSGL_ERR, "vo_caca: Unknown subdevice: %s\n", arg);
-        return ENOSYS;
-    }
+	if (arg)
+	{
+		mp_msg(MSGT_VO, MSGL_ERR, "vo_caca: Unknown subdevice: %s\n", arg);
+		return ENOSYS;
+	}
 
-    canvas = caca_create_canvas(0, 0);
-    if (canvas == NULL) {
-        mp_msg(MSGT_VO, MSGL_ERR, "vo_caca: failed to create canvas\n");
-        return ENOSYS;
-    }
+	canvas = caca_create_canvas(0, 0);
+	if (canvas == NULL)
+	{
+		mp_msg(MSGT_VO, MSGL_ERR, "vo_caca: failed to create canvas\n");
+		return ENOSYS;
+	}
 
-    display = caca_create_display(canvas);
+	display = caca_create_display(canvas);
 
-    if (display == NULL) {
-        mp_msg(MSGT_VO, MSGL_ERR, "vo_caca: failed to create display\n");
-        caca_free_canvas(canvas);
-        return ENOSYS;
-    }
+	if (display == NULL)
+	{
+		mp_msg(MSGT_VO, MSGL_ERR, "vo_caca: failed to create display\n");
+		caca_free_canvas(canvas);
+		return ENOSYS;
+	}
 
-    caca_set_display_title(display, "MPlayer");
+	caca_set_display_title(display, "MPlayer");
 
-    return 0;
+	return 0;
 }
 
 static int query_format(uint32_t format)
 {
-    if (format == IMGFMT_BGR24)
-        return VFCAP_OSD | VFCAP_CSP_SUPPORTED;
+	if (format == IMGFMT_BGR24)
+		return VFCAP_OSD | VFCAP_CSP_SUPPORTED;
 
-    return 0;
+	return 0;
 }
 
-static int control(uint32_t request, void *data)
+static int control(uint32_t request, void* data)
 {
-    switch (request) {
-    case VOCTRL_QUERY_FORMAT:
-        return query_format(*((uint32_t *)data));
-    default:
-        return VO_NOTIMPL;
-    }
+	switch (request)
+	{
+	case VOCTRL_QUERY_FORMAT:
+		return query_format(*((uint32_t*)data));
+	default:
+		return VO_NOTIMPL;
+	}
 }

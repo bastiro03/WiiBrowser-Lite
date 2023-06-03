@@ -27,10 +27,11 @@
 #include <stdint.h>
 #include "avutil.h"
 
-typedef struct AVFifoBuffer {
-    uint8_t *buffer;
-    uint8_t *rptr, *wptr, *end;
-    uint32_t rndx, wndx;
+typedef struct AVFifoBuffer
+{
+	uint8_t* buffer;
+	uint8_t *rptr, *wptr, *end;
+	uint32_t rndx, wndx;
 } AVFifoBuffer;
 
 /**
@@ -38,19 +39,19 @@ typedef struct AVFifoBuffer {
  * @param size of FIFO
  * @return AVFifoBuffer or NULL in case of memory allocation failure
  */
-AVFifoBuffer *av_fifo_alloc(unsigned int size);
+AVFifoBuffer* av_fifo_alloc(unsigned int size);
 
 /**
  * Free an AVFifoBuffer.
  * @param f AVFifoBuffer to free
  */
-void av_fifo_free(AVFifoBuffer *f);
+void av_fifo_free(AVFifoBuffer* f);
 
 /**
  * Reset the AVFifoBuffer to the state right after av_fifo_alloc, in particular it is emptied.
  * @param f AVFifoBuffer to reset
  */
-void av_fifo_reset(AVFifoBuffer *f);
+void av_fifo_reset(AVFifoBuffer* f);
 
 /**
  * Return the amount of data in bytes in the AVFifoBuffer, that is the
@@ -58,7 +59,7 @@ void av_fifo_reset(AVFifoBuffer *f);
  * @param f AVFifoBuffer to read from
  * @return size
  */
-int av_fifo_size(AVFifoBuffer *f);
+int av_fifo_size(AVFifoBuffer* f);
 
 /**
  * Return the amount of space in bytes in the AVFifoBuffer, that is the
@@ -66,7 +67,7 @@ int av_fifo_size(AVFifoBuffer *f);
  * @param f AVFifoBuffer to write into
  * @return size
  */
-int av_fifo_space(AVFifoBuffer *f);
+int av_fifo_space(AVFifoBuffer* f);
 
 /**
  * Feed data from an AVFifoBuffer to a user-supplied callback.
@@ -75,7 +76,7 @@ int av_fifo_space(AVFifoBuffer *f);
  * @param func generic read function
  * @param dest data destination
  */
-int av_fifo_generic_read(AVFifoBuffer *f, void *dest, int buf_size, void (*func)(void*, void*, int));
+int av_fifo_generic_read(AVFifoBuffer* f, void* dest, int buf_size, void (*func)(void*, void*, int));
 
 /**
  * Feed data from a user-supplied callback to an AVFifoBuffer.
@@ -90,7 +91,7 @@ int av_fifo_generic_read(AVFifoBuffer *f, void *dest, int buf_size, void (*func)
  * If func is NULL, src is interpreted as a simple byte array for source data.
  * @return the number of bytes written to the FIFO
  */
-int av_fifo_generic_write(AVFifoBuffer *f, void *src, int size, int (*func)(void*, void*, int));
+int av_fifo_generic_write(AVFifoBuffer* f, void* src, int size, int (*func)(void*, void*, int));
 
 /**
  * Resize an AVFifoBuffer.
@@ -100,7 +101,7 @@ int av_fifo_generic_write(AVFifoBuffer *f, void *src, int size, int (*func)(void
  * @param size new AVFifoBuffer size in bytes
  * @return <0 for failure, >=0 otherwise
  */
-int av_fifo_realloc2(AVFifoBuffer *f, unsigned int size);
+int av_fifo_realloc2(AVFifoBuffer* f, unsigned int size);
 
 /**
  * Enlarge an AVFifoBuffer.
@@ -111,14 +112,14 @@ int av_fifo_realloc2(AVFifoBuffer *f, unsigned int size);
  * @param additional_space the amount of space in bytes to allocate in addition to av_fifo_size()
  * @return <0 for failure, >=0 otherwise
  */
-int av_fifo_grow(AVFifoBuffer *f, unsigned int additional_space);
+int av_fifo_grow(AVFifoBuffer* f, unsigned int additional_space);
 
 /**
  * Read and discard the specified amount of data from an AVFifoBuffer.
  * @param f AVFifoBuffer to read from
  * @param size amount of data to read in bytes
  */
-void av_fifo_drain(AVFifoBuffer *f, int size);
+void av_fifo_drain(AVFifoBuffer* f, int size);
 
 /**
  * Return a pointer to the data stored in a FIFO buffer at a certain offset.
@@ -130,14 +131,14 @@ void av_fifo_drain(AVFifoBuffer *f, int size);
  *             point outside to the buffer data.
  *             The used buffer size can be checked with av_fifo_size().
  */
-static inline uint8_t *av_fifo_peek2(const AVFifoBuffer *f, int offs)
+static inline uint8_t* av_fifo_peek2(const AVFifoBuffer* f, int offs)
 {
-    uint8_t *ptr = f->rptr + offs;
-    if (ptr >= f->end)
-        ptr = f->buffer + (ptr - f->end);
-    else if (ptr < f->buffer)
-        ptr = f->end - (f->buffer - ptr);
-    return ptr;
+	uint8_t* ptr = f->rptr + offs;
+	if (ptr >= f->end)
+		ptr = f->buffer + (ptr - f->end);
+	else if (ptr < f->buffer)
+		ptr = f->end - (f->buffer - ptr);
+	return ptr;
 }
 
 #if FF_API_AV_FIFO_PEEK
@@ -145,9 +146,10 @@ static inline uint8_t *av_fifo_peek2(const AVFifoBuffer *f, int offs)
  * @deprecated Use av_fifo_peek2() instead.
  */
 attribute_deprecated
-static inline uint8_t av_fifo_peek(AVFifoBuffer *f, int offs)
+
+static inline uint8_t av_fifo_peek(AVFifoBuffer* f, int offs)
 {
-    return *av_fifo_peek2(f, offs);
+	return *av_fifo_peek2(f, offs);
 }
 #endif
 

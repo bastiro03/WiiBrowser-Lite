@@ -6,9 +6,9 @@ namespace litehtml
 	class el_body : public element
 	{
 	public:
-		el_body(litehtml::document* doc);
-		virtual ~el_body();
+		el_body(document* doc);
+		~el_body() override;
 
-		virtual bool is_body()  const;
+		bool is_body() const override;
 	};
 }

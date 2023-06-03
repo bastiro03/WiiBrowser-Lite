@@ -33,43 +33,44 @@
 #define MQC_CX_UNI 17
 #define MQC_CX_RL  18
 
-extern uint16_t  ff_mqc_qe[2*47];
-extern uint8_t ff_mqc_nlps[2*47];
-extern uint8_t ff_mqc_nmps[2*47];
+extern uint16_t ff_mqc_qe[2 * 47];
+extern uint8_t ff_mqc_nlps[2 * 47];
+extern uint8_t ff_mqc_nmps[2 * 47];
 
-typedef struct {
-    uint8_t *bp, *bpstart;
-    unsigned int a;
-    unsigned int c;
-    unsigned int ct;
-    uint8_t cx_states[19];
+typedef struct
+{
+	uint8_t *bp, *bpstart;
+	unsigned int a;
+	unsigned int c;
+	unsigned int ct;
+	uint8_t cx_states[19];
 } MqcState;
 
 /* encoder */
 
 /** initialize the encoder */
-void ff_mqc_initenc(MqcState *mqc, uint8_t *bp);
+void ff_mqc_initenc(MqcState* mqc, uint8_t* bp);
 
 /** code bit d with context cx */
-void ff_mqc_encode(MqcState *mqc, uint8_t *cxstate, int d);
+void ff_mqc_encode(MqcState* mqc, uint8_t* cxstate, int d);
 
 /** number of encoded bytes */
-int ff_mqc_length(MqcState *mqc);
+int ff_mqc_length(MqcState* mqc);
 
 /** flush the encoder [returns number of bytes encoded] */
-int ff_mqc_flush(MqcState *mqc);
+int ff_mqc_flush(MqcState* mqc);
 
 /* decoder */
 
 /** initialize the decoder */
-void ff_mqc_initdec(MqcState *mqc, uint8_t *bp);
+void ff_mqc_initdec(MqcState* mqc, uint8_t* bp);
 
 /** returns decoded bit with context cx */
-int ff_mqc_decode(MqcState *mqc, uint8_t *cxstate);
+int ff_mqc_decode(MqcState* mqc, uint8_t* cxstate);
 
 /* common */
 
 /** initialize the contexts */
-void ff_mqc_init_contexts(MqcState *mqc);
+void ff_mqc_init_contexts(MqcState* mqc);
 
 #endif /* AVCODEC_MQC_H */

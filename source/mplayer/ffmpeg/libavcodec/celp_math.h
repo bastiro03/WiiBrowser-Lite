@@ -59,8 +59,8 @@ int ff_log2(uint32_t value);
  */
 static inline int bidir_sal(int value, int offset)
 {
-    if(offset < 0) return value >> -offset;
-    else           return value <<  offset;
+	if (offset < 0) return value >> -offset;
+	return value << offset;
 }
 
 /**
@@ -71,7 +71,7 @@ static inline int bidir_sal(int value, int offset)
  *
  * @return dot product = sum of elementwise products
  */
-int64_t ff_dot_product(const int16_t *a, const int16_t *b, int length);
+int64_t ff_dot_product(const int16_t* a, const int16_t* b, int length);
 
 /**
  * Return the dot product.

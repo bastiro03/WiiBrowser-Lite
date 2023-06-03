@@ -21,8 +21,8 @@
 
 #include <stdint.h>
 
-double real_fix_timestamp(unsigned char *buf, unsigned int timestamp,
-                          unsigned int format, int64_t *kf_base,
-                          int *kf_pts, double *pts);
+double real_fix_timestamp(unsigned char* buf, unsigned int timestamp,
+                          unsigned int format, int64_t* kf_base,
+                          int* kf_pts, double* pts);
 
 #endif /* MPLAYER_DEMUX_REAL_H */

@@ -39,39 +39,44 @@
 #define ID3v2_FLAG_ENCRYPTION  0x0004
 #define ID3v2_FLAG_COMPRESSION 0x0008
 
-enum ID3v2Encoding {
-    ID3v2_ENCODING_ISO8859  = 0,
-    ID3v2_ENCODING_UTF16BOM = 1,
-    ID3v2_ENCODING_UTF16BE  = 2,
-    ID3v2_ENCODING_UTF8     = 3,
+enum ID3v2Encoding
+{
+	ID3v2_ENCODING_ISO8859 = 0,
+	ID3v2_ENCODING_UTF16BOM = 1,
+	ID3v2_ENCODING_UTF16BE = 2,
+	ID3v2_ENCODING_UTF8 = 3,
 };
 
-typedef struct ID3v2EncContext {
-    int      version;       ///< ID3v2 minor version, either 3 or 4
-    int64_t size_pos;       ///< offset of the tag total size
-    int          len;       ///< size of the tag written so far
+typedef struct ID3v2EncContext
+{
+	int version; ///< ID3v2 minor version, either 3 or 4
+	int64_t size_pos; ///< offset of the tag total size
+	int len; ///< size of the tag written so far
 } ID3v2EncContext;
 
-typedef struct ID3v2ExtraMeta {
-    const char *tag;
-    void *data;
-    struct ID3v2ExtraMeta *next;
+typedef struct ID3v2ExtraMeta
+{
+	const char* tag;
+	void* data;
+	struct ID3v2ExtraMeta* next;
 } ID3v2ExtraMeta;
 
-typedef struct ID3v2ExtraMetaGEOB {
-    uint32_t datasize;
-    uint8_t *mime_type;
-    uint8_t *file_name;
-    uint8_t *description;
-    uint8_t *data;
+typedef struct ID3v2ExtraMetaGEOB
+{
+	uint32_t datasize;
+	uint8_t* mime_type;
+	uint8_t* file_name;
+	uint8_t* description;
+	uint8_t* data;
 } ID3v2ExtraMetaGEOB;
 
-typedef struct ID3v2ExtraMetaAPIC {
-    uint8_t     *data;
-    int          len;
-    const char  *type;
-    uint8_t     *description;
-    enum CodecID id;
+typedef struct ID3v2ExtraMetaAPIC
+{
+	uint8_t* data;
+	int len;
+	const char* type;
+	uint8_t* description;
+	enum CodecID id;
 } ID3v2ExtraMetaAPIC;
 
 /**
@@ -80,42 +85,42 @@ typedef struct ID3v2ExtraMetaAPIC {
  * @param magic magic bytes to identify the header.
  * If in doubt, use ID3v2_DEFAULT_MAGIC.
  */
-int ff_id3v2_match(const uint8_t *buf, const char *magic);
+int ff_id3v2_match(const uint8_t* buf, const char* magic);
 
 /**
  * Get the length of an ID3v2 tag.
  * @param buf must be ID3v2_HEADER_SIZE bytes long and point to the start of an
  * already detected ID3v2 tag
  */
-int ff_id3v2_tag_len(const uint8_t *buf);
+int ff_id3v2_tag_len(const uint8_t* buf);
 
 /**
  * Read an ID3v2 tag, including supported extra metadata
  * @param extra_meta If not NULL, extra metadata is parsed into a list of
  * ID3v2ExtraMeta structs and *extra_meta points to the head of the list
  */
-void ff_id3v2_read(AVFormatContext *s, const char *magic, ID3v2ExtraMeta **extra_meta);
+void ff_id3v2_read(AVFormatContext* s, const char* magic, ID3v2ExtraMeta** extra_meta);
 
 /**
  * Initialize an ID3v2 tag.
  */
-void ff_id3v2_start(ID3v2EncContext *id3, AVIOContext *pb, int id3v2_version,
-                    const char *magic);
+void ff_id3v2_start(ID3v2EncContext* id3, AVIOContext* pb, int id3v2_version,
+                    const char* magic);
 
 /**
  * Convert and write all global metadata from s into an ID3v2 tag.
  */
-int ff_id3v2_write_metadata(AVFormatContext *s, ID3v2EncContext *id3);
+int ff_id3v2_write_metadata(AVFormatContext* s, ID3v2EncContext* id3);
 
 /**
  * Write an attached picture from pkt into an ID3v2 tag.
  */
-int ff_id3v2_write_apic(AVFormatContext *s, ID3v2EncContext *id3, AVPacket *pkt);
+int ff_id3v2_write_apic(AVFormatContext* s, ID3v2EncContext* id3, AVPacket* pkt);
 
 /**
  * Finalize an opened ID3v2 tag.
  */
-void ff_id3v2_finish(ID3v2EncContext *id3, AVIOContext *pb);
+void ff_id3v2_finish(ID3v2EncContext* id3, AVIOContext* pb);
 
 /**
  * Write an ID3v2 tag containing all global metadata from s.
@@ -123,19 +128,19 @@ void ff_id3v2_finish(ID3v2EncContext *id3, AVIOContext *pb);
  * @param magic magic bytes to identify the header
  * If in doubt, use ID3v2_DEFAULT_MAGIC.
  */
-int ff_id3v2_write_simple(struct AVFormatContext *s, int id3v2_version, const char *magic);
+int ff_id3v2_write_simple(struct AVFormatContext* s, int id3v2_version, const char* magic);
 
 /**
  * Free memory allocated parsing special (non-text) metadata.
  * @param extra_meta Pointer to a pointer to the head of a ID3v2ExtraMeta list, *extra_meta is set to NULL.
  */
-void ff_id3v2_free_extra_meta(ID3v2ExtraMeta **extra_meta);
+void ff_id3v2_free_extra_meta(ID3v2ExtraMeta** extra_meta);
 
 /**
  * Create a stream for each APIC (attached picture) extracted from the
  * ID3v2 header.
  */
-int ff_id3v2_parse_apic(AVFormatContext *s, ID3v2ExtraMeta **extra_meta);
+int ff_id3v2_parse_apic(AVFormatContext* s, ID3v2ExtraMeta** extra_meta);
 
 extern const AVMetadataConv ff_id3v2_34_metadata_conv[];
 extern const AVMetadataConv ff_id3v2_4_metadata_conv[];
@@ -159,6 +164,6 @@ extern const char ff_id3v2_3_tags[][4];
 
 extern const CodecMime ff_id3v2_mime_tags[];
 
-extern const char *ff_id3v2_picture_types[21];
+extern const char* ff_id3v2_picture_types[21];
 
 #endif /* AVFORMAT_ID3V2_H */

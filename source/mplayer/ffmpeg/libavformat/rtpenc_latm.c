@@ -22,40 +22,45 @@
 #include "avformat.h"
 #include "rtpenc.h"
 
-void ff_rtp_send_latm(AVFormatContext *s1, const uint8_t *buff, int size)
+void ff_rtp_send_latm(AVFormatContext* s1, const uint8_t* buff, int size)
 {
-    /* MP4A-LATM
-     * The RTP payload format specification is described in RFC 3016
-     * The encoding specifications are provided in ISO/IEC 14496-3 */
+	/* MP4A-LATM
+	 * The RTP payload format specification is described in RFC 3016
+	 * The encoding specifications are provided in ISO/IEC 14496-3 */
 
-    RTPMuxContext *s = s1->priv_data;
-    int header_size;
-    int offset = 0;
-    int len    = 0;
+	RTPMuxContext* s = s1->priv_data;
+	int header_size;
+	int offset = 0;
+	int len = 0;
 
-    /* skip ADTS header, if present */
-    if ((s1->streams[0]->codec->extradata_size) == 0) {
-        size -= 7;
-        buff += 7;
-    }
+	/* skip ADTS header, if present */
+	if ((s1->streams[0]->codec->extradata_size) == 0)
+	{
+		size -= 7;
+		buff += 7;
+	}
 
-    /* PayloadLengthInfo() */
-    header_size = size/0xFF + 1;
-    memset(s->buf, 0xFF, header_size - 1);
-    s->buf[header_size - 1] = size % 0xFF;
+	/* PayloadLengthInfo() */
+	header_size = size / 0xFF + 1;
+	memset(s->buf, 0xFF, header_size - 1);
+	s->buf[header_size - 1] = size % 0xFF;
 
-    s->timestamp = s->cur_timestamp;
+	s->timestamp = s->cur_timestamp;
 
-    /* PayloadMux() */
-    while (size > 0) {
-        len   = FFMIN(size, s->max_payload_size - (!offset ? header_size : 0));
-        size -= len;
-        if (!offset) {
-            memcpy(s->buf + header_size, buff, len);
-            ff_rtp_send_data(s1, s->buf, header_size + len, !size);
-        } else {
-            ff_rtp_send_data(s1, buff + offset, len, !size);
-        }
-        offset += len;
-    }
+	/* PayloadMux() */
+	while (size > 0)
+	{
+		len = FFMIN(size, s->max_payload_size - (!offset ? header_size : 0));
+		size -= len;
+		if (!offset)
+		{
+			memcpy(s->buf + header_size, buff, len);
+			ff_rtp_send_data(s1, s->buf, header_size + len, !size);
+		}
+		else
+		{
+			ff_rtp_send_data(s1, buff + offset, len, !size);
+		}
+		offset += len;
+	}
 }

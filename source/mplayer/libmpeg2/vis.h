@@ -143,11 +143,12 @@
 
 static inline void vis_set_gsr(unsigned int _val)
 {
-	register unsigned int val asm("g1");
+	register unsigned int val
+	asm("g1");
 
 	val = _val;
 	__asm__ __volatile__(".word 0xa7804000"
-			     : : "r" (val));
+		: : "r"(val));
 }
 
 #define VIS_GSR_ALIGNADDR_MASK	0x0000007
@@ -225,68 +226,72 @@ do {	register void *__mem asm("g1"); \
 
 /* Alignment instructions.  */
 
-static inline void *vis_alignaddr(void *_ptr)
+static inline void* vis_alignaddr(void* _ptr)
 {
-	register void *ptr asm("g1");
+	register void* ptr
+	asm("g1");
 
 	ptr = _ptr;
 
 	__asm__ __volatile__(".word %2"
-			     : "=&r" (ptr)
-			     : "0" (ptr),
-			       "i" (vis_opc_base | vis_opf(0x18) |
-				    vis_rs1_s(1) |
-				    vis_rs2_s(0) |
-				    vis_rd_s(1)));
+		: "=&r"(ptr)
+		: "0"(ptr),
+	                     "i"(vis_opc_base | vis_opf(0x18) |
+		                     vis_rs1_s(1) |
+		                     vis_rs2_s(0) |
+		                     vis_rd_s(1)));
 
 	return ptr;
 }
 
-static inline void vis_alignaddr_g0(void *_ptr)
+static inline void vis_alignaddr_g0(void* _ptr)
 {
-	register void *ptr asm("g1");
+	register void* ptr
+	asm("g1");
 
 	ptr = _ptr;
 
 	__asm__ __volatile__(".word %2"
-			     : "=&r" (ptr)
-			     : "0" (ptr),
-			       "i" (vis_opc_base | vis_opf(0x18) |
-				    vis_rs1_s(1) |
-				    vis_rs2_s(0) |
-				    vis_rd_s(0)));
+		: "=&r"(ptr)
+		: "0"(ptr),
+	                     "i"(vis_opc_base | vis_opf(0x18) |
+		                     vis_rs1_s(1) |
+		                     vis_rs2_s(0) |
+		                     vis_rd_s(0)));
 }
 
-static inline void *vis_alignaddrl(void *_ptr)
+static inline void* vis_alignaddrl(void* _ptr)
 {
-	register void *ptr asm("g1");
+	register void* ptr
+	asm("g1");
 
 	ptr = _ptr;
 
 	__asm__ __volatile__(".word %2"
-			     : "=&r" (ptr)
-			     : "0" (ptr),
-			       "i" (vis_opc_base | vis_opf(0x19) |
-				    vis_rs1_s(1) |
-				    vis_rs2_s(0) |
-				    vis_rd_s(1)));
+		: "=&r"(ptr)
+		: "0"(ptr),
+	                     "i"(vis_opc_base | vis_opf(0x19) |
+		                     vis_rs1_s(1) |
+		                     vis_rs2_s(0) |
+		                     vis_rd_s(1)));
 
 	return ptr;
 }
 
-static inline void vis_alignaddrl_g0(void *_ptr)
+static inline void vis_alignaddrl_g0(void* _ptr)
 {
-	register void *ptr asm("g1");
+	register void* ptr
+	asm("g1");
 
 	ptr = _ptr;
 
 	__asm__ __volatile__(".word %2"
-			     : "=&r" (ptr)
-			     : "0" (ptr),
-			       "i" (vis_opc_base | vis_opf(0x19) |
-				    vis_rs1_s(1) |
-				    vis_rs2_s(0) |
-				    vis_rd_s(0)));
+		: "=&r"(ptr)
+		: "0"(ptr),
+	                     "i"(vis_opc_base | vis_opf(0x19) |
+		                     vis_rs1_s(1) |
+		                     vis_rs2_s(0) |
+		                     vis_rd_s(0)));
 }
 
 #define vis_faligndata(rs1,rs2,rd)	vis_dd2d(0x48, rs1, rs2, rd)

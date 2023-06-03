@@ -21,9 +21,9 @@
 
 #include <gtk/gtk.h>
 
-extern GtkWidget * About;
+extern GtkWidget* About;
 
-GtkWidget * create_About( void );
-void ShowAboutBox( void );
+GtkWidget* create_About(void);
+void ShowAboutBox(void);
 
 #endif /* MPLAYER_GUI_ABOUT_H */

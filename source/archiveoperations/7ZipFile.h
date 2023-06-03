@@ -39,58 +39,57 @@ extern "C" {
 #include <sevenzip/7zHeader.h>
 }
 
-typedef struct
+using ArchiveFileStruct = struct
 {
-	char * filename; // full filename
+	char* filename; // full filename
 	size_t length; // uncompressed file length in 64 bytes for sizes higher than 4GB
 	size_t comp_length; // compressed file length in 64 bytes for sizes higher than 4GB
 	bool isdir; // 0 - file, 1 - directory
 	u32 fileindex; // fileindex number
 	u64 ModTime; // modification time
 	u8 archiveType; // modification time
-} ArchiveFileStruct;
+};
 
 enum
 {
-    UNKNOWN = 1,
-    ZIP,
-    SZIP,
-    RAR,
-    U8Arch,
-    ArcArch
+	UNKNOWN = 1,
+	ZIP,
+	SZIP,
+	RAR,
+	U8Arch,
+	ArcArch
 };
-
 
 class SzFile
 {
-    public:
-		//!Constructor
-        SzFile(const char *filepath);
-		//!Destructor
-		~SzFile();
-		//!Check if it is a 7zip file
-        bool Is7ZipFile (const char *buffer);
-		//!Get the archive file structure
-        ArchiveFileStruct * GetFileStruct(int fileIndx);
-		//!Extract file from a 7zip to file
-        int ExtractFile(int fileindex, const char * outpath, bool withpath = false);
-		//!Extract all files from the 7zip to a path
-        int ExtractAll(const char * destpath);
-		//!Get the total amount of items inside the archive
-        u32 GetItemCount();
+public:
+	//!Constructor
+	SzFile(const char* filepath);
+	//!Destructor
+	~SzFile();
+	//!Check if it is a 7zip file
+	bool Is7ZipFile(const char* buffer);
+	//!Get the archive file structure
+	ArchiveFileStruct* GetFileStruct(int fileIndx);
+	//!Extract file from a 7zip to file
+	int ExtractFile(int fileindex, const char* outpath, bool withpath = false);
+	//!Extract all files from the 7zip to a path
+	int ExtractAll(const char* destpath);
+	//!Get the total amount of items inside the archive
+	u32 GetItemCount();
 
-    private:
-        void DisplayError(SRes res);
+private:
+	void DisplayError(SRes res);
 
-        ArchiveFileStruct CurArcFile;
-        SRes SzResult;
-        CFileInStream archiveStream;
-        CLookToRead lookStream;
-        CSzArEx SzArchiveDb;
-        ISzAlloc SzAllocImp;
-        ISzAlloc SzAllocTempImp;
-        UInt32 SzBlockIndex;
-        CSzFileItem * SzFileItem;
+	ArchiveFileStruct CurArcFile;
+	SRes SzResult;
+	CFileInStream archiveStream;
+	CLookToRead lookStream;
+	CSzArEx SzArchiveDb;
+	ISzAlloc SzAllocImp;
+	ISzAlloc SzAllocTempImp;
+	UInt32 SzBlockIndex;
+	CSzFileItem* SzFileItem;
 };
 
 #endif

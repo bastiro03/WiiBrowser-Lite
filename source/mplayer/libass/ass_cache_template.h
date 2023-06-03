@@ -57,84 +57,81 @@
 #error missing defines
 #endif
 
-
-
 // describes an outline bitmap
 START(outline_bitmap, outline_bitmap_hash_key)
-    GENERIC(OutlineHashValue *, outline)
-    GENERIC(char, be) // blur edges
-    GENERIC(double, blur) // gaussian blur
-    GENERIC(int, frx) // signed 16.16
-    GENERIC(int, fry) // signed 16.16
-    GENERIC(int, frz) // signed 16.16
-    GENERIC(int, fax) // signed 16.16
-    GENERIC(int, fay) // signed 16.16
-    // shift vector that was added to glyph before applying rotation
-    // = 0, if frx = fry = frx = 0
-    // = (glyph base point) - (rotation origin), otherwise
-    GENERIC(int, shift_x)
-    GENERIC(int, shift_y)
-    FTVECTOR(advance) // subpixel shift vector
-    FTVECTOR(shadow_offset) // shadow subpixel shift
+	GENERIC(OutlineHashValue*, outline)
+	GENERIC(char, be) // blur edges
+	GENERIC(double, blur) // gaussian blur
+	GENERIC(int, frx) // signed 16.16
+	GENERIC(int, fry) // signed 16.16
+	GENERIC(int, frz) // signed 16.16
+	GENERIC(int, fax) // signed 16.16
+	GENERIC(int, fay) // signed 16.16
+	// shift vector that was added to glyph before applying rotation
+	// = 0, if frx = fry = frx = 0
+	// = (glyph base point) - (rotation origin), otherwise
+	GENERIC(int, shift_x)
+	GENERIC(int, shift_y)
+	FTVECTOR(advance) // subpixel shift vector
+	FTVECTOR(shadow_offset) // shadow subpixel shift
 END(OutlineBitmapHashKey)
 
 // describe a clip mask bitmap
 START(clip_bitmap, clip_bitmap_hash_key)
-    STRING(text)
+	STRING(text)
 END(ClipMaskHashKey)
 
 // describes an outline glyph
 START(glyph, glyph_hash_key)
-    GENERIC(ASS_Font *, font)
-    GENERIC(double, size) // font size
-    GENERIC(int, face_index)
-    GENERIC(int, glyph_index)
-    GENERIC(int, bold)
-    GENERIC(int, italic)
-    GENERIC(unsigned, scale_x) // 16.16
-    GENERIC(unsigned, scale_y) // 16.16
-    FTVECTOR(outline) // border width, 16.16
-    GENERIC(unsigned, flags)    // glyph decoration flags
-    GENERIC(unsigned, border_style)
+	GENERIC(ASS_Font*, font)
+	GENERIC(double, size) // font size
+	GENERIC(int, face_index)
+	GENERIC(int, glyph_index)
+	GENERIC(int, bold)
+	GENERIC(int, italic)
+	GENERIC(unsigned, scale_x) // 16.16
+	GENERIC(unsigned, scale_y) // 16.16
+	FTVECTOR(outline) // border width, 16.16
+	GENERIC(unsigned, flags) // glyph decoration flags
+	GENERIC(unsigned, border_style)
 END(GlyphHashKey)
 
 START(glyph_metrics, glyph_metrics_hash_key)
-    GENERIC(ASS_Font *, font)
-    GENERIC(double, size)
-    GENERIC(int, face_index)
-    GENERIC(int, glyph_index)
-    GENERIC(unsigned, scale_x)
-    GENERIC(unsigned, scale_y)
+	GENERIC(ASS_Font*, font)
+	GENERIC(double, size)
+	GENERIC(int, face_index)
+	GENERIC(int, glyph_index)
+	GENERIC(unsigned, scale_x)
+	GENERIC(unsigned, scale_y)
 END(GlyphMetricsHashKey)
 
 // describes an outline drawing
 START(drawing, drawing_hash_key)
-    GENERIC(unsigned, scale_x)
-    GENERIC(unsigned, scale_y)
-    GENERIC(int, pbo)
-    FTVECTOR(outline)
-    GENERIC(unsigned, border_style)
-    GENERIC(int, scale)
-    GENERIC(unsigned, hash)
-    STRING(text)
+	GENERIC(unsigned, scale_x)
+	GENERIC(unsigned, scale_y)
+	GENERIC(int, pbo)
+	FTVECTOR(outline)
+	GENERIC(unsigned, border_style)
+	GENERIC(int, scale)
+	GENERIC(unsigned, hash)
+	STRING(text)
 END(DrawingHashKey)
 
 // Cache for composited bitmaps
 START(composite, composite_hash_key)
-    GENERIC(int, aw)
-    GENERIC(int, ah)
-    GENERIC(int, bw)
-    GENERIC(int, bh)
-    GENERIC(int, ax)
-    GENERIC(int, ay)
-    GENERIC(int, bx)
-    GENERIC(int, by)
-    GENERIC(int, as)
-    GENERIC(int, bs)
-    GENERIC(unsigned char *, a)
-    GENERIC(unsigned char *, b)
+	GENERIC(int, aw)
+	GENERIC(int, ah)
+	GENERIC(int, bw)
+	GENERIC(int, bh)
+	GENERIC(int, ax)
+	GENERIC(int, ay)
+	GENERIC(int, bx)
+	GENERIC(int, by)
+	GENERIC(int, as)
+	GENERIC(int, bs)
+	GENERIC(unsigned char*, a)
+	GENERIC(unsigned char*, b)
 END(CompositeHashKey)
-
 
 #undef START
 #undef GENERIC

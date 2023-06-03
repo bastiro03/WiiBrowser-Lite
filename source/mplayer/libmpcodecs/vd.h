@@ -29,15 +29,15 @@ typedef mp_codec_info_t vd_info_t;
 /* interface of video decoder drivers */
 typedef struct vd_functions
 {
-        const vd_info_t *info;
-        int (*init)(sh_video_t *sh);
-        void (*uninit)(sh_video_t *sh);
-        int (*control)(sh_video_t *sh,int cmd,void* arg, ...);
-        mp_image_t* (*decode)(sh_video_t *sh,void* data,int len,int flags);
+	const vd_info_t* info;
+	int (*init)(sh_video_t* sh);
+	void (*uninit)(sh_video_t* sh);
+	int (*control)(sh_video_t* sh, int cmd, void* arg, ...);
+	mp_image_t* (*decode)(sh_video_t* sh, void* data, int len, int flags);
 } vd_functions_t;
 
 // NULL terminated array of all drivers
-extern const vd_functions_t * const mpcodecs_vd_drivers[];
+extern const vd_functions_t* const mpcodecs_vd_drivers[];
 
 extern int flip;
 extern int fullscreen;
@@ -61,9 +61,9 @@ extern const m_option_t xvid_dec_opts[];
 #define VDCTRL_QUERY_UNSEEN_FRAMES 9 /* current decoder lag */
 
 // callbacks:
-int mpcodecs_config_vo(sh_video_t *sh, int w, int h, unsigned int preferred_outfmt);
-mp_image_t* mpcodecs_get_image(sh_video_t *sh, int mp_imgtype, int mp_imgflag, int w, int h);
-void mpcodecs_draw_slice(sh_video_t *sh, unsigned char** src, int* stride, int w,int h, int x, int y);
+int mpcodecs_config_vo(sh_video_t* sh, int w, int h, unsigned int preferred_outfmt);
+mp_image_t* mpcodecs_get_image(sh_video_t* sh, int mp_imgtype, int mp_imgflag, int w, int h);
+void mpcodecs_draw_slice(sh_video_t* sh, unsigned char** src, int* stride, int w, int h, int x, int y);
 
 #define VDFLAGS_DROPFRAME 3
 

@@ -16,64 +16,62 @@ typedef uint32_t fourcc_t;
 /*
 typedef struct FatalError
 {
-    FatalError();
-    void PrintAll(void) {}
+	FatalError();
+	void PrintAll(void) {}
 }FatalError;
 */
 
 typedef struct CodecInfo
 {
-    char* dll;
-    GUID* guid;
-}CodecInfo;
-
+	char* dll;
+	GUID* guid;
+} CodecInfo;
 
 typedef struct CImage // public  your_libvo_mem
 {
-    char* ptr;
+	char* ptr;
 
-    /*char* (*Data)();
-    {
+	/*char* (*Data)();
+	{
 	return 0;
 	// pointer to memory block
-    }*/
-    /*int (*Supported)(fourcc_t csp, int bits);
-    {
+	}*/
+	/*int (*Supported)(fourcc_t csp, int bits);
+	{
 	return true;
 	// if you support such surface
-    }*/
-}CImage;
-
+	}*/
+} CImage;
 
 #if 0
 struct BitmapInfo : public BITMAPINFOHEADER
 {
-    void SetBits(int b) { return; /*fixme*/ }
-    void SetSpace(int b) { return; /*fixme*/ }
+	void SetBits(int b) { return; /*fixme*/ }
+	void SetSpace(int b) { return; /*fixme*/ }
 };
 #endif
 
 typedef struct IAudioDecoder
 {
-    WAVEFORMATEX in_fmt;
-    CodecInfo  record;
-    /*(*IAudioDecoder)( CodecInfo * r, const WAVEFORMATEX* w);
-    {
-        memcpy(&this->record,r,sizeof(CodecInfo));
-        in_fmt = *w;
-    }*/
-}IAudioDecoder;
+	WAVEFORMATEX in_fmt;
+	CodecInfo record;
+	/*(*IAudioDecoder)( CodecInfo * r, const WAVEFORMATEX* w);
+	{
+		memcpy(&this->record,r,sizeof(CodecInfo));
+		in_fmt = *w;
+	}*/
+} IAudioDecoder;
 
 /*
 struct IAudioEncoder
 {
-    IAudioEncoder(const CodecInfo&, WAVEFORMATEX*) {}
-    // you do not need this one...
+	IAudioEncoder(const CodecInfo&, WAVEFORMATEX*) {}
+	// you do not need this one...
 };
 */
 
-    enum CAPS
-    {
+enum CAPS
+{
 	CAP_NONE = 0,
 	CAP_YUY2 = 1,
 	CAP_YV12 = 2,
@@ -83,68 +81,70 @@ struct IAudioEncoder
 	CAP_I420 = 32,
 	CAP_YVU9 = 64,
 	CAP_IF09 = 128,
-    };
-    enum DecodingMode
-    {
+};
+
+enum DecodingMode
+{
 	DIRECT = 0,
 	REALTIME,
 	REALTIME_QUALITY_AUTO,
-    };
-    enum DecodingState
-    {
+};
+
+enum DecodingState
+{
 	STOP = 0,
 	START,
-    };
+};
 
 typedef struct BitmapInfo
 {
-    long 	biSize;
-    long  	biWidth;
-    long  	biHeight;
-    short 	biPlanes;
-    short 	biBitCount;
-    long 	biCompression;
-    long 	biSizeImage;
-    long  	biXPelsPerMeter;
-    long  	biYPelsPerMeter;
-    long 	biClrUsed;
-    long 	biClrImportant;
-    int 	colors[3];
+	long biSize;
+	long biWidth;
+	long biHeight;
+	short biPlanes;
+	short biBitCount;
+	long biCompression;
+	long biSizeImage;
+	long biXPelsPerMeter;
+	long biYPelsPerMeter;
+	long biClrUsed;
+	long biClrImportant;
+	int colors[3];
 } BitmapInfo;
 
 typedef struct IVideoDecoder
 {
-    int VBUFSIZE;
-    int QMARKHI;
-    int QMARKLO;
-    int DMARKHI;
-    int DMARKLO;
+	int VBUFSIZE;
+	int QMARKHI;
+	int QMARKLO;
+	int DMARKHI;
+	int DMARKLO;
 
-    /*
-    IVideoDecoder(CodecInfo& info, const BITMAPINFOHEADER& format) : record(info)
-    {
-        // implement init part
-    }
-    virtual ~IVideoDecoder();
-    void Stop()
-    {
-    }
-    void Start()
-    {
-    }
-    */
-    const CodecInfo record;
-    int m_Mode;	// should we do precaching (or even change Quality on the fly)
-    int m_State;
-    int m_iDecpos;
-    int m_iPlaypos;
-    float m_fQuality;           // quality for the progress bar 0..1(best)
-    int m_bCapable16b;
+	/*
+	IVideoDecoder(CodecInfo& info, const BITMAPINFOHEADER& format) : record(info)
+	{
+		// implement init part
+	}
+	virtual ~IVideoDecoder();
+	void Stop()
+	{
+	}
+	void Start()
+	{
+	}
+	*/
+	const CodecInfo record;
+	int m_Mode; // should we do precaching (or even change Quality on the fly)
+	int m_State;
+	int m_iDecpos;
+	int m_iPlaypos;
+	float m_fQuality; // quality for the progress bar 0..1(best)
+	int m_bCapable16b;
 
-    BITMAPINFOHEADER* m_bh;	// format of input data (might be larger - e.g. huffyuv)
-    BitmapInfo m_decoder;	// format of decoder output
-    BitmapInfo m_obh;		// format of returned frames
-}IVideoDecoder;
+	BITMAPINFOHEADER* m_bh; // format of input data (might be larger - e.g. huffyuv)
+	BitmapInfo m_decoder; // format of decoder output
+	BitmapInfo m_obh; // format of returned frames
+} IVideoDecoder;
 
 /*
 struct IRtConfig
@@ -235,7 +235,6 @@ struct IRtConfig
 #define fcccram mmioFOURCC('c', 'r', 'a', 'm')
 #define fccCRAM mmioFOURCC('C', 'R', 'A', 'M')
 #define fccMSVC mmioFOURCC('M', 'S', 'V', 'C')
-
 
 #define fccMSZH mmioFOURCC('M', 'S', 'Z', 'H')
 

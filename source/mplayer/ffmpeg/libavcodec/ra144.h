@@ -33,44 +33,45 @@
 #define FRAMESIZE       20      ///< size of encoded frame
 #define LPC_ORDER       10      ///< order of LPC filter
 
-typedef struct {
-    AVCodecContext *avctx;
-    AVFrame frame;
-    LPCContext lpc_ctx;
-    AudioFrameQueue afq;
-    int last_frame;
+typedef struct
+{
+	AVCodecContext* avctx;
+	AVFrame frame;
+	LPCContext lpc_ctx;
+	AudioFrameQueue afq;
+	int last_frame;
 
-    unsigned int     old_energy;        ///< previous frame energy
+	unsigned int old_energy; ///< previous frame energy
 
-    unsigned int     lpc_tables[2][10];
+	unsigned int lpc_tables[2][10];
 
-    /** LPC coefficients: lpc_coef[0] is the coefficients of the current frame
-     *  and lpc_coef[1] of the previous one. */
-    unsigned int    *lpc_coef[2];
+	/** LPC coefficients: lpc_coef[0] is the coefficients of the current frame
+	 *  and lpc_coef[1] of the previous one. */
+	unsigned int* lpc_coef[2];
 
-    unsigned int     lpc_refl_rms[2];
+	unsigned int lpc_refl_rms[2];
 
-    int16_t curr_block[NBLOCKS * BLOCKSIZE];
+	int16_t curr_block[NBLOCKS * BLOCKSIZE];
 
-    /** The current subblock padded by the last 10 values of the previous one. */
-    int16_t curr_sblock[50];
+	/** The current subblock padded by the last 10 values of the previous one. */
+	int16_t curr_sblock[50];
 
-    /** Adaptive codebook, its size is two units bigger to avoid a
-     *  buffer overflow. */
-    uint16_t adapt_cb[146+2];
+	/** Adaptive codebook, its size is two units bigger to avoid a
+	 *  buffer overflow. */
+	uint16_t adapt_cb[146 + 2];
 } RA144Context;
 
-void ff_copy_and_dup(int16_t *target, const int16_t *source, int offset);
-int ff_eval_refl(int *refl, const int16_t *coefs, AVCodecContext *avctx);
-void ff_eval_coefs(int *coefs, const int *refl);
-void ff_int_to_int16(int16_t *out, const int *inp);
+void ff_copy_and_dup(int16_t* target, const int16_t* source, int offset);
+int ff_eval_refl(int* refl, const int16_t* coefs, AVCodecContext* avctx);
+void ff_eval_coefs(int* coefs, const int* refl);
+void ff_int_to_int16(int16_t* out, const int* inp);
 int ff_t_sqrt(unsigned int x);
-unsigned int ff_rms(const int *data);
-int ff_interp(RA144Context *ractx, int16_t *out, int a, int copyold,
+unsigned int ff_rms(const int* data);
+int ff_interp(RA144Context* ractx, int16_t* out, int a, int copyold,
               int energy);
 unsigned int ff_rescale_rms(unsigned int rms, unsigned int energy);
-int ff_irms(const int16_t *data);
-void ff_subblock_synthesis(RA144Context *ractx, const uint16_t *lpc_coefs,
+int ff_irms(const int16_t* data);
+void ff_subblock_synthesis(RA144Context* ractx, const uint16_t* lpc_coefs,
                            int cba_idx, int cb1_idx, int cb2_idx,
                            int gval, int gain);
 
@@ -81,6 +82,6 @@ extern const int8_t ff_cb2_vects[128][40];
 extern const uint16_t ff_cb1_base[128];
 extern const uint16_t ff_cb2_base[128];
 extern const int16_t ff_energy_tab[32];
-extern const int16_t * const ff_lpc_refl_cb[10];
+extern const int16_t* const ff_lpc_refl_cb[10];
 
 #endif /* AVCODEC_RA144_H */

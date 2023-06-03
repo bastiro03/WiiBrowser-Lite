@@ -29,6 +29,6 @@
 
 extern int ivtv_fd;
 
-int ivtv_write(const unsigned char *data, int len);
+int ivtv_write(const unsigned char* data, int len);
 
 #endif /* MPLAYER_VO_IVTV_H */

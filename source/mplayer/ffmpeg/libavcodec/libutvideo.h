@@ -31,17 +31,19 @@
 #include <utvideo/utvideo.h>
 #include <utvideo/Codec.h>
 
-typedef struct {
-    uint32_t version;
-    uint32_t original_format;
-    uint32_t frameinfo_size;
-    uint32_t flags;
-} UtVideoExtra;
+using UtVideoExtra = struct
+{
+	uint32_t version;
+	uint32_t original_format;
+	uint32_t frameinfo_size;
+	uint32_t flags;
+};
 
-typedef struct {
-    CCodec *codec;
-    unsigned int buf_size;
-    uint8_t *buffer;
-} UtVideoContext;
+using UtVideoContext = struct
+{
+	CCodec* codec;
+	unsigned int buf_size;
+	uint8_t* buffer;
+};
 
 #endif /* AVCODEC_LIBUTVIDEO_H */

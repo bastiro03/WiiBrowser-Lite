@@ -31,9 +31,9 @@
 #include "mpeg2_internal.h"
 #include "alpha_asm.h"
 
-static inline uint64_t avg2 (uint64_t a, uint64_t b)
+static inline uint64_t avg2(uint64_t a, uint64_t b)
 {
-    return (a | b) - (((a ^ b) & BYTE_VEC (0xfe)) >> 1);
+	return (a | b) - (((a ^ b) & BYTE_VEC(0xfe)) >> 1);
 }
 
 // Load two unaligned quadwords from addr. This macro only works if
@@ -234,20 +234,20 @@ static void MC_ ## OPNAME ## _ ## SUFF ## _ ## SIZE ## _alpha		\
     MAKE_OP (OPNAME, 16, xy, OP16_XY2, STORE);
 
 #define STORE(l,b) stq (l, b)
-PIXOP (put, STORE);
+PIXOP(put, STORE);
 #undef STORE
 #define STORE(l,b) stq (avg2 (l, ldq (b)), b);
-PIXOP (avg, STORE);
+PIXOP(avg, STORE);
 
 mpeg2_mc_t mpeg2_mc_alpha = {
-    { MC_put_o_16_alpha, MC_put_x_16_alpha,
-      MC_put_y_16_alpha, MC_put_xy_16_alpha,
-      MC_put_o_8_alpha, MC_put_x_8_alpha,
-      MC_put_y_8_alpha, MC_put_xy_8_alpha },
-    { MC_avg_o_16_alpha, MC_avg_x_16_alpha,
-      MC_avg_y_16_alpha, MC_avg_xy_16_alpha,
-      MC_avg_o_8_alpha, MC_avg_x_8_alpha,
-      MC_avg_y_8_alpha, MC_avg_xy_8_alpha }
+	{ MC_put_o_16_alpha, MC_put_x_16_alpha,
+	  MC_put_y_16_alpha, MC_put_xy_16_alpha,
+	  MC_put_o_8_alpha, MC_put_x_8_alpha,
+	  MC_put_y_8_alpha, MC_put_xy_8_alpha },
+	{ MC_avg_o_16_alpha, MC_avg_x_16_alpha,
+	  MC_avg_y_16_alpha, MC_avg_xy_16_alpha,
+	  MC_avg_o_8_alpha, MC_avg_x_8_alpha,
+	  MC_avg_y_8_alpha, MC_avg_xy_8_alpha }
 };
 
 #endif

@@ -5,32 +5,34 @@ namespace litehtml
 	class object
 	{
 	protected:
-		unsigned long volatile	m_refCount;
+		volatile unsigned long m_refCount;
+
 	public:
 		object()
-		{ 
+		{
 			m_refCount = 0;
 		}
+
 		virtual ~object()
 		{
-
 		}
 
 		void addRef()
-		{ 
+		{
 			m_refCount++;
 		}
-		
+
 		void release()
 		{
-			if(!(--m_refCount)) delete this;
+			if (!(--m_refCount)) delete this;
 		}
 	};
 
-	template<class T>
+	template <class T>
 	class object_ptr
 	{
-		T*	m_ptr;
+		T* m_ptr;
+
 	public:
 		object_ptr()
 		{
@@ -40,7 +42,7 @@ namespace litehtml
 		object_ptr(T* ptr)
 		{
 			m_ptr = ptr;
-			if(m_ptr)
+			if (m_ptr)
 			{
 				m_ptr->addRef();
 			}
@@ -49,7 +51,7 @@ namespace litehtml
 		object_ptr(const object_ptr<T>& val)
 		{
 			m_ptr = val.m_ptr;
-			if(m_ptr)
+			if (m_ptr)
 			{
 				m_ptr->addRef();
 			}
@@ -57,7 +59,7 @@ namespace litehtml
 
 		~object_ptr()
 		{
-			if(m_ptr)
+			if (m_ptr)
 			{
 				m_ptr->release();
 			}
@@ -68,11 +70,11 @@ namespace litehtml
 		{
 			T* oldPtr = m_ptr;
 			m_ptr = val.m_ptr;
-			if(m_ptr)
+			if (m_ptr)
 			{
 				m_ptr->addRef();
 			}
-			if(oldPtr)
+			if (oldPtr)
 			{
 				oldPtr->release();
 			}
@@ -82,11 +84,11 @@ namespace litehtml
 		{
 			T* oldPtr = m_ptr;
 			m_ptr = val;
-			if(m_ptr)
+			if (m_ptr)
 			{
 				m_ptr->addRef();
 			}
-			if(oldPtr)
+			if (oldPtr)
 			{
 				oldPtr->release();
 			}

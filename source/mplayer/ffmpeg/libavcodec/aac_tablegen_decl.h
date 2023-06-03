@@ -28,7 +28,7 @@
 extern const float ff_aac_pow2sf_tab[428];
 #else
 void ff_aac_tableinit(void);
-extern       float ff_aac_pow2sf_tab[428];
+extern float ff_aac_pow2sf_tab[428];
 #endif /* CONFIG_HARDCODED_TABLES */
 
 #endif /* AVCODEC_AAC_TABLEGEN_DECL_H */

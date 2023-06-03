@@ -28,22 +28,24 @@
 
 #define MAX_FONT_NAME 128
 
-typedef struct {
-    int x, y;     // location
-    int sx, sy;   // size
+typedef struct
+{
+	int x, y; // location
+	int sx, sy; // size
 } fntChar;
 
-typedef struct {
-    fntChar Fnt[ASCII_CHRS + EXTRA_CHRS];
-    unsigned char nonASCIIidx[EXTRA_CHRS][UTF8LENGTH];
-    guiImage Bitmap;
-    char name[MAX_FONT_NAME];
+typedef struct
+{
+	fntChar Fnt[ASCII_CHRS + EXTRA_CHRS];
+	unsigned char nonASCIIidx[EXTRA_CHRS][UTF8LENGTH];
+	guiImage Bitmap;
+	char name[MAX_FONT_NAME];
 } bmpFont;
 
-int fntFindID(char *name);
+int fntFindID(char* name);
 void fntFreeFont(void);
-int fntRead(char *path, char *fname);
-guiImage *fntTextRender(wItem *item, int px, char *txt);
-int fntTextWidth(int id, char *str);
+int fntRead(char* path, char* fname);
+guiImage* fntTextRender(wItem* item, int px, char* txt);
+int fntTextWidth(int id, char* str);
 
 #endif /* MPLAYER_GUI_FONT_H */

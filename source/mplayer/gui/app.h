@@ -91,9 +91,10 @@
 #define ivRedraw          7002
 #define ivPlayDVD         7003
 
-typedef struct {
-    int message;
-    const char *name;
+typedef struct
+{
+	int message;
+	const char* name;
 } evName;
 
 /* Skin items */
@@ -121,66 +122,68 @@ typedef struct {
 
 #define MAX_ITEMS 64
 
-typedef struct {
-    int type;
+typedef struct
+{
+	int type;
 
-    int x, y;
-    int width, height;
+	int x, y;
+	int width, height;
 
-    guiImage Bitmap;
-    guiImage Mask;
+	guiImage Bitmap;
+	guiImage Mask;
 
-    int fontid;
-    int align;
-    char *label;
+	int fontid;
+	int align;
+	char* label;
 
-    int pwidth, pheight;
-    int numphases;
-    float value;
+	int pwidth, pheight;
+	int numphases;
+	float value;
 
-    int message;
+	int message;
 
-    int R, G, B;
+	int R, G, B;
 
-    char *text;
-    int textwidth;
-    unsigned int starttime;
-    int last_x;
+	char* text;
+	int textwidth;
+	unsigned int starttime;
+	int last_x;
 
-    int pressed;
+	int pressed;
 } wItem;
 
-typedef struct {
-    wItem main;
-    wsTWindow mainWindow;
-    int mainDecoration;
+typedef struct
+{
+	wItem main;
+	wsTWindow mainWindow;
+	int mainDecoration;
 
-    wItem video;
-    wsTWindow videoWindow;
+	wItem video;
+	wsTWindow videoWindow;
 
-    wItem playbar;
-    wsTWindow playbarWindow;
-    int playbarIsPresent;
+	wItem playbar;
+	wsTWindow playbarWindow;
+	int playbarIsPresent;
 
-    wItem menu;
-    wItem menuSelected;
-    wsTWindow menuWindow;
-    int menuIsPresent;
+	wItem menu;
+	wItem menuSelected;
+	wsTWindow menuWindow;
+	int menuIsPresent;
 
-    int IndexOfMainItems;
-    wItem mainItems[MAX_ITEMS];
+	int IndexOfMainItems;
+	wItem mainItems[MAX_ITEMS];
 
-    int IndexOfPlaybarItems;
-    wItem playbarItems[MAX_ITEMS];
+	int IndexOfPlaybarItems;
+	wItem playbarItems[MAX_ITEMS];
 
-    int IndexOfMenuItems;
-    wItem menuItems[MAX_ITEMS];
+	int IndexOfMenuItems;
+	wItem menuItems[MAX_ITEMS];
 } guiItems;
 
 extern guiItems guiApp;
 
-wItem *appFindItem(int event);
-int appFindMessage(const char *name);
+wItem* appFindItem(int event);
+int appFindMessage(const char* name);
 void appFreeStruct(void);
 void btnModify(int event, float state);
 void btnSet(int event, int set);

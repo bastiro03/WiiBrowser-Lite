@@ -28,135 +28,138 @@
 #include "libmpcodecs/dec_teletext.h"
 #include "libmpdemux/demuxer.h"
 
-typedef struct tv_param_s {
-    char *freq;
-    char *channel;
-    char *chanlist;
-    char *norm;
-    int automute;
-    int normid;
-    char *device;
-    char *driver;
-    int width;
-    int height;
-    int input;
-    int outfmt;
-    float fps;
-    char **channels;
-    int noaudio;
-    int immediate;
-    int audiorate;
-    int audio_id;
-    int amode;
-    int volume;
-    int bass;
-    int treble;
-    int balance;
-    int forcechan;
-    int force_audio;
-    int buffer_size;
-    int mjpeg;
-    int decimation;
-    int quality;
-    int alsa;
-    char* adevice;
-    int brightness;
-    int contrast;
-    int hue;
-    int saturation;
-    int gain;
-    struct tt_param teletext;
+typedef struct tv_param_s
+{
+	char* freq;
+	char* channel;
+	char* chanlist;
+	char* norm;
+	int automute;
+	int normid;
+	char* device;
+	char* driver;
+	int width;
+	int height;
+	int input;
+	int outfmt;
+	float fps;
+	char** channels;
+	int noaudio;
+	int immediate;
+	int audiorate;
+	int audio_id;
+	int amode;
+	int volume;
+	int bass;
+	int treble;
+	int balance;
+	int forcechan;
+	int force_audio;
+	int buffer_size;
+	int mjpeg;
+	int decimation;
+	int quality;
+	int alsa;
+	char* adevice;
+	int brightness;
+	int contrast;
+	int hue;
+	int saturation;
+	int gain;
+	struct tt_param teletext;
 
-    int scan;
-    int scan_threshold;
-    float scan_period;
-    /**
-      Terminate stream with video renderer instead of Null renderer
-      Will help if video freezes but audio does not.
-      May not work with -vo directx and -vf crop combination.
-    */
-    int hidden_video_renderer;
-    /**
-      For VIVO cards VP pin have to be rendered too.
-      This tweak will cause VidePort pin stream to be terminated with video renderer
-      instead of removing it from graph.
-      Use if your card have vp pin and video is still choppy.
-      May not work with -vo directx and -vf crop combination.
-    */
-    int hidden_vp_renderer;
-    /**
-      Use system clock as sync source instead of default graph clock (usually the clock
-      from one of live sources in graph.
-    */
-    int system_clock;
-    /**
-      Some audio cards creates audio chunks with about 0.5 sec size.
-      This can cause choppy video when using mplayer with immediatemode=0
-      Use followingtweak to decrease audio chunk sizes.
-      It will create audio chunks with time length equal to one video frame time.
-    */
-    int normalize_audio_chunks;
+	int scan;
+	int scan_threshold;
+	float scan_period;
+	/**
+	  Terminate stream with video renderer instead of Null renderer
+	  Will help if video freezes but audio does not.
+	  May not work with -vo directx and -vf crop combination.
+	*/
+	int hidden_video_renderer;
+	/**
+	  For VIVO cards VP pin have to be rendered too.
+	  This tweak will cause VidePort pin stream to be terminated with video renderer
+	  instead of removing it from graph.
+	  Use if your card have vp pin and video is still choppy.
+	  May not work with -vo directx and -vf crop combination.
+	*/
+	int hidden_vp_renderer;
+	/**
+	  Use system clock as sync source instead of default graph clock (usually the clock
+	  from one of live sources in graph.
+	*/
+	int system_clock;
+	/**
+	  Some audio cards creates audio chunks with about 0.5 sec size.
+	  This can cause choppy video when using mplayer with immediatemode=0
+	  Use followingtweak to decrease audio chunk sizes.
+	  It will create audio chunks with time length equal to one video frame time.
+	*/
+	int normalize_audio_chunks;
 } tv_param_t;
 
 extern tv_param_t stream_tv_defaults;
 
 typedef struct tvi_info_s
 {
-    struct tvi_handle_s * (*tvi_init)(tv_param_t* tv_param);
-    const char *name;
-    const char *short_name;
-    const char *author;
-    const char *comment;
+	struct tvi_handle_s* (*tvi_init)(tv_param_t* tv_param);
+	const char* name;
+	const char* short_name;
+	const char* author;
+	const char* comment;
 } tvi_info_t;
-
 
 struct priv;
 
 typedef struct tvi_functions_s
 {
-    int (*init)(struct priv *priv);
-    int (*uninit)(struct priv *priv);
-    int (*control)(struct priv *priv, int cmd, void *arg);
-    int (*start)(struct priv *priv);
-    double (*grab_video_frame)(struct priv *priv, char *buffer, int len);
-    int (*get_video_framesize)(struct priv *priv);
-    double (*grab_audio_frame)(struct priv *priv, char *buffer, int len);
-    int (*get_audio_framesize)(struct priv *priv);
+	int (*init)(struct priv* priv);
+	int (*uninit)(struct priv* priv);
+	int (*control)(struct priv* priv, int cmd, void* arg);
+	int (*start)(struct priv* priv);
+	double (*grab_video_frame)(struct priv* priv, char* buffer, int len);
+	int (*get_video_framesize)(struct priv* priv);
+	double (*grab_audio_frame)(struct priv* priv, char* buffer, int len);
+	int (*get_audio_framesize)(struct priv* priv);
 } tvi_functions_t;
 
-typedef struct tvi_handle_s {
-    const tvi_functions_t	*functions;
-    void		*priv;
-    int 		seq;
-    demuxer_t		*demuxer;
+typedef struct tvi_handle_s
+{
+	const tvi_functions_t* functions;
+	void* priv;
+	int seq;
+	demuxer_t* demuxer;
 
-    /* specific */
-    int			norm;
-    int			chanlist;
-    const struct CHANLIST *chanlist_s;
-    int			channel;
-    tv_param_t          * tv_param;
-    void                * scan;
+	/* specific */
+	int norm;
+	int chanlist;
+	const struct CHANLIST* chanlist_s;
+	int channel;
+	tv_param_t* tv_param;
+	void* scan;
 } tvi_handle_t;
 
-typedef struct tv_channels_s {
-    int index;
-    char number[5];
-    char name[20];
-    int norm;
-    int   freq;
-    struct tv_channels_s *next;
-    struct tv_channels_s *prev;
+typedef struct tv_channels_s
+{
+	int index;
+	char number[5];
+	char name[20];
+	int norm;
+	int freq;
+	struct tv_channels_s* next;
+	struct tv_channels_s* prev;
 } tv_channels_t;
 
-extern tv_channels_t *tv_channel_list;
+extern tv_channels_t* tv_channel_list;
 extern tv_channels_t *tv_channel_current, *tv_channel_last;
-extern char *tv_channel_last_real;
+extern char* tv_channel_last_real;
 
-typedef struct {
-    unsigned int     scan_timer;
-    int     channel_num;
-    int     new_channels;
+typedef struct
+{
+	unsigned int scan_timer;
+	int channel_num;
+	int new_channels;
 } tv_scan_t;
 
 #define TVI_CONTROL_FALSE		0
@@ -226,37 +229,37 @@ typedef struct {
 #define TVI_CONTROL_VBI_INIT           0x501   ///< vbi init
 #define TVI_CONTROL_GET_VBI_PTR        0x502   ///< get teletext private pointer
 
-int tv_set_color_options(tvi_handle_t *tvh, int opt, int val);
-int tv_get_color_options(tvi_handle_t *tvh, int opt, int* val);
+int tv_set_color_options(tvi_handle_t* tvh, int opt, int val);
+int tv_get_color_options(tvi_handle_t* tvh, int opt, int* val);
 #define TV_COLOR_BRIGHTNESS	1
 #define TV_COLOR_HUE		2
 #define TV_COLOR_SATURATION	3
 #define TV_COLOR_CONTRAST	4
 
-int tv_step_channel_real(tvi_handle_t *tvh, int direction);
-int tv_step_channel(tvi_handle_t *tvh, int direction);
+int tv_step_channel_real(tvi_handle_t* tvh, int direction);
+int tv_step_channel(tvi_handle_t* tvh, int direction);
 #define TV_CHANNEL_LOWER	1
 #define TV_CHANNEL_HIGHER	2
 
-int tv_last_channel(tvi_handle_t *tvh);
+int tv_last_channel(tvi_handle_t* tvh);
 
-int tv_set_channel_real(tvi_handle_t *tvh, char *channel);
-int tv_set_channel(tvi_handle_t *tvh, char *channel);
+int tv_set_channel_real(tvi_handle_t* tvh, char* channel);
+int tv_set_channel(tvi_handle_t* tvh, char* channel);
 
-int tv_step_norm(tvi_handle_t *tvh);
-int tv_step_chanlist(tvi_handle_t *tvh);
+int tv_step_norm(tvi_handle_t* tvh);
+int tv_step_chanlist(tvi_handle_t* tvh);
 
-int tv_set_freq(tvi_handle_t *tvh, unsigned long freq);
-int tv_get_freq(tvi_handle_t *tvh, unsigned long *freq);
-int tv_get_signal(tvi_handle_t *tvh);
-int tv_step_freq(tvi_handle_t *tvh, float step_interval);
+int tv_set_freq(tvi_handle_t* tvh, unsigned long freq);
+int tv_get_freq(tvi_handle_t* tvh, unsigned long* freq);
+int tv_get_signal(tvi_handle_t* tvh);
+int tv_step_freq(tvi_handle_t* tvh, float step_interval);
 
-int tv_set_norm(tvi_handle_t *tvh, char* norm);
+int tv_set_norm(tvi_handle_t* tvh, char* norm);
 
-void tv_start_scan(tvi_handle_t *tvh, int start);
+void tv_start_scan(tvi_handle_t* tvh, int start);
 
-tvi_handle_t *tv_new_handle(int size, const tvi_functions_t *functions);
-void tv_free_handle(tvi_handle_t *h);
+tvi_handle_t* tv_new_handle(int size, const tvi_functions_t* functions);
+void tv_free_handle(tvi_handle_t* h);
 
 #define TV_NORM_PAL		1
 #define TV_NORM_NTSC		2

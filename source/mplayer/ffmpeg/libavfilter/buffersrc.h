@@ -27,18 +27,17 @@
 
 #include "avfilter.h"
 
-enum {
+enum
+{
+	/**
+	 * Do not check for format changes.
+	 */
+	AV_BUFFERSRC_FLAG_NO_CHECK_FORMAT = 1,
 
-    /**
-     * Do not check for format changes.
-     */
-    AV_BUFFERSRC_FLAG_NO_CHECK_FORMAT = 1,
-
-    /**
-     * Do not copy buffer data.
-     */
-    AV_BUFFERSRC_FLAG_NO_COPY = 2,
-
+	/**
+	 * Do not copy buffer data.
+	 */
+	AV_BUFFERSRC_FLAG_NO_COPY = 2,
 };
 
 /**
@@ -50,8 +49,8 @@ enum {
  * @return            >= 0 in case of success, a negative AVERROR code
  *                    in case of failure
  */
-int av_buffersrc_add_ref(AVFilterContext *buffer_src,
-                         AVFilterBufferRef *picref, int flags);
+int av_buffersrc_add_ref(AVFilterContext* buffer_src,
+                         AVFilterBufferRef* picref, int flags);
 
 /**
  * Get the number of failed requests.
@@ -60,7 +59,7 @@ int av_buffersrc_add_ref(AVFilterContext *buffer_src,
  * frame is present in the buffer.
  * The number is reset when a frame is added.
  */
-unsigned av_buffersrc_get_nb_failed_requests(AVFilterContext *buffer_src);
+unsigned av_buffersrc_get_nb_failed_requests(AVFilterContext* buffer_src);
 
 /**
  * Add a buffer to the filtergraph s.
@@ -69,7 +68,7 @@ unsigned av_buffersrc_get_nb_failed_requests(AVFilterContext *buffer_src);
  * This function will take ownership of buf, the user must not free it.
  * A NULL buf signals EOF -- i.e. no more frames will be sent to this filter.
  */
-int av_buffersrc_buffer(AVFilterContext *s, AVFilterBufferRef *buf);
+int av_buffersrc_buffer(AVFilterContext* s, AVFilterBufferRef* buf);
 
 /**
  * Add a frame to the buffer source.
@@ -80,6 +79,6 @@ int av_buffersrc_buffer(AVFilterContext *s, AVFilterBufferRef *buf);
  * @warning frame data will be memcpy()ed, which may be a big performance
  *          hit. Use av_buffersrc_buffer() to avoid copying the data.
  */
-int av_buffersrc_write_frame(AVFilterContext *s, AVFrame *frame);
+int av_buffersrc_write_frame(AVFilterContext* s, AVFrame* frame);
 
 #endif /* AVFILTER_BUFFERSRC_H */

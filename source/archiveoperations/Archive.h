@@ -38,31 +38,31 @@
 
 class ArchiveHandle
 {
-    public:
-		//!Constructor
-        ArchiveHandle(const char  * filepath);
-		//!Destructor
-        ~ArchiveHandle();
-		//!Get the archive file structure
-        ArchiveFileStruct * GetFileStruct(int fileIndx);
-		//!Extract a files from a zip file to a path
-        int ExtractFile(int ind, const char *destpath, bool withpath = false);
-		//!Extract all files from a zip file to a directory
-        int ExtractAll(const char *destpath);
-		//!Reload archive list
-        bool ReloadList();
-		//!Get the total amount of items inside the archive
-        u32 GetItemCount();
+public:
+	//!Constructor
+	ArchiveHandle(const char* filepath);
+	//!Destructor
+	~ArchiveHandle();
+	//!Get the archive file structure
+	ArchiveFileStruct* GetFileStruct(int fileIndx);
+	//!Extract a files from a zip file to a path
+	int ExtractFile(int ind, const char* destpath, bool withpath = false);
+	//!Extract all files from a zip file to a directory
+	int ExtractAll(const char* destpath);
+	//!Reload archive list
+	bool ReloadList();
+	//!Get the total amount of items inside the archive
+	u32 GetItemCount();
 
-    private:
-		//!Check what kind of archive it is
-        bool IsZipFile (const char *buffer);
-        bool Is7ZipFile(const char *buffer);
-        bool IsRarFile(const char *buffer);
+private:
+	//!Check what kind of archive it is
+	bool IsZipFile(const char* buffer);
+	bool Is7ZipFile(const char* buffer);
+	bool IsRarFile(const char* buffer);
 
-        SzFile * szFile;
-        ZipFile * zipFile;
-        RarFile * rarFile;
+	SzFile* szFile;
+	ZipFile* zipFile;
+	RarFile* rarFile;
 };
 
 #endif //ARCHIVE_BROWSER_H_

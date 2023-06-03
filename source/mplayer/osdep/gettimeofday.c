@@ -22,9 +22,9 @@
 #include <sys/timeb.h>
 int gettimeofday(struct timeval* t, struct timezone* timezone)
 {       struct timeb timebuffer;
-        ftime( &timebuffer );
-        t->tv_sec=timebuffer.time;
-        t->tv_usec=1000*timebuffer.millitm;
-        return 0;
+		ftime( &timebuffer );
+		t->tv_sec=timebuffer.time;
+		t->tv_usec=1000*timebuffer.millitm;
+		return 0;
 }
 */

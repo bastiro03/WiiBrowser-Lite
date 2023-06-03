@@ -43,26 +43,25 @@
 /*****************************************************************************
  * Error messages
  *****************************************************************************/
-void _print_error( dvdcss_t dvdcss, char *psz_string )
+void _print_error(dvdcss_t dvdcss, char* psz_string)
 {
-    if( dvdcss->b_errors )
-    {
-        fprintf( stderr, "libdvdcss error: %s\n", psz_string );
-    }
+	if (dvdcss->b_errors)
+	{
+		fprintf(stderr, "libdvdcss error: %s\n", psz_string);
+	}
 
-    dvdcss->psz_error = psz_string;
+	dvdcss->psz_error = psz_string;
 }
 
 /*****************************************************************************
  * Debug messages
  *****************************************************************************/
 #if 0
-void _print_debug( dvdcss_t dvdcss, char *psz_string )
+void _print_debug(dvdcss_t dvdcss, char* psz_string)
 {
-    if( dvdcss->b_debug )
-    {
-        fprintf( stderr, "libdvdcss debug: %s\n", psz_string );
-    }
+	if (dvdcss->b_debug)
+	{
+		fprintf(stderr, "libdvdcss debug: %s\n", psz_string);
+	}
 }
 #endif
-

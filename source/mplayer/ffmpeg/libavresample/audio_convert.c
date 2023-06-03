@@ -29,102 +29,118 @@
 #include "audio_convert.h"
 #include "audio_data.h"
 
-enum ConvFuncType {
-    CONV_FUNC_TYPE_FLAT,
-    CONV_FUNC_TYPE_INTERLEAVE,
-    CONV_FUNC_TYPE_DEINTERLEAVE,
+enum ConvFuncType
+{
+	CONV_FUNC_TYPE_FLAT,
+	CONV_FUNC_TYPE_INTERLEAVE,
+	CONV_FUNC_TYPE_DEINTERLEAVE,
 };
 
-typedef void (conv_func_flat)(uint8_t *out, const uint8_t *in, int len);
+typedef void (conv_func_flat)(uint8_t* out, const uint8_t* in, int len);
 
-typedef void (conv_func_interleave)(uint8_t *out, uint8_t *const *in,
+typedef void (conv_func_interleave)(uint8_t* out, uint8_t* const* in,
                                     int len, int channels);
 
-typedef void (conv_func_deinterleave)(uint8_t **out, const uint8_t *in, int len,
+typedef void (conv_func_deinterleave)(uint8_t** out, const uint8_t* in, int len,
                                       int channels);
 
-struct AudioConvert {
-    AVAudioResampleContext *avr;
-    enum AVSampleFormat in_fmt;
-    enum AVSampleFormat out_fmt;
-    int channels;
-    int planes;
-    int ptr_align;
-    int samples_align;
-    int has_optimized_func;
-    const char *func_descr;
-    const char *func_descr_generic;
-    enum ConvFuncType func_type;
-    conv_func_flat         *conv_flat;
-    conv_func_flat         *conv_flat_generic;
-    conv_func_interleave   *conv_interleave;
-    conv_func_interleave   *conv_interleave_generic;
-    conv_func_deinterleave *conv_deinterleave;
-    conv_func_deinterleave *conv_deinterleave_generic;
+struct AudioConvert
+{
+	AVAudioResampleContext* avr;
+	enum AVSampleFormat in_fmt;
+	enum AVSampleFormat out_fmt;
+	int channels;
+	int planes;
+	int ptr_align;
+	int samples_align;
+	int has_optimized_func;
+	const char* func_descr;
+	const char* func_descr_generic;
+	enum ConvFuncType func_type;
+	conv_func_flat* conv_flat;
+	conv_func_flat* conv_flat_generic;
+	conv_func_interleave* conv_interleave;
+	conv_func_interleave* conv_interleave_generic;
+	conv_func_deinterleave* conv_deinterleave;
+	conv_func_deinterleave* conv_deinterleave_generic;
 };
 
-void ff_audio_convert_set_func(AudioConvert *ac, enum AVSampleFormat out_fmt,
+void ff_audio_convert_set_func(AudioConvert* ac, enum AVSampleFormat out_fmt,
                                enum AVSampleFormat in_fmt, int channels,
                                int ptr_align, int samples_align,
-                               const char *descr, void *conv)
+                               const char* descr, void* conv)
 {
-    int found = 0;
+	int found = 0;
 
-    switch (ac->func_type) {
-    case CONV_FUNC_TYPE_FLAT:
-        if (av_get_packed_sample_fmt(ac->in_fmt)  == in_fmt &&
-            av_get_packed_sample_fmt(ac->out_fmt) == out_fmt) {
-            ac->conv_flat     = conv;
-            ac->func_descr    = descr;
-            ac->ptr_align     = ptr_align;
-            ac->samples_align = samples_align;
-            if (ptr_align == 1 && samples_align == 1) {
-                ac->conv_flat_generic  = conv;
-                ac->func_descr_generic = descr;
-            } else {
-                ac->has_optimized_func = 1;
-            }
-            found = 1;
-        }
-        break;
-    case CONV_FUNC_TYPE_INTERLEAVE:
-        if (ac->in_fmt == in_fmt && ac->out_fmt == out_fmt &&
-            (!channels || ac->channels == channels)) {
-            ac->conv_interleave = conv;
-            ac->func_descr      = descr;
-            ac->ptr_align       = ptr_align;
-            ac->samples_align   = samples_align;
-            if (ptr_align == 1 && samples_align == 1) {
-                ac->conv_interleave_generic = conv;
-                ac->func_descr_generic      = descr;
-            } else {
-                ac->has_optimized_func = 1;
-            }
-            found = 1;
-        }
-        break;
-    case CONV_FUNC_TYPE_DEINTERLEAVE:
-        if (ac->in_fmt == in_fmt && ac->out_fmt == out_fmt &&
-            (!channels || ac->channels == channels)) {
-            ac->conv_deinterleave = conv;
-            ac->func_descr        = descr;
-            ac->ptr_align         = ptr_align;
-            ac->samples_align     = samples_align;
-            if (ptr_align == 1 && samples_align == 1) {
-                ac->conv_deinterleave_generic = conv;
-                ac->func_descr_generic        = descr;
-            } else {
-                ac->has_optimized_func = 1;
-            }
-            found = 1;
-        }
-        break;
-    }
-    if (found) {
-        av_log(ac->avr, AV_LOG_DEBUG, "audio_convert: found function: %-4s "
-               "to %-4s (%s)\n", av_get_sample_fmt_name(ac->in_fmt),
-               av_get_sample_fmt_name(ac->out_fmt), descr);
-    }
+	switch (ac->func_type)
+	{
+	case CONV_FUNC_TYPE_FLAT:
+		if (av_get_packed_sample_fmt(ac->in_fmt) == in_fmt &&
+			av_get_packed_sample_fmt(ac->out_fmt) == out_fmt)
+		{
+			ac->conv_flat = conv;
+			ac->func_descr = descr;
+			ac->ptr_align = ptr_align;
+			ac->samples_align = samples_align;
+			if (ptr_align == 1 && samples_align == 1)
+			{
+				ac->conv_flat_generic = conv;
+				ac->func_descr_generic = descr;
+			}
+			else
+			{
+				ac->has_optimized_func = 1;
+			}
+			found = 1;
+		}
+		break;
+	case CONV_FUNC_TYPE_INTERLEAVE:
+		if (ac->in_fmt == in_fmt && ac->out_fmt == out_fmt &&
+			(!channels || ac->channels == channels))
+		{
+			ac->conv_interleave = conv;
+			ac->func_descr = descr;
+			ac->ptr_align = ptr_align;
+			ac->samples_align = samples_align;
+			if (ptr_align == 1 && samples_align == 1)
+			{
+				ac->conv_interleave_generic = conv;
+				ac->func_descr_generic = descr;
+			}
+			else
+			{
+				ac->has_optimized_func = 1;
+			}
+			found = 1;
+		}
+		break;
+	case CONV_FUNC_TYPE_DEINTERLEAVE:
+		if (ac->in_fmt == in_fmt && ac->out_fmt == out_fmt &&
+			(!channels || ac->channels == channels))
+		{
+			ac->conv_deinterleave = conv;
+			ac->func_descr = descr;
+			ac->ptr_align = ptr_align;
+			ac->samples_align = samples_align;
+			if (ptr_align == 1 && samples_align == 1)
+			{
+				ac->conv_deinterleave_generic = conv;
+				ac->func_descr_generic = descr;
+			}
+			else
+			{
+				ac->has_optimized_func = 1;
+			}
+			found = 1;
+		}
+		break;
+	}
+	if (found)
+	{
+		av_log(ac->avr, AV_LOG_DEBUG, "audio_convert: found function: %-4s "
+		       "to %-4s (%s)\n", av_get_sample_fmt_name(ac->in_fmt),
+		       av_get_sample_fmt_name(ac->out_fmt), descr);
+	}
 }
 
 #define CONV_FUNC_NAME(dst_fmt, src_fmt) conv_ ## src_fmt ## _to_ ## dst_fmt
@@ -134,8 +150,7 @@ void ff_audio_convert_set_func(AudioConvert *ac, enum AVSampleFormat out_fmt,
         *(otype *)po = expr;                                                \
         pi += is;                                                           \
         po += os;                                                           \
-    } while (po < end);                                                     \
-
+    } while (po < end);
 #define CONV_FUNC_FLAT(ofmt, otype, ifmt, itype, expr)                      \
 static void CONV_FUNC_NAME(ofmt, ifmt)(uint8_t *out, const uint8_t *in,     \
                                        int len)                             \
@@ -185,150 +200,165 @@ CONV_FUNC_FLAT(        ofmt,      otype, ifmt,      itype, expr) \
 CONV_FUNC_INTERLEAVE(  ofmt,      otype, ifmt ## P, itype, expr) \
 CONV_FUNC_DEINTERLEAVE(ofmt ## P, otype, ifmt,      itype, expr)
 
-CONV_FUNC_GROUP(AV_SAMPLE_FMT_U8,  uint8_t, AV_SAMPLE_FMT_U8,  uint8_t,  *(const uint8_t *)pi)
-CONV_FUNC_GROUP(AV_SAMPLE_FMT_S16, int16_t, AV_SAMPLE_FMT_U8,  uint8_t, (*(const uint8_t *)pi - 0x80) <<  8)
-CONV_FUNC_GROUP(AV_SAMPLE_FMT_S32, int32_t, AV_SAMPLE_FMT_U8,  uint8_t, (*(const uint8_t *)pi - 0x80) << 24)
-CONV_FUNC_GROUP(AV_SAMPLE_FMT_FLT, float,   AV_SAMPLE_FMT_U8,  uint8_t, (*(const uint8_t *)pi - 0x80) * (1.0f / (1 << 7)))
-CONV_FUNC_GROUP(AV_SAMPLE_FMT_DBL, double,  AV_SAMPLE_FMT_U8,  uint8_t, (*(const uint8_t *)pi - 0x80) * (1.0  / (1 << 7)))
-CONV_FUNC_GROUP(AV_SAMPLE_FMT_U8,  uint8_t, AV_SAMPLE_FMT_S16, int16_t, (*(const int16_t *)pi >> 8) + 0x80)
-CONV_FUNC_GROUP(AV_SAMPLE_FMT_S16, int16_t, AV_SAMPLE_FMT_S16, int16_t,  *(const int16_t *)pi)
-CONV_FUNC_GROUP(AV_SAMPLE_FMT_S32, int32_t, AV_SAMPLE_FMT_S16, int16_t,  *(const int16_t *)pi << 16)
-CONV_FUNC_GROUP(AV_SAMPLE_FMT_FLT, float,   AV_SAMPLE_FMT_S16, int16_t,  *(const int16_t *)pi * (1.0f / (1 << 15)))
-CONV_FUNC_GROUP(AV_SAMPLE_FMT_DBL, double,  AV_SAMPLE_FMT_S16, int16_t,  *(const int16_t *)pi * (1.0  / (1 << 15)))
-CONV_FUNC_GROUP(AV_SAMPLE_FMT_U8,  uint8_t, AV_SAMPLE_FMT_S32, int32_t, (*(const int32_t *)pi >> 24) + 0x80)
-CONV_FUNC_GROUP(AV_SAMPLE_FMT_S16, int16_t, AV_SAMPLE_FMT_S32, int32_t,  *(const int32_t *)pi >> 16)
-CONV_FUNC_GROUP(AV_SAMPLE_FMT_S32, int32_t, AV_SAMPLE_FMT_S32, int32_t,  *(const int32_t *)pi)
-CONV_FUNC_GROUP(AV_SAMPLE_FMT_FLT, float,   AV_SAMPLE_FMT_S32, int32_t,  *(const int32_t *)pi * (1.0f / (1U << 31)))
-CONV_FUNC_GROUP(AV_SAMPLE_FMT_DBL, double,  AV_SAMPLE_FMT_S32, int32_t,  *(const int32_t *)pi * (1.0  / (1U << 31)))
-CONV_FUNC_GROUP(AV_SAMPLE_FMT_U8,  uint8_t, AV_SAMPLE_FMT_FLT, float,   av_clip_uint8(  lrintf(*(const float *)pi * (1  <<  7)) + 0x80))
-CONV_FUNC_GROUP(AV_SAMPLE_FMT_S16, int16_t, AV_SAMPLE_FMT_FLT, float,   av_clip_int16(  lrintf(*(const float *)pi * (1  << 15))))
-CONV_FUNC_GROUP(AV_SAMPLE_FMT_S32, int32_t, AV_SAMPLE_FMT_FLT, float,   av_clipl_int32(llrintf(*(const float *)pi * (1U << 31))))
-CONV_FUNC_GROUP(AV_SAMPLE_FMT_FLT, float,   AV_SAMPLE_FMT_FLT, float,   *(const float *)pi)
-CONV_FUNC_GROUP(AV_SAMPLE_FMT_DBL, double,  AV_SAMPLE_FMT_FLT, float,   *(const float *)pi)
-CONV_FUNC_GROUP(AV_SAMPLE_FMT_U8,  uint8_t, AV_SAMPLE_FMT_DBL, double,  av_clip_uint8(  lrint(*(const double *)pi * (1  <<  7)) + 0x80))
-CONV_FUNC_GROUP(AV_SAMPLE_FMT_S16, int16_t, AV_SAMPLE_FMT_DBL, double,  av_clip_int16(  lrint(*(const double *)pi * (1  << 15))))
-CONV_FUNC_GROUP(AV_SAMPLE_FMT_S32, int32_t, AV_SAMPLE_FMT_DBL, double,  av_clipl_int32(llrint(*(const double *)pi * (1U << 31))))
-CONV_FUNC_GROUP(AV_SAMPLE_FMT_FLT, float,   AV_SAMPLE_FMT_DBL, double,  *(const double *)pi)
-CONV_FUNC_GROUP(AV_SAMPLE_FMT_DBL, double,  AV_SAMPLE_FMT_DBL, double,  *(const double *)pi)
+CONV_FUNC_GROUP(AV_SAMPLE_FMT_U8, uint8_t, AV_SAMPLE_FMT_U8, uint8_t, *(const uint8_t*)pi)
+CONV_FUNC_GROUP(AV_SAMPLE_FMT_S16, int16_t, AV_SAMPLE_FMT_U8, uint8_t, (*(const uint8_t*)pi - 0x80) << 8)
+CONV_FUNC_GROUP(AV_SAMPLE_FMT_S32, int32_t, AV_SAMPLE_FMT_U8, uint8_t, (*(const uint8_t*)pi - 0x80) << 24)
+CONV_FUNC_GROUP(AV_SAMPLE_FMT_FLT, float, AV_SAMPLE_FMT_U8, uint8_t, (*(const uint8_t*)pi - 0x80)* (1.0f / (1 << 7)))
+CONV_FUNC_GROUP(AV_SAMPLE_FMT_DBL, double, AV_SAMPLE_FMT_U8, uint8_t, (*(const uint8_t*)pi - 0x80)* (1.0 / (1 << 7)))
+CONV_FUNC_GROUP(AV_SAMPLE_FMT_U8, uint8_t, AV_SAMPLE_FMT_S16, int16_t, (*(const int16_t*)pi >> 8) + 0x80)
+CONV_FUNC_GROUP(AV_SAMPLE_FMT_S16, int16_t, AV_SAMPLE_FMT_S16, int16_t, *(const int16_t*)pi)
+CONV_FUNC_GROUP(AV_SAMPLE_FMT_S32, int32_t, AV_SAMPLE_FMT_S16, int16_t, *(const int16_t*)pi << 16)
+CONV_FUNC_GROUP(AV_SAMPLE_FMT_FLT, float, AV_SAMPLE_FMT_S16, int16_t, *(const int16_t*)pi* (1.0f / (1 << 15)))
+CONV_FUNC_GROUP(AV_SAMPLE_FMT_DBL, double, AV_SAMPLE_FMT_S16, int16_t, *(const int16_t*)pi* (1.0 / (1 << 15)))
+CONV_FUNC_GROUP(AV_SAMPLE_FMT_U8, uint8_t, AV_SAMPLE_FMT_S32, int32_t, (*(const int32_t*)pi >> 24) + 0x80)
+CONV_FUNC_GROUP(AV_SAMPLE_FMT_S16, int16_t, AV_SAMPLE_FMT_S32, int32_t, *(const int32_t*)pi >> 16)
+CONV_FUNC_GROUP(AV_SAMPLE_FMT_S32, int32_t, AV_SAMPLE_FMT_S32, int32_t, *(const int32_t*)pi)
+CONV_FUNC_GROUP(AV_SAMPLE_FMT_FLT, float, AV_SAMPLE_FMT_S32, int32_t, *(const int32_t*)pi* (1.0f / (1U << 31)))
+CONV_FUNC_GROUP(AV_SAMPLE_FMT_DBL, double, AV_SAMPLE_FMT_S32, int32_t, *(const int32_t*)pi* (1.0 / (1U << 31)))
+CONV_FUNC_GROUP(AV_SAMPLE_FMT_U8, uint8_t, AV_SAMPLE_FMT_FLT, float,
+                av_clip_uint8(lrintf(*(const float*)pi* (1 << 7)) + 0x80))
+CONV_FUNC_GROUP(AV_SAMPLE_FMT_S16, int16_t, AV_SAMPLE_FMT_FLT, float,
+                av_clip_int16(lrintf(*(const float*)pi* (1 << 15))))
+CONV_FUNC_GROUP(AV_SAMPLE_FMT_S32, int32_t, AV_SAMPLE_FMT_FLT, float,
+                av_clipl_int32(llrintf(*(const float*)pi* (1U << 31))))
+CONV_FUNC_GROUP(AV_SAMPLE_FMT_FLT, float, AV_SAMPLE_FMT_FLT, float, *(const float*)pi)
+CONV_FUNC_GROUP(AV_SAMPLE_FMT_DBL, double, AV_SAMPLE_FMT_FLT, float, *(const float*)pi)
+CONV_FUNC_GROUP(AV_SAMPLE_FMT_U8, uint8_t, AV_SAMPLE_FMT_DBL, double,
+                av_clip_uint8(lrint(*(const double*)pi* (1 << 7)) + 0x80))
+CONV_FUNC_GROUP(AV_SAMPLE_FMT_S16, int16_t, AV_SAMPLE_FMT_DBL, double,
+                av_clip_int16(lrint(*(const double*)pi* (1 << 15))))
+CONV_FUNC_GROUP(AV_SAMPLE_FMT_S32, int32_t, AV_SAMPLE_FMT_DBL, double,
+                av_clipl_int32(llrint(*(const double*)pi* (1U << 31))))
+CONV_FUNC_GROUP(AV_SAMPLE_FMT_FLT, float, AV_SAMPLE_FMT_DBL, double, *(const double*)pi)
+CONV_FUNC_GROUP(AV_SAMPLE_FMT_DBL, double, AV_SAMPLE_FMT_DBL, double, *(const double*)pi)
 
 #define SET_CONV_FUNC_GROUP(ofmt, ifmt)                                                             \
 ff_audio_convert_set_func(ac, ofmt,      ifmt,      0, 1, 1, "C", CONV_FUNC_NAME(ofmt,      ifmt)); \
 ff_audio_convert_set_func(ac, ofmt ## P, ifmt,      0, 1, 1, "C", CONV_FUNC_NAME(ofmt ## P, ifmt)); \
 ff_audio_convert_set_func(ac, ofmt,      ifmt ## P, 0, 1, 1, "C", CONV_FUNC_NAME(ofmt,      ifmt ## P));
 
-static void set_generic_function(AudioConvert *ac)
+static void set_generic_function(AudioConvert* ac)
 {
-    SET_CONV_FUNC_GROUP(AV_SAMPLE_FMT_U8,  AV_SAMPLE_FMT_U8)
-    SET_CONV_FUNC_GROUP(AV_SAMPLE_FMT_S16, AV_SAMPLE_FMT_U8)
-    SET_CONV_FUNC_GROUP(AV_SAMPLE_FMT_S32, AV_SAMPLE_FMT_U8)
-    SET_CONV_FUNC_GROUP(AV_SAMPLE_FMT_FLT, AV_SAMPLE_FMT_U8)
-    SET_CONV_FUNC_GROUP(AV_SAMPLE_FMT_DBL, AV_SAMPLE_FMT_U8)
-    SET_CONV_FUNC_GROUP(AV_SAMPLE_FMT_U8,  AV_SAMPLE_FMT_S16)
-    SET_CONV_FUNC_GROUP(AV_SAMPLE_FMT_S16, AV_SAMPLE_FMT_S16)
-    SET_CONV_FUNC_GROUP(AV_SAMPLE_FMT_S32, AV_SAMPLE_FMT_S16)
-    SET_CONV_FUNC_GROUP(AV_SAMPLE_FMT_FLT, AV_SAMPLE_FMT_S16)
-    SET_CONV_FUNC_GROUP(AV_SAMPLE_FMT_DBL, AV_SAMPLE_FMT_S16)
-    SET_CONV_FUNC_GROUP(AV_SAMPLE_FMT_U8,  AV_SAMPLE_FMT_S32)
-    SET_CONV_FUNC_GROUP(AV_SAMPLE_FMT_S16, AV_SAMPLE_FMT_S32)
-    SET_CONV_FUNC_GROUP(AV_SAMPLE_FMT_S32, AV_SAMPLE_FMT_S32)
-    SET_CONV_FUNC_GROUP(AV_SAMPLE_FMT_FLT, AV_SAMPLE_FMT_S32)
-    SET_CONV_FUNC_GROUP(AV_SAMPLE_FMT_DBL, AV_SAMPLE_FMT_S32)
-    SET_CONV_FUNC_GROUP(AV_SAMPLE_FMT_U8,  AV_SAMPLE_FMT_FLT)
-    SET_CONV_FUNC_GROUP(AV_SAMPLE_FMT_S16, AV_SAMPLE_FMT_FLT)
-    SET_CONV_FUNC_GROUP(AV_SAMPLE_FMT_S32, AV_SAMPLE_FMT_FLT)
-    SET_CONV_FUNC_GROUP(AV_SAMPLE_FMT_FLT, AV_SAMPLE_FMT_FLT)
-    SET_CONV_FUNC_GROUP(AV_SAMPLE_FMT_DBL, AV_SAMPLE_FMT_FLT)
-    SET_CONV_FUNC_GROUP(AV_SAMPLE_FMT_U8,  AV_SAMPLE_FMT_DBL)
-    SET_CONV_FUNC_GROUP(AV_SAMPLE_FMT_S16, AV_SAMPLE_FMT_DBL)
-    SET_CONV_FUNC_GROUP(AV_SAMPLE_FMT_S32, AV_SAMPLE_FMT_DBL)
-    SET_CONV_FUNC_GROUP(AV_SAMPLE_FMT_FLT, AV_SAMPLE_FMT_DBL)
-    SET_CONV_FUNC_GROUP(AV_SAMPLE_FMT_DBL, AV_SAMPLE_FMT_DBL)
+	SET_CONV_FUNC_GROUP(AV_SAMPLE_FMT_U8, AV_SAMPLE_FMT_U8)
+	SET_CONV_FUNC_GROUP(AV_SAMPLE_FMT_S16, AV_SAMPLE_FMT_U8)
+	SET_CONV_FUNC_GROUP(AV_SAMPLE_FMT_S32, AV_SAMPLE_FMT_U8)
+	SET_CONV_FUNC_GROUP(AV_SAMPLE_FMT_FLT, AV_SAMPLE_FMT_U8)
+	SET_CONV_FUNC_GROUP(AV_SAMPLE_FMT_DBL, AV_SAMPLE_FMT_U8)
+	SET_CONV_FUNC_GROUP(AV_SAMPLE_FMT_U8, AV_SAMPLE_FMT_S16)
+	SET_CONV_FUNC_GROUP(AV_SAMPLE_FMT_S16, AV_SAMPLE_FMT_S16)
+	SET_CONV_FUNC_GROUP(AV_SAMPLE_FMT_S32, AV_SAMPLE_FMT_S16)
+	SET_CONV_FUNC_GROUP(AV_SAMPLE_FMT_FLT, AV_SAMPLE_FMT_S16)
+	SET_CONV_FUNC_GROUP(AV_SAMPLE_FMT_DBL, AV_SAMPLE_FMT_S16)
+	SET_CONV_FUNC_GROUP(AV_SAMPLE_FMT_U8, AV_SAMPLE_FMT_S32)
+	SET_CONV_FUNC_GROUP(AV_SAMPLE_FMT_S16, AV_SAMPLE_FMT_S32)
+	SET_CONV_FUNC_GROUP(AV_SAMPLE_FMT_S32, AV_SAMPLE_FMT_S32)
+	SET_CONV_FUNC_GROUP(AV_SAMPLE_FMT_FLT, AV_SAMPLE_FMT_S32)
+	SET_CONV_FUNC_GROUP(AV_SAMPLE_FMT_DBL, AV_SAMPLE_FMT_S32)
+	SET_CONV_FUNC_GROUP(AV_SAMPLE_FMT_U8, AV_SAMPLE_FMT_FLT)
+	SET_CONV_FUNC_GROUP(AV_SAMPLE_FMT_S16, AV_SAMPLE_FMT_FLT)
+	SET_CONV_FUNC_GROUP(AV_SAMPLE_FMT_S32, AV_SAMPLE_FMT_FLT)
+	SET_CONV_FUNC_GROUP(AV_SAMPLE_FMT_FLT, AV_SAMPLE_FMT_FLT)
+	SET_CONV_FUNC_GROUP(AV_SAMPLE_FMT_DBL, AV_SAMPLE_FMT_FLT)
+	SET_CONV_FUNC_GROUP(AV_SAMPLE_FMT_U8, AV_SAMPLE_FMT_DBL)
+	SET_CONV_FUNC_GROUP(AV_SAMPLE_FMT_S16, AV_SAMPLE_FMT_DBL)
+	SET_CONV_FUNC_GROUP(AV_SAMPLE_FMT_S32, AV_SAMPLE_FMT_DBL)
+	SET_CONV_FUNC_GROUP(AV_SAMPLE_FMT_FLT, AV_SAMPLE_FMT_DBL)
+	SET_CONV_FUNC_GROUP(AV_SAMPLE_FMT_DBL, AV_SAMPLE_FMT_DBL)
 }
 
-AudioConvert *ff_audio_convert_alloc(AVAudioResampleContext *avr,
+AudioConvert* ff_audio_convert_alloc(AVAudioResampleContext* avr,
                                      enum AVSampleFormat out_fmt,
                                      enum AVSampleFormat in_fmt,
                                      int channels)
 {
-    AudioConvert *ac;
-    int in_planar, out_planar;
+	AudioConvert* ac;
+	int in_planar, out_planar;
 
-    ac = av_mallocz(sizeof(*ac));
-    if (!ac)
-        return NULL;
+	ac = av_mallocz(sizeof(*ac));
+	if (!ac)
+		return NULL;
 
-    ac->avr      = avr;
-    ac->out_fmt  = out_fmt;
-    ac->in_fmt   = in_fmt;
-    ac->channels = channels;
+	ac->avr = avr;
+	ac->out_fmt = out_fmt;
+	ac->in_fmt = in_fmt;
+	ac->channels = channels;
 
-    in_planar  = av_sample_fmt_is_planar(in_fmt);
-    out_planar = av_sample_fmt_is_planar(out_fmt);
+	in_planar = av_sample_fmt_is_planar(in_fmt);
+	out_planar = av_sample_fmt_is_planar(out_fmt);
 
-    if (in_planar == out_planar) {
-        ac->func_type = CONV_FUNC_TYPE_FLAT;
-        ac->planes    = in_planar ? ac->channels : 1;
-    } else if (in_planar)
-        ac->func_type = CONV_FUNC_TYPE_INTERLEAVE;
-    else
-        ac->func_type = CONV_FUNC_TYPE_DEINTERLEAVE;
+	if (in_planar == out_planar)
+	{
+		ac->func_type = CONV_FUNC_TYPE_FLAT;
+		ac->planes = in_planar ? ac->channels : 1;
+	}
+	else if (in_planar)
+		ac->func_type = CONV_FUNC_TYPE_INTERLEAVE;
+	else
+		ac->func_type = CONV_FUNC_TYPE_DEINTERLEAVE;
 
-    set_generic_function(ac);
+	set_generic_function(ac);
 
-    if (ARCH_X86)
-        ff_audio_convert_init_x86(ac);
+	if (ARCH_X86)
+		ff_audio_convert_init_x86(ac);
 
-    return ac;
+	return ac;
 }
 
-int ff_audio_convert(AudioConvert *ac, AudioData *out, AudioData *in, int len)
+int ff_audio_convert(AudioConvert* ac, AudioData* out, AudioData* in, int len)
 {
-    int use_generic = 1;
+	int use_generic = 1;
 
-    /* determine whether to use the optimized function based on pointer and
-       samples alignment in both the input and output */
-    if (ac->has_optimized_func) {
-        int ptr_align     = FFMIN(in->ptr_align,     out->ptr_align);
-        int samples_align = FFMIN(in->samples_align, out->samples_align);
-        int aligned_len   = FFALIGN(len, ac->samples_align);
-        if (!(ptr_align % ac->ptr_align) && samples_align >= aligned_len) {
-            len = aligned_len;
-            use_generic = 0;
-        }
-    }
-    av_dlog(ac->avr, "%d samples - audio_convert: %s to %s (%s)\n", len,
-            av_get_sample_fmt_name(ac->in_fmt),
-            av_get_sample_fmt_name(ac->out_fmt),
-            use_generic ? ac->func_descr_generic : ac->func_descr);
+	/* determine whether to use the optimized function based on pointer and
+	   samples alignment in both the input and output */
+	if (ac->has_optimized_func)
+	{
+		int ptr_align = FFMIN(in->ptr_align, out->ptr_align);
+		int samples_align = FFMIN(in->samples_align, out->samples_align);
+		int aligned_len = FFALIGN(len, ac->samples_align);
+		if (!(ptr_align % ac->ptr_align) && samples_align >= aligned_len)
+		{
+			len = aligned_len;
+			use_generic = 0;
+		}
+	}
+	av_dlog(ac->avr, "%d samples - audio_convert: %s to %s (%s)\n", len,
+	        av_get_sample_fmt_name(ac->in_fmt),
+	        av_get_sample_fmt_name(ac->out_fmt),
+	        use_generic ? ac->func_descr_generic : ac->func_descr);
 
-    switch (ac->func_type) {
-    case CONV_FUNC_TYPE_FLAT: {
-        int p;
-        if (!in->is_planar)
-            len *= in->channels;
-        if (use_generic) {
-            for (p = 0; p < ac->planes; p++)
-                ac->conv_flat_generic(out->data[p], in->data[p], len);
-        } else {
-            for (p = 0; p < ac->planes; p++)
-                ac->conv_flat(out->data[p], in->data[p], len);
-        }
-        break;
-    }
-    case CONV_FUNC_TYPE_INTERLEAVE:
-        if (use_generic)
-            ac->conv_interleave_generic(out->data[0], in->data, len, ac->channels);
-        else
-            ac->conv_interleave(out->data[0], in->data, len, ac->channels);
-        break;
-    case CONV_FUNC_TYPE_DEINTERLEAVE:
-        if (use_generic)
-            ac->conv_deinterleave_generic(out->data, in->data[0], len, ac->channels);
-        else
-            ac->conv_deinterleave(out->data, in->data[0], len, ac->channels);
-        break;
-    }
+	switch (ac->func_type)
+	{
+	case CONV_FUNC_TYPE_FLAT:
+		{
+			int p;
+			if (!in->is_planar)
+				len *= in->channels;
+			if (use_generic)
+			{
+				for (p = 0; p < ac->planes; p++)
+					ac->conv_flat_generic(out->data[p], in->data[p], len);
+			}
+			else
+			{
+				for (p = 0; p < ac->planes; p++)
+					ac->conv_flat(out->data[p], in->data[p], len);
+			}
+			break;
+		}
+	case CONV_FUNC_TYPE_INTERLEAVE:
+		if (use_generic)
+			ac->conv_interleave_generic(out->data[0], in->data, len, ac->channels);
+		else
+			ac->conv_interleave(out->data[0], in->data, len, ac->channels);
+		break;
+	case CONV_FUNC_TYPE_DEINTERLEAVE:
+		if (use_generic)
+			ac->conv_deinterleave_generic(out->data, in->data[0], len, ac->channels);
+		else
+			ac->conv_deinterleave(out->data, in->data[0], len, ac->channels);
+		break;
+	}
 
-    out->nb_samples = in->nb_samples;
-    return 0;
+	out->nb_samples = in->nb_samples;
+	return 0;
 }

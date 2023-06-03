@@ -14,7 +14,7 @@ using namespace htmlcxx;
 using namespace HTML;
 using namespace kp;
 
-const tree<HTML::Node>& ParserDom::parseTree(const std::string &html)
+const tree<Node>& ParserDom::parseTree(const std::string& html)
 {
 	this->parse(html);
 	return this->getTree();
@@ -23,18 +23,18 @@ const tree<HTML::Node>& ParserDom::parseTree(const std::string &html)
 void ParserDom::beginParsing()
 {
 	mHtmlTree.clear();
-	tree<HTML::Node>::iterator top = mHtmlTree.begin();
-	HTML::Node lambda_node;
+	auto top = mHtmlTree.begin();
+	Node lambda_node;
 	lambda_node.offset(0);
 	lambda_node.length(0);
 	lambda_node.isTag(true);
 	lambda_node.isComment(false);
-	mCurrentState = mHtmlTree.insert(top,lambda_node);
+	mCurrentState = mHtmlTree.insert(top, lambda_node);
 }
 
 void ParserDom::endParsing()
 {
-	tree<HTML::Node>::iterator top = mHtmlTree.begin();
+	auto top = mHtmlTree.begin();
 	top->length(mCurrentOffset);
 }
 
@@ -55,7 +55,7 @@ void ParserDom::foundTag(Node node, bool isEnd)
 	if (!isEnd)
 	{
 		//append to current tree node
-		tree<HTML::Node>::iterator next_state;
+		tree<Node>::iterator next_state;
 		next_state = mHtmlTree.append_child(mCurrentState, node);
 		mCurrentState = next_state;
 	}
@@ -64,23 +64,22 @@ void ParserDom::foundTag(Node node, bool isEnd)
 		//Look if there is a pending open tag with that same name upwards
 		//If mCurrentState tag isn't matching tag, maybe a some of its parents
 		// matches
-		vector< tree<HTML::Node>::iterator > path;
-		tree<HTML::Node>::iterator i = mCurrentState;
+		vector<tree<Node>::iterator> path;
+		auto i = mCurrentState;
 		bool found_open = false;
 		while (i != mHtmlTree.begin())
 		{
 #ifdef DEBUG
-			cerr << "comparing " << node.tagName() << " with " << i->tagName()<<endl<<":";
-			if (!i->tagName().length()) cerr << "Tag with no name at" << i->offset()<<";"<<i->offset()+i->length();
+			cerr << "comparing " << node.tagName() << " with " << i->tagName() << endl << ":";
+			if (!i->tagName().length()) cerr << "Tag with no name at" << i->offset() << ";" << i->offset() + i->length();
 #endif
 			assert(i->isTag());
 			assert(i->tagName().length());
 
 			bool equal;
-			const char *open = i->tagName().c_str();
-			const char *close = node.tagName().c_str();
-			equal = !(strcasecmp(open,close));
-
+			const char* open = i->tagName().c_str();
+			const char* close = node.tagName().c_str();
+			equal = !(strcasecmp(open, close));
 
 			if (equal)
 			{
@@ -95,10 +94,7 @@ void ParserDom::foundTag(Node node, bool isEnd)
 				found_open = true;
 				break;
 			}
-			else
-			{
-				path.push_back(i);
-			}
+			path.push_back(i);
 
 			i = mHtmlTree.parent(i);
 		}
@@ -109,7 +105,7 @@ void ParserDom::foundTag(Node node, bool isEnd)
 			//nodes that were waiting for a close
 			for (unsigned int j = 0; j < path.size(); ++j)
 			{
-//				path[j]->length(node.offset() - path[j]->offset());
+				//				path[j]->length(node.offset() - path[j]->offset());
 				mHtmlTree.flatten(path[j]);
 			}
 			node.isTag(false);
@@ -128,25 +124,23 @@ void ParserDom::foundTag(Node node, bool isEnd)
 	}
 }
 
-ostream &HTML::operator<<(ostream &stream, const tree<HTML::Node> &tr)
+ostream& HTML::operator<<(ostream& stream, const tree<Node>& tr)
 {
-
-	tree<HTML::Node>::pre_order_iterator it = tr.begin();
-	tree<HTML::Node>::pre_order_iterator end = tr.end();
+	tree<Node>::pre_order_iterator it = tr.begin();
+	tree<Node>::pre_order_iterator end = tr.end();
 
 	int rootdepth = tr.depth(it);
 	stream << "-----" << endl;
 
 	unsigned int n = 0;
-	while ( it != end )
+	while (it != end)
 	{
-
 		int cur_depth = tr.depth(it);
-		for(int i=0; i < cur_depth - rootdepth; ++i) stream << "  ";
+		for (int i = 0; i < cur_depth - rootdepth; ++i) stream << "  ";
 		stream << n << "@";
 		stream << "[" << it->offset() << ";";
 		stream << it->offset() + it->length() << ") ";
-		stream << (string)(*it) << endl;
+		stream << static_cast<string>(*it) << endl;
 		++it, ++n;
 	}
 	stream << "-----" << endl;

@@ -50,78 +50,78 @@ static const ad_info_t info =
 
 LIBAD_EXTERN(libdv)
 
-static int preinit(sh_audio_t *sh_audio)
+static int preinit(sh_audio_t* sh_audio)
 {
-  sh_audio->audio_out_minsize=4*DV_AUDIO_MAX_SAMPLES*2;
-  return 1;
+	sh_audio->audio_out_minsize = 4 * DV_AUDIO_MAX_SAMPLES * 2;
+	return 1;
 }
 
-static int16_t *audioBuffers[4]={NULL,NULL,NULL,NULL};
+static int16_t* audioBuffers[4] = {NULL,NULL,NULL,NULL};
 
-static int init(sh_audio_t *sh)
+static int init(sh_audio_t* sh)
 {
-  int i;
-  WAVEFORMATEX *h=sh->wf;
+	int i;
+	WAVEFORMATEX* h = sh->wf;
 
-  if(!h) return 0;
+	if (!h) return 0;
 
-  sh->i_bps=h->nAvgBytesPerSec;
-  sh->channels=h->nChannels;
-  sh->samplerate=h->nSamplesPerSec;
-  sh->samplesize=(h->wBitsPerSample+7)/8;
+	sh->i_bps = h->nAvgBytesPerSec;
+	sh->channels = h->nChannels;
+	sh->samplerate = h->nSamplesPerSec;
+	sh->samplesize = (h->wBitsPerSample + 7) / 8;
 
-  sh->context=init_global_rawdv_decoder();
+	sh->context = init_global_rawdv_decoder();
 
-  for (i=0; i < 4; i++)
-    audioBuffers[i] = malloc(2*DV_AUDIO_MAX_SAMPLES);
+	for (i = 0; i < 4; i++)
+		audioBuffers[i] = malloc(2 * DV_AUDIO_MAX_SAMPLES);
 
-  return 1;
+	return 1;
 }
 
-static void uninit(sh_audio_t *sh_audio)
+static void uninit(sh_audio_t* sh_audio)
 {
-  int i;
-  for (i=0; i < 4; i++)
-    free(audioBuffers[i]);
+	int i;
+	for (i = 0; i < 4; i++)
+		free(audioBuffers[i]);
 }
 
-static int control(sh_audio_t *sh,int cmd,void* arg, ...)
+static int control(sh_audio_t* sh, int cmd, void* arg, ...)
 {
-    // TODO!!!
-  return CONTROL_UNKNOWN;
+	// TODO!!!
+	return CONTROL_UNKNOWN;
 }
 
-static int decode_audio(sh_audio_t *audio, unsigned char *buf, int minlen, int maxlen)
+static int decode_audio(sh_audio_t* audio, unsigned char* buf, int minlen, int maxlen)
 {
-   int len=0;
-   dv_decoder_t* decoder=audio->context;  //global_rawdv_decoder;
-   unsigned char* dv_audio_frame=NULL;
-   int xx=ds_get_packet(audio->ds,&dv_audio_frame);
-   if(xx<=0 || !dv_audio_frame) return 0; // EOF?
+	int len = 0;
+	dv_decoder_t* decoder = audio->context; //global_rawdv_decoder;
+	unsigned char* dv_audio_frame = NULL;
+	int xx = ds_get_packet(audio->ds, &dv_audio_frame);
+	if (xx <= 0 || !dv_audio_frame) return 0; // EOF?
 
-   dv_parse_header(decoder, dv_audio_frame);
+	dv_parse_header(decoder, dv_audio_frame);
 
-   if(xx!=decoder->frame_size)
-       mp_msg(MSGT_GLOBAL,MSGL_WARN,MSGTR_MPCODECS_AudioFramesizeDiffers,
-           xx, decoder->frame_size);
+	if (xx != decoder->frame_size)
+		mp_msg(MSGT_GLOBAL, MSGL_WARN, MSGTR_MPCODECS_AudioFramesizeDiffers,
+		       xx, decoder->frame_size);
 
-   if (dv_decode_full_audio(decoder, dv_audio_frame,(int16_t**) audioBuffers))
-   {
-      /* Interleave the audio into a single buffer */
-      int i=0;
-      int16_t *bufP=(int16_t*)buf;
+	if (dv_decode_full_audio(decoder, dv_audio_frame, (int16_t**)audioBuffers))
+	{
+		/* Interleave the audio into a single buffer */
+		int i = 0;
+		int16_t* bufP = buf;
 
-//      printf("samples=%d/%d  chans=%d  mem=%d  \n",decoder->audio->samples_this_frame,DV_AUDIO_MAX_SAMPLES,
-//          decoder->audio->num_channels, decoder->audio->samples_this_frame*decoder->audio->num_channels*2);
+		//      printf("samples=%d/%d  chans=%d  mem=%d  \n",decoder->audio->samples_this_frame,DV_AUDIO_MAX_SAMPLES,
+		//          decoder->audio->num_channels, decoder->audio->samples_this_frame*decoder->audio->num_channels*2);
 
-//   return (44100/30)*4;
+		//   return (44100/30)*4;
 
-      for (i=0; i < decoder->audio->samples_this_frame; i++)
-      {
-         int ch;
-         for (ch=0; ch < decoder->audio->num_channels; ch++)
-            bufP[len++] = audioBuffers[ch][i];
-      }
-   }
-   return len*2;
+		for (i = 0; i < decoder->audio->samples_this_frame; i++)
+		{
+			int ch;
+			for (ch = 0; ch < decoder->audio->num_channels; ch++)
+				bufP[len++] = audioBuffers[ch][i];
+		}
+	}
+	return len * 2;
 }

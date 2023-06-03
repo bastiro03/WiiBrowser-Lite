@@ -27,11 +27,11 @@
 
 int main(void)
 {
-    cbrt_tableinit();
+	cbrt_tableinit();
 
-    write_fileheader();
+	write_fileheader();
 
-    WRITE_ARRAY("static const", uint32_t, cbrt_tab);
+	WRITE_ARRAY("static const", uint32_t, cbrt_tab);
 
-    return 0;
+	return 0;
 }

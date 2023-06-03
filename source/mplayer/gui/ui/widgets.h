@@ -37,29 +37,30 @@
 #define GTK_MB_ERROR 4
 #define GTK_MB_WARNING 8
 
-extern GtkWidget *PlayList;
-extern GtkWidget *Options;
-extern GtkWidget *PopUpMenu;
+extern GtkWidget* PlayList;
+extern GtkWidget* Options;
+extern GtkWidget* PopUpMenu;
 
-extern GtkWidget *WarningPixmap;
-extern GtkWidget *ErrorPixmap;
+extern GtkWidget* WarningPixmap;
+extern GtkWidget* ErrorPixmap;
 
-extern GtkWidget *SkinList;
-extern GtkWidget *gtkMessageBoxText;
+extern GtkWidget* SkinList;
+extern GtkWidget* gtkMessageBoxText;
 
 extern int gtkPopupMenu;
 extern int gtkPopupMenuParam;
 
-extern char *sbMPlayerDirInHome;
-extern char *sbMPlayerPrefixDir;
+extern char* sbMPlayerDirInHome;
+extern char* sbMPlayerPrefixDir;
 
-typedef struct {
-    Pixmap small;
-    Pixmap small_mask;
-    Pixmap normal;
-    Pixmap normal_mask;
-    int collection_size;
-    long *collection;
+typedef struct
+{
+	Pixmap small;
+	Pixmap small_mask;
+	Pixmap normal;
+	Pixmap normal_mask;
+	int collection_size;
+	long* collection;
 } guiIcon_t;
 
 extern guiIcon_t guiIcon;
@@ -67,18 +68,18 @@ extern guiIcon_t guiIcon;
 void widgetsCreate(void);
 
 void gtkInit(void);
-void gtkAddIcon(GtkWidget *window);
+void gtkAddIcon(GtkWidget* window);
 
-int gtkFillSkinList(gchar *dir);
-void gtkClearList(GtkWidget *list);
-void gtkSetDefaultToCList(GtkWidget *list, char *item);
-int gtkFindCList(GtkWidget *list, char *item);
+int gtkFillSkinList(gchar* dir);
+void gtkClearList(GtkWidget* list);
+void gtkSetDefaultToCList(GtkWidget* list, char* item);
+int gtkFindCList(GtkWidget* list, char* item);
 
 void gtkEventHandling(void);
 
-void gtkShow(int type, char *param);
-void gtkMessageBox(int type, const gchar *str);
-void gtkSetLayer(GtkWidget *wdg);
-void gtkActive(GtkWidget *wdg);
+void gtkShow(int type, char* param);
+void gtkMessageBox(int type, const gchar* str);
+void gtkSetLayer(GtkWidget* wdg);
+void gtkActive(GtkWidget* wdg);
 
 #endif /* MPLAYER_GUI_WIDGETS_H */

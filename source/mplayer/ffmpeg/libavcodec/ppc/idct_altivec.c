@@ -34,7 +34,6 @@
  * perform a full transpose at the end of the function.
  */
 
-
 #include <stdlib.h>                                      /* malloc(), free() */
 #include <string.h>
 #include "config.h"
@@ -79,7 +78,6 @@
     vy5 = vec_mradds (mc4, t4, t0);                     \
     vy3 = vec_adds (t2, t6);                            \
     vy4 = vec_subs (t2, t6);
-
 
 #define IDCT                                                            \
     vec_s16 vx0, vx1, vx2, vx3, vx4, vx5, vx6, vx7;                \
@@ -149,53 +147,63 @@
     vx6 = vec_sra (vy6, shift);                                         \
     vx7 = vec_sra (vy7, shift);
 
-
 static const vec_s16 constants[5] = {
-    {23170, 13573,  6518, 21895, -23170, -21895,    32,    31},
-    {16384, 22725, 21407, 19266,  16384,  19266, 21407, 22725},
-    {22725, 31521, 29692, 26722,  22725,  26722, 29692, 31521},
-    {21407, 29692, 27969, 25172,  21407,  25172, 27969, 29692},
-    {19266, 26722, 25172, 22654,  19266,  22654, 25172, 26722}
+	{23170, 13573, 6518, 21895, -23170, -21895, 32, 31},
+	{16384, 22725, 21407, 19266, 16384, 19266, 21407, 22725},
+	{22725, 31521, 29692, 26722, 22725, 26722, 29692, 31521},
+	{21407, 29692, 27969, 25172, 21407, 25172, 27969, 29692},
+	{19266, 26722, 25172, 22654, 19266, 22654, 25172, 26722}
 };
 
-void ff_idct_put_altivec(uint8_t* dest, int stride, int16_t *blk)
+void ff_idct_put_altivec(uint8_t* dest, int stride, int16_t* blk)
 {
-    vec_s16 *block = (vec_s16*)blk;
-    vec_u8 tmp;
+	vec_s16* block = (vec_s16*
+	)
+	blk;
+	vec_u8 tmp;
 
-    IDCT
+	IDCT
 
 #define COPY(dest,src)                                          \
     tmp = vec_packsu (src, src);                                \
     vec_ste ((vec_u32)tmp, 0, (unsigned int *)dest);       \
     vec_ste ((vec_u32)tmp, 4, (unsigned int *)dest);
 
-    COPY (dest, vx0)    dest += stride;
-    COPY (dest, vx1)    dest += stride;
-    COPY (dest, vx2)    dest += stride;
-    COPY (dest, vx3)    dest += stride;
-    COPY (dest, vx4)    dest += stride;
-    COPY (dest, vx5)    dest += stride;
-    COPY (dest, vx6)    dest += stride;
-    COPY (dest, vx7)
+	COPY(dest, vx0)
+	dest += stride;
+	COPY(dest, vx1)
+	dest += stride;
+	COPY(dest, vx2)
+	dest += stride;
+	COPY(dest, vx3)
+	dest += stride;
+	COPY(dest, vx4)
+	dest += stride;
+	COPY(dest, vx5)
+	dest += stride;
+	COPY(dest, vx6)
+	dest += stride;
+	COPY(dest, vx7)
 }
 
-void ff_idct_add_altivec(uint8_t* dest, int stride, int16_t *blk)
+void ff_idct_add_altivec(uint8_t* dest, int stride, int16_t* blk)
 {
-    vec_s16 *block = (vec_s16*)blk;
-    vec_u8 tmp;
-    vec_s16 tmp2, tmp3;
-    vec_u8 perm0;
-    vec_u8 perm1;
-    vec_u8 p0, p1, p;
+	vec_s16* block = (vec_s16*
+	)
+	blk;
+	vec_u8 tmp;
+	vec_s16 tmp2, tmp3;
+	vec_u8 perm0;
+	vec_u8 perm1;
+	vec_u8 p0, p1, p;
 
-    IDCT
+	IDCT
 
-    p0 = vec_lvsl (0, dest);
-    p1 = vec_lvsl (stride, dest);
-    p = vec_splat_u8 (-1);
-    perm0 = vec_mergeh (p, p0);
-    perm1 = vec_mergeh (p, p1);
+	p0 = vec_lvsl(0, dest);
+	p1 = vec_lvsl(stride, dest);
+	p = vec_splat_u8(-1);
+	perm0 = vec_mergeh(p, p0);
+	perm1 = vec_mergeh(p, p1);
 
 #define ADD(dest,src,perm)                                              \
     /* *(uint64_t *)&tmp = *(uint64_t *)dest; */                        \
@@ -206,12 +214,19 @@ void ff_idct_add_altivec(uint8_t* dest, int stride, int16_t *blk)
     vec_ste ((vec_u32)tmp, 0, (unsigned int *)dest);               \
     vec_ste ((vec_u32)tmp, 4, (unsigned int *)dest);
 
-    ADD (dest, vx0, perm0)      dest += stride;
-    ADD (dest, vx1, perm1)      dest += stride;
-    ADD (dest, vx2, perm0)      dest += stride;
-    ADD (dest, vx3, perm1)      dest += stride;
-    ADD (dest, vx4, perm0)      dest += stride;
-    ADD (dest, vx5, perm1)      dest += stride;
-    ADD (dest, vx6, perm0)      dest += stride;
-    ADD (dest, vx7, perm1)
+	ADD(dest, vx0, perm0)
+	dest += stride;
+	ADD(dest, vx1, perm1)
+	dest += stride;
+	ADD(dest, vx2, perm0)
+	dest += stride;
+	ADD(dest, vx3, perm1)
+	dest += stride;
+	ADD(dest, vx4, perm0)
+	dest += stride;
+	ADD(dest, vx5, perm1)
+	dest += stride;
+	ADD(dest, vx6, perm0)
+	dest += stride;
+	ADD(dest, vx7, perm1)
 }

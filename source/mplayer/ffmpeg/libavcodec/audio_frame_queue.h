@@ -24,18 +24,20 @@
 
 #include "avcodec.h"
 
-typedef struct AudioFrame {
-    int64_t pts;
-    int duration;
+typedef struct AudioFrame
+{
+	int64_t pts;
+	int duration;
 } AudioFrame;
 
-typedef struct AudioFrameQueue {
-    AVCodecContext *avctx;
-    int remaining_delay;
-    int remaining_samples;
-    AudioFrame *frames;
-    unsigned frame_count;
-    unsigned frame_alloc;
+typedef struct AudioFrameQueue
+{
+	AVCodecContext* avctx;
+	int remaining_delay;
+	int remaining_samples;
+	AudioFrame* frames;
+	unsigned frame_count;
+	unsigned frame_alloc;
 } AudioFrameQueue;
 
 /**
@@ -44,7 +46,7 @@ typedef struct AudioFrameQueue {
  * @param avctx context to use for time_base and av_log
  * @param afq   queue context
  */
-void ff_af_queue_init(AVCodecContext *avctx, AudioFrameQueue *afq);
+void ff_af_queue_init(AVCodecContext* avctx, AudioFrameQueue* afq);
 
 /**
  * Close AudioFrameQueue.
@@ -53,7 +55,7 @@ void ff_af_queue_init(AVCodecContext *avctx, AudioFrameQueue *afq);
  *
  * @param afq queue context
  */
-void ff_af_queue_close(AudioFrameQueue *afq);
+void ff_af_queue_close(AudioFrameQueue* afq);
 
 /**
  * Add a frame to the queue.
@@ -61,7 +63,7 @@ void ff_af_queue_close(AudioFrameQueue *afq);
  * @param afq queue context
  * @param f   frame to add to the queue
  */
-int ff_af_queue_add(AudioFrameQueue *afq, const AVFrame *f);
+int ff_af_queue_add(AudioFrameQueue* afq, const AVFrame* f);
 
 /**
  * Remove frame(s) from the queue.
@@ -77,14 +79,14 @@ int ff_af_queue_add(AudioFrameQueue *afq, const AVFrame *f);
  * @param[out] pts      output packet pts
  * @param[out] duration output packet duration
  */
-void ff_af_queue_remove(AudioFrameQueue *afq, int nb_samples, int64_t *pts,
-                        int *duration);
+void ff_af_queue_remove(AudioFrameQueue* afq, int nb_samples, int64_t* pts,
+                        int* duration);
 
 /**
  * Log the current state of the queue.
  *
  * @param afq queue context
  */
-void ff_af_queue_log_state(AudioFrameQueue *afq);
+void ff_af_queue_log_state(AudioFrameQueue* afq);
 
 #endif /* AVCODEC_AUDIO_FRAME_QUEUE_H */

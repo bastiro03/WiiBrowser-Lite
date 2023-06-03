@@ -85,43 +85,43 @@
 #endif
 
 /* esds_t */
-typedef struct {
-  uint8_t  version;
-  uint24_t flags;
+typedef struct
+{
+	uint8_t version;
+	uint24_t flags;
 
-  /* 0x03 ESDescrTag */
-  uint16_t ESId;
-  uint8_t  streamPriority;
+	/* 0x03 ESDescrTag */
+	uint16_t ESId;
+	uint8_t streamPriority;
 
-  /* 0x04 DecConfigDescrTag */
-  uint8_t  objectTypeId;
-  uint8_t  streamType;
-  /* XXX: really streamType is
-   * only 6bit, followed by:
-   * 1bit  upStream
-   * 1bit  reserved
-   */
-  uint24_t bufferSizeDB;
-  uint32_t maxBitrate;
-  uint32_t avgBitrate;
+	/* 0x04 DecConfigDescrTag */
+	uint8_t objectTypeId;
+	uint8_t streamType;
+	/* XXX: really streamType is
+	 * only 6bit, followed by:
+	 * 1bit  upStream
+	 * 1bit  reserved
+	 */
+	uint24_t bufferSizeDB;
+	uint32_t maxBitrate;
+	uint32_t avgBitrate;
 
-  /* 0x05 DecSpecificDescrTag */
-  uint16_t  decoderConfigLen;
-  uint8_t *decoderConfig;
+	/* 0x05 DecSpecificDescrTag */
+	uint16_t decoderConfigLen;
+	uint8_t* decoderConfig;
 
-  /* 0x06 SLConfigDescrTag */
-  uint8_t  SLConfigLen;
-  uint8_t *SLConfig;
+	/* 0x06 SLConfigDescrTag */
+	uint8_t SLConfigLen;
+	uint8_t* SLConfig;
 
-  /* TODO: add the missing tags,
-   * I currently have no specs
-   * for them and doubt they
-   * are currently needed ::atmos
-   */
-
+	/* TODO: add the missing tags,
+	 * I currently have no specs
+	 * for them and doubt they
+	 * are currently needed ::atmos
+	 */
 } esds_t;
 
-int mp4_parse_esds(unsigned char *data, int datalen, esds_t *esds);
-void mp4_free_esds(esds_t *esds);
+int mp4_parse_esds(unsigned char* data, int datalen, esds_t* esds);
+void mp4_free_esds(esds_t* esds);
 
 #endif /* MPLAYER_PARSE_MP4_H */

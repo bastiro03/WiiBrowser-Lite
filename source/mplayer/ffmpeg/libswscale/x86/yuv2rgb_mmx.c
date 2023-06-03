@@ -39,12 +39,18 @@
 #define DITHER1XBPP // only for MMX
 
 /* hope these constant values are cache line aligned */
-DECLARE_ASM_CONST(8, uint64_t, mmx_00ffw)   = 0x00ff00ff00ff00ffULL;
-DECLARE_ASM_CONST(8, uint64_t, mmx_redmask) = 0xf8f8f8f8f8f8f8f8ULL;
-DECLARE_ASM_CONST(8, uint64_t, mmx_grnmask) = 0xfcfcfcfcfcfcfcfcULL;
-DECLARE_ASM_CONST(8, uint64_t, pb_e0) = 0xe0e0e0e0e0e0e0e0ULL;
-DECLARE_ASM_CONST(8, uint64_t, pb_03) = 0x0303030303030303ULL;
-DECLARE_ASM_CONST(8, uint64_t, pb_07) = 0x0707070707070707ULL;
+DECLARE_ASM_CONST(8, uint64_t, mmx_00ffw) =
+0x00ff00ff00ff00ffULL;
+DECLARE_ASM_CONST(8, uint64_t, mmx_redmask) =
+0xf8f8f8f8f8f8f8f8ULL;
+DECLARE_ASM_CONST(8, uint64_t, mmx_grnmask) =
+0xfcfcfcfcfcfcfcfcULL;
+DECLARE_ASM_CONST(8, uint64_t, pb_e0) =
+0xe0e0e0e0e0e0e0e0ULL;
+DECLARE_ASM_CONST(8, uint64_t, pb_03) =
+0x0303030303030303ULL;
+DECLARE_ASM_CONST(8, uint64_t, pb_07) =
+0x0707070707070707ULL;
 
 //MMX versions
 #if HAVE_MMX
@@ -64,41 +70,51 @@ DECLARE_ASM_CONST(8, uint64_t, pb_07) = 0x0707070707070707ULL;
 #include "yuv2rgb_template.c"
 #endif /* HAVE_MMX2 */
 
-SwsFunc ff_yuv2rgb_init_mmx(SwsContext *c)
+SwsFunc ff_yuv2rgb_init_mmx(SwsContext* c)
 {
-    int cpu_flags = av_get_cpu_flags();
+	int cpu_flags = av_get_cpu_flags();
 
 #if HAVE_MMX2
-    if (cpu_flags & AV_CPU_FLAG_MMX2) {
-        switch (c->dstFormat) {
-        case PIX_FMT_RGB24:  return yuv420_rgb24_MMX2;
-        case PIX_FMT_BGR24:  return yuv420_bgr24_MMX2;
-        }
-    }
+	if (cpu_flags & AV_CPU_FLAG_MMX2) {
+		switch (c->dstFormat) {
+		case PIX_FMT_RGB24:  return yuv420_rgb24_MMX2;
+		case PIX_FMT_BGR24:  return yuv420_bgr24_MMX2;
+		}
+	}
 #endif
 
-    if (cpu_flags & AV_CPU_FLAG_MMX) {
-        switch (c->dstFormat) {
-            case PIX_FMT_RGB32:
-                if (c->srcFormat == PIX_FMT_YUVA420P) {
+	if (cpu_flags & AV_CPU_FLAG_MMX)
+	{
+		switch (c->dstFormat)
+		{
+		case PIX_FMT_RGB32:
+			{
+				if (c->srcFormat == PIX_FMT_YUVA420P)
+				{
 #if HAVE_7REGS && CONFIG_SWSCALE_ALPHA
-                    return yuva420_rgb32_MMX;
+				return yuva420_rgb32_MMX;
 #endif
-                    break;
-                } else return yuv420_rgb32_MMX;
-            case PIX_FMT_BGR32:
-                if (c->srcFormat == PIX_FMT_YUVA420P) {
+					break;
+				}
+				return yuv420_rgb32_MMX;
+			}
+		case PIX_FMT_BGR32:
+			{
+				if (c->srcFormat == PIX_FMT_YUVA420P)
+				{
 #if HAVE_7REGS && CONFIG_SWSCALE_ALPHA
-                    return yuva420_bgr32_MMX;
+				return yuva420_bgr32_MMX;
 #endif
-                    break;
-                } else return yuv420_bgr32_MMX;
-            case PIX_FMT_RGB24:  return yuv420_rgb24_MMX;
-            case PIX_FMT_BGR24:  return yuv420_bgr24_MMX;
-            case PIX_FMT_RGB565: return yuv420_rgb16_MMX;
-            case PIX_FMT_RGB555: return yuv420_rgb15_MMX;
-        }
-    }
+					break;
+				}
+				return yuv420_bgr32_MMX;
+			}
+		case PIX_FMT_RGB24: return yuv420_rgb24_MMX;
+		case PIX_FMT_BGR24: return yuv420_bgr24_MMX;
+		case PIX_FMT_RGB565: return yuv420_rgb16_MMX;
+		case PIX_FMT_RGB555: return yuv420_rgb15_MMX;
+		}
+	}
 
-    return NULL;
+	return NULL;
 }

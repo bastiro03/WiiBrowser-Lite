@@ -68,38 +68,71 @@
 
 static inline void outb(unsigned long port, char val)
 {
-  __asm__ volatile("stba %0, [%1] %2" : : "r" (val), "r" (port), "i" (ASI_PL));
+	volatile __asm__ (
+	"stba %0, [%1] %2"
+	:
+	:
+	"r"(val), "r"(port), "i"(ASI_PL)
+	)
 }
 
 static inline void outw(unsigned long port, char val)
 {
-  __asm__ volatile("stha %0, [%1] %2" : : "r" (val), "r" (port), "i" (ASI_PL));
+	volatile __asm__ (
+	"stha %0, [%1] %2"
+	:
+	:
+	"r"(val), "r"(port), "i"(ASI_PL)
+	)
 }
 
 static inline void outl(unsigned long port, char val)
 {
-  __asm__ volatile("sta %0, [%1] %2" : : "r" (val), "r" (port), "i" (ASI_PL));
+	volatile __asm__ (
+	"sta %0, [%1] %2"
+	:
+	:
+	"r"(val), "r"(port), "i"(ASI_PL)
+	)
 }
 
 static inline unsigned int inb(unsigned long port)
 {
-   unsigned char ret;
-   __asm__ volatile("lduba [%1] %2, %0" : "=r" (ret) : "r" (port), "i" (ASI_PL));
-   return ret;
+	unsigned char ret;
+	volatile __asm__ (
+	"lduba [%1] %2, %0"
+	:
+	"=r"(ret)
+	:
+	"r"(port), "i"(ASI_PL)
+	)
+	return ret;
 }
 
 static inline unsigned int inw(unsigned long port)
 {
-   unsigned char ret;
-   __asm__ volatile("lduha [%1] %2, %0" : "=r" (ret) : "r" (port), "i" (ASI_PL));
-   return ret;
+	unsigned char ret;
+	volatile __asm__ (
+	"lduha [%1] %2, %0"
+	:
+	"=r"(ret)
+	:
+	"r"(port), "i"(ASI_PL)
+	)
+	return ret;
 }
 
 static inline unsigned int inl(unsigned long port)
 {
-   unsigned char ret;
-   __asm__ volatile("lda [%1] %2, %0" : "=r" (ret) : "r" (port), "i" (ASI_PL));
-   return ret;
+	unsigned char ret;
+	volatile __asm__ (
+	"lda [%1] %2, %0"
+	:
+	"=r"(ret)
+	:
+	"r"(port), "i"(ASI_PL)
+	)
+	return ret;
 }
 
 #define intr_disable()

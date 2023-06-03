@@ -33,7 +33,7 @@
 #endif
 
 #ifndef av_always_inline
-#if AV_GCC_VERSION_AT_LEAST(3,1)
+#if AV_GCC_VERSION_AT_LEAST(3, 1)
 #    define av_always_inline __attribute__((always_inline)) inline
 #else
 #    define av_always_inline inline
@@ -41,7 +41,7 @@
 #endif
 
 #ifndef av_noreturn
-#if AV_GCC_VERSION_AT_LEAST(2,5)
+#if AV_GCC_VERSION_AT_LEAST(2, 5)
 #    define av_noreturn __attribute__((noreturn))
 #else
 #    define av_noreturn
@@ -49,7 +49,7 @@
 #endif
 
 #ifndef av_noinline
-#if AV_GCC_VERSION_AT_LEAST(3,1)
+#if AV_GCC_VERSION_AT_LEAST(3, 1)
 #    define av_noinline __attribute__((noinline))
 #else
 #    define av_noinline
@@ -57,7 +57,7 @@
 #endif
 
 #ifndef av_pure
-#if AV_GCC_VERSION_AT_LEAST(3,1)
+#if AV_GCC_VERSION_AT_LEAST(3, 1)
 #    define av_pure __attribute__((pure))
 #else
 #    define av_pure
@@ -65,7 +65,7 @@
 #endif
 
 #ifndef av_const
-#if AV_GCC_VERSION_AT_LEAST(2,6)
+#if AV_GCC_VERSION_AT_LEAST(2, 6)
 #    define av_const __attribute__((const))
 #else
 #    define av_const
@@ -73,7 +73,7 @@
 #endif
 
 #ifndef av_cold
-#if AV_GCC_VERSION_AT_LEAST(4,3)
+#if AV_GCC_VERSION_AT_LEAST(4, 3)
 #    define av_cold __attribute__((cold))
 #else
 #    define av_cold
@@ -81,7 +81,7 @@
 #endif
 
 #ifndef av_flatten
-#if AV_GCC_VERSION_AT_LEAST(4,1)
+#if AV_GCC_VERSION_AT_LEAST(4, 1)
 #    define av_flatten __attribute__((flatten))
 #else
 #    define av_flatten
@@ -89,7 +89,7 @@
 #endif
 
 #ifndef attribute_deprecated
-#if AV_GCC_VERSION_AT_LEAST(3,1)
+#if AV_GCC_VERSION_AT_LEAST(3, 1)
 #    define attribute_deprecated __attribute__((deprecated))
 #else
 #    define attribute_deprecated
@@ -102,7 +102,7 @@
  * scheduled for removal.
  */
 #ifndef AV_NOWARN_DEPRECATED
-#if AV_GCC_VERSION_AT_LEAST(4,6)
+#if AV_GCC_VERSION_AT_LEAST(4, 6)
 #    define AV_NOWARN_DEPRECATED(code) \
         _Pragma("GCC diagnostic push") \
         _Pragma("GCC diagnostic ignored \"-Wdeprecated-declarations\"") \
@@ -112,7 +112,6 @@
 #    define AV_NOWARN_DEPRECATED(code) code
 #endif
 #endif
-
 
 #ifndef av_unused
 #if defined(__GNUC__)
@@ -128,7 +127,7 @@
  * assembler without the compiler being aware.
  */
 #ifndef av_used
-#if AV_GCC_VERSION_AT_LEAST(3,1)
+#if AV_GCC_VERSION_AT_LEAST(3, 1)
 #    define av_used __attribute__((used))
 #else
 #    define av_used
@@ -136,7 +135,7 @@
 #endif
 
 #ifndef av_alias
-#if AV_GCC_VERSION_AT_LEAST(3,3)
+#if AV_GCC_VERSION_AT_LEAST(3, 3)
 #   define av_alias __attribute__((may_alias))
 #else
 #   define av_alias

@@ -23,60 +23,78 @@
 
 #ifndef _WAVEFORMATEX_
 #define _WAVEFORMATEX_
-typedef struct __attribute__((__packed__)) _WAVEFORMATEX {
-  unsigned short  wFormatTag;
-  unsigned short  nChannels;
-  unsigned int    nSamplesPerSec;
-  unsigned int    nAvgBytesPerSec;
-  unsigned short  nBlockAlign;
-  unsigned short  wBitsPerSample;
-  unsigned short  cbSize;
-} WAVEFORMATEX, *PWAVEFORMATEX, *NPWAVEFORMATEX, *LPWAVEFORMATEX;
+
+typedef struct __attribute__ ((__packed__)) _WAVEFORMATEX
+{
+	unsigned short wFormatTag;
+	unsigned short nChannels;
+	unsigned int nSamplesPerSec;
+	unsigned int nAvgBytesPerSec;
+	unsigned short nBlockAlign;
+	unsigned short wBitsPerSample;
+	unsigned short cbSize;
+}
+
+WAVEFORMATEX
+,
+*
+PWAVEFORMATEX
+,
+*
+NPWAVEFORMATEX
+,
+*
+LPWAVEFORMATEX;
 #endif /* _WAVEFORMATEX_ */
 
 #ifndef _WAVEFORMATEXTENSIBLE_
 #define _WAVEFORMATEXTENSIBLE_
-typedef struct __attribute__((__packed__)) _WAVEFORMATEXTENSIBLE {
-    WAVEFORMATEX   wf;
-    unsigned short wValidBitsPerSample;
-    unsigned int   dwChannelMask;
-    unsigned int   SubFormat; // Only interested in first 32 bits of guid
-    unsigned int   _guid_remainder[3];
-} WAVEFORMATEXTENSIBLE;
+
+typedef struct __attribute__ ((__packed__)) _WAVEFORMATEXTENSIBLE
+{
+	WAVEFORMATEX wf;
+	unsigned short wValidBitsPerSample;
+	unsigned int dwChannelMask;
+	unsigned int SubFormat; // Only interested in first 32 bits of guid
+	unsigned int _guid_remainder[3];
+}
+
+WAVEFORMATEXTENSIBLE;
 #endif /* _WAVEFORMATEXTENSIBLE_ */
 
 #ifndef _MPEGLAYER3WAVEFORMAT_
 #define _MPEGLAYER3WAVEFORMAT_
-typedef struct __attribute__((__packed__)) mpeglayer3waveformat_tag {
-  WAVEFORMATEX wf;
-  unsigned short wID;
-  unsigned int   fdwFlags;
-  unsigned short nBlockSize;
-  unsigned short nFramesPerBlock;
-  unsigned short nCodecDelay;
-} MPEGLAYER3WAVEFORMAT;
+
+typedef struct __attribute__ ((__packed__)) mpeglayer3waveformat_tag
+{
+	WAVEFORMATEX wf;
+	unsigned short wID;
+	unsigned int fdwFlags;
+	unsigned short nBlockSize;
+	unsigned short nFramesPerBlock;
+	unsigned short nCodecDelay;
+}
+
+MPEGLAYER3WAVEFORMAT;
 #endif /* _MPEGLAYER3WAVEFORMAT_ */
 
 /* windows.h #includes wingdi.h on MinGW. */
 #if !defined(_BITMAPINFOHEADER_) && !defined(_WINGDI_)
 #define _BITMAPINFOHEADER_
-typedef struct __attribute__((__packed__))
+
+using __packed__ = struct __attribute__;
+BITMAPINFOHEADER
+,
+*
+PBITMAPINFOHEADER
+,
+*
+LPBITMAPINFOHEADER;
+
+typedef struct
 {
-    int 	biSize;
-    int  	biWidth;
-    int  	biHeight;
-    short 	biPlanes;
-    short 	biBitCount;
-    int 	biCompression;
-    int 	biSizeImage;
-    int  	biXPelsPerMeter;
-    int  	biYPelsPerMeter;
-    int 	biClrUsed;
-    int 	biClrImportant;
-} BITMAPINFOHEADER, *PBITMAPINFOHEADER, *LPBITMAPINFOHEADER;
-typedef struct {
 	BITMAPINFOHEADER bmiHeader;
-	int	bmiColors[1];
+	int bmiColors[1];
 } BITMAPINFO, *LPBITMAPINFO;
 #endif
 

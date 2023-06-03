@@ -29,25 +29,25 @@
 
 int screen_width = 80;
 int screen_height = 24;
-char *erase_to_end_of_line = NULL;
+char* erase_to_end_of_line = NULL;
 
-
-void get_screen_size() {
+void get_screen_size()
+{
 }
 
-void getch2_enable() {
+void getch2_enable()
+{
 }
 
-void getch2_disable() {
+void getch2_disable()
+{
 }
-
 
 void getch2(void)
 {
 }
 
-
-char* get_term_charset(void) {
+char* get_term_charset(void)
+{
 	return "ASCII";
 }
-

@@ -51,6 +51,6 @@ freely, subject to the following restrictions:
 // esc = characters to protect a single character
 //
 
-void tokenize ( const std::wstring& str, std::vector<std::wstring>& result,
-			const std::wstring& delimiters, const std::wstring& delimiters_preserve = L"",
-			const std::wstring& quote = L"\"", const std::wstring& esc = L"\\" );
+void tokenize(const std::wstring& str, std::vector<std::wstring>& result,
+              const std::wstring& delimiters, const std::wstring& delimiters_preserve = L"",
+              const std::wstring& quote = L"\"", const std::wstring& esc = L"\\");

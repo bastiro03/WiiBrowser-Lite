@@ -24,6 +24,6 @@
 
 #include <inttypes.h>
 
-void ff_asfcrypt_dec(const uint8_t key[20], uint8_t *data, int len);
+void ff_asfcrypt_dec(const uint8_t key[20], uint8_t* data, int len);
 
 #endif /* AVFORMAT_ASFCRYPT_H */

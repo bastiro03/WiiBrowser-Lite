@@ -58,6 +58,6 @@ uint32_t ff_mov_get_channel_label(uint32_t label);
  */
 uint32_t ff_mov_get_channel_layout_tag(enum CodecID codec_id,
                                        uint64_t channel_layout,
-                                       uint32_t *bitmap);
+                                       uint32_t* bitmap);
 
 #endif /* AVFORMAT_MOV_CHAN_H */

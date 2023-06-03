@@ -22,11 +22,13 @@
 #include "libavutil/ppc/paired.h"
 
 #if CONFIG_MDCT
-void ff_imdct_calc_paired(FFTContext *s, FFTSample *output, const FFTSample *input);
-void ff_imdct_half_paired(FFTContext *s, FFTSample *output, const FFTSample *input);
+void ff_imdct_calc_paired(FFTContext* s, FFTSample* output, const FFTSample* input);
+void ff_imdct_half_paired(FFTContext* s, FFTSample* output, const FFTSample* input);
 #endif
 
-av_cold void ff_fft_init_paired(FFTContext *s)
+av_cold
+
+void ff_fft_init_paired(FFTContext* s)
 {
 #if CONFIG_MDCT
 	s->imdct_calc = ff_imdct_calc_paired;

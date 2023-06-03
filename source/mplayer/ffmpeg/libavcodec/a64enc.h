@@ -33,26 +33,27 @@
 #define C64XRES 320
 #define C64YRES 200
 
-typedef struct A64Context {
-    /* general variables */
-    AVFrame picture;
+typedef struct A64Context
+{
+	/* general variables */
+	AVFrame picture;
 
-    /* variables for multicolor modes */
-    AVLFG randctx;
-    int mc_lifetime;
-    int mc_use_5col;
-    int mc_frame_counter;
-    int *mc_meta_charset;
-    int *mc_charmap;
-    int *mc_best_cb;
-    int mc_luma_vals[5];
-    uint8_t *mc_charset;
-    uint8_t *mc_colram;
-    uint8_t *mc_palette;
-    int mc_pal_size;
+	/* variables for multicolor modes */
+	AVLFG randctx;
+	int mc_lifetime;
+	int mc_use_5col;
+	int mc_frame_counter;
+	int* mc_meta_charset;
+	int* mc_charmap;
+	int* mc_best_cb;
+	int mc_luma_vals[5];
+	uint8_t* mc_charset;
+	uint8_t* mc_colram;
+	uint8_t* mc_palette;
+	int mc_pal_size;
 
-    /* pts of the next packet that will be output */
-    int64_t next_pts;
+	/* pts of the next packet that will be output */
+	int64_t next_pts;
 } A64Context;
 
 #endif /* AVCODEC_A64ENC_H */

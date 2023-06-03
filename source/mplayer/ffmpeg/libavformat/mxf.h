@@ -26,51 +26,56 @@
 
 typedef uint8_t UID[16];
 
-enum MXFMetadataSetType {
-    AnyType,
-    MaterialPackage,
-    SourcePackage,
-    SourceClip,
-    TimecodeComponent,
-    Sequence,
-    MultipleDescriptor,
-    Descriptor,
-    Track,
-    CryptoContext,
-    Preface,
-    Identification,
-    ContentStorage,
-    SubDescriptor,
-    IndexTableSegment,
-    EssenceContainerData,
-    TypeBottom,// add metadata type before this
+enum MXFMetadataSetType
+{
+	AnyType,
+	MaterialPackage,
+	SourcePackage,
+	SourceClip,
+	TimecodeComponent,
+	Sequence,
+	MultipleDescriptor,
+	Descriptor,
+	Track,
+	CryptoContext,
+	Preface,
+	Identification,
+	ContentStorage,
+	SubDescriptor,
+	IndexTableSegment,
+	EssenceContainerData,
+	TypeBottom,
+	// add metadata type before this
 };
 
-enum MXFFrameLayout {
-    FullFrame = 0,
-    SeparateFields,
-    OneField,
-    MixedFields,
-    SegmentedFrame,
+enum MXFFrameLayout
+{
+	FullFrame = 0,
+	SeparateFields,
+	OneField,
+	MixedFields,
+	SegmentedFrame,
 };
 
-typedef struct {
-    UID key;
-    int64_t offset;
-    uint64_t length;
+typedef struct
+{
+	UID key;
+	int64_t offset;
+	uint64_t length;
 } KLVPacket;
 
-typedef struct {
-    UID uid;
-    unsigned matching_len;
-    int id;
+typedef struct
+{
+	UID uid;
+	unsigned matching_len;
+	int id;
 } MXFCodecUL;
 
 extern const MXFCodecUL ff_mxf_data_definition_uls[];
 extern const MXFCodecUL ff_mxf_codec_uls[];
 extern const MXFCodecUL ff_mxf_pixel_format_uls[];
 
-int ff_mxf_decode_pixel_layout(const char pixel_layout[16], enum PixelFormat *pix_fmt);
+int ff_mxf_decode_pixel_layout(const char pixel_layout[16], enum PixelFormat* pix_fmt);
 
 #define PRINT_KEY(pc, s, x) av_dlog(pc, "%s %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n", s, \
                              (x)[0], (x)[1], (x)[2], (x)[3], (x)[4], (x)[5], (x)[6], (x)[7], (x)[8], (x)[9], (x)[10], (x)[11], (x)[12], (x)[13], (x)[14], (x)[15])

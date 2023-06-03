@@ -22,16 +22,16 @@
 #include "libavcodec/dsputil.h"
 #include "dsputil_arm.h"
 
-void ff_vector_fmul_vfp(float *dst, const float *src0,
-                        const float *src1, int len);
-void ff_vector_fmul_reverse_vfp(float *dst, const float *src0,
-                                const float *src1, int len);
+void ff_vector_fmul_vfp(float* dst, const float* src0,
+                        const float* src1, int len);
+void ff_vector_fmul_reverse_vfp(float* dst, const float* src0,
+                                const float* src1, int len);
 
-void ff_dsputil_init_vfp(DSPContext* c, AVCodecContext *avctx)
+void ff_dsputil_init_vfp(DSPContext* c, AVCodecContext* avctx)
 {
-    int cpu_flags = av_get_cpu_flags();
+	int cpu_flags = av_get_cpu_flags();
 
-    if (!have_vfpv3(cpu_flags))
-        c->vector_fmul = ff_vector_fmul_vfp;
-    c->vector_fmul_reverse = ff_vector_fmul_reverse_vfp;
+	if (!have_vfpv3(cpu_flags))
+		c->vector_fmul = ff_vector_fmul_vfp;
+	c->vector_fmul_reverse = ff_vector_fmul_reverse_vfp;
 }

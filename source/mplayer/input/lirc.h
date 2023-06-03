@@ -19,13 +19,13 @@
 #ifndef MPLAYER_LIRC_H
 #define MPLAYER_LIRC_H
 
-extern char *lirc_configfile;
+extern char* lirc_configfile;
 
 int
 mp_input_lirc_init(void);
 
 int
-mp_input_lirc_read(int fd,char* dest, int s);
+mp_input_lirc_read(int fd, char* dest, int s);
 
 void
 mp_input_lirc_close(int fd);

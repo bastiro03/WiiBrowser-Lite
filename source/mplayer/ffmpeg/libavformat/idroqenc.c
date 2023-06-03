@@ -22,25 +22,24 @@
 #include "avformat.h"
 #include "rawenc.h"
 
-
-static int roq_write_header(struct AVFormatContext *s)
+static int roq_write_header(struct AVFormatContext* s)
 {
-    static const uint8_t header[] = {
-        0x84, 0x10, 0xFF, 0xFF, 0xFF, 0xFF, 0x1E, 0x00
-    };
+	static const uint8_t header[] = {
+		0x84, 0x10, 0xFF, 0xFF, 0xFF, 0xFF, 0x1E, 0x00
+	};
 
-    avio_write(s->pb, header, 8);
-    avio_flush(s->pb);
+	avio_write(s->pb, header, 8);
+	avio_flush(s->pb);
 
-    return 0;
+	return 0;
 }
 
 AVOutputFormat ff_roq_muxer = {
-    .name         = "roq",
-    .long_name    = NULL_IF_CONFIG_SMALL("raw id RoQ format"),
-    .extensions   = "roq",
-    .audio_codec  = CODEC_ID_ROQ_DPCM,
-    .video_codec  = CODEC_ID_ROQ,
-    .write_header = roq_write_header,
-    .write_packet = ff_raw_write_packet,
+	.name = "roq",
+	.long_name = NULL_IF_CONFIG_SMALL("raw id RoQ format"),
+	.extensions = "roq",
+	.audio_codec = CODEC_ID_ROQ_DPCM,
+	.video_codec = CODEC_ID_ROQ,
+	.write_header = roq_write_header,
+	.write_packet = ff_raw_write_packet,
 };

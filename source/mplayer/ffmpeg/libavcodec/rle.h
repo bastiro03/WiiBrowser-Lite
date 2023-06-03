@@ -33,7 +33,7 @@
  * @param w Image width
  * @return Size of output in bytes, or -1 if larger than out_size
  */
-int ff_rle_encode(uint8_t *outbuf, int out_size, const uint8_t *inbuf, int bpp, int w,
+int ff_rle_encode(uint8_t* outbuf, int out_size, const uint8_t* inbuf, int bpp, int w,
                   int add_rep, int xor_rep, int add_raw, int xor_raw);
 
 #endif /* AVCODEC_RLE_H */

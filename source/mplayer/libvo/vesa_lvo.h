@@ -25,10 +25,10 @@
 
 #include <stdint.h>
 
-int	 vlvo_preinit(const char *drvname);
-int      vlvo_init(unsigned src_width,unsigned src_height,
-		   unsigned x_org,unsigned y_org,unsigned dst_width,
-		   unsigned dst_height,unsigned format,unsigned dest_bpp);
-void     vlvo_term( void );
+int vlvo_preinit(const char* drvname);
+int vlvo_init(unsigned src_width, unsigned src_height,
+              unsigned x_org, unsigned y_org, unsigned dst_width,
+              unsigned dst_height, unsigned format, unsigned dest_bpp);
+void vlvo_term(void);
 
 #endif /* MPLAYER_VESA_LVO_H */

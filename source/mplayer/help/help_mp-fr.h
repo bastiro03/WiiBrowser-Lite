@@ -7,12 +7,12 @@
 
 // ========================= Aide MPlayer ===========================
 
-static const char help_text[]=
-"Utilisation :      mplayer [options] [url|répertoire/]fichier\n"
-"\n"
-"Options de base :  (liste complète dans la page de man)\n"
-" -vo <pil[:pér]>  pilote et périph. vidéo de sortie ('-vo help' pour liste)\n"
-" -ao <pil[:pér]>  pilote et périph. audio de sortie ('-ao help' pour liste)\n"
+static const char help_text[] =
+	"Utilisation :      mplayer [options] [url|répertoire/]fichier\n"
+	"\n"
+	"Options de base :  (liste complète dans la page de man)\n"
+	" -vo <pil[:pér]>  pilote et périph. vidéo de sortie ('-vo help' pour liste)\n"
+	" -ao <pil[:pér]>  pilote et périph. audio de sortie ('-ao help' pour liste)\n"
 #ifdef CONFIG_VCD
 " vcd://<n°piste>  lit piste (S)VCD (Super Video CD) (périf. brut, non-monté)\n"
 #endif
@@ -20,32 +20,32 @@ static const char help_text[]=
 " dvd://<n°titre>  lit titre DVD du périf. plutôt que d'un fichier\n"
 " -alang/-slang    langue audio/sous-titres du DVD (code pays 2 lettres)\n"
 #endif
-" -ss <pos>        démarre lecture à 'pos' (temps en secondes ou hh:mm:ss)\n"
-" -nosound         ne joue aucun son\n"
-" -fs              plein-écran (ou -vm, -zoom, détails dans page man)\n"
-" -x <x> -y <y>    résolution de l'affichage (à utiliser avec -vm ou -zoom)\n"
-" -sub <fich>      fichier sous-titres à utiliser (cf. -subfps, -subdelay)\n"
-" -playlist <fich> fichier des titres audio à lire\n"
-" -vid x -aid y    spécifie les flux vidéo (x) et audio (y) à lire\n"
-" -fps x -srate y  change fréquences vidéo (x fps) et audio (y Hz)\n"
-" -pp <qualité>    active le filtre de post-traitement (détails page man)\n"
-" -framedrop       active saut d'images (pour machines lentes)\n"
-"\n"
-"Fonctions au clavier: (liste complète dans page man, voir aussi input.conf)\n"
-" <- ou ->         arrière/avant 10 secondes\n"
-" haut ou bas      arrière/avant 1 minute\n"
-" PgUp ou PgDown   arrière/avant 10 minutes\n"
-" < ou >           fichier précédent/suivant dans liste audio à lire\n"
-" p ou ESPACE      pause film (presser n'importe quelle touche pour continuer)\n"
-" q ou ESC         arrête la lecture et quitte le programme\n"
-" + ou -           ajuste délai audio : +/- 0.1 seconde\n"
-" o                cycle mode OSD: aucun/barre recherche/barre rech. + temps\n"
-" * ou /           augmente/diminue le volume PCM\n"
-" x ou z           ajuste délai des sous-titres : +/- 0.1 seconde\n"
-" r ou t           ajuste position sous-titres : +haut/+bas, cf. -vf expand\n"
-"\n"
-" * * * VOIR PAGE MAN POUR DÉTAILS, AUTRES OPTIONS (AVANCÉES) ET TOUCHES * * *\n"
-"\n";
+	" -ss <pos>        démarre lecture à 'pos' (temps en secondes ou hh:mm:ss)\n"
+	" -nosound         ne joue aucun son\n"
+	" -fs              plein-écran (ou -vm, -zoom, détails dans page man)\n"
+	" -x <x> -y <y>    résolution de l'affichage (à utiliser avec -vm ou -zoom)\n"
+	" -sub <fich>      fichier sous-titres à utiliser (cf. -subfps, -subdelay)\n"
+	" -playlist <fich> fichier des titres audio à lire\n"
+	" -vid x -aid y    spécifie les flux vidéo (x) et audio (y) à lire\n"
+	" -fps x -srate y  change fréquences vidéo (x fps) et audio (y Hz)\n"
+	" -pp <qualité>    active le filtre de post-traitement (détails page man)\n"
+	" -framedrop       active saut d'images (pour machines lentes)\n"
+	"\n"
+	"Fonctions au clavier: (liste complète dans page man, voir aussi input.conf)\n"
+	" <- ou ->         arrière/avant 10 secondes\n"
+	" haut ou bas      arrière/avant 1 minute\n"
+	" PgUp ou PgDown   arrière/avant 10 minutes\n"
+	" < ou >           fichier précédent/suivant dans liste audio à lire\n"
+	" p ou ESPACE      pause film (presser n'importe quelle touche pour continuer)\n"
+	" q ou ESC         arrête la lecture et quitte le programme\n"
+	" + ou -           ajuste délai audio : +/- 0.1 seconde\n"
+	" o                cycle mode OSD: aucun/barre recherche/barre rech. + temps\n"
+	" * ou /           augmente/diminue le volume PCM\n"
+	" x ou z           ajuste délai des sous-titres : +/- 0.1 seconde\n"
+	" r ou t           ajuste position sous-titres : +haut/+bas, cf. -vf expand\n"
+	"\n"
+	" * * * VOIR PAGE MAN POUR DÉTAILS, AUTRES OPTIONS (AVANCÉES) ET TOUCHES * * *\n"
+	"\n";
 
 #define MSGTR_SamplesWanted "Échantillons ce format demandés pour améliorer support. Contacter developpeurs.\n"
 
@@ -186,7 +186,6 @@ static const char help_text[]=
 #define MSGTR_EdloutBadStop "Saut EDL annulé, dernier début > arrêt\n"
 #define MSGTR_EdloutStartSkip "EDL saute le début, presse 'i' encore une fois pour fin du bloc.\n"
 #define MSGTR_EdloutEndSkip "EDL saute la fin, ligne écrite.\n"
-
 
 // mplayer.c OSD
 
@@ -1153,7 +1152,6 @@ static const char help_text[]=
 #define MSGTR_AO_ALSA_TryingToResetSoundcard "[AO_ALSA] Essaie de réinitialiser la carte son.\n"
 #define MSGTR_AO_ALSA_CannotGetPcmStatus "[AO_ALSA] Ne peux avoir le statut pcm : %s\n"
 
-
 // ao_plugin.c
 
 #define MSGTR_AO_PLUGIN_InvalidPlugin "[AO PLUGIN] plugiciel invalide : %s\n"
@@ -1842,7 +1840,6 @@ static const char help_text[]=
 "[VO_XV] Voir 'mplayer -vo help' pour autres pilotes sortie vidéo (non xv).\n"\
 "[VO_XV] Essayez -vo x11.\n"
 
-
 // loader/ldt_keeper.c
 
 #define MSGTR_LOADER_DYLD_Warning "AVERTISSEMENT : Tentative d'utilisation de codecs DLL alors que la variable d'environment\n         DYLD_BIND_AT_LAUNCH n'est pas assignée. Plantage très probable.\n"
@@ -1893,7 +1890,6 @@ static const char help_text[]=
 // ass.c
 #define MSGTR_LIBASS_NoStyleNamedXFoundUsingY "[ass] [%p] Avertissement: aucun style nommé '%s' trouvé, utilise '%s'\n"
 #define MSGTR_LIBASS_BadTimestamp "[ass] mauvais marqueur de temps\n"
-
 
 #define MSGTR_LIBASS_ErrorOpeningIconvDescriptor "[ass] erreur lors de l'ouverture du descripteur de conversion.\n"
 #define MSGTR_LIBASS_ErrorRecodingFile "[ass] erreur lors de l'enregistrement du fichier.\n"
@@ -2022,7 +2018,5 @@ static const char help_text[]=
 #define MSGTR_TVI_DS_NoVideoCaptureDevice "tvi_dshow: Impossible de trouver un périphérique de capture vidéo\n"
 #define MSGTR_TVI_DS_NoAudioCaptureDevice "tvi_dshow: Impossible de trouver un périphérique de capture audio\n"
 #define MSGTR_TVI_DS_GetActualMediatypeFailed "tvi_dshow: Impossible d'obtenir le type de média réel (Erreur:0x%x).  Suppose qu'il s'agit de celui requis.\n"
-
-
 
 /* Messages to be moved to the section where they belong in the English version */

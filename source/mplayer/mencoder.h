@@ -19,14 +19,14 @@
 #ifndef MPLAYER_MENCODER_H
 #define MPLAYER_MENCODER_H
 
-extern char *info_artist;
-extern char *info_comment;
-extern char *info_copyright;
-extern char *info_genre;
-extern char *info_name;
-extern char *info_sourceform;
-extern char *info_subject;
-extern char *out_filename;
-extern char *passtmpfile;
+extern char* info_artist;
+extern char* info_comment;
+extern char* info_copyright;
+extern char* info_genre;
+extern char* info_name;
+extern char* info_sourceform;
+extern char* info_subject;
+extern char* out_filename;
+extern char* passtmpfile;
 
 #endif /* MPLAYER_MENCODER_H */

@@ -27,18 +27,18 @@
 
 int main(void)
 {
-    softclip_table_init();
-    rnd_table_init();
-    init_noise_samples();
+	softclip_table_init();
+	rnd_table_init();
+	init_noise_samples();
 
-    write_fileheader();
+	write_fileheader();
 
-    WRITE_ARRAY("static const", uint16_t, softclip_table);
-    WRITE_ARRAY("static const", float, noise_table);
-    WRITE_ARRAY("static const", float, noise_samples);
+	WRITE_ARRAY("static const", uint16_t, softclip_table);
+	WRITE_ARRAY("static const", float, noise_table);
+	WRITE_ARRAY("static const", float, noise_samples);
 
-    WRITE_2D_ARRAY("static const", uint8_t, random_dequant_index);
-    WRITE_2D_ARRAY("static const", uint8_t, random_dequant_type24);
+	WRITE_2D_ARRAY("static const", uint8_t, random_dequant_index);
+	WRITE_2D_ARRAY("static const", uint8_t, random_dequant_type24);
 
-    return 0;
+	return 0;
 }

@@ -31,169 +31,174 @@ extern "C" {
 #include "libutvideo.h"
 #include "get_bits.h"
 
-static av_cold int utvideo_decode_init(AVCodecContext *avctx)
+static av_cold int utvideo_decode_init(AVCodecContext* avctx)
 {
-    UtVideoContext *utv = (UtVideoContext *)avctx->priv_data;
-    UtVideoExtra info;
-    int format;
-    int begin_ret;
+	auto utv = static_cast<UtVideoContext*>(avctx->priv_data);
+	UtVideoExtra info;
+	int format;
+	int begin_ret;
 
-    if (avctx->extradata_size != 4*4) {
-        av_log(avctx, AV_LOG_ERROR, "Extradata size mismatch.\n");
-        return -1;
-    }
+	if (avctx->extradata_size != 4 * 4)
+	{
+		av_log(avctx, AV_LOG_ERROR, "Extradata size mismatch.\n");
+		return -1;
+	}
 
-    /* Read extradata */
-    info.version = AV_RL32(avctx->extradata);
-    info.original_format = AV_RL32(avctx->extradata + 4);
-    info.frameinfo_size = AV_RL32(avctx->extradata + 8);
-    info.flags = AV_RL32(avctx->extradata + 12);
+	/* Read extradata */
+	info.version = AV_RL32(avctx->extradata);
+	info.original_format = AV_RL32(avctx->extradata + 4);
+	info.frameinfo_size = AV_RL32(avctx->extradata + 8);
+	info.flags = AV_RL32(avctx->extradata + 12);
 
-    /* Pick format based on FOURCC */
-    switch (avctx->codec_tag) {
-    case MKTAG('U', 'L', 'Y', '0'):
-        avctx->pix_fmt = PIX_FMT_YUV420P;
-        format = UTVF_YV12;
-        break;
-    case MKTAG('U', 'L', 'Y', '2'):
-        avctx->pix_fmt = PIX_FMT_YUYV422;
-        format = UTVF_YUY2;
-        break;
-    case MKTAG('U', 'L', 'R', 'G'):
-        avctx->pix_fmt = PIX_FMT_BGR24;
-        format = UTVF_RGB24_WIN;
-        break;
-    case MKTAG('U', 'L', 'R', 'A'):
-        avctx->pix_fmt = PIX_FMT_RGB32;
-        format = UTVF_RGB32_WIN;
-        break;
-    default:
-        av_log(avctx, AV_LOG_ERROR,
-              "Not a Ut Video FOURCC: %X\n", avctx->codec_tag);
-        return -1;
-    }
+	/* Pick format based on FOURCC */
+	switch (avctx->codec_tag)
+	{
+	case MKTAG('U', 'L', 'Y', '0'):
+		avctx->pix_fmt = PIX_FMT_YUV420P;
+		format = UTVF_YV12;
+		break;
+	case MKTAG('U', 'L', 'Y', '2'):
+		avctx->pix_fmt = PIX_FMT_YUYV422;
+		format = UTVF_YUY2;
+		break;
+	case MKTAG('U', 'L', 'R', 'G'):
+		avctx->pix_fmt = PIX_FMT_BGR24;
+		format = UTVF_RGB24_WIN;
+		break;
+	case MKTAG('U', 'L', 'R', 'A'):
+		avctx->pix_fmt = PIX_FMT_RGB32;
+		format = UTVF_RGB32_WIN;
+		break;
+	default:
+		av_log(avctx, AV_LOG_ERROR,
+		       "Not a Ut Video FOURCC: %X\n", avctx->codec_tag);
+		return -1;
+	}
 
-    /* Only allocate the buffer once */
-    utv->buf_size = avpicture_get_size(avctx->pix_fmt, avctx->width, avctx->height);
-    utv->buffer = (uint8_t *)av_malloc(utv->buf_size * sizeof(uint8_t));
+	/* Only allocate the buffer once */
+	utv->buf_size = avpicture_get_size(avctx->pix_fmt, avctx->width, avctx->height);
+	utv->buffer = static_cast<uint8_t*>(av_malloc(utv->buf_size * sizeof(uint8_t)));
 
-    if (utv->buffer == NULL) {
-        av_log(avctx, AV_LOG_ERROR, "Unable to allocate output buffer.\n");
-        return -1;
-    }
+	if (utv->buffer == nullptr)
+	{
+		av_log(avctx, AV_LOG_ERROR, "Unable to allocate output buffer.\n");
+		return -1;
+	}
 
-    /* Allocate the output frame */
-    avctx->coded_frame = avcodec_alloc_frame();
+	/* Allocate the output frame */
+	avctx->coded_frame = avcodec_alloc_frame();
 
-    /* Ut Video only supports 8-bit */
-    avctx->bits_per_raw_sample = 8;
+	/* Ut Video only supports 8-bit */
+	avctx->bits_per_raw_sample = 8;
 
-    /* Is it interlaced? */
-    avctx->coded_frame->interlaced_frame = info.flags & 0x800 ? 1 : 0;
+	/* Is it interlaced? */
+	avctx->coded_frame->interlaced_frame = info.flags & 0x800 ? 1 : 0;
 
-    /* Apparently Ut Video doesn't store this info... */
-    avctx->coded_frame->top_field_first = 1;
+	/* Apparently Ut Video doesn't store this info... */
+	avctx->coded_frame->top_field_first = 1;
 
-    /*
-     * Create a Ut Video instance. Since the function wants
-     * an "interface name" string, pass it the name of the lib.
-     */
-    utv->codec = CCodec::CreateInstance(UNFCC(avctx->codec_tag), "libavcodec");
+	/*
+	 * Create a Ut Video instance. Since the function wants
+	 * an "interface name" string, pass it the name of the lib.
+	 */
+	utv->codec = CCodec::CreateInstance(UNFCC(avctx->codec_tag), "libavcodec");
 
-    /* Initialize Decoding */
-    begin_ret = utv->codec->DecodeBegin(format, avctx->width, avctx->height,
-                            CBGROSSWIDTH_WINDOWS, &info, sizeof(UtVideoExtra));
+	/* Initialize Decoding */
+	begin_ret = utv->codec->DecodeBegin(format, avctx->width, avctx->height,
+	                                    CBGROSSWIDTH_WINDOWS, &info, sizeof(UtVideoExtra));
 
-    /* Check to see if the decoder initlized properly */
-    if (begin_ret != 0) {
-        av_log(avctx, AV_LOG_ERROR,
-               "Could not initialize decoder: %d\n", begin_ret);
-        return -1;
-    }
+	/* Check to see if the decoder initlized properly */
+	if (begin_ret != 0)
+	{
+		av_log(avctx, AV_LOG_ERROR,
+		       "Could not initialize decoder: %d\n", begin_ret);
+		return -1;
+	}
 
-    return 0;
+	return 0;
 }
 
-static int utvideo_decode_frame(AVCodecContext *avctx, void *data,
-                                int *data_size, AVPacket *avpkt)
+static int utvideo_decode_frame(AVCodecContext* avctx, void* data,
+                                int* data_size, AVPacket* avpkt)
 {
-    UtVideoContext *utv = (UtVideoContext *)avctx->priv_data;
-    AVFrame *pic = avctx->coded_frame;
-    int w = avctx->width, h = avctx->height;
+	auto utv = static_cast<UtVideoContext*>(avctx->priv_data);
+	AVFrame* pic = avctx->coded_frame;
+	int w = avctx->width, h = avctx->height;
 
-    /* Set flags */
-    pic->reference = 0;
-    pic->pict_type = AV_PICTURE_TYPE_I;
-    pic->key_frame = 1;
+	/* Set flags */
+	pic->reference = 0;
+	pic->pict_type = AV_PICTURE_TYPE_I;
+	pic->key_frame = 1;
 
-    /* Decode the frame */
-    utv->codec->DecodeFrame(utv->buffer, avpkt->data, true);
+	/* Decode the frame */
+	utv->codec->DecodeFrame(utv->buffer, avpkt->data, true);
 
-    /* Set the output data depending on the colorspace */
-    switch (avctx->pix_fmt) {
-    case PIX_FMT_YUV420P:
-        pic->linesize[0] = w;
-        pic->linesize[1] = pic->linesize[2] = w / 2;
-        pic->data[0] = utv->buffer;
-        pic->data[2] = utv->buffer + (w * h);
-        pic->data[1] = pic->data[2] + (w * h / 4);
-        break;
-    case PIX_FMT_YUYV422:
-        pic->linesize[0] = w * 2;
-        pic->data[0] = utv->buffer;
-        break;
-    case PIX_FMT_BGR24:
-    case PIX_FMT_RGB32:
-        /* Make the linesize negative, since Ut Video uses bottom-up BGR */
-        pic->linesize[0] = -1 * w * (avctx->pix_fmt == PIX_FMT_BGR24 ? 3 : 4);
-        pic->data[0] = utv->buffer + utv->buf_size + pic->linesize[0];
-        break;
-    }
+	/* Set the output data depending on the colorspace */
+	switch (avctx->pix_fmt)
+	{
+	case PIX_FMT_YUV420P:
+		pic->linesize[0] = w;
+		pic->linesize[1] = pic->linesize[2] = w / 2;
+		pic->data[0] = utv->buffer;
+		pic->data[2] = utv->buffer + (w * h);
+		pic->data[1] = pic->data[2] + (w * h / 4);
+		break;
+	case PIX_FMT_YUYV422:
+		pic->linesize[0] = w * 2;
+		pic->data[0] = utv->buffer;
+		break;
+	case PIX_FMT_BGR24:
+	case PIX_FMT_RGB32:
+		/* Make the linesize negative, since Ut Video uses bottom-up BGR */
+		pic->linesize[0] = -1 * w * (avctx->pix_fmt == PIX_FMT_BGR24 ? 3 : 4);
+		pic->data[0] = utv->buffer + utv->buf_size + pic->linesize[0];
+		break;
+	}
 
-    *data_size = sizeof(AVFrame);
-    *(AVFrame *)data = *pic;
+	*data_size = sizeof(AVFrame);
+	*static_cast<AVFrame*>(data) = *pic;
 
-    return avpkt->size;
+	return avpkt->size;
 }
 
-static av_cold int utvideo_decode_close(AVCodecContext *avctx)
+static av_cold int utvideo_decode_close(AVCodecContext* avctx)
 {
-    UtVideoContext *utv = (UtVideoContext *)avctx->priv_data;
+	auto utv = static_cast<UtVideoContext*>(avctx->priv_data);
 
-    /* Free output */
-    av_freep(&avctx->coded_frame);
-    av_freep(&utv->buffer);
+	/* Free output */
+	av_freep(&avctx->coded_frame);
+	av_freep(&utv->buffer);
 
-    /* Finish decoding and clean up the instance */
-    utv->codec->DecodeEnd();
-    CCodec::DeleteInstance(utv->codec);
+	/* Finish decoding and clean up the instance */
+	utv->codec->DecodeEnd();
+	CCodec::DeleteInstance(utv->codec);
 
-    return 0;
+	return 0;
 }
 
 AVCodec ff_libutvideo_decoder = {
-    "libutvideo",
-    NULL_IF_CONFIG_SMALL("Ut Video"),
-    AVMEDIA_TYPE_VIDEO,
-    CODEC_ID_UTVIDEO,
-    0,    //capabilities
-    NULL, //supported_framerates
-    NULL, //pix_fmts
-    NULL, //supported_samplerates
-    NULL, //sample_fmts
-    NULL, //channel_layouts
-    0,    //max_lowres
-    NULL, //priv_class
-    NULL, //profiles
-    sizeof(UtVideoContext),
-    NULL, //next
-    NULL, //init_thread_copy
-    NULL, //update_thread_context
-    NULL, //defaults
-    NULL, //init_static_data
-    utvideo_decode_init,
-    NULL, //encode
-    NULL, //encode2
-    utvideo_decode_frame,
-    utvideo_decode_close,
+	"libutvideo",
+	NULL_IF_CONFIG_SMALL("Ut Video"),
+	AVMEDIA_TYPE_VIDEO,
+	CODEC_ID_UTVIDEO,
+	0, //capabilities
+	nullptr, //supported_framerates
+	nullptr, //pix_fmts
+	nullptr, //supported_samplerates
+	nullptr, //sample_fmts
+	nullptr, //channel_layouts
+	0, //max_lowres
+	nullptr, //priv_class
+	nullptr, //profiles
+	sizeof(UtVideoContext),
+	nullptr, //next
+	nullptr, //init_thread_copy
+	nullptr, //update_thread_context
+	nullptr, //defaults
+	nullptr, //init_static_data
+	utvideo_decode_init,
+	nullptr, //encode
+	nullptr, //encode2
+	utvideo_decode_frame,
+	utvideo_decode_close,
 };

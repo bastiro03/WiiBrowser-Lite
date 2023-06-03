@@ -34,16 +34,17 @@
 
 int main(void)
 {
-    int i;
+	int i;
 
-    write_fileheader();
+	write_fileheader();
 
-    for (i = 5; i <= 13; i++) {
-        ff_init_ff_sine_windows(i);
-        printf("SINETABLE(%4i) = {\n", 1 << i);
-        write_float_array(ff_sine_windows[i], 1 << i);
-        printf("};\n");
-    }
+	for (i = 5; i <= 13; i++)
+	{
+		ff_init_ff_sine_windows(i);
+		printf("SINETABLE(%4i) = {\n", 1 << i);
+		write_float_array(ff_sine_windows[i], 1 << i);
+		printf("};\n");
+	}
 
-    return 0;
+	return 0;
 }

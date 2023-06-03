@@ -25,69 +25,73 @@
 
 #include "avfilter.h"
 
-static AVFilterBufferRef *get_video_buffer(AVFilterLink *link, int perms,
+static AVFilterBufferRef* get_video_buffer(AVFilterLink* link, int perms,
                                            int w, int h)
 {
-    AVFilterBufferRef *picref =
-        avfilter_default_get_video_buffer(link, perms, w, h);
-    uint8_t *tmp;
-    int tmp2;
+	AVFilterBufferRef* picref =
+		avfilter_default_get_video_buffer(link, perms, w, h);
+	uint8_t* tmp;
+	int tmp2;
 
-    tmp             = picref->data[2];
-    picref->data[2] = picref->data[1];
-    picref->data[1] = tmp;
+	tmp = picref->data[2];
+	picref->data[2] = picref->data[1];
+	picref->data[1] = tmp;
 
-    tmp2                = picref->linesize[2];
-    picref->linesize[2] = picref->linesize[1];
-    picref->linesize[1] = tmp2;
+	tmp2 = picref->linesize[2];
+	picref->linesize[2] = picref->linesize[1];
+	picref->linesize[1] = tmp2;
 
-    return picref;
+	return picref;
 }
 
-static void start_frame(AVFilterLink *link, AVFilterBufferRef *inpicref)
+static void start_frame(AVFilterLink* link, AVFilterBufferRef* inpicref)
 {
-    AVFilterBufferRef *outpicref = avfilter_ref_buffer(inpicref, ~0);
+	AVFilterBufferRef* outpicref = avfilter_ref_buffer(inpicref, ~0);
 
-    outpicref->data[1] = inpicref->data[2];
-    outpicref->data[2] = inpicref->data[1];
+	outpicref->data[1] = inpicref->data[2];
+	outpicref->data[2] = inpicref->data[1];
 
-    outpicref->linesize[1] = inpicref->linesize[2];
-    outpicref->linesize[2] = inpicref->linesize[1];
+	outpicref->linesize[1] = inpicref->linesize[2];
+	outpicref->linesize[2] = inpicref->linesize[1];
 
-    avfilter_start_frame(link->dst->outputs[0], outpicref);
+	avfilter_start_frame(link->dst->outputs[0], outpicref);
 }
 
-static int query_formats(AVFilterContext *ctx)
+static int query_formats(AVFilterContext* ctx)
 {
-    static const enum PixelFormat pix_fmts[] = {
-        PIX_FMT_YUV420P, PIX_FMT_YUVJ420P, PIX_FMT_YUVA420P,
-        PIX_FMT_YUV444P, PIX_FMT_YUVJ444P, PIX_FMT_YUVA444P,
-        PIX_FMT_YUV440P, PIX_FMT_YUVJ440P,
-        PIX_FMT_YUV422P, PIX_FMT_YUVJ422P,
-        PIX_FMT_YUV411P,
-        PIX_FMT_NONE,
-    };
+	static const enum PixelFormat pix_fmts[] = {
+		PIX_FMT_YUV420P, PIX_FMT_YUVJ420P, PIX_FMT_YUVA420P,
+		PIX_FMT_YUV444P, PIX_FMT_YUVJ444P, PIX_FMT_YUVA444P,
+		PIX_FMT_YUV440P, PIX_FMT_YUVJ440P,
+		PIX_FMT_YUV422P, PIX_FMT_YUVJ422P,
+		PIX_FMT_YUV411P,
+		PIX_FMT_NONE,
+	};
 
-    avfilter_set_common_pixel_formats(ctx, avfilter_make_format_list(pix_fmts));
-    return 0;
+	avfilter_set_common_pixel_formats(ctx, avfilter_make_format_list(pix_fmts));
+	return 0;
 }
 
 AVFilter avfilter_vf_swapuv = {
-    .name      = "swapuv",
-    .description = NULL_IF_CONFIG_SMALL("Swap U and V components."),
-    .priv_size = 0,
-    .query_formats = query_formats,
+	.name = "swapuv",
+	.description = NULL_IF_CONFIG_SMALL("Swap U and V components."),
+	.priv_size = 0,
+	.query_formats = query_formats,
 
-    .inputs = (const AVFilterPad[]) {
-        { .name             = "default",
-          .type             = AVMEDIA_TYPE_VIDEO,
-          .get_video_buffer = get_video_buffer,
-          .start_frame      = start_frame, },
-        { .name = NULL }
-    },
-    .outputs = (const AVFilterPad[]) {
-        { .name             = "default",
-          .type             = AVMEDIA_TYPE_VIDEO, },
-        { .name             = NULL }
-    },
+	.inputs = (const AVFilterPad[]){
+		{
+			.name = "default",
+			.type = AVMEDIA_TYPE_VIDEO,
+			.get_video_buffer = get_video_buffer,
+			.start_frame = start_frame,
+		},
+		{.name = NULL}
+	},
+	.outputs = (const AVFilterPad[]){
+		{
+			.name = "default",
+			.type = AVMEDIA_TYPE_VIDEO,
+		},
+		{.name = NULL}
+	},
 };

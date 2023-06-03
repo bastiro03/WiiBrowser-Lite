@@ -23,71 +23,71 @@
 #include "h264.h"
 #include "vda_internal.h"
 
-static int start_frame(AVCodecContext *avctx,
-                       av_unused const uint8_t *buffer,
+static int start_frame(AVCodecContext* avctx,
+                       const av_unused uint8_t* buffer,
                        av_unused uint32_t size)
 {
-    struct vda_context *vda_ctx = avctx->hwaccel_context;
+	struct vda_context* vda_ctx = avctx->hwaccel_context;
 
-    if (!vda_ctx->decoder)
-        return -1;
+	if (!vda_ctx->decoder)
+		return -1;
 
-    vda_ctx->bitstream_size = 0;
+	vda_ctx->bitstream_size = 0;
 
-    return 0;
+	return 0;
 }
 
-static int decode_slice(AVCodecContext *avctx,
-                        const uint8_t *buffer,
+static int decode_slice(AVCodecContext* avctx,
+                        const uint8_t* buffer,
                         uint32_t size)
 {
-    struct vda_context *vda_ctx = avctx->hwaccel_context;
-    void *tmp;
+	struct vda_context* vda_ctx = avctx->hwaccel_context;
+	void* tmp;
 
-    if (!vda_ctx->decoder)
-        return -1;
+	if (!vda_ctx->decoder)
+		return -1;
 
-    tmp = av_fast_realloc(vda_ctx->bitstream, &vda_ctx->ref_size, vda_ctx->bitstream_size+size+4);
-    if (!tmp)
-        return AVERROR(ENOMEM);
+	tmp = av_fast_realloc(vda_ctx->bitstream, &vda_ctx->ref_size, vda_ctx->bitstream_size + size + 4);
+	if (!tmp)
+		return AVERROR(ENOMEM);
 
-    vda_ctx->bitstream = tmp;
+	vda_ctx->bitstream = tmp;
 
-    AV_WB32(vda_ctx->bitstream+vda_ctx->bitstream_size, size);
-    memcpy(vda_ctx->bitstream+vda_ctx->bitstream_size+4, buffer, size);
+	AV_WB32(vda_ctx->bitstream + vda_ctx->bitstream_size, size);
+	memcpy(vda_ctx->bitstream + vda_ctx->bitstream_size + 4, buffer, size);
 
-    vda_ctx->bitstream_size += size + 4;
+	vda_ctx->bitstream_size += size + 4;
 
-    return 0;
+	return 0;
 }
 
-static int end_frame(AVCodecContext *avctx)
+static int end_frame(AVCodecContext* avctx)
 {
-    H264Context *h = avctx->priv_data;
-    struct vda_context *vda_ctx = avctx->hwaccel_context;
-    AVFrame *frame = &h->s.current_picture_ptr->f;
-    int status;
+	H264Context* h = avctx->priv_data;
+	struct vda_context* vda_ctx = avctx->hwaccel_context;
+	AVFrame* frame = &h->s.current_picture_ptr->f;
+	int status;
 
-    if (!vda_ctx->decoder || !vda_ctx->bitstream)
-        return -1;
+	if (!vda_ctx->decoder || !vda_ctx->bitstream)
+		return -1;
 
-    status = ff_vda_decoder_decode(vda_ctx, vda_ctx->bitstream,
-                                   vda_ctx->bitstream_size,
-                                   frame->reordered_opaque);
+	status = ff_vda_decoder_decode(vda_ctx, vda_ctx->bitstream,
+	                               vda_ctx->bitstream_size,
+	                               frame->reordered_opaque);
 
-    if (status)
-        av_log(avctx, AV_LOG_ERROR, "Failed to decode frame (%d)\n", status);
+	if (status)
+		av_log(avctx, AV_LOG_ERROR, "Failed to decode frame (%d)\n", status);
 
-    return status;
+	return status;
 }
 
 AVHWAccel ff_h264_vda_hwaccel = {
-    .name           = "h264_vda",
-    .type           = AVMEDIA_TYPE_VIDEO,
-    .id             = CODEC_ID_H264,
-    .pix_fmt        = PIX_FMT_VDA_VLD,
-    .start_frame    = start_frame,
-    .decode_slice   = decode_slice,
-    .end_frame      = end_frame,
-    .priv_data_size = 0,
+	.name = "h264_vda",
+	.type = AVMEDIA_TYPE_VIDEO,
+	.id = CODEC_ID_H264,
+	.pix_fmt = PIX_FMT_VDA_VLD,
+	.start_frame = start_frame,
+	.decode_slice = decode_slice,
+	.end_frame = end_frame,
+	.priv_data_size = 0,
 };

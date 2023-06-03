@@ -37,32 +37,32 @@
 #define MAXPATHLEN 512
 
 // 7zip error list
-static const char * szerrormsg[10] = {
-   ("File is corrupt."), // 7z: Data error
-   ("Not enough memory."), // 7z: Out of memory
-   ("File is corrupt (CRC mismatch)."), // 7z: CRC Error
-   ("File uses unsupported compression settings."), // 7z: Not implemented
-   ("File is corrupt."), // 7z: Fail
-   ("Failed to read file data."), // 7z: Data read failure
-   ("File is corrupt."), // 7z: Archive error
-   ("File uses too high of compression settings (dictionary size is too large)."), // 7z: Dictionary too large
-   ("Can't open file."),
-   ("Process canceled."),
+static const char* szerrormsg[10] = {
+	("File is corrupt."), // 7z: Data error
+	("Not enough memory."), // 7z: Out of memory
+	("File is corrupt (CRC mismatch)."), // 7z: CRC Error
+	("File uses unsupported compression settings."), // 7z: Not implemented
+	("File is corrupt."), // 7z: Fail
+	("Failed to read file data."), // 7z: Data read failure
+	("File is corrupt."), // 7z: Archive error
+	("File uses too high of compression settings (dictionary size is too large)."), // 7z: Dictionary too large
+	("Can't open file."),
+	("Process canceled."),
 };
 
-SzFile::SzFile(const char *filepath)
+SzFile::SzFile(const char* filepath)
 {
-	if(InFile_Open(&archiveStream.file, filepath))
+	if (InFile_Open(&archiveStream.file, filepath))
 	{
-	    SzResult = 9;
+		SzResult = 9;
 		return;
 	}
 
-    FileInStream_CreateVTable(&archiveStream);
-    LookToRead_CreateVTable(&lookStream, False);
+	FileInStream_CreateVTable(&archiveStream);
+	LookToRead_CreateVTable(&lookStream, False);
 
-    lookStream.realStream = &archiveStream.s;
-    LookToRead_Init(&lookStream);
+	lookStream.realStream = &archiveStream.s;
+	LookToRead_Init(&lookStream);
 
 	// set default 7Zip SDK handlers for allocation and freeing memory
 	SzAllocImp.Alloc = SzAlloc;
@@ -71,12 +71,11 @@ SzFile::SzFile(const char *filepath)
 	SzAllocTempImp.Free = SzFreeTemp;
 
 	// prepare CRC and 7Zip database structures
-    CrcGenerateTable();
-    SzArEx_Init(&SzArchiveDb);
+	CrcGenerateTable();
+	SzArEx_Init(&SzArchiveDb);
 
 	// open the archive
-    SzResult = SzArEx_Open(&SzArchiveDb, &lookStream.s, &SzAllocImp, &SzAllocTempImp);
-
+	SzResult = SzArEx_Open(&SzArchiveDb, &lookStream.s, &SzAllocImp, &SzAllocTempImp);
 
 	if (SzResult != SZ_OK)
 	{
@@ -86,136 +85,136 @@ SzFile::SzFile(const char *filepath)
 
 SzFile::~SzFile()
 {
-    SzArEx_Free(&SzArchiveDb, &SzAllocImp);
+	SzArEx_Free(&SzArchiveDb, &SzAllocImp);
 
-    File_Close(&archiveStream.file);
+	File_Close(&archiveStream.file);
 }
 
-bool SzFile::Is7ZipFile (const char *buffer)
+bool SzFile::Is7ZipFile(const char* buffer)
 {
-	unsigned int *check;
-	check = (unsigned int *) buffer;
+	unsigned int* check;
+	check = (unsigned int*)buffer;
 
 	// 7z signature
 	int i;
-	for(i = 0; i < 6; i++)
-		if(buffer[i] != k7zSignature[i])
+	for (i = 0; i < 6; i++)
+		if (buffer[i] != k7zSignature[i])
 			return false;
 
 	return true; // 7z archive found
 }
 
-ArchiveFileStruct * SzFile::GetFileStruct(int ind)
+ArchiveFileStruct* SzFile::GetFileStruct(int ind)
 {
-    if(ind > (int) SzArchiveDb.db.NumFiles || ind < 0)
-        return NULL;
+	if (ind > static_cast<int>(SzArchiveDb.db.NumFiles) || ind < 0)
+		return nullptr;
 
-    CSzFileItem * SzFileItem = SzArchiveDb.db.Files + ind;
+	CSzFileItem* SzFileItem = SzArchiveDb.db.Files + ind;
 
-    CurArcFile.filename = SzFileItem->Name;
-    CurArcFile.length = SzFileItem->Size;
-    CurArcFile.comp_length = 0;
-    CurArcFile.isdir = SzFileItem->IsDir;
-    CurArcFile.fileindex = ind;
-    if(SzFileItem->MTimeDefined)
-        CurArcFile.ModTime = (u64) (SzFileItem->MTime.Low  | ((u64) SzFileItem->MTime.High << 32));
-    else
-        CurArcFile.ModTime = 0;
-    CurArcFile.archiveType = SZIP;
+	CurArcFile.filename = SzFileItem->Name;
+	CurArcFile.length = SzFileItem->Size;
+	CurArcFile.comp_length = 0;
+	CurArcFile.isdir = SzFileItem->IsDir;
+	CurArcFile.fileindex = ind;
+	if (SzFileItem->MTimeDefined)
+		CurArcFile.ModTime = (u64)(SzFileItem->MTime.Low | (static_cast<u64>(SzFileItem->MTime.High) << 32));
+	else
+		CurArcFile.ModTime = 0;
+	CurArcFile.archiveType = SZIP;
 
-    return &CurArcFile;
+	return &CurArcFile;
 }
 
 void SzFile::DisplayError(SRes res)
 {
-	WindowPrompt(("7z decompression failed:"), szerrormsg[(res - 1)], ("OK"), NULL);
+	WindowPrompt(("7z decompression failed:"), szerrormsg[(res - 1)], ("OK"), nullptr);
 }
 
 u32 SzFile::GetItemCount()
 {
-    if(SzResult != SZ_OK)
-        return 0;
+	if (SzResult != SZ_OK)
+		return 0;
 
 	return SzArchiveDb.db.NumFiles;
 }
 
-int SzFile::ExtractFile(int fileindex, const char * outpath, bool withpath)
+int SzFile::ExtractFile(int fileindex, const char* outpath, bool withpath)
 {
-    if(SzResult != SZ_OK)
-        return -1;
+	if (SzResult != SZ_OK)
+		return -1;
 
-    if(!GetFileStruct(fileindex))
-        return -2;
+	if (!GetFileStruct(fileindex))
+		return -2;
 
 	// reset variables
 	UInt32 SzBlockIndex = 0xFFFFFFFF;
 	size_t SzOffset = 0;
-    size_t SzSizeProcessed = 0;
-    Byte * outBuffer = 0;
-    size_t outBufferSize = 0;
+	size_t SzSizeProcessed = 0;
+	Byte* outBuffer = nullptr;
+	size_t outBufferSize = 0;
 
-	char * RealFilename = strrchr(CurArcFile.filename, '/');
+	char* RealFilename = strrchr(CurArcFile.filename, '/');
 
 	char writepath[MAXPATHLEN];
-	if(!RealFilename || withpath)
-        snprintf(writepath, sizeof(writepath), "%s/%s", outpath, CurArcFile.filename);
-    else
-        snprintf(writepath, sizeof(writepath), "%s/%s", outpath, RealFilename+1);
+	if (!RealFilename || withpath)
+		snprintf(writepath, sizeof(writepath), "%s/%s", outpath, CurArcFile.filename);
+	else
+		snprintf(writepath, sizeof(writepath), "%s/%s", outpath, RealFilename + 1);
 
-    if(CurArcFile.isdir)
-    {
-        strncat(writepath, "/", sizeof(writepath));
-        CreateSubfolder(writepath);
-        return 1;
-    }
+	if (CurArcFile.isdir)
+	{
+		strncat(writepath, "/", sizeof(writepath));
+		CreateSubfolder(writepath);
+		return 1;
+	}
 
-    char * temppath = strdup(writepath);
-    char * pointer = strrchr(temppath, '/');
-    if(pointer)
-    {
-        pointer += 1;
-        pointer[0] = '\0';
-    }
-    CreateSubfolder(temppath);
+	char* temppath = strdup(writepath);
+	char* pointer = strrchr(temppath, '/');
+	if (pointer)
+	{
+		pointer += 1;
+		pointer[0] = '\0';
+	}
+	CreateSubfolder(temppath);
 
-    free(temppath);
-    temppath = NULL;
+	free(temppath);
+	temppath = nullptr;
 
 	// Extract
 	SzResult = SzAr_Extract(&SzArchiveDb, &lookStream.s, fileindex,
-                            &SzBlockIndex, &outBuffer, &outBufferSize,
-                            &SzOffset, &SzSizeProcessed,
-                            &SzAllocImp, &SzAllocTempImp);
+	                        &SzBlockIndex, &outBuffer, &outBufferSize,
+	                        &SzOffset, &SzSizeProcessed,
+	                        &SzAllocImp, &SzAllocTempImp);
 
-    if(SzResult == SZ_OK)
-    {
-        FILE * wFile = fopen(writepath, "wb");
+	if (SzResult == SZ_OK)
+	{
+		FILE* wFile = fopen(writepath, "wb");
 
-        //not quite right and needs to be changed
-        u32 done = 0;
-        if(!wFile)
-            done = CurArcFile.length;
+		//not quite right and needs to be changed
+		u32 done = 0;
+		if (!wFile)
+			done = CurArcFile.length;
 
-        do
-        {
-            int wrote = fwrite(outBuffer, 1, 51200, wFile);
-            done += wrote;
+		do
+		{
+			int wrote = fwrite(outBuffer, 1, 51200, wFile);
+			done += wrote;
 
-            if(wrote == 0)
-                break;
+			if (wrote == 0)
+				break;
+		}
+		while (done < CurArcFile.length);
 
-        } while(done < CurArcFile.length);
-
-        fclose(wFile);
-    }
-    if(outBuffer)
-    {
-        IAlloc_Free(&SzAllocImp, outBuffer);
-        outBuffer = NULL;
-    }
+		fclose(wFile);
+	}
+	if (outBuffer)
+	{
+		IAlloc_Free(&SzAllocImp, outBuffer);
+		outBuffer = NULL;
+	}
 
 	// check for errors
-	if(SzResult != SZ_OK)
+	if (SzResult != SZ_OK)
 	{
 		// display error message
 		DisplayError(SzResult);
@@ -225,35 +224,35 @@ int SzFile::ExtractFile(int fileindex, const char * outpath, bool withpath)
 	return 1;
 }
 
-int SzFile::ExtractAll(const char * destpath)
+int SzFile::ExtractAll(const char* destpath)
 {
-    if(!destpath)
-        return -5;
+	if (!destpath)
+		return -5;
 
-    for(u32 i = 0; i < SzArchiveDb.db.NumFiles; i++)
+	for (u32 i = 0; i < SzArchiveDb.db.NumFiles; i++)
 	{
-        CSzFileItem * SzFileItem = SzArchiveDb.db.Files + i;
+		CSzFileItem* SzFileItem = SzArchiveDb.db.Files + i;
 
-        char path[MAXPATHLEN];
-        snprintf(path, sizeof(path), "%s/%s", destpath, SzFileItem->Name);
-        u32 filesize = SzFileItem->Size;
+		char path[MAXPATHLEN];
+		snprintf(path, sizeof(path), "%s/%s", destpath, SzFileItem->Name);
+		u32 filesize = SzFileItem->Size;
 
-        if(!filesize)
-            continue;
+		if (!filesize)
+			continue;
 
-        char * pointer = strrchr(path, '/')+1;
+		char* pointer = strrchr(path, '/') + 1;
 
-        if(pointer)
-        {
-            //cut off filename
-            pointer[0] = '\0';
-        }
-        else
-            continue; //shouldn't ever happen but to be sure, skip the file if it does
+		if (pointer)
+		{
+			//cut off filename
+			pointer[0] = '\0';
+		}
+		else
+			continue; //shouldn't ever happen but to be sure, skip the file if it does
 
-        CreateSubfolder(path);
+		CreateSubfolder(path);
 
-        ExtractFile(i, path);
+		ExtractFile(i, path);
 	}
 
 	return 1;

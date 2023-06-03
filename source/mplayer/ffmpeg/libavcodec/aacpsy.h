@@ -26,25 +26,30 @@
 #include "aac.h"
 //#include "lowpass.h"
 
-enum AACPsyModelType{
-    AAC_PSY_TEST,              ///< a sample model to exercise encoder
-    AAC_PSY_3GPP,              ///< model following recommendations from 3GPP TS 26.403
+enum AACPsyModelType
+{
+	AAC_PSY_TEST,
+	///< a sample model to exercise encoder
+	AAC_PSY_3GPP,
+	///< model following recommendations from 3GPP TS 26.403
 
-    AAC_NB_PSY_MODELS          ///< total number of psychoacoustic models, since it's not a part of the ABI new models can be added freely
+	AAC_NB_PSY_MODELS
+	///< total number of psychoacoustic models, since it's not a part of the ABI new models can be added freely
 };
 
 /**
  * context used by psychoacoustic model
  */
-typedef struct AACPsyContext {
-    AVCodecContext *avctx;            ///< encoder context
-}AACPsyContext;
+using AACPsyContext = struct AACPsyContext
+{
+	AVCodecContext* avctx; ///< encoder context
+};
 
 /**
  * Cleanup model context at the end.
  *
  * @param ctx model context
  */
-void ff_aac_psy_end(AACPsyContext *ctx);
+void ff_aac_psy_end(AACPsyContext* ctx);
 
 #endif /* AVCODEC_AACPSY_H */

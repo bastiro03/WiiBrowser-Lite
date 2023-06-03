@@ -35,7 +35,7 @@ int demux_is_mpeg_rtp_stream(demuxer_t* demuxer);
 int demux_is_multiplexed_rtp_stream(demuxer_t* demuxer);
 
 // Read from a RTP demuxer:
-int demux_rtp_fill_buffer(demuxer_t *demux, demux_stream_t* ds);
+int demux_rtp_fill_buffer(demuxer_t* demux, demux_stream_t* ds);
 
 // Close a RTP demuxer
 void demux_close_rtp(demuxer_t* demuxer);

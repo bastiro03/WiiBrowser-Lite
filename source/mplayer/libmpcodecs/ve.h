@@ -25,13 +25,13 @@ extern const m_option_t lavcopts_conf[];
 extern const m_option_t vfwopts_conf[];
 extern const m_option_t xvidencopts_conf[];
 
-extern char *lavc_param_acodec;
-extern char *lavc_param_audio_avopt;
-extern int   lavc_param_abitrate;
-extern int   lavc_param_atag;
-extern int   lavc_param_audio_global_header;
+extern char* lavc_param_acodec;
+extern char* lavc_param_audio_avopt;
+extern int lavc_param_abitrate;
+extern int lavc_param_atag;
+extern int lavc_param_audio_global_header;
 
-int parse_forced_key_frames(const m_option_t *opt, const char *arg);
+int parse_forced_key_frames(const m_option_t* opt, const char* arg);
 int is_forced_key_frame(double pts);
 
 #endif /* MPLAYER_VE_H */

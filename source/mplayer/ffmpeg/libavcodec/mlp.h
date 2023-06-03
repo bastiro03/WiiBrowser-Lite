@@ -71,22 +71,24 @@
 #define IIR 1
 
 /** filter data */
-typedef struct {
-    uint8_t     order; ///< number of taps in filter
-    uint8_t     shift; ///< Right shift to apply to output of filter.
+typedef struct
+{
+	uint8_t order; ///< number of taps in filter
+	uint8_t shift; ///< Right shift to apply to output of filter.
 
-    int32_t     state[MAX_FIR_ORDER];
+	int32_t state[MAX_FIR_ORDER];
 } FilterParams;
 
 /** sample data coding information */
-typedef struct {
-    FilterParams filter_params[NUM_FILTERS];
-    int32_t     coeff[NUM_FILTERS][MAX_FIR_ORDER];
+typedef struct
+{
+	FilterParams filter_params[NUM_FILTERS];
+	int32_t coeff[NUM_FILTERS][MAX_FIR_ORDER];
 
-    int16_t     huff_offset;      ///< Offset to apply to residual values.
-    int32_t     sign_huff_offset; ///< sign/rounding-corrected version of huff_offset
-    uint8_t     codebook;         ///< Which VLC codebook to use to read residuals.
-    uint8_t     huff_lsbs;        ///< Size of residual suffix not encoded using VLC.
+	int16_t huff_offset; ///< Offset to apply to residual values.
+	int32_t sign_huff_offset; ///< sign/rounding-corrected version of huff_offset
+	uint8_t codebook; ///< Which VLC codebook to use to read residuals.
+	uint8_t huff_lsbs; ///< Size of residual suffix not encoded using VLC.
 } ChannelParams;
 
 /** Tables defining the Huffman codes.
@@ -101,27 +103,27 @@ extern const uint8_t ff_mlp_huffman_tables[3][18][2];
  *  We can implement this behavior using a standard av_crc on all but the
  *  last element, then XOR that with the last element.
  */
-uint8_t  ff_mlp_checksum8 (const uint8_t *buf, unsigned int buf_size);
-uint16_t ff_mlp_checksum16(const uint8_t *buf, unsigned int buf_size);
+uint8_t ff_mlp_checksum8(const uint8_t* buf, unsigned int buf_size);
+uint16_t ff_mlp_checksum16(const uint8_t* buf, unsigned int buf_size);
 
 /** Calculate an 8-bit checksum over a restart header -- a non-multiple-of-8
  *  number of bits, starting two bits into the first byte of buf.
  */
-uint8_t ff_mlp_restart_checksum(const uint8_t *buf, unsigned int bit_size);
+uint8_t ff_mlp_restart_checksum(const uint8_t* buf, unsigned int bit_size);
 
 /** XOR together all the bytes of a buffer.
  *  Does this belong in dspcontext?
  */
-uint8_t ff_mlp_calculate_parity(const uint8_t *buf, unsigned int buf_size);
+uint8_t ff_mlp_calculate_parity(const uint8_t* buf, unsigned int buf_size);
 
 void ff_mlp_init_crc(void);
 
 /** XOR four bytes into one. */
 static inline uint8_t xor_32_to_8(uint32_t value)
 {
-    value ^= value >> 16;
-    value ^= value >>  8;
-    return value;
+	value ^= value >> 16;
+	value ^= value >> 8;
+	return value;
 }
 
 #endif /* AVCODEC_MLP_H */

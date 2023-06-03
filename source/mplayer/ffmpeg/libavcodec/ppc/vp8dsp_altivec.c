@@ -31,13 +31,13 @@
 // h subpel filter uses msum to multiply+add 4 pixel taps at once
 static const vec_s8 h_subpel_filters_inner[7] =
 {
-    REPT4( -6, 123,  12,  -1),
-    REPT4(-11, 108,  36,  -8),
-    REPT4( -9,  93,  50,  -6),
-    REPT4(-16,  77,  77, -16),
-    REPT4( -6,  50,  93,  -9),
-    REPT4( -8,  36, 108, -11),
-    REPT4( -1,  12, 123,  -6),
+	REPT4(-6, 123, 12, -1),
+	REPT4(-11, 108, 36, -8),
+	REPT4(-9, 93, 50, -6),
+	REPT4(-16, 77, 77, -16),
+	REPT4(-6, 50, 93, -9),
+	REPT4(-8, 36, 108, -11),
+	REPT4(-1, 12, 123, -6),
 };
 
 // for 6tap filters, these are the outer two taps
@@ -45,9 +45,9 @@ static const vec_s8 h_subpel_filters_inner[7] =
 // and vice-versa
 static const vec_s8 h_subpel_filters_outer[3] =
 {
-    REPT4(0, 0, 2, 1),
-    REPT4(0, 0, 3, 3),
-    REPT4(0, 0, 1, 2),
+	REPT4(0, 0, 2, 1),
+	REPT4(0, 0, 3, 3),
+	REPT4(0, 0, 1, 2),
 };
 
 #define LOAD_H_SUBPEL_FILTER(i) \
@@ -75,63 +75,72 @@ static const vec_s8 h_subpel_filters_outer[3] =
     dstv = vec_sra(dstv, c7)
 
 static av_always_inline
-void put_vp8_epel_h_altivec_core(uint8_t *dst, ptrdiff_t dst_stride,
-                                 uint8_t *src, ptrdiff_t src_stride,
+
+void put_vp8_epel_h_altivec_core(uint8_t* dst, ptrdiff_t dst_stride,
+                                 uint8_t* src, ptrdiff_t src_stride,
                                  int h, int mx, int w, int is6tap)
 {
-    LOAD_H_SUBPEL_FILTER(mx-1);
-    vec_u8 align_vec0, align_vec8, permh0, permh8, filt;
-    vec_u8 perm_6tap0, perm_6tap8, perml0, perml8;
-    vec_u8 a, b, pixh, pixl, outer;
-    vec_s16 f16h, f16l;
-    vec_s32 filth, filtl;
+	LOAD_H_SUBPEL_FILTER(mx - 1);
+	vec_u8 align_vec0, align_vec8, permh0, permh8, filt;
+	vec_u8 perm_6tap0, perm_6tap8, perml0, perml8;
+	vec_u8 a, b, pixh, pixl, outer;
+	vec_s16 f16h, f16l;
+	vec_s32 filth, filtl;
 
-    vec_u8 perm_inner6 = { 1,2,3,4, 2,3,4,5, 3,4,5,6, 4,5,6,7 };
-    vec_u8 perm_inner4 = { 0,1,2,3, 1,2,3,4, 2,3,4,5, 3,4,5,6 };
-    vec_u8 perm_inner  = is6tap ? perm_inner6 : perm_inner4;
-    vec_u8 perm_outer = { 4,9, 0,5, 5,10, 1,6, 6,11, 2,7, 7,12, 3,8 };
-    vec_s32 c64 = vec_sl(vec_splat_s32(1), vec_splat_u32(6));
-    vec_u16 c7  = vec_splat_u16(7);
+	vec_u8 perm_inner6 = {1, 2, 3, 4, 2, 3, 4, 5, 3, 4, 5, 6, 4, 5, 6, 7};
+	vec_u8 perm_inner4 = {0, 1, 2, 3, 1, 2, 3, 4, 2, 3, 4, 5, 3, 4, 5, 6};
+	vec_u8 perm_inner = is6tap ? perm_inner6 : perm_inner4;
+	vec_u8 perm_outer = {4, 9, 0, 5, 5, 10, 1, 6, 6, 11, 2, 7, 7, 12, 3, 8};
+	vec_s32 c64 = vec_sl(vec_splat_s32(1), vec_splat_u32(6));
+	vec_u16 c7 = vec_splat_u16(7);
 
-    align_vec0 = vec_lvsl( -is6tap-1, src);
-    align_vec8 = vec_lvsl(8-is6tap-1, src);
+	align_vec0 = vec_lvsl(-is6tap - 1, src);
+	align_vec8 = vec_lvsl(8 - is6tap - 1, src);
 
-    permh0     = vec_perm(align_vec0, align_vec0, perm_inner);
-    permh8     = vec_perm(align_vec8, align_vec8, perm_inner);
-    perm_inner = vec_add(perm_inner, vec_splat_u8(4));
-    perml0     = vec_perm(align_vec0, align_vec0, perm_inner);
-    perml8     = vec_perm(align_vec8, align_vec8, perm_inner);
-    perm_6tap0 = vec_perm(align_vec0, align_vec0, perm_outer);
-    perm_6tap8 = vec_perm(align_vec8, align_vec8, perm_outer);
+	permh0 = vec_perm(align_vec0, align_vec0, perm_inner);
+	permh8 = vec_perm(align_vec8, align_vec8, perm_inner);
+	perm_inner = vec_add(perm_inner, vec_splat_u8(4));
+	perml0 = vec_perm(align_vec0, align_vec0, perm_inner);
+	perml8 = vec_perm(align_vec8, align_vec8, perm_inner);
+	perm_6tap0 = vec_perm(align_vec0, align_vec0, perm_outer);
+	perm_6tap8 = vec_perm(align_vec8, align_vec8, perm_outer);
 
-    while (h --> 0) {
-        FILTER_H(f16h, 0);
+	while (h-- > 0)
+	{
+		FILTER_H(f16h, 0);
 
-        if (w == 16) {
-            FILTER_H(f16l, 8);
-            filt = vec_packsu(f16h, f16l);
-            vec_st(filt, 0, dst);
-        } else {
-            filt = vec_packsu(f16h, f16h);
-            vec_ste((vec_u32)filt, 0, (uint32_t*)dst);
-            if (w == 8)
-                vec_ste((vec_u32)filt, 4, (uint32_t*)dst);
-        }
-        src += src_stride;
-        dst += dst_stride;
-    }
+		if (w == 16)
+		{
+			FILTER_H(f16l, 8);
+			filt = vec_packsu(f16h, f16l);
+			vec_st(filt, 0, dst);
+		}
+		else
+		{
+			filt = vec_packsu(f16h, f16h);
+			vec_ste((vec_u32)
+			filt, 0, (uint32_t*)dst
+			)
+			if (w == 8)
+				vec_ste((vec_u32)
+			filt, 4, (uint32_t*)dst
+			)
+		}
+		src += src_stride;
+		dst += dst_stride;
+	}
 }
 
 // v subpel filter does a simple vertical multiply + add
 static const vec_u8 v_subpel_filters[7] =
 {
-    { 0,   6, 123,  12,   1,   0 },
-    { 2,  11, 108,  36,   8,   1 },
-    { 0,   9,  93,  50,   6,   0 },
-    { 3,  16,  77,  77,  16,   3 },
-    { 0,   6,  50,  93,   9,   0 },
-    { 1,   8,  36, 108,  11,   2 },
-    { 0,   1,  12, 123,   6,   0 },
+	{0, 6, 123, 12, 1, 0},
+	{2, 11, 108, 36, 8, 1},
+	{0, 9, 93, 50, 6, 0},
+	{3, 16, 77, 77, 16, 3},
+	{0, 6, 50, 93, 9, 0},
+	{1, 8, 36, 108, 11, 2},
+	{0, 1, 12, 123, 6, 0},
 };
 
 #define LOAD_V_SUBPEL_FILTER(i) \
@@ -161,67 +170,80 @@ static const vec_u8 v_subpel_filters[7] =
     dstv = vec_sra(dstv, c7)
 
 static av_always_inline
-void put_vp8_epel_v_altivec_core(uint8_t *dst, ptrdiff_t dst_stride,
-                                 uint8_t *src, ptrdiff_t src_stride,
+
+void put_vp8_epel_v_altivec_core(uint8_t* dst, ptrdiff_t dst_stride,
+                                 uint8_t* src, ptrdiff_t src_stride,
                                  int h, int my, int w, int is6tap)
 {
-    LOAD_V_SUBPEL_FILTER(my-1);
-    vec_u8 s0, s1, s2, s3, s4, s5, filt, align_vech, perm_vec, align_vecl;
-    vec_s16 s0f, s1f, s2f, s3f, s4f, s5f, f16h, f16l;
-    vec_s16 c64 = vec_sl(vec_splat_s16(1), vec_splat_u16(6));
-    vec_u16 c7  = vec_splat_u16(7);
+	LOAD_V_SUBPEL_FILTER(my - 1);
+	vec_u8 s0, s1, s2, s3, s4, s5, filt, align_vech, perm_vec, align_vecl;
+	vec_s16 s0f, s1f, s2f, s3f, s4f, s5f, f16h, f16l;
+	vec_s16 c64 = vec_sl(vec_splat_s16(1), vec_splat_u16(6));
+	vec_u16 c7 = vec_splat_u16(7);
 
-    // we want pixels 0-7 to be in the even positions and 8-15 in the odd,
-    // so combine this permute with the alignment permute vector
-    align_vech = vec_lvsl(0, src);
-    align_vecl = vec_sld(align_vech, align_vech, 8);
-    if (w ==16)
-        perm_vec = vec_mergeh(align_vech, align_vecl);
-    else
-        perm_vec = vec_mergeh(align_vech, align_vech);
+	// we want pixels 0-7 to be in the even positions and 8-15 in the odd,
+	// so combine this permute with the alignment permute vector
+	align_vech = vec_lvsl(0, src);
+	align_vecl = vec_sld(align_vech, align_vech, 8);
+	if (w == 16)
+		perm_vec = vec_mergeh(align_vech, align_vecl);
+	else
+		perm_vec = vec_mergeh(align_vech, align_vech);
 
-    if (is6tap)
-        s0 = load_with_perm_vec(-2*src_stride, src, perm_vec);
-    s1 = load_with_perm_vec(-1*src_stride, src, perm_vec);
-    s2 = load_with_perm_vec( 0*src_stride, src, perm_vec);
-    s3 = load_with_perm_vec( 1*src_stride, src, perm_vec);
-    if (is6tap)
-        s4 = load_with_perm_vec( 2*src_stride, src, perm_vec);
+	if (is6tap)
+		s0 = load_with_perm_vec(-2 * src_stride, src, perm_vec);
+	s1 = load_with_perm_vec(-1 * src_stride, src, perm_vec);
+	s2 = load_with_perm_vec(0 * src_stride, src, perm_vec);
+	s3 = load_with_perm_vec(1 * src_stride, src, perm_vec);
+	if (is6tap)
+		s4 = load_with_perm_vec(2 * src_stride, src, perm_vec);
 
-    src += (2+is6tap)*src_stride;
+	src += (2 + is6tap) * src_stride;
 
-    while (h --> 0) {
-        if (is6tap)
-            s5 = load_with_perm_vec(0, src, perm_vec);
-        else
-            s4 = load_with_perm_vec(0, src, perm_vec);
+	while (h-- > 0)
+	{
+		if (is6tap)
+			s5 = load_with_perm_vec(0, src, perm_vec);
+		else
+			s4 = load_with_perm_vec(0, src, perm_vec);
 
-        FILTER_V(f16h, vec_mule);
+		FILTER_V(f16h, vec_mule);
 
-        if (w == 16) {
-            FILTER_V(f16l, vec_mulo);
-            filt = vec_packsu(f16h, f16l);
-            vec_st(filt, 0, dst);
-        } else {
-            filt = vec_packsu(f16h, f16h);
-            if (w == 4)
-                filt = (vec_u8)vec_splat((vec_u32)filt, 0);
-            else
-                vec_ste((vec_u32)filt, 4, (uint32_t*)dst);
-            vec_ste((vec_u32)filt, 0, (uint32_t*)dst);
-        }
+		if (w == 16)
+		{
+			FILTER_V(f16l, vec_mulo);
+			filt = vec_packsu(f16h, f16l);
+			vec_st(filt, 0, dst);
+		}
+		else
+		{
+			filt = vec_packsu(f16h, f16h);
+			if (w == 4)
+				filt = (vec_u8
+			)
+			vec_splat((vec_u32)
+			filt, 0
+			)
+			else
+			vec_ste((vec_u32)
+			filt, 4, (uint32_t*)dst
+			)
+			vec_ste((vec_u32)
+			filt, 0, (uint32_t*)dst
+			)
+		}
 
-        if (is6tap)
-            s0 = s1;
-        s1 = s2;
-        s2 = s3;
-        s3 = s4;
-        if (is6tap)
-            s4 = s5;
+		if (is6tap)
+			s0 = s1;
+		s1 = s2;
+		s2 = s3;
+		s3 = s4;
+		if (is6tap)
+			s4 = s5;
 
-        dst += dst_stride;
-        src += src_stride;
-    }
+		dst += dst_stride;
+		src += src_stride;
+	}
 }
 
 #define EPEL_FUNCS(WIDTH, TAPS) \
@@ -250,54 +272,56 @@ static void put_vp8_epel ## WIDTH ## _h ## HTAPS ## v ## VTAPS ## _altivec(uint8
     } \
 }
 
-EPEL_FUNCS(16,6)
+EPEL_FUNCS(16, 6)
 EPEL_FUNCS(8, 6)
 EPEL_FUNCS(8, 4)
 EPEL_FUNCS(4, 6)
 EPEL_FUNCS(4, 4)
 
-EPEL_HV(16, 6,6)
-EPEL_HV(8,  6,6)
-EPEL_HV(8,  4,6)
-EPEL_HV(8,  6,4)
-EPEL_HV(8,  4,4)
-EPEL_HV(4,  6,6)
-EPEL_HV(4,  4,6)
-EPEL_HV(4,  6,4)
-EPEL_HV(4,  4,4)
+EPEL_HV(16, 6, 6)
+EPEL_HV(8, 6, 6)
+EPEL_HV(8, 4, 6)
+EPEL_HV(8, 6, 4)
+EPEL_HV(8, 4, 4)
+EPEL_HV(4, 6, 6)
+EPEL_HV(4, 4, 6)
+EPEL_HV(4, 6, 4)
+EPEL_HV(4, 4, 4)
 
-static void put_vp8_pixels16_altivec(uint8_t *dst, ptrdiff_t stride, uint8_t *src, ptrdiff_t s, int h, int mx, int my)
+static void put_vp8_pixels16_altivec(uint8_t* dst, ptrdiff_t stride, uint8_t* src, ptrdiff_t s, int h, int mx, int my)
 {
-    ff_put_pixels16_altivec(dst, src, stride, h);
+	ff_put_pixels16_altivec(dst, src, stride, h);
 }
 
-av_cold void ff_vp8dsp_init_altivec(VP8DSPContext *c)
+av_cold
+
+void ff_vp8dsp_init_altivec(VP8DSPContext* c)
 {
-    if (!(av_get_cpu_flags() & AV_CPU_FLAG_ALTIVEC))
-        return;
+	if (!(av_get_cpu_flags() & AV_CPU_FLAG_ALTIVEC))
+		return;
 
-    c->put_vp8_epel_pixels_tab[0][0][0] = put_vp8_pixels16_altivec;
-    c->put_vp8_epel_pixels_tab[0][0][2] = put_vp8_epel16_h6_altivec;
-    c->put_vp8_epel_pixels_tab[0][2][0] = put_vp8_epel16_v6_altivec;
-    c->put_vp8_epel_pixels_tab[0][2][2] = put_vp8_epel16_h6v6_altivec;
+	c->put_vp8_epel_pixels_tab[0][0][0] = put_vp8_pixels16_altivec;
+	c->put_vp8_epel_pixels_tab[0][0][2] = put_vp8_epel16_h6_altivec;
+	c->put_vp8_epel_pixels_tab[0][2][0] = put_vp8_epel16_v6_altivec;
+	c->put_vp8_epel_pixels_tab[0][2][2] = put_vp8_epel16_h6v6_altivec;
 
-    c->put_vp8_epel_pixels_tab[1][0][2] = put_vp8_epel8_h6_altivec;
-    c->put_vp8_epel_pixels_tab[1][2][0] = put_vp8_epel8_v6_altivec;
-    c->put_vp8_epel_pixels_tab[1][0][1] = put_vp8_epel8_h4_altivec;
-    c->put_vp8_epel_pixels_tab[1][1][0] = put_vp8_epel8_v4_altivec;
+	c->put_vp8_epel_pixels_tab[1][0][2] = put_vp8_epel8_h6_altivec;
+	c->put_vp8_epel_pixels_tab[1][2][0] = put_vp8_epel8_v6_altivec;
+	c->put_vp8_epel_pixels_tab[1][0][1] = put_vp8_epel8_h4_altivec;
+	c->put_vp8_epel_pixels_tab[1][1][0] = put_vp8_epel8_v4_altivec;
 
-    c->put_vp8_epel_pixels_tab[1][2][2] = put_vp8_epel8_h6v6_altivec;
-    c->put_vp8_epel_pixels_tab[1][1][1] = put_vp8_epel8_h4v4_altivec;
-    c->put_vp8_epel_pixels_tab[1][1][2] = put_vp8_epel8_h6v4_altivec;
-    c->put_vp8_epel_pixels_tab[1][2][1] = put_vp8_epel8_h4v6_altivec;
+	c->put_vp8_epel_pixels_tab[1][2][2] = put_vp8_epel8_h6v6_altivec;
+	c->put_vp8_epel_pixels_tab[1][1][1] = put_vp8_epel8_h4v4_altivec;
+	c->put_vp8_epel_pixels_tab[1][1][2] = put_vp8_epel8_h6v4_altivec;
+	c->put_vp8_epel_pixels_tab[1][2][1] = put_vp8_epel8_h4v6_altivec;
 
-    c->put_vp8_epel_pixels_tab[2][0][2] = put_vp8_epel4_h6_altivec;
-    c->put_vp8_epel_pixels_tab[2][2][0] = put_vp8_epel4_v6_altivec;
-    c->put_vp8_epel_pixels_tab[2][0][1] = put_vp8_epel4_h4_altivec;
-    c->put_vp8_epel_pixels_tab[2][1][0] = put_vp8_epel4_v4_altivec;
+	c->put_vp8_epel_pixels_tab[2][0][2] = put_vp8_epel4_h6_altivec;
+	c->put_vp8_epel_pixels_tab[2][2][0] = put_vp8_epel4_v6_altivec;
+	c->put_vp8_epel_pixels_tab[2][0][1] = put_vp8_epel4_h4_altivec;
+	c->put_vp8_epel_pixels_tab[2][1][0] = put_vp8_epel4_v4_altivec;
 
-    c->put_vp8_epel_pixels_tab[2][2][2] = put_vp8_epel4_h6v6_altivec;
-    c->put_vp8_epel_pixels_tab[2][1][1] = put_vp8_epel4_h4v4_altivec;
-    c->put_vp8_epel_pixels_tab[2][1][2] = put_vp8_epel4_h6v4_altivec;
-    c->put_vp8_epel_pixels_tab[2][2][1] = put_vp8_epel4_h4v6_altivec;
+	c->put_vp8_epel_pixels_tab[2][2][2] = put_vp8_epel4_h6v6_altivec;
+	c->put_vp8_epel_pixels_tab[2][1][1] = put_vp8_epel4_h4v4_altivec;
+	c->put_vp8_epel_pixels_tab[2][1][2] = put_vp8_epel4_h6v4_altivec;
+	c->put_vp8_epel_pixels_tab[2][2][1] = put_vp8_epel4_h4v6_altivec;
 }

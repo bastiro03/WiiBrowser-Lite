@@ -42,7 +42,7 @@
 #define put(predictor,i) dest[i] = predictor (i)
 #define avg(predictor,i) dest[i] = avg2 (predictor (i), dest[i])
 
-/* mc function template */
+ /* mc function template */
 
 #define MC_FUNC(op,xy)							\
 static void inline MC_##op##_##xy##_16_c (uint8_t * dest, const uint8_t * ref,	\
@@ -87,99 +87,97 @@ static void MC_##op##_##xy##_8_c (uint8_t * dest, const uint8_t * ref,	\
 }									\
 /* definitions of the actual mc functions */
 
-MC_FUNC (avg,o)
-MC_FUNC (avg,x)
-MC_FUNC (put,y)
-MC_FUNC (avg,y)
-MC_FUNC (put,xy)
-MC_FUNC (avg,xy)
+MC_FUNC(avg, o)
+MC_FUNC(avg, x)
+MC_FUNC(put, y)
+MC_FUNC(avg, y)
+MC_FUNC(put, xy)
+MC_FUNC(avg, xy)
 
+extern void MC_put_o_16_arm(uint8_t* dest, const uint8_t* ref,
+	int stride, int height);
 
-extern void MC_put_o_16_arm (uint8_t * dest, const uint8_t * ref,
-			     int stride, int height);
+extern void MC_put_x_16_arm(uint8_t* dest, const uint8_t* ref,
+	int stride, int height);
 
-extern void MC_put_x_16_arm (uint8_t * dest, const uint8_t * ref,
-			     int stride, int height);
-
-
-static void MC_put_y_16_arm (uint8_t * dest, const uint8_t * ref,
-			      int stride, int height)
+static void MC_put_y_16_arm(uint8_t* dest, const uint8_t* ref,
+	int stride, int height)
 {
-    MC_put_y_16_c(dest, ref, stride, height);
+	MC_put_y_16_c(dest, ref, stride, height);
 }
 
-static void MC_put_xy_16_arm (uint8_t * dest, const uint8_t * ref,
-			       int stride, int height)
+static void MC_put_xy_16_arm(uint8_t* dest, const uint8_t* ref,
+	int stride, int height)
 {
-    MC_put_xy_16_c(dest, ref, stride, height);
+	MC_put_xy_16_c(dest, ref, stride, height);
 }
 
-extern void MC_put_o_8_arm (uint8_t * dest, const uint8_t * ref,
-			     int stride, int height);
+extern void MC_put_o_8_arm(uint8_t* dest, const uint8_t* ref,
+	int stride, int height);
 
-extern void MC_put_x_8_arm (uint8_t * dest, const uint8_t * ref,
-			    int stride, int height);
+extern void MC_put_x_8_arm(uint8_t* dest, const uint8_t* ref,
+	int stride, int height);
 
-static void MC_put_y_8_arm (uint8_t * dest, const uint8_t * ref,
-			     int stride, int height)
+static void MC_put_y_8_arm(uint8_t* dest, const uint8_t* ref,
+	int stride, int height)
 {
-    MC_put_y_8_c(dest, ref, stride, height);
+	MC_put_y_8_c(dest, ref, stride, height);
 }
 
-static void MC_put_xy_8_arm (uint8_t * dest, const uint8_t * ref,
-			      int stride, int height)
+static void MC_put_xy_8_arm(uint8_t* dest, const uint8_t* ref,
+	int stride, int height)
 {
-    MC_put_xy_8_c(dest, ref, stride, height);
+	MC_put_xy_8_c(dest, ref, stride, height);
 }
 
-static void MC_avg_o_16_arm (uint8_t * dest, const uint8_t * ref,
-			      int stride, int height)
+static void MC_avg_o_16_arm(uint8_t* dest, const uint8_t* ref,
+	int stride, int height)
 {
-    MC_avg_o_16_c(dest, ref, stride, height);
+	MC_avg_o_16_c(dest, ref, stride, height);
 }
 
-static void MC_avg_x_16_arm (uint8_t * dest, const uint8_t * ref,
-			      int stride, int height)
+static void MC_avg_x_16_arm(uint8_t* dest, const uint8_t* ref,
+	int stride, int height)
 {
-    MC_avg_x_16_c(dest, ref, stride, height);
+	MC_avg_x_16_c(dest, ref, stride, height);
 }
 
-static void MC_avg_y_16_arm (uint8_t * dest, const uint8_t * ref,
-			      int stride, int height)
+static void MC_avg_y_16_arm(uint8_t* dest, const uint8_t* ref,
+	int stride, int height)
 {
-    MC_avg_y_16_c(dest, ref, stride, height);
+	MC_avg_y_16_c(dest, ref, stride, height);
 }
 
-static void MC_avg_xy_16_arm (uint8_t * dest, const uint8_t * ref,
-			       int stride, int height)
+static void MC_avg_xy_16_arm(uint8_t* dest, const uint8_t* ref,
+	int stride, int height)
 {
-    MC_avg_xy_16_c(dest, ref, stride, height);
+	MC_avg_xy_16_c(dest, ref, stride, height);
 }
 
-static void MC_avg_o_8_arm (uint8_t * dest, const uint8_t * ref,
-			     int stride, int height)
+static void MC_avg_o_8_arm(uint8_t* dest, const uint8_t* ref,
+	int stride, int height)
 {
-    MC_avg_o_8_c(dest, ref, stride, height);
+	MC_avg_o_8_c(dest, ref, stride, height);
 }
 
-static void MC_avg_x_8_arm (uint8_t * dest, const uint8_t * ref,
-			     int stride, int height)
+static void MC_avg_x_8_arm(uint8_t* dest, const uint8_t* ref,
+	int stride, int height)
 {
-    MC_avg_x_8_c(dest, ref, stride, height);
+	MC_avg_x_8_c(dest, ref, stride, height);
 }
 
-static void MC_avg_y_8_arm (uint8_t * dest, const uint8_t * ref,
-			     int stride, int height)
+static void MC_avg_y_8_arm(uint8_t* dest, const uint8_t* ref,
+	int stride, int height)
 {
-    MC_avg_y_8_c(dest, ref, stride, height);
+	MC_avg_y_8_c(dest, ref, stride, height);
 }
 
-static void MC_avg_xy_8_arm (uint8_t * dest, const uint8_t * ref,
-			      int stride, int height)
+static void MC_avg_xy_8_arm(uint8_t* dest, const uint8_t* ref,
+	int stride, int height)
 {
-    MC_avg_xy_8_c(dest, ref, stride, height);
+	MC_avg_xy_8_c(dest, ref, stride, height);
 }
 
-MPEG2_MC_EXTERN (arm)
+MPEG2_MC_EXTERN(arm)
 
 #endif

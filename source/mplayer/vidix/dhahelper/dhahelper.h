@@ -34,46 +34,46 @@ typedef struct dhahelper_port_s
 {
 #define PORT_OP_READ	1
 #define PORT_OP_WRITE	2
-    int		operation;
-    int		size;
-    int		addr;
-    int		value;
+	int operation;
+	int size;
+	int addr;
+	int value;
 } dhahelper_port_t;
 
 typedef struct dhahelper_memory_s
 {
 #define MEMORY_OP_MAP	1
 #define MEMORY_OP_UNMAP	2
-    int		operation;
-    int		start;
-    int		offset;
-    int		size;
-    int		ret;
+	int operation;
+	int start;
+	int offset;
+	int size;
+	int ret;
 #define MEMORY_FLAG_NOCACHE 1
-    int		flags;
+	int flags;
 } dhahelper_memory_t;
 
 typedef struct dhahelper_mtrr_s
 {
 #define MTRR_OP_ADD	1
 #define MTRR_OP_DEL	2
-    int		operation;
-    int		start;
-    int		size;
-    int		type;
+	int operation;
+	int start;
+	int size;
+	int type;
 } dhahelper_mtrr_t;
 
 typedef struct dhahelper_pci_s
 {
 #define PCI_OP_READ	1
 #define PCI_OP_WRITE	1
-    int		operation;
-    int		bus;
-    int		dev;
-    int		func;
-    int		cmd;
-    int		size;
-    int		ret;
+	int operation;
+	int bus;
+	int dev;
+	int func;
+	int cmd;
+	int size;
+	int ret;
 } dhahelper_pci_t;
 
 #define DHAHELPER_GET_VERSION	_IOW('D', 0, int)

@@ -25,30 +25,31 @@
 
 #include "avcodec.h"
 
-typedef struct ParseContext{
-    uint8_t *buffer;
-    int index;
-    int last_index;
-    unsigned int buffer_size;
-    uint32_t state;             ///< contains the last few bytes in MSB order
-    int frame_start_found;
-    int overread;               ///< the number of bytes which where irreversibly read from the next frame
-    int overread_index;         ///< the index into ParseContext.buffer of the overread bytes
-    uint64_t state64;           ///< contains the last 8 bytes in MSB order
+typedef struct ParseContext
+{
+	uint8_t* buffer;
+	int index;
+	int last_index;
+	unsigned int buffer_size;
+	uint32_t state; ///< contains the last few bytes in MSB order
+	int frame_start_found;
+	int overread; ///< the number of bytes which where irreversibly read from the next frame
+	int overread_index; ///< the index into ParseContext.buffer of the overread bytes
+	uint64_t state64; ///< contains the last 8 bytes in MSB order
 } ParseContext;
 
 #define END_NOT_FOUND (-100)
 
-int ff_combine_frame(ParseContext *pc, int next, const uint8_t **buf, int *buf_size);
-int ff_mpeg4video_split(AVCodecContext *avctx, const uint8_t *buf,
+int ff_combine_frame(ParseContext* pc, int next, const uint8_t** buf, int* buf_size);
+int ff_mpeg4video_split(AVCodecContext* avctx, const uint8_t* buf,
                         int buf_size);
-void ff_parse_close(AVCodecParserContext *s);
+void ff_parse_close(AVCodecParserContext* s);
 
 /**
  * Fetch timestamps for a specific byte within the current access unit.
  * @param off byte position within the access unit
  * @param remove Found timestamps will be removed if set to 1, kept if set to 0.
  */
-void ff_fetch_timestamp(AVCodecParserContext *s, int off, int remove);
+void ff_fetch_timestamp(AVCodecParserContext* s, int off, int remove);
 
 #endif /* AVCODEC_PARSER_H */

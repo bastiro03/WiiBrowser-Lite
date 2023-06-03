@@ -12,16 +12,16 @@
 
 #include "gui.h"
 
-static GuiImageData *tooltipLeft = NULL;
-static GuiImageData *tooltipTile = NULL;
-static GuiImageData *tooltipRight = NULL;
+static GuiImageData* tooltipLeft = nullptr;
+static GuiImageData* tooltipTile = nullptr;
+static GuiImageData* tooltipRight = nullptr;
 
 /**
  * Constructor for the GuiTooltip class.
  */
-GuiTooltip::GuiTooltip(const char *t)
+GuiTooltip::GuiTooltip(const char* t)
 {
-	if(tooltipLeft == NULL)
+	if (tooltipLeft == nullptr)
 	{
 		tooltipLeft = new GuiImageData(tooltip_left_png);
 		tooltipTile = new GuiImageData(tooltip_tile_png);
@@ -33,18 +33,18 @@ GuiTooltip::GuiTooltip(const char *t)
 	rightImage.SetImage(tooltipRight);
 
 	height = leftImage.GetHeight();
-    offsetHr = 0;
+	offsetHr = 0;
 	offsetVr = -50;
 
-	text = NULL;
-	origtext = NULL;
+	text = nullptr;
+	origtext = nullptr;
 	timeout = 0;
 
-	if(t)
+	if (t)
 		SetText(t);
 
-    this->SetAlignment(ALIGN_CENTRE,ALIGN_TOP);
-    this->EffectFinished.connect(this, &GuiTooltip::OnEffectFinished);
+	this->SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
+	this->EffectFinished.connect(this, &GuiTooltip::OnEffectFinished);
 
 	leftImage.SetParent(this);
 	tileImage.SetParent(this);
@@ -60,9 +60,9 @@ GuiTooltip::GuiTooltip(const char *t)
  */
 GuiTooltip::~GuiTooltip()
 {
-	if(text)
+	if (text)
 		delete text;
-    if(origtext)
+	if (origtext)
 		delete origtext;
 }
 
@@ -74,27 +74,31 @@ float GuiTooltip::GetScale()
 /* !Sets the text of the GuiTooltip element
  * !\param t Text
  */
-void GuiTooltip::SetText(const char * t)
+void GuiTooltip::SetText(const char* t)
 {
-	if(text)
+	if (text)
 	{
 		delete text;
-		text = NULL;
+		text = nullptr;
 	}
 
-	if(!t)
+	if (!t)
 		return;
 
-	text = new GuiText(t, 20, (GXColor){0, 0, 0, 255});
+	text = new GuiText(t, 20, (GXColor)
+	{
+		0, 0, 0, 255
+	}
+	)
 	text->SetMaxWidth(250);
 	text->SetParent(this);
 	text->SetPosition(offsetHr, offsetVr);
-    text->SetScroll(SCROLL_HORIZONTAL);
+	text->SetScroll(SCROLL_HORIZONTAL);
 
 	int bound = text->GetTextWidth() < text->GetMaxWidth() ? text->GetTextWidth() : text->GetMaxWidth();
-	int tile = ((float)bound / (float)tileImage.GetWidth()) + 1;
+	int tile = (static_cast<float>(bound) / static_cast<float>(tileImage.GetWidth())) + 1;
 
-	if(tile < 0)
+	if (tile < 0)
 		tile = 0;
 
 	leftImage.SetPosition(offsetHr, offsetVr);
@@ -106,27 +110,27 @@ void GuiTooltip::SetText(const char * t)
 
 void GuiTooltip::SetOffset(int hOff, int vOff)
 {
-    offsetHr = hOff;
-    offsetVr = vOff;
-    text->SetPosition(offsetHr, offsetVr);
+	offsetHr = hOff;
+	offsetVr = vOff;
+	text->SetPosition(offsetHr, offsetVr);
 
-	int tile = ((float)text->GetTextWidth() / (float)tileImage.GetWidth()) + 1;
-	if(tile < 0)
+	int tile = (static_cast<float>(text->GetTextWidth()) / static_cast<float>(tileImage.GetWidth())) + 1;
+	if (tile < 0)
 		tile = 0;
 
-    leftImage.SetPosition(offsetHr, offsetVr);
+	leftImage.SetPosition(offsetHr, offsetVr);
 	tileImage.SetPosition(leftImage.GetWidth() + offsetHr, offsetVr);
 	rightImage.SetPosition(leftImage.GetWidth() + tile * tileImage.GetWidth() + offsetHr, offsetVr);
 }
 
 void GuiTooltip::ResetText()
 {
-	if(text)
+	if (text)
 		text->ResetText();
 
-	int tile = ((float)text->GetTextWidth() / (float)tileImage.GetWidth()) + 1;
+	int tile = (static_cast<float>(text->GetTextWidth()) / static_cast<float>(tileImage.GetWidth())) + 1;
 
-	if(tile < 0)
+	if (tile < 0)
 		tile = 0;
 
 	tileImage.SetTile(tile);
@@ -134,35 +138,35 @@ void GuiTooltip::ResetText()
 	width = leftImage.GetWidth() + tile * tileImage.GetWidth() + rightImage.GetWidth();
 }
 
-void GuiTooltip::OnEffectFinished(GuiElement *e)
+void GuiTooltip::OnEffectFinished(GuiElement* e)
 {
-    if(!origtext)
-        return;
+	if (!origtext)
+		return;
 
-    if(this->GetAlpha() == 0)
-    {
-        text->SetText(origtext);
-        this->GetParent()->ResetState();
-    }
+	if (this->GetAlpha() == 0)
+	{
+		text->SetText(origtext);
+		this->GetParent()->ResetState();
+	}
 }
 
-void GuiTooltip::SetTimeout(const char *replace, int sec)
+void GuiTooltip::SetTimeout(const char* replace, int sec)
 {
-    if(!replace)
-        replace = text->GetText();
+	if (!replace)
+		replace = text->GetText();
 
-    if(origtext)
+	if (origtext)
 		delete origtext;
 
-    origtext = new char [strlen(text->GetText())+1];
-    strcpy(origtext, text->GetText());
-    text->SetText(replace);
+	origtext = new char[strlen(text->GetText()) + 1];
+	strcpy(origtext, text->GetText());
+	text->SetText(replace);
 
-    time(&time3);
-    timeout = sec;
-    SetEffect(EFFECT_FADE, 20);
+	time(&time3);
+	timeout = sec;
+	SetEffect(EFFECT_FADE, 20);
 
-    this->GetParent()->SetState(STATE_HIGHLIGHTED);
+	this->GetParent()->SetState(STATE_HIGHLIGHTED);
 }
 
 /*
@@ -170,34 +174,34 @@ void GuiTooltip::SetTimeout(const char *replace, int sec)
  */
 void GuiTooltip::DrawTooltip()
 {
-	if(!text || !this->IsVisible() || !parentElement)
+	if (!text || !this->IsVisible() || !parentElement)
 		return;
 
-    if(timeout)
-    {
-        time(&time4);
+	if (timeout)
+	{
+		time(&time4);
 
-        if(difftime(time4, time3) >= (float)timeout)
-        {
-            SetEffect(EFFECT_FADE, -20);
-            timeout = 0;
-        }
-        else goto draw;
-    }
+		if (difftime(time4, time3) >= static_cast<float>(timeout))
+		{
+			SetEffect(EFFECT_FADE, -20);
+			timeout = 0;
+		}
+		else goto draw;
+	}
 
-	if(parentElement->GetState() == STATE_SELECTED)
+	if (parentElement->GetState() == STATE_SELECTED)
 	{
 		if (time2 == 0)
 		{
 			time(&time1);
 			time2 = time1;
 		}
-		if(time1 != 0)
+		if (time1 != 0)
 			time(&time1);
 
-		if(time1 == 0 || difftime(time1, time2) >= 1.0)
+		if (time1 == 0 || difftime(time1, time2) >= 1.0)
 		{
-			if(time1 != 0 && !timeout)
+			if (time1 != 0 && !timeout)
 				SetEffect(EFFECT_FADE, 20);
 			time1 = 0;
 			goto draw;
@@ -205,14 +209,14 @@ void GuiTooltip::DrawTooltip()
 	}
 	else
 	{
-		if(time2 != 0 && time1 == 0 && !timeout)
+		if (time2 != 0 && time1 == 0 && !timeout)
 			SetEffect(EFFECT_FADE, -20);
 		time2 = 0;
 	}
 
-	if(GetEffect())
+	if (GetEffect())
 	{
-		draw:
+	draw:
 		leftImage.Draw();
 		tileImage.Draw();
 		rightImage.Draw();

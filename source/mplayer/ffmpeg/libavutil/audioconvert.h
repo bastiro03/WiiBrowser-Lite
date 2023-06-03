@@ -64,8 +64,8 @@
 #define AV_CH_SURROUND_DIRECT_RIGHT  0x0000000400000000ULL
 
 /** Channel mask value used for AVCodecContext.request_channel_layout
-    to indicate that the user requests the channel order of the decoder output
-    to be the native codec channel order. */
+	to indicate that the user requests the channel order of the decoder output
+	to be the native codec channel order. */
 #define AV_CH_LAYOUT_NATIVE          0x8000000000000000ULL
 
 /**
@@ -122,7 +122,7 @@
  *
  * Example: "stereo+FC" = "2+FC" = "2c+1c" = "0x7"
  */
-uint64_t av_get_channel_layout(const char *name);
+uint64_t av_get_channel_layout(const char* name);
 
 /**
  * Return a description of a channel layout.
@@ -131,7 +131,7 @@ uint64_t av_get_channel_layout(const char *name);
  * @param buf put here the string containing the channel layout
  * @param buf_size size in bytes of the buffer
  */
-void av_get_channel_layout_string(char *buf, int buf_size, int nb_channels, uint64_t channel_layout);
+void av_get_channel_layout_string(char* buf, int buf_size, int nb_channels, uint64_t channel_layout);
 
 /**
  * Return the number of channels in the channel layout.

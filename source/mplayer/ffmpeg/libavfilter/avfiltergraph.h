@@ -25,32 +25,33 @@
 #include "avfilter.h"
 #include "libavutil/log.h"
 
-typedef struct AVFilterGraph {
+typedef struct AVFilterGraph
+{
 #if FF_API_GRAPH_AVCLASS
-    const AVClass *av_class;
+	const AVClass* av_class;
 #endif
-    unsigned filter_count;
-    AVFilterContext **filters;
+	unsigned filter_count;
+	AVFilterContext** filters;
 
-    char *scale_sws_opts; ///< sws options to use for the auto-inserted scale filters
+	char* scale_sws_opts; ///< sws options to use for the auto-inserted scale filters
 
-    /**
-     * Private fields
-     *
-     * The following fields are for internal use only.
-     * Their type, offset, number and semantic can change without notice.
-     */
+	/**
+	 * Private fields
+	 *
+	 * The following fields are for internal use only.
+	 * Their type, offset, number and semantic can change without notice.
+	 */
 
-    AVFilterLink **sink_links;
-    int sink_links_count;
+	AVFilterLink** sink_links;
+	int sink_links_count;
 
-    unsigned disable_auto_convert;
+	unsigned disable_auto_convert;
 } AVFilterGraph;
 
 /**
  * Allocate a filter graph.
  */
-AVFilterGraph *avfilter_graph_alloc(void);
+AVFilterGraph* avfilter_graph_alloc(void);
 
 /**
  * Get a filter instance with name name from graph.
@@ -58,7 +59,7 @@ AVFilterGraph *avfilter_graph_alloc(void);
  * @return the pointer to the found filter instance or NULL if it
  * cannot be found.
  */
-AVFilterContext *avfilter_graph_get_filter(AVFilterGraph *graph, char *name);
+AVFilterContext* avfilter_graph_get_filter(AVFilterGraph* graph, char* name);
 
 /**
  * Add an existing filter instance to a filter graph.
@@ -66,7 +67,7 @@ AVFilterContext *avfilter_graph_get_filter(AVFilterGraph *graph, char *name);
  * @param graphctx  the filter graph
  * @param filter the filter to be added
  */
-int avfilter_graph_add_filter(AVFilterGraph *graphctx, AVFilterContext *filter);
+int avfilter_graph_add_filter(AVFilterGraph* graphctx, AVFilterContext* filter);
 
 /**
  * Create and add a filter instance into an existing graph.
@@ -81,9 +82,9 @@ int avfilter_graph_add_filter(AVFilterGraph *graphctx, AVFilterContext *filter);
  * @return a negative AVERROR error code in case of failure, a non
  * negative value otherwise
  */
-int avfilter_graph_create_filter(AVFilterContext **filt_ctx, AVFilter *filt,
-                                 const char *name, const char *args, void *opaque,
-                                 AVFilterGraph *graph_ctx);
+int avfilter_graph_create_filter(AVFilterContext** filt_ctx, AVFilter* filt,
+                                 const char* name, const char* args, void* opaque,
+                                 AVFilterGraph* graph_ctx);
 
 /**
  * Enable or disable automatic format conversion inside the graph.
@@ -93,11 +94,14 @@ int avfilter_graph_create_filter(AVFilterContext **filt_ctx, AVFilter *filt,
  *
  * @param flags  any of the AVFILTER_AUTO_CONVERT_* constants
  */
-void avfilter_graph_set_auto_convert(AVFilterGraph *graph, unsigned flags);
+void avfilter_graph_set_auto_convert(AVFilterGraph* graph, unsigned flags);
 
-enum {
-    AVFILTER_AUTO_CONVERT_ALL  =  0, /**< all automatic conversions enabled */
-    AVFILTER_AUTO_CONVERT_NONE = -1, /**< all automatic conversions disabled */
+enum
+{
+	AVFILTER_AUTO_CONVERT_ALL = 0,
+	/**< all automatic conversions enabled */
+	AVFILTER_AUTO_CONVERT_NONE = -1,
+	/**< all automatic conversions disabled */
 };
 
 /**
@@ -107,13 +111,13 @@ enum {
  * @param log_ctx context used for logging
  * @return 0 in case of success, a negative AVERROR code otherwise
  */
-int avfilter_graph_config(AVFilterGraph *graphctx, void *log_ctx);
+int avfilter_graph_config(AVFilterGraph* graphctx, void* log_ctx);
 
 /**
  * Free a graph, destroy its links, and set *graph to NULL.
  * If *graph is NULL, do nothing.
  */
-void avfilter_graph_free(AVFilterGraph **graph);
+void avfilter_graph_free(AVFilterGraph** graph);
 
 /**
  * A linked-list of the inputs/outputs of the filter chain.
@@ -124,18 +128,19 @@ void avfilter_graph_free(AVFilterGraph **graph);
  * This struct specifies, per each not connected pad contained in the graph, the
  * filter context and the pad index required for establishing a link.
  */
-typedef struct AVFilterInOut {
-    /** unique name for this input/output in the list */
-    char *name;
+typedef struct AVFilterInOut
+{
+	/** unique name for this input/output in the list */
+	char* name;
 
-    /** filter context associated to this input/output */
-    AVFilterContext *filter_ctx;
+	/** filter context associated to this input/output */
+	AVFilterContext* filter_ctx;
 
-    /** index of the filt_ctx pad to use for linking */
-    int pad_idx;
+	/** index of the filt_ctx pad to use for linking */
+	int pad_idx;
 
-    /** next input/input in the list, NULL if this is the last */
-    struct AVFilterInOut *next;
+	/** next input/input in the list, NULL if this is the last */
+	struct AVFilterInOut* next;
 } AVFilterInOut;
 
 /**
@@ -143,13 +148,13 @@ typedef struct AVFilterInOut {
  * Must be freed with avfilter_inout_free().
  * @return allocated AVFilterInOut on success, NULL on failure.
  */
-AVFilterInOut *avfilter_inout_alloc(void);
+AVFilterInOut* avfilter_inout_alloc(void);
 
 /**
  * Free the supplied list of AVFilterInOut and set *inout to NULL.
  * If *inout is NULL, do nothing.
  */
-void avfilter_inout_free(AVFilterInOut **inout);
+void avfilter_inout_free(AVFilterInOut** inout);
 
 /**
  * Add a graph described by a string to a graph.
@@ -164,9 +169,9 @@ void avfilter_inout_free(AVFilterInOut **inout);
  *                after the parsing, should be freed with avfilter_inout_free().
  * @return non negative on success, a negative AVERROR code on error
  */
-int avfilter_graph_parse(AVFilterGraph *graph, const char *filters,
-                         AVFilterInOut **inputs, AVFilterInOut **outputs,
-                         void *log_ctx);
+int avfilter_graph_parse(AVFilterGraph* graph, const char* filters,
+                         AVFilterInOut** inputs, AVFilterInOut** outputs,
+                         void* log_ctx);
 
 /**
  * Add a graph described by a string to a graph.
@@ -198,10 +203,9 @@ int avfilter_graph_parse(AVFilterGraph *graph, const char *filters,
  * Analogously the outputs parameter will contain outputs of the newly created
  * filters.
  */
-int avfilter_graph_parse2(AVFilterGraph *graph, const char *filters,
-                          AVFilterInOut **inputs,
-                          AVFilterInOut **outputs);
-
+int avfilter_graph_parse2(AVFilterGraph* graph, const char* filters,
+                          AVFilterInOut** inputs,
+                          AVFilterInOut** outputs);
 
 /**
  * Send a command to one or more filter instances.
@@ -218,7 +222,8 @@ int avfilter_graph_parse2(AVFilterGraph *graph, const char *filters,
  * @returns >=0 on success otherwise an error code.
  *              AVERROR(ENOSYS) on unsupported commands
  */
-int avfilter_graph_send_command(AVFilterGraph *graph, const char *target, const char *cmd, const char *arg, char *res, int res_len, int flags);
+int avfilter_graph_send_command(AVFilterGraph* graph, const char* target, const char* cmd, const char* arg, char* res,
+                                int res_len, int flags);
 
 /**
  * Queue a command for one or more filter instances.
@@ -235,8 +240,8 @@ int avfilter_graph_send_command(AVFilterGraph *graph, const char *target, const 
  * @note As this executes commands after this function returns, no return code
  *       from the filter is provided, also AVFILTER_CMD_FLAG_ONE is not supported.
  */
-int avfilter_graph_queue_command(AVFilterGraph *graph, const char *target, const char *cmd, const char *arg, int flags, double ts);
-
+int avfilter_graph_queue_command(AVFilterGraph* graph, const char* target, const char* cmd, const char* arg, int flags,
+                                 double ts);
 
 /**
  * Dump a graph into a human-readable string representation.
@@ -246,7 +251,7 @@ int avfilter_graph_queue_command(AVFilterGraph *graph, const char *target, const
  * @return  a string, or NULL in case of memory allocation failure;
  *          the string must be freed using av_free
  */
-char *avfilter_graph_dump(AVFilterGraph *graph, const char *options);
+char* avfilter_graph_dump(AVFilterGraph* graph, const char* options);
 
 /**
  * Request a frame on the oldest sink link.
@@ -260,6 +265,6 @@ char *avfilter_graph_dump(AVFilterGraph *graph, const char *options);
  * @return  the return value of avfilter_request_frame,
  *          or AVERROR_EOF of all links returned AVERROR_EOF.
  */
-int avfilter_graph_request_oldest(AVFilterGraph *graph);
+int avfilter_graph_request_oldest(AVFilterGraph* graph);
 
 #endif /* AVFILTER_AVFILTERGRAPH_H */

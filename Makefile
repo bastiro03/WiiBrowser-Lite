@@ -29,7 +29,7 @@ INCLUDES	:=	source source/mplayer source/network
 # options for code generation
 #---------------------------------------------------------------------------------
 
-CFLAGS		=	-g -O3 -Wall $(MACHDEP) $(INCLUDE)
+CFLAGS		=	-g -O3 -Wall $(MACHDEP) $(INCLUDE) `freetype-config --cflags`
 CXXFLAGS	=	-std=gnu++0x $(CFLAGS)
 LDFLAGS		=	-g -ggdb $(MACHDEP) -Wl
 
@@ -43,6 +43,7 @@ LDFLAGS		=	-g -ggdb $(MACHDEP) -Wl
 LIBS	:=	-lfribidi -ljpeg -liconv -ldi -lpng -lunrar -lzip -lsevenzip -lz \
 				-lcurl -lcyassl -lnetport -lasnd -lvorbisidec \
 					 -lmxml -llua -lm -lfat -lwiiuse -lwiikeyboard -lbte -logc -lfreetype \
+					 `freetype-config --libs`
 
 #---------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level containing

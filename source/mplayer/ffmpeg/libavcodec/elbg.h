@@ -37,9 +37,9 @@
  * @param closest_cb Return the closest codebook to each point. Must be allocated.
  * @param rand_state A random number generator state. Should be already initialized by av_lfg_init().
  */
-void ff_do_elbg(int *points, int dim, int numpoints, int *codebook,
-                int numCB, int num_steps, int *closest_cb,
-                AVLFG *rand_state);
+void ff_do_elbg(int* points, int dim, int numpoints, int* codebook,
+                int numCB, int num_steps, int* closest_cb,
+                AVLFG* rand_state);
 
 /**
  * Initialize the **codebook vector for the elbg algorithm. If you have already
@@ -48,8 +48,8 @@ void ff_do_elbg(int *points, int dim, int numpoints, int *codebook,
  * If not, it calls ff_do_elbg for a (smaller) random sample of the points in
  * **points. Get the same parameters as ff_do_elbg.
  */
-void ff_init_elbg(int *points, int dim, int numpoints, int *codebook,
-                  int numCB, int num_steps, int *closest_cb,
-                  AVLFG *rand_state);
+void ff_init_elbg(int* points, int dim, int numpoints, int* codebook,
+                  int numCB, int num_steps, int* closest_cb,
+                  AVLFG* rand_state);
 
 #endif /* AVCODEC_ELBG_H */

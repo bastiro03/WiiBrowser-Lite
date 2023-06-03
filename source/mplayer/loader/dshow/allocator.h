@@ -9,17 +9,17 @@ typedef struct MemAllocator MemAllocator;
 
 struct MemAllocator
 {
-    IMemAllocator_vt* vt;
-    DECLARE_IUNKNOWN();
-    ALLOCATOR_PROPERTIES props;
-    avm_list_t* used_list;
-    avm_list_t* free_list;
-    char* new_pointer;
-    CMediaSample* modified_sample;
-    GUID interfaces[2];
+	IMemAllocator_vt* vt;
+	DECLARE_IUNKNOWN();
+	ALLOCATOR_PROPERTIES props;
+	avm_list_t* used_list;
+	avm_list_t* free_list;
+	char* new_pointer;
+	CMediaSample* modified_sample;
+	GUID interfaces[2];
 
-    void ( *SetPointer )(MemAllocator* This, char* pointer);
-    void ( *ResetPointer )(MemAllocator* This);
+	void (*SetPointer)(MemAllocator* This, char* pointer);
+	void (*ResetPointer)(MemAllocator* This);
 };
 
 MemAllocator* MemAllocatorCreate(void);

@@ -23,30 +23,30 @@
 
 int bstrcmp(struct bstr str1, struct bstr str2)
 {
-    int ret = memcmp(str1.start, str2.start, FFMIN(str1.len, str2.len));
+	int ret = memcmp(str1.start, str2.start, FFMIN(str1.len, str2.len));
 
-    if (!ret) {
-        if (str1.len == str2.len)
-            return 0;
-        else if (str1.len > str2.len)
-            return 1;
-        else
-            return -1;
-    }
-    return ret;
+	if (!ret)
+	{
+		if (str1.len == str2.len)
+			return 0;
+		if (str1.len > str2.len)
+			return 1;
+		return -1;
+	}
+	return ret;
 }
 
 int bstrcasecmp(struct bstr str1, struct bstr str2)
 {
-    int ret = strncasecmp(str1.start, str2.start, FFMIN(str1.len, str2.len));
+	int ret = strncasecmp(str1.start, str2.start, FFMIN(str1.len, str2.len));
 
-    if (!ret) {
-        if (str1.len == str2.len)
-            return 0;
-        else if (str1.len > str2.len)
-            return 1;
-        else
-            return -1;
-    }
-    return ret;
+	if (!ret)
+	{
+		if (str1.len == str2.len)
+			return 0;
+		if (str1.len > str2.len)
+			return 1;
+		return -1;
+	}
+	return ret;
 }

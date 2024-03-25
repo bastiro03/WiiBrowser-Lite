@@ -6,8 +6,8 @@
 
 using namespace std;
 
-const char* htmlcxx::CSS::IE_CSS = nullptr;
-//const char *htmlcxx::CSS::IE_CSS = DEFAULT_CSS;
+const char *htmlcxx::CSS::IE_CSS = nullptr;
+// const char *htmlcxx::CSS::IE_CSS = DEFAULT_CSS;
 
 namespace htmlcxx
 {
@@ -17,8 +17,8 @@ namespace htmlcxx
 		{
 		}
 
-		Parser::Selector::Selector(const string& e, const string& i, const string& c, const PseudoClass& pc,
-		                           const PseudoElement& pe)
+		Parser::Selector::Selector(const string &e, const string &i, const string &c, const PseudoClass &pc,
+								   const PseudoElement &pe)
 		{
 			setElement(e);
 			setId(i);
@@ -27,22 +27,28 @@ namespace htmlcxx
 			setPseudoElement(pe);
 		}
 
-		void Parser::Selector::setElement(const string& str)
+		void Parser::Selector::setElement(const string &str)
 		{
 			mElement = str;
-			transform(mElement.begin(), mElement.end(), mElement.begin(), tolower);
+			transform(mElement.begin(), mElement.end(), mElement.begin(),
+					  [](unsigned char c)
+					  { return std::tolower(c); });
 		}
 
-		void Parser::Selector::setId(const string& str)
+		void Parser::Selector::setId(const string &str)
 		{
 			mId = str;
-			transform(mId.begin(), mId.end(), mId.begin(), tolower);
+			transform(mId.begin(), mId.end(), mId.begin(),
+					  [](unsigned char c)
+					  { return std::tolower(c); });
 		}
 
-		void Parser::Selector::setClass(const string& str)
+		void Parser::Selector::setClass(const string &str)
 		{
 			mEClass = str;
-			transform(mEClass.begin(), mEClass.end(), mEClass.begin(), tolower);
+			transform(mEClass.begin(), mEClass.end(), mEClass.begin(),
+					  [](unsigned char c)
+					  { return std::tolower(c); });
 		}
 
 		void Parser::Selector::setPseudoClass(enum PseudoClass p)
@@ -55,9 +61,10 @@ namespace htmlcxx
 			mPsElement = p;
 		}
 
-		bool Parser::Selector::match(const Selector& s) const
+		bool Parser::Selector::match(const Selector &s) const
 		{
-			if (mElement.empty()) return false;
+			if (mElement.empty())
+				return false;
 
 			if (s.mElement.empty())
 			{
@@ -68,7 +75,7 @@ namespace htmlcxx
 			return *this == s;
 		}
 
-		bool Parser::Selector::operator==(const Selector& s) const
+		bool Parser::Selector::operator==(const Selector &s) const
 		{
 			if (mElement == s.mElement &&
 				mId == s.mId &&
@@ -81,21 +88,31 @@ namespace htmlcxx
 			return false;
 		}
 
-		bool Parser::Selector::operator<(const Selector& s) const
+		bool Parser::Selector::operator<(const Selector &s) const
 		{
 			int my_count = 0, count = 0;
 
-			if (!mElement.empty()) ++my_count;
-			if (!mId.empty()) ++my_count;
-			if (!mEClass.empty()) ++my_count;
-			if (mPsClass != NONE_CLASS) ++my_count;
-			if (mPsElement != NONE_ELEMENT) ++my_count;
+			if (!mElement.empty())
+				++my_count;
+			if (!mId.empty())
+				++my_count;
+			if (!mEClass.empty())
+				++my_count;
+			if (mPsClass != NONE_CLASS)
+				++my_count;
+			if (mPsElement != NONE_ELEMENT)
+				++my_count;
 
-			if (!s.mElement.empty()) ++count;
-			if (!s.mId.empty()) ++count;
-			if (!s.mEClass.empty()) ++count;
-			if (s.mPsClass != NONE_CLASS) ++count;
-			if (s.mPsElement != NONE_ELEMENT) ++count;
+			if (!s.mElement.empty())
+				++count;
+			if (!s.mId.empty())
+				++count;
+			if (!s.mEClass.empty())
+				++count;
+			if (s.mPsClass != NONE_CLASS)
+				++count;
+			if (s.mPsElement != NONE_ELEMENT)
+				++count;
 
 			if (my_count == count)
 			{
@@ -124,12 +141,14 @@ namespace htmlcxx
 			return count > my_count;
 		}
 
-		bool Parser::match(const vector<Selector>& selector, const vector<Selector>& path)
+		bool Parser::match(const vector<Selector> &selector, const vector<Selector> &path)
 		{
-			if (path.empty()) return false;
-			if (selector.empty()) return false;
+			if (path.empty())
+				return false;
+			if (selector.empty())
+				return false;
 
-			const Selector& element = path[0];
+			const Selector &element = path[0];
 			//	cout << "Trying: " << path[0] << " against " << selector[0] << endl;
 			if (element.match(selector[0]))
 			{
@@ -140,18 +159,21 @@ namespace htmlcxx
 				while (n != selector.end())
 				{
 					//			cout << "Trying: " << *m << " against " << *n << endl;
-					while (m != path.end() && !m->match(*n)) ++m;
-					if (m == path.end()) break;
+					while (m != path.end() && !m->match(*n))
+						++m;
+					if (m == path.end())
+						break;
 					++n, ++m;
 				}
-				if (n == selector.end()) return true;
+				if (n == selector.end())
+					return true;
 			}
 
 			return false;
 		}
 
 		map<string, string>
-		Parser::getAttributes(const vector<Selector>& path) const
+		Parser::getAttributes(const vector<Selector> &path) const
 		{
 			map<string, string> ret;
 
@@ -170,13 +192,13 @@ namespace htmlcxx
 			return ret;
 		}
 
-		void Parser::merge(const Parser& p)
+		void Parser::merge(const Parser &p)
 		{
 			RuleSet::const_iterator i;
 			for (i = p.mRuleSets.begin(); i != p.mRuleSets.end(); ++i)
 			{
-				map<string, Attribute>& mine = mRuleSets[i->first];
-				const map<string, Attribute>& their = i->second;
+				map<string, Attribute> &mine = mRuleSets[i->first];
+				const map<string, Attribute> &their = i->second;
 				map<std::string, Attribute>::const_iterator j;
 				for (j = their.begin(); j != their.end(); ++j)
 				{
@@ -185,12 +207,12 @@ namespace htmlcxx
 			}
 		}
 
-		bool Parser::parse(const string& css)
+		bool Parser::parse(const string &css)
 		{
 			return parse(css.c_str(), css.length());
 		}
 
-		bool Parser::parse(const char* buf, int buf_len)
+		bool Parser::parse(const char *buf, int buf_len)
 		{
 			struct selector_list_t *css, *pos;
 
@@ -199,7 +221,7 @@ namespace htmlcxx
 
 			while (pos != nullptr)
 			{
-				struct selector_t* sel = pos->selector;
+				struct selector_t *sel = pos->selector;
 
 				vector<Selector> p;
 				while (sel != nullptr)
@@ -250,8 +272,8 @@ namespace htmlcxx
 
 				reverse(p.begin(), p.end());
 
-				map<string, Attribute>& m = mRuleSets[p];
-				struct property_t* prop = pos->selector->property;
+				map<string, Attribute> &m = mRuleSets[p];
+				struct property_t *prop = pos->selector->property;
 				while (prop != nullptr)
 				{
 					m[prop->name] = Attribute(prop->val, prop->important);
@@ -266,20 +288,22 @@ namespace htmlcxx
 			return true;
 		}
 
-		ostream& operator<<(ostream& out, const map<string, Parser::Attribute>& s)
+		ostream &operator<<(ostream &out, const map<string, Parser::Attribute> &s)
 		{
 			map<string, Parser::Attribute>::const_iterator i;
 			for (i = s.begin(); i != s.end(); ++i)
 			{
-				if (i != s.begin()) out << " ";
+				if (i != s.begin())
+					out << " ";
 				out << i->first << ": " << i->second.mVal;
-				if (i->second.mImportant) out << " !important";
+				if (i->second.mImportant)
+					out << " !important";
 				out << ";";
 			}
 			return out;
 		}
 
-		string psc2str(const enum Parser::PseudoClass& s)
+		string psc2str(const enum Parser::PseudoClass &s)
 		{
 			switch (s)
 			{
@@ -297,7 +321,7 @@ namespace htmlcxx
 			}
 		}
 
-		string pse2str(const enum Parser::PseudoElement& s)
+		string pse2str(const enum Parser::PseudoElement &s)
 		{
 			switch (s)
 			{
@@ -313,27 +337,30 @@ namespace htmlcxx
 			}
 		}
 
-		ostream& operator<<(ostream& out, const Parser::Selector& s)
+		ostream &operator<<(ostream &out, const Parser::Selector &s)
 		{
 			out << s.mElement;
-			if (!s.mId.empty()) out << "#" << s.mId;
-			if (!s.mEClass.empty()) out << "." << s.mEClass;
+			if (!s.mId.empty())
+				out << "#" << s.mId;
+			if (!s.mEClass.empty())
+				out << "." << s.mEClass;
 			out << psc2str(s.mPsClass) << pse2str(s.mPsElement);
 			return out;
 		}
 
-		ostream& operator<<(ostream& out, const Parser& p)
+		ostream &operator<<(ostream &out, const Parser &p)
 		{
 			for (auto i = p.mRuleSets.begin(); i != p.mRuleSets.end(); ++i)
 			{
-				if (i != p.mRuleSets.begin()) out << endl;
+				if (i != p.mRuleSets.begin())
+					out << endl;
 				copy(i->first.rbegin(),
-				     i->first.rend(),
-				     ostream_iterator<Parser::Selector>(out, " "));
+					 i->first.rend(),
+					 ostream_iterator<Parser::Selector>(out, " "));
 				out << "{ ";
 				out << i->second << " }";
 			}
 			return out;
 		}
-	} //namespace CSS
-} //namespace htmlcxx
+	} // namespace CSS
+} // namespace htmlcxx

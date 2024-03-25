@@ -1,29 +1,29 @@
 /*
  Copyright (c) 2008 Francisco Muñoz 'Hermes' <www.elotrolado.net>
  All rights reserved.
-
+ 
  Proper (standard) vorbis usage by Tantric, 2009
  Threading modifications/corrections by Tantric, 2009
 
- Redistribution and use in source and binary forms, with or without
+ Redistribution and use in source and binary forms, with or without 
  modification, are permitted provided that the following conditions are met:
 
  - Redistributions of source code must retain the above copyright notice, this
  list of conditions and the following disclaimer.
- - Redistributions in binary form must reproduce the above copyright notice,
- this list of conditions and the following disclaimer in the documentation
+ - Redistributions in binary form must reproduce the above copyright notice, 
+ this list of conditions and the following disclaimer in the documentation 
  and/or other materials provided with the distribution.
- - The names of the contributors may not be used to endorse or promote products
+ - The names of the contributors may not be used to endorse or promote products 
  derived from this software without specific prior written permission.
 
- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+ AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
- FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE 
+ FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+ DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
+ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, 
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
@@ -41,12 +41,12 @@
 
 static struct
 {
-	char* mem;
+	char *mem;
 	int size;
 	int pos;
 } file[4];
 
-static int f_read(void* punt, int bytes, int blocks, int* f)
+static int f_read(void * punt, int bytes, int blocks, int *f)
 {
 	int b;
 	int c = 0;
@@ -64,7 +64,7 @@ static int f_read(void* punt, int bytes, int blocks, int* f)
 			b = 4096;
 
 		d = (*f) - 0x666;
-		if ((unsigned)(d) <= (0x669 - 0x666))
+		if((unsigned)(d) <= (0x669 - 0x666))
 		{
 			if (file[d].size == 0)
 				return -1;
@@ -77,7 +77,7 @@ static int f_read(void* punt, int bytes, int blocks, int* f)
 			}
 		}
 		else
-			b = read(*f, ((char*)punt) + c, b);
+			b = read(*f, ((char *) punt) + c, b);
 
 		if (b <= 0)
 		{
@@ -89,15 +89,15 @@ static int f_read(void* punt, int bytes, int blocks, int* f)
 	return c / bytes;
 }
 
-static int f_seek(int* f, ogg_int64_t offset, int mode)
+static int f_seek(int *f, ogg_int64_t offset, int mode)
 {
-	if (f == NULL) return (-1);
+	if(f==NULL) return(-1);
 
 	int k;
 	mode &= 3;
 
 	int d = (*f) - 0x666;
-	if ((unsigned)(d) <= (0x669 - 0x666))
+	if((unsigned)(d) <= (0x669 - 0x666))
 	{
 		k = 0;
 
@@ -136,6 +136,7 @@ static int f_seek(int* f, ogg_int64_t offset, int mode)
 		}
 		else if (mode == 2)
 		{
+
 			if ((file[d].size + offset) >= file[d].size)
 			{
 				file[d].pos = file[d].size;
@@ -149,9 +150,10 @@ static int f_seek(int* f, ogg_int64_t offset, int mode)
 			else
 				file[d].pos = file[d].size + offset;
 		}
+
 	}
 	else
-		k = lseek(*f, (int)offset, mode);
+		k = lseek(*f, (int) offset, mode);
 
 	if (k < 0)
 		k = -1;
@@ -160,39 +162,40 @@ static int f_seek(int* f, ogg_int64_t offset, int mode)
 	return k;
 }
 
-static int f_close(int* f)
+static int f_close(int *f)
 {
 	int d = (*f) - 0x666;
-	if ((unsigned)(d) <= (0x669 - 0x666))
+	if((unsigned)(d) <= (0x669 - 0x666))
 	{
 		file[d].size = 0;
 		file[d].pos = 0;
 		if (file[d].mem)
 		{
-			file[d].mem = (void*)0;
+			file[d].mem = (void *) 0;
 		}
 		return 0;
 	}
-	return close(*f);
+	else
+		return close(*f);
 	return 0;
 }
 
-static long f_tell(int* f)
+static long f_tell(int *f)
 {
 	int k;
 
 	int d = (*f) - 0x666;
-	if ((unsigned)(d) <= (0x669 - 0x666))
+	if((unsigned)(d) <= (0x669 - 0x666))
 	{
 		k = file[d].pos;
 	}
 	else
 		k = lseek(*f, 0, 1);
 
-	return k;
+	return (long) k;
 }
 
-static int mem_open(char* ogg, int size)
+static int mem_open(char * ogg, int size)
 {
 	static int one = 1;
 	int n;
@@ -225,31 +228,31 @@ static int mem_open(char* ogg, int size)
 
 static int mem_close(int fd)
 {
-	if ((unsigned)((fd) - 0x666) <= (0x669 - 0x666)) // it is a memory file descriptor?
+	if((unsigned)((fd) - 0x666) <= (0x669 - 0x666)) // it is a memory file descriptor?
 	{
 		fd -= 0x666;
 		file[fd].size = 0;
 		return 0;
 	}
-	return f_close(&fd);
+	else
+		return f_close(&fd);
 }
 
 static ov_callbacks callbacks = {
-	(size_t(*)(void*, size_t, size_t, void*))f_read,
-	(int (*)(void*, ogg_int64_t, int))f_seek,
-	(int (*)(void*))f_close,
-	(long (*)(void*))f_tell
+	(size_t (*)(void *, size_t, size_t, void *))  f_read,
+	(int (*)(void *, ogg_int64_t, int))           f_seek,
+	(int (*)(void *))                             f_close,
+	(long (*)(void *))                            f_tell
 };
 
 /* OGG control */
 
 #define READ_SAMPLES 4096 // samples that it must read before to send
 #define MAX_PCMOUT 4096 // minimum size to read ogg samples
-
 typedef struct
 {
 	OggVorbis_File vf;
-	vorbis_info* vi;
+	vorbis_info *vi;
 	int current_section;
 
 	// OGG file operation
@@ -264,6 +267,7 @@ typedef struct
 	short pcmout[2][READ_SAMPLES + MAX_PCMOUT * 2]; /* take 4k out of the data segment, not the stack */
 	int pcmout_pos;
 	int pcm_indx;
+
 } private_data_ogg;
 
 static private_data_ogg private_ogg;
@@ -291,8 +295,8 @@ static void ogg_add_callback(int voice)
 	if (private_ogg.pcm_indx >= READ_SAMPLES)
 	{
 		if (ASND_AddVoice(0,
-		                  (void*)private_ogg.pcmout[private_ogg.pcmout_pos],
-		                  private_ogg.pcm_indx << 1) == 0)
+				(void *) private_ogg.pcmout[private_ogg.pcmout_pos],
+				private_ogg.pcm_indx << 1) == 0)
 		{
 			private_ogg.pcmout_pos ^= 1;
 			private_ogg.pcm_indx = 0;
@@ -310,7 +314,7 @@ static void ogg_add_callback(int voice)
 	}
 }
 
-static void* ogg_player_thread(private_data_ogg* priv)
+static void * ogg_player_thread(private_data_ogg * priv)
 {
 	int first_time = 1;
 	long ret;
@@ -338,7 +342,7 @@ static void* ogg_player_thread(private_data_ogg* priv)
 		if (priv[0].flag == 0) // wait to all samples are sent
 		{
 			if (ASND_TestPointer(0, priv[0].pcmout[priv[0].pcmout_pos])
-				&& ASND_StatusVoice(0) != SND_UNUSED)
+					&& ASND_StatusVoice(0) != SND_UNUSED)
 			{
 				priv[0].flag |= 64;
 				continue;
@@ -353,10 +357,10 @@ static void* ogg_player_thread(private_data_ogg* priv)
 					priv[0].seek_time = -1;
 				}
 
-				ret = ov_read(
-					&priv[0].vf,
-					(void*)&priv[0].pcmout[priv[0].pcmout_pos][priv[0].pcm_indx],
-					MAX_PCMOUT,/*0,2,1,*/&priv[0].current_section);
+				ret	= ov_read(
+								&priv[0].vf,
+								(void *) &priv[0].pcmout[priv[0].pcmout_pos][priv[0].pcm_indx],
+								MAX_PCMOUT,/*0,2,1,*/&priv[0].current_section);
 				priv[0].flag &= 192;
 				if (ret == 0)
 				{
@@ -397,9 +401,9 @@ static void* ogg_player_thread(private_data_ogg* priv)
 				if (priv[0].vi->channels == 2)
 				{
 					ASND_SetVoice(0, VOICE_STEREO_16BIT, priv[0].vi->rate, 0,
-					              (void*)priv[0].pcmout[priv[0].pcmout_pos],
-					              priv[0].pcm_indx << 1, priv[0].volume,
-					              priv[0].volume, ogg_add_callback);
+							(void *) priv[0].pcmout[priv[0].pcmout_pos],
+							priv[0].pcm_indx << 1, priv[0].volume,
+							priv[0].volume, ogg_add_callback);
 					priv[0].pcmout_pos ^= 1;
 					priv[0].pcm_indx = 0;
 					priv[0].flag = 0;
@@ -407,9 +411,9 @@ static void* ogg_player_thread(private_data_ogg* priv)
 				else
 				{
 					ASND_SetVoice(0, VOICE_MONO_16BIT, priv[0].vi->rate, 0,
-					              (void*)priv[0].pcmout[priv[0].pcmout_pos],
-					              priv[0].pcm_indx << 1, priv[0].volume,
-					              priv[0].volume, ogg_add_callback);
+							(void *) priv[0].pcmout[priv[0].pcmout_pos],
+							priv[0].pcm_indx << 1, priv[0].volume,
+							priv[0].volume, ogg_add_callback);
 					priv[0].pcmout_pos ^= 1;
 					priv[0].pcm_indx = 0;
 					priv[0].flag = 0;
@@ -430,32 +434,32 @@ void StopOgg()
 	ASND_StopVoice(0);
 	ogg_thread_running = 0;
 
-	if (h_oggplayer != LWP_THREAD_NULL)
+	if(h_oggplayer != LWP_THREAD_NULL)
 	{
-		if (oggplayer_queue != LWP_TQUEUE_NULL)
+		if(oggplayer_queue != LWP_TQUEUE_NULL)
 			LWP_ThreadSignal(oggplayer_queue);
 		LWP_JoinThread(h_oggplayer, NULL);
 		h_oggplayer = LWP_THREAD_NULL;
 	}
-	if (oggplayer_queue != LWP_TQUEUE_NULL)
+	if(oggplayer_queue != LWP_TQUEUE_NULL)
 	{
 		LWP_CloseQueue(oggplayer_queue);
 		oggplayer_queue = LWP_TQUEUE_NULL;
 	}
 }
 
-int PlayOgg(const void* buffer, s32 len, int time_pos, int mode)
+int PlayOgg(const void *buffer, s32 len, int time_pos, int mode)
 {
 	StopOgg();
 
-	private_ogg.fd = mem_open((char*)buffer, len);
-
+	private_ogg.fd = mem_open((char *)buffer, len);
+	
 	if (private_ogg.fd < 0)
 	{
 		private_ogg.fd = -1;
 		return -1;
 	}
-
+	
 	private_ogg.mode = mode;
 	private_ogg.eof = 0;
 	private_ogg.volume = 127;
@@ -465,7 +469,7 @@ int PlayOgg(const void* buffer, s32 len, int time_pos, int mode)
 	if (time_pos > 0)
 		private_ogg.seek_time = time_pos;
 
-	if (ov_open_callbacks((void*)&private_ogg.fd, &private_ogg.vf, NULL, 0, callbacks) < 0)
+	if (ov_open_callbacks((void *) &private_ogg.fd, &private_ogg.vf, NULL, 0, callbacks) < 0)
 	{
 		mem_close(private_ogg.fd); // mem_close() can too close files from devices
 		private_ogg.fd = -1;
@@ -473,8 +477,8 @@ int PlayOgg(const void* buffer, s32 len, int time_pos, int mode)
 		return -1;
 	}
 
-	if (LWP_CreateThread(&h_oggplayer, (void*)ogg_player_thread,
-	                     &private_ogg, oggplayer_stack, STACKSIZE, 80) == -1)
+	if (LWP_CreateThread(&h_oggplayer, (void *) ogg_player_thread,
+			&private_ogg, oggplayer_stack, STACKSIZE, 80) == -1)
 	{
 		ogg_thread_running = 0;
 		ov_clear(&private_ogg.vf);
@@ -508,11 +512,10 @@ int StatusOgg()
 {
 	if (ogg_thread_running == 0)
 		return -1; // Error
-	if (private_ogg.eof)
+	else if (private_ogg.eof)
 		return 255; // EOF
-	if (private_ogg.flag & 128)
-		return 2;
-	// paused
+	else if (private_ogg.flag & 128)
+		return 2; // paused
 	return 1; // running
 }
 
@@ -527,7 +530,7 @@ s32 GetTimeOgg()
 	int ret;
 	if (ogg_thread_running == 0 || private_ogg.fd < 0)
 		return -1;
-	ret = ((s32)ov_time_tell(&private_ogg.vf));
+	ret = ((s32) ov_time_tell(&private_ogg.vf));
 
 	return ret;
 }

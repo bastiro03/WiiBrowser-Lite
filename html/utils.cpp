@@ -12,16 +12,17 @@ namespace htmlcxx
 {
 	namespace HTML
 	{
-		bool detect_utf8(const char* begin, int size)
+		bool detect_utf8(const char *begin, int size)
 		{
-			const char* ptr;
-			const char* end = begin + size;
+			const char *ptr;
+			const char *end = begin + size;
 			auto signature = "﻿";
 			char previous_byte = 0;
 			unsigned count_bad_utf = 0;
 			unsigned count_good_utf = 0;
 
-			if (!strncmp(begin, signature, 3)) return true;
+			if (!strncmp(begin, signature, 3))
+				return true;
 
 			for (ptr = begin; ptr != end; ++ptr)
 			{
@@ -47,16 +48,17 @@ namespace htmlcxx
 			return count_good_utf > count_bad_utf;
 		}
 
-		string single_blank(const string& str)
+		string single_blank(const string &str)
 		{
 			unsigned int count = 0;
 			bool first_space = true;
-			const char* ptr = str.c_str();
+			const char *ptr = str.c_str();
 
 			string ret(str.length(), ' ');
 
 			// Skip space at beginning
-			while (isspace(*ptr)) ++ptr;
+			while (isspace(*ptr))
+				++ptr;
 
 			while (*ptr)
 			{
@@ -91,13 +93,13 @@ namespace htmlcxx
 			return ret;
 		}
 
-		string strip_comments(const string& str)
+		string strip_comments(const string &str)
 		{
 			string ret;
 			ret.reserve(str.size());
 
-			const char* ptr = str.c_str();
-			const char* end = ptr + str.length();
+			const char *ptr = str.c_str();
+			const char *end = ptr + str.length();
 
 			bool inside_comment = false;
 			while (true)
@@ -106,8 +108,7 @@ namespace htmlcxx
 				{
 					if (ptr + 4 < end)
 					{
-						if (*ptr == '<' && *(ptr + 1) == '!' && *(ptr + 2) == '-' && *(ptr + 3) == '-' && isspace(
-							*(ptr + 4)))
+						if (*ptr == '<' && *(ptr + 1) == '!' && *(ptr + 2) == '-' && *(ptr + 3) == '-' && isspace(*(ptr + 4)))
 						{
 							inside_comment = true;
 						}
@@ -124,8 +125,10 @@ namespace htmlcxx
 						}
 					}
 				}
-				if (ptr == end) break;
-				if (!inside_comment) ret += *ptr;
+				if (ptr == end)
+					break;
+				if (!inside_comment)
+					ret += *ptr;
 				ptr++;
 			}
 
@@ -136,7 +139,7 @@ namespace htmlcxx
 
 		static struct
 		{
-			const char* str;
+			const char *str;
 			unsigned char chr;
 		} entities[] = {
 			/* 00 */
@@ -253,17 +256,18 @@ namespace htmlcxx
 			{nullptr, 0},
 		};
 
-		string decode_entities(const string& str)
+		string decode_entities(const string &str)
 		{
 			unsigned int count = 0;
-			const char* ptr = str.c_str();
-			const char* end;
+			const char *ptr = str.c_str();
+			const char *end;
 
 			string ret(str);
 			string entity;
 
 			ptr = strchr(ptr, '&');
-			if (ptr == nullptr) return ret;
+			if (ptr == nullptr)
+				return ret;
 
 			count += static_cast<unsigned int>(ptr - str.c_str());
 
@@ -316,14 +320,19 @@ namespace htmlcxx
 			return ret;
 		}
 
-		string get_attribute(const string& tag, const string& attr)
+		string get_attribute(const string &tag, const string &attr)
 		{
 			string val;
 			string low_tag(tag);
 			string low_attr(attr);
 
-			transform(low_attr.begin(), low_attr.end(), low_attr.begin(), tolower);
-			transform(low_tag.begin(), low_tag.end(), low_tag.begin(), tolower);
+			std::transform(low_attr.begin(), low_attr.end(), low_attr.begin(),
+						   [](unsigned char c)
+						   { return std::tolower(c); });
+
+			std::transform(low_tag.begin(), low_tag.end(), low_tag.begin(),
+						   [](unsigned char c)
+						   { return std::tolower(c); });
 
 			string::size_type a;
 			a = low_tag.find(low_attr);
@@ -331,24 +340,28 @@ namespace htmlcxx
 				return val;
 
 			a += attr.length();
-			while (a < tag.length() && isspace(tag[a])) a++;
+			while (a < tag.length() && isspace(tag[a]))
+				a++;
 			if (a == tag.length() || tag[a] != '=')
 				return val;
 			a++;
-			while (a < tag.length() && isspace(tag[a])) a++;
+			while (a < tag.length() && isspace(tag[a]))
+				a++;
 			if (a == tag.length())
 				return val;
 
 			if (tag[a] == '"')
 			{
 				string::size_type b = tag.find('"', a + 1);
-				if (b == string::npos) return val;
+				if (b == string::npos)
+					return val;
 				val = tag.substr(a + 1, b - a - 1);
 			}
 			else if (tag[a] == '\'')
 			{
 				string::size_type b = tag.find('\'', a + 1);
-				if (b == string::npos) return val;
+				if (b == string::npos)
+					return val;
 				val = tag.substr(a + 1, b - a - 1);
 			}
 			else
@@ -362,32 +375,37 @@ namespace htmlcxx
 			return val;
 		}
 
-		string normalize_slashs(const string& url)
+		string normalize_slashs(const string &url)
 		{
 			const int NONE = 0;
 			const int LASTSLASH = 1;
 			const int LASTDOTSLASH = 2;
 			const int LASTDOTDOTSLASH = 3;
 			int state = NONE;
-			const char* question_dash;
-			const char* question;
-			const char* dash;
+			const char *question_dash;
+			const char *question;
+			const char *dash;
 			unsigned int count = 0;
-			const char* ptr = url.c_str();
+			const char *ptr = url.c_str();
 			string ret(url);
 
 			question = strchr(ptr, '?');
 			dash = strchr(ptr, '#');
-			if (question && (!dash || question < dash)) question_dash = question;
-			else question_dash = dash;
-			if (question_dash == nullptr) question_dash = url.c_str() + url.length();
+			if (question && (!dash || question < dash))
+				question_dash = question;
+			else
+				question_dash = dash;
+			if (question_dash == nullptr)
+				question_dash = url.c_str() + url.length();
 
-			const char* problem;
-			const char* problem1 = strstr(ptr, "//");
-			const char* problem2 = strstr(ptr, "/.");
+			const char *problem;
+			const char *problem1 = strstr(ptr, "//");
+			const char *problem2 = strstr(ptr, "/.");
 
-			if (problem1 && (!problem2 || problem1 < problem2)) problem = problem1;
-			else problem = problem2;
+			if (problem1 && (!problem2 || problem1 < problem2))
+				problem = problem1;
+			else
+				problem = problem2;
 
 			if (problem && problem < question_dash)
 			{
@@ -437,7 +455,7 @@ namespace htmlcxx
 					case LASTDOTDOTSLASH:
 						if (*ptr == '/')
 						{
-							const char* last_slash = ret.c_str() + count - 2;
+							const char *last_slash = ret.c_str() + count - 2;
 							while (last_slash >= ret.c_str() && *last_slash != '/')
 								--last_slash;
 							if (last_slash >= ret.c_str())
@@ -485,7 +503,7 @@ namespace htmlcxx
 			return ret;
 		}
 
-		string convert_link(const string& relative, const Uri& root)
+		string convert_link(const string &relative, const Uri &root)
 		{
 			string url(relative);
 
@@ -524,16 +542,16 @@ namespace htmlcxx
 			return uri.unparse(Uri::REMOVE_FRAGMENT);
 		}
 
-		string __serialize_gml(const tree<Node>& tr, tree<Node>::iterator it, tree<Node>::iterator end,
-		                       unsigned int parent_id, unsigned int& label)
+		string __serialize_gml(const tree<Node> &tr, tree<Node>::iterator it, tree<Node>::iterator end,
+							   unsigned int parent_id, unsigned int &label)
 		{
 			using namespace std;
 			ostrstream ret;
 			tree<Node>::sibling_iterator sib = tr.begin(it);
 			while (sib != tr.end(it))
 			{
-				//ret << "node [ id " << ++label << "\n label \"" << label << "\"\n]\n";
-				//ret << "edge [ \n source " << parent_id << "\n target " << label << "\n]" << endl;
+				// ret << "node [ id " << ++label << "\n label \"" << label << "\"\n]\n";
+				// ret << "edge [ \n source " << parent_id << "\n target " << label << "\n]" << endl;
 				ret << __serialize_gml(tr, sib, end, label, label);
 				++sib;
 			}
@@ -543,7 +561,7 @@ namespace htmlcxx
 			return str;
 		}
 
-		string serialize_gml(const tree<Node>& tr)
+		string serialize_gml(const tree<Node> &tr)
 		{
 			using namespace std;
 
@@ -559,5 +577,5 @@ namespace htmlcxx
 			ret += "]";
 			return ret;
 		}
-	} //namespace html
-} //namespace htmlcxx
+	} // namespace html
+} // namespace htmlcxx

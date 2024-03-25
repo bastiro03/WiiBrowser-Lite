@@ -1,5 +1,5 @@
 # WiiBrowser Lite
-A community-driven revival project for "WiiBrowser" by gave92, a homebrew alternative to the Wii's Internet Channel. While not in active development by me, pull requests are welcome.
+WiiBrowser Lite is a homebrew alternative to the Wii's Internet Channel, and it is a revival project of the original WiiBrowser by gave92. While I am not actively working on it, I would appreciate any contributions through pull requests.
 
 ### Currently supported
 - HTML 4.01

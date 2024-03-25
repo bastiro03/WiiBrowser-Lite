@@ -7,23 +7,23 @@
 #include "gettext.h"
 #include "filelist.h"
 
-using MSG = struct _MSG
+typedef struct _MSG
 {
 	u32 id;
 	char* msgstr;
-	struct _MSG* next;
-};
-static MSG* baseMSG = nullptr;
+	struct _MSG *next;
+} MSG;
+static MSG *baseMSG = 0;
 
 #define HASHWORDBITS 32
 
 /* Defines the so called `hashpjw' function by P.J. Weinberger
  [see Aho/Sethi/Ullman, COMPILERS: Principles, Techniques and Tools,
  1986, 1987 Bell Telephone Laboratories, Inc.]  */
-static inline u32 hash_string(const char* str_param)
+static inline u32 hash_string(const char *str_param)
 {
 	u32 hval, g;
-	const char* str = str_param;
+	const char *str = str_param;
 
 	/* Compute the hash value for the given string.  */
 	hval = 0;
@@ -31,7 +31,7 @@ static inline u32 hash_string(const char* str_param)
 	{
 		hval <<= 4;
 		hval += (u8) * str++;
-		g = hval & (static_cast<u32>(0xf) << (HASHWORDBITS - 4));
+		g = hval & ((u32) 0xf << (HASHWORDBITS - 4));
 		if (g != 0)
 		{
 			hval ^= g >> (HASHWORDBITS - 8);
@@ -42,15 +42,15 @@ static inline u32 hash_string(const char* str_param)
 }
 
 /* Expand some escape sequences found in the argument string.  */
-static char*
-expand_escape(const char* str)
+static char *
+expand_escape(const char *str)
 {
 	char *retval, *rp;
-	const char* cp = str;
+	const char *cp = str;
 
-	retval = static_cast<char*>(malloc(strlen(str) + 1));
-	if (retval == nullptr)
-		return nullptr;
+	retval = (char *) malloc(strlen(str) + 1);
+	if (retval == NULL)
+		return NULL;
 	rp = retval;
 
 	while (cp[0] != '\0' && cp[0] != '\\')
@@ -59,6 +59,7 @@ expand_escape(const char* str)
 		goto terminate;
 	do
 	{
+
 		/* Here cp[0] == '\\'.  */
 		switch (*++cp)
 		{
@@ -106,22 +107,22 @@ expand_escape(const char* str)
 		case '5':
 		case '6':
 		case '7':
+		{
+			int ch = *cp++ - '0';
+
+			if (*cp >= '0' && *cp <= '7')
 			{
-				int ch = *cp++ - '0';
+				ch *= 8;
+				ch += *cp++ - '0';
 
 				if (*cp >= '0' && *cp <= '7')
 				{
 					ch *= 8;
 					ch += *cp++ - '0';
-
-					if (*cp >= '0' && *cp <= '7')
-					{
-						ch *= 8;
-						ch += *cp++ - '0';
-					}
 				}
-				*rp = ch;
 			}
+			*rp = ch;
+		}
 			break;
 		default:
 			*rp = '\\';
@@ -130,34 +131,33 @@ expand_escape(const char* str)
 
 		while (cp[0] != '\0' && cp[0] != '\\')
 			*rp++ = *cp++;
-	}
-	while (cp[0] != '\0');
+	} while (cp[0] != '\0');
 
 	/* Terminate string.  */
-terminate: *rp = '\0';
+	terminate: *rp = '\0';
 	return retval;
 }
 
-static MSG* findMSG(u32 id)
+static MSG *findMSG(u32 id)
 {
-	MSG* msg;
+	MSG *msg;
 	for (msg = baseMSG; msg; msg = msg->next)
 	{
 		if (msg->id == id)
 			return msg;
 	}
-	return nullptr;
+	return NULL;
 }
 
-static MSG* setMSG(const char* msgid, const char* msgstr)
+static MSG *setMSG(const char *msgid, const char *msgstr)
 {
 	u32 id = hash_string(msgid);
-	MSG* msg = findMSG(id);
+	MSG *msg = findMSG(id);
 	if (!msg)
 	{
-		msg = static_cast<MSG*>(malloc(sizeof(MSG)));
+		msg = (MSG *) malloc(sizeof(MSG));
 		msg->id = id;
-		msg->msgstr = nullptr;
+		msg->msgstr = NULL;
 		msg->next = baseMSG;
 		baseMSG = msg;
 	}
@@ -171,49 +171,43 @@ static MSG* setMSG(const char* msgid, const char* msgstr)
 		}
 		return msg;
 	}
-	return nullptr;
+	return NULL;
 }
 
 static void gettextCleanUp(void)
 {
 	while (baseMSG)
 	{
-		MSG* nextMsg = baseMSG->next;
+		MSG *nextMsg = baseMSG->next;
 		free(baseMSG->msgstr);
 		free(baseMSG);
 		baseMSG = nextMsg;
 	}
 }
 
-static char* memfgets(char* dst, int maxlen, char* src)
+static char * memfgets(char * dst, int maxlen, char * src)
 {
-	if (!src || !dst || maxlen <= 0)
-		return nullptr;
+	if(!src || !dst || maxlen <= 0)
+		return NULL;
 
-	char* newline = strchr(src, '\n');
+	char * newline = strchr(src, '\n');
 
-	if (newline == nullptr)
-		return nullptr;
+	if(newline == NULL)
+		return NULL;
 
-	memcpy(dst, src, (newline - src));
-	dst[(newline - src)] = 0;
+	memcpy(dst, src, (newline-src));
+	dst[(newline-src)] = 0;
 	return ++newline;
 }
 
 bool LoadLanguage()
 {
 	char line[200];
-	char* lastID = nullptr;
+	char *lastID = NULL;
+	
+	char *file, *eof;
 
-	char *file = nullptr, *eof;
-
-	switch (Settings.Language)
-	{
-	case LANG_ENGLISH: file = static_cast<char*>(en_lang);
-		eof = file + en_lang_size;
-		break;
-	default: break;
-	}
+	file = (char *)en_lang; eof = file + en_lang_size;
 
 	gettextCleanUp();
 
@@ -221,7 +215,7 @@ bool LoadLanguage()
 	{
 		file = memfgets(line, sizeof(line), file);
 
-		if (!file)
+		if(!file)
 			break;
 
 		// lines starting with # are comments
@@ -234,7 +228,7 @@ bool LoadLanguage()
 			if (lastID)
 			{
 				free(lastID);
-				lastID = nullptr;
+				lastID = NULL;
 			}
 			msgid = &line[7];
 			end = strrchr(msgid, '"');
@@ -248,7 +242,7 @@ bool LoadLanguage()
 		{
 			char *msgstr, *end;
 
-			if (lastID == nullptr)
+			if (lastID == NULL)
 				continue;
 
 			msgstr = &line[8];
@@ -259,15 +253,15 @@ bool LoadLanguage()
 				setMSG(lastID, msgstr);
 			}
 			free(lastID);
-			lastID = nullptr;
+			lastID = NULL;
 		}
 	}
 	return true;
 }
 
-const char* gettext(const char* msgid)
+const char *gettext(const char *msgid)
 {
-	MSG* msg = findMSG(hash_string(msgid));
+	MSG *msg = findMSG(hash_string(msgid));
 
 	if (msg && msg->msgstr)
 	{

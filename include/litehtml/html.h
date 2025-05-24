@@ -1,71 +1,161 @@
-#pragma once
+#ifndef LH_HTML_H
+#define LH_HTML_H
 
-#include <string>
-#include <ctype.h>
-#include <vector>
-#include <map>
-
+#include <cstdlib>
+#include <cmath>
+#include <cctype>
+#include <cstring>
+#include <algorithm>
 #include "types.h"
-#include "background.h"
-#include "borders.h"
-#include "element.h"
-#include "web_color.h"
-#include "object.h"
+#include "media_query.h"
 
 namespace litehtml
 {
-	// call back interface to draw text, images and other elements
-	class document_container
+	const string whitespace = " \n\r\t\f";
+	string& trim(string& s, const string& chars_to_trim = whitespace);
+	string trim(const string& s, const string& chars_to_trim = whitespace);
+	string& lcase(string& s);
+	int	 value_index(const string& val, const string& strings, int defValue = -1, char delim = ';');
+	string index_value(int index, const string& strings, char delim = ';');
+	bool value_in_list(const string& val, const string& strings, char delim = ';');
+	string::size_type find_close_bracket(const string& s, string::size_type off, char open_b = '(', char close_b = ')');
+	void split_string(const string& str, string_vector& tokens, const string& delims = whitespace, const string& delims_preserve = "", const string& quote = "\"");
+	string_vector split_string(const string& str, const string& delims = whitespace, const string& delims_preserve = "", const string& quote = "\"");
+	void join_string(string& str, const string_vector& tokens, const string& delims);
+	double t_strtod(const char* string, char** endPtr = nullptr);
+	string get_escaped_string(const string& in_str);
+
+	template<typename T, typename... Opts>
+	bool is_one_of(T val, Opts ...opts)
 	{
-	public:
-		virtual uint_ptr create_font(const wchar_t* faceName, int size, int weight, font_style italic,
-		                             unsigned int decoration) = 0;
-		virtual void delete_font(uint_ptr hFont) = 0;
-		virtual int line_height(uint_ptr hdc, uint_ptr hFont) = 0;
-		virtual int text_width(uint_ptr hdc, const wchar_t* text, uint_ptr hFont) = 0;
-		virtual void draw_text(uint_ptr hdc, const wchar_t* text, uint_ptr hFont, web_color color,
-		                       const position& pos) = 0;
-		virtual void fill_rect(uint_ptr hdc, const position& pos, web_color color, const css_border_radius& radius) = 0;
-		virtual uint_ptr get_temp_dc() = 0;
-		virtual void release_temp_dc(uint_ptr hdc) = 0;
-		virtual int pt_to_px(int pt) = 0;
-		virtual int get_default_font_size() = 0;
-		virtual int get_text_base_line(uint_ptr hdc, uint_ptr hFont) = 0;
-		virtual void draw_list_marker(uint_ptr hdc, list_style_type marker_type, int x, int y, int height,
-		                              const web_color& color) = 0;
-		virtual void load_image(const wchar_t* src, const wchar_t* baseurl) = 0;
-		virtual void get_image_size(const wchar_t* src, const wchar_t* baseurl, size& sz) = 0;
-		virtual void draw_image(uint_ptr hdc, const wchar_t* src, const wchar_t* baseurl, const position& pos) = 0;
-		virtual void draw_background(uint_ptr hdc,
-		                             const wchar_t* image,
-		                             const wchar_t* baseurl,
-		                             const position& draw_pos,
-		                             const css_position& bg_pos,
-		                             background_repeat repeat,
-		                             background_attachment attachment) = 0;
-		virtual void draw_borders(uint_ptr hdc, const css_borders& borders, const position& draw_pos) = 0;
+		return (... || (val == opts));
+	}
+	template<class T>
+	const T& at(const vector<T>& vec, int index /*may be negative*/)
+	{
+		static T invalid_item; // T's default constructor must create invalid item
+		if (index < 0) index += (int)vec.size();
+		return index >= 0 && index < (int)vec.size() ? vec[index] : invalid_item;
+	}
+	template<class Map, class Key>
+	auto at(const Map& map, Key key)
+	{
+		static typename Map::mapped_type invalid_value; // mapped_type's default constructor must create invalid item
+		auto it = map.find(key);
+		return it != map.end() ? it->second : invalid_value;
+	}
+	template<typename T>
+	vector<T> slice(const vector<T>& vec, int index, int count = -1)
+	{
+		if (count == -1) count = (int)vec.size() - index;
+		return {vec.begin() + index, vec.begin() + index + count};
+	}
+	template<class C> // C == vector or string
+	void remove(C& vec, int index /*may be negative*/, int count = 1)
+	{
+		if (index < 0) index += (int)vec.size();
 
-		virtual void set_caption(const wchar_t* caption) = 0;
-		virtual void set_base_url(const wchar_t* base_url) = 0;
-		virtual void link(document* doc, element::ptr el) = 0;
-		virtual void on_anchor_click(const wchar_t* url, element::ptr el) = 0;
-		virtual void set_cursor(const wchar_t* cursor) = 0;
-		virtual wchar_t toupper(wchar_t c) = 0;
-		virtual wchar_t tolower(wchar_t c) = 0;
-		virtual void import_css(std::wstring& text, const std::wstring& url, std::wstring& baseurl,
-		                        const string_vector& media) = 0;
-		virtual void set_clip(const position& pos, bool valid_x, bool valid_y) = 0;
-		virtual void del_clip() = 0;
-	};
+		if (!(index >= 0 && index < (int)vec.size()))
+			return;
 
-	void trim(std::wstring& s);
-	int value_index(const wchar_t* val, const wchar_t* strings, int defValue = -1, const wchar_t* delim = L";");
-	int value_in_list(const wchar_t* val, const wchar_t* strings, const wchar_t* delim = L";");
+		count = min(count, (int)vec.size() - index);
+		if (count <= 0) return;
+
+		vec.erase(vec.begin() + index, vec.begin() + index + count);
+	}
+	template<class T>
+	void insert(vector<T>& vec, int index, const vector<T>& x)
+	{
+		vec.insert(vec.begin() + index, x.begin(), x.end());
+	}
+	template<class T>
+	vector<T>& operator+=(vector<T>& vec, const vector<T>& x)
+	{
+		vec.insert(vec.end(), x.begin(), x.end());
+		return vec;
+	}
+	template<class C, class T>
+	bool contains(const C& coll, const T& item)
+	{
+		return std::find(coll.begin(), coll.end(), item) != coll.end();
+	}
+	inline bool contains(const string& str, const string& substr)
+	{
+		return str.find(substr) != string::npos;
+	}
+	template<class C> void sort(C& coll) { std::sort(coll.begin(), coll.end()); }
+
+	int t_strcasecmp(const char *s1, const char *s2);
+	int t_strncasecmp(const char *s1, const char *s2, size_t n);
+	inline bool equal_i(const string& s1, const string& s2)
+	{
+		if (s1.size() != s2.size()) return false;
+		return t_strncasecmp(s1.c_str(), s2.c_str(), s1.size()) == 0;
+	}
+	inline bool match(const string& str, int index /*may be negative*/, const string& substr)
+	{
+		if (index < 0) index += (int)str.size();
+		if (index < 0) return false;
+		return str.substr(index, substr.size()) == substr;
+	}
+	inline bool match_i(const string& str, int index /*may be negative*/, const string& substr)
+	{
+		if (index < 0) index += (int)str.size();
+		if (index < 0) return false;
+		return equal_i(str.substr(index, substr.size()), substr);
+	}
+
+	bool is_number(const string& string, bool allow_dot = true);
+
+	// https://infra.spec.whatwg.org/#ascii-whitespace
+	inline bool is_whitespace(int c)
+	{
+		return c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f';
+	}
+
+	inline int t_isalpha(int c)
+	{
+		return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
+	}
+	const auto is_letter = t_isalpha;
+
+	inline int t_tolower(int c)
+	{
+		return (c >= 'A' && c <= 'Z' ? c + 'a' - 'A' : c);
+	}
+	// https://infra.spec.whatwg.org/#ascii-lowercase
+	inline int lowcase(int c)
+	{
+		return t_tolower(c);
+	}
+	inline string lowcase(string str)
+	{
+		for (char& c : str) c = (char)t_tolower(c);
+		return str;
+	}
+
+	inline int t_isdigit(int c)
+	{
+		return (c >= '0' && c <= '9');
+	}
+	const auto is_digit = t_isdigit;
+
+	inline bool is_hex_digit(int ch) {
+		return is_digit(ch) || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F');
+	}
+
+	inline int digit_value(int ch) {
+		return is_digit(ch) ? ch - '0' : lowcase(ch) - 'a' + 10;
+	}
+
+	inline bool is_surrogate(int ch) {
+		return ch >= 0xD800 && ch < 0xE000;
+	}
 
 	inline int round_f(float val)
 	{
-		int int_val = static_cast<int>(val);
-		if (val - int_val >= 0.5)
+		int int_val = (int) val;
+		if(val - int_val >= 0.5)
 		{
 			int_val++;
 		}
@@ -74,11 +164,23 @@ namespace litehtml
 
 	inline int round_d(double val)
 	{
-		int int_val = static_cast<int>(val);
-		if (val - int_val >= 0.5)
+		int int_val = (int) val;
+		if(val - int_val >= 0.5)
 		{
 			int_val++;
 		}
 		return int_val;
 	}
+
+	inline float t_strtof(const string& str, char** endPtr = nullptr)
+	{
+		return (float)t_strtod(str.c_str(), endPtr);
+	}
+
+	inline int baseline_align(int line_height, int line_base_line, int height, int baseline)
+	{
+		return (line_height - line_base_line) - (height - baseline);
+	}
 }
+
+#endif  // LH_HTML_H

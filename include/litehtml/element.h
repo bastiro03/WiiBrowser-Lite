@@ -1,385 +1,225 @@
-#pragma once
+#ifndef LH_ELEMENT_H
+#define LH_ELEMENT_H
 
-#include "object.h"
-#include "style.h"
-#include "line.h"
-#include "background.h"
-#include "css_margins.h"
-#include "borders.h"
-#include "css_selector.h"
+#include <functional>
+#include <memory>
+#include <tuple>
+#include <list>
+#include "litehtml/types.h"
 #include "stylesheet.h"
+#include "css_properties.h"
 
 namespace litehtml
 {
-	class element : public object
+	class line_box;
+	class dumper;
+	class render_item;
+
+	class element : public std::enable_shared_from_this<element>
 	{
-		friend class elements_iterator;
-		friend class line;
+		friend class line_box;
+		friend class html_tag;
 		friend class el_table;
-		friend class table_grid;
-
+		friend class document;
 	public:
-		using ptr = object_ptr<element>;
-
+		typedef std::shared_ptr<element>		ptr;
+		typedef std::shared_ptr<const element>	const_ptr;
+		typedef std::weak_ptr<element>			weak_ptr;
 	protected:
-		element* m_parent;
-		document* m_doc;
-		elements_vector m_children;
-		std::wstring m_id;
-		std::wstring m_class;
-		std::wstring m_tag;
-		style m_style;
-		string_map m_attrs;
-		position m_pos;
-		margins m_margins;
-		margins m_padding;
-		margins m_borders;
-		vertical_align m_vertical_align;
-		text_align m_text_align;
-		style_display m_display;
-		list_style_type m_list_style_type;
-		list_style_position m_list_style_position;
-		white_space m_white_space;
-		element_float m_float;
-		element_clear m_clear;
-		elements_vector m_floats;
-		elements_vector m_absolutes;
-		bool m_skip;
-		background m_bg;
-		element_position m_el_position;
-		int m_line_height;
-		bool m_lh_predefined;
-		line* m_line;
-		string_vector m_pseudo_classes;
-		used_selector::vector m_used_styles;
+		std::weak_ptr<element>					m_parent;
+		std::weak_ptr<document>					m_doc;
+		elements_list							m_children;
+		css_properties							m_css;
+		std::list<std::weak_ptr<render_item>>	m_renders;
+		used_selector::vector					m_used_styles;
 
-		uint_ptr m_font;
-		int m_font_size;
-		int m_base_line;
-
-		css_margins m_css_margins;
-		css_margins m_css_padding;
-		css_borders m_css_borders;
-		css_length m_css_width;
-		css_length m_css_height;
-		css_length m_css_min_width;
-		css_length m_css_min_height;
-		css_length m_css_left;
-		css_length m_css_right;
-		css_length m_css_top;
-		css_length m_css_bottom;
-
-		overflow m_overflow;
-
-		/* rendered lines */
-		line::vector m_lines;
-
-	public:
-		element(document* doc);
-		~element() override;
-
-		/* render functions */
-
-		virtual int render(int x, int y, int max_width);
-
-		int place_element(element* el, int max_width);
-		virtual int render_inline(element* container, int max_width);
-		int add_line(int max_width, element_clear clr = clear_none, int el_width = 0, bool finish_prev = true);
-		void finish_line(int max_width);
-		line::ptr first_line() const;
-		line::ptr last_line() const;
-
-		virtual bool appendChild(element* el);
-		virtual ptr parentElement() const;
-		virtual const wchar_t* get_tagName() const;
-		virtual void set_tagName(const wchar_t* tag);
-		virtual void set_data(const wchar_t* data);
-
-		virtual void set_attr(const wchar_t* name, const wchar_t* val);
-		virtual const wchar_t* get_attr(const wchar_t* name, const wchar_t* def = nullptr);
-		virtual void apply_stylesheet(const css& stylesheet);
-		virtual bool is_white_space();
-		virtual bool is_body() const;
-		virtual bool is_break() const;
-		virtual int get_base_line();
-		virtual background get_background();
-		virtual bool on_mouse_over(int x, int y);
-		virtual bool on_mouse_leave();
-		virtual bool on_lbutton_down(int x, int y);
-		virtual bool on_lbutton_up(int x, int y);
-		virtual void on_click(int x, int y);
-		virtual bool find_styles_changes(position::vector& redraw_boxes, int x, int y);
-		virtual const wchar_t* get_cursor();
-		virtual void init_font();
-		virtual bool is_point_inside(int x, int y);
-		virtual bool set_pseudo_class(const wchar_t* pclass, bool add);
-		virtual bool in_normal_flow() const;
-		virtual int line_height() const;
-
-		white_space get_white_space() const;
-		style_display get_display() const;
-		elements_vector& children();
-
-		bool select(const wchar_t* selectors);
-
-		void calc_outlines(int parent_width);
-		virtual void parse_styles(bool is_reparse = false);
-		virtual void draw(uint_ptr hdc, int x, int y, const position* clip);
-
-		virtual void draw_background(uint_ptr hdc, int x, int y, const position* clip);
-		int left() const;
-		int right() const;
-		int top() const;
-		int bottom() const;
-		int height() const;
-		int height_raw() const;
-		int width() const;
-
-		int content_margins_top() const;
-		int content_margins_bottom() const;
-		int content_margins_left() const;
-		int content_margins_right() const;
-
-		margins content_margins() const;
-
-		int margin_top() const;
-		int margin_bottom() const;
-		int margin_left() const;
-		int margin_right() const;
-		margins get_margins() const;
-
-		int padding_top() const;
-		int padding_bottom() const;
-		int padding_left() const;
-		int padding_right() const;
-		margins get_paddings() const;
-
-		int border_top() const;
-		int border_bottom() const;
-		int border_left() const;
-		int border_right() const;
-		margins get_borders() const;
-		css_borders get_css_borders() const;
-
-		virtual const wchar_t* get_style_property(const wchar_t* name, bool inherited, const wchar_t* def = nullptr);
-
-		uint_ptr get_font();
-		virtual int get_font_size();
-		web_color get_color(const wchar_t* prop_name, bool inherited, const web_color& def_color = web_color());
-		int select(const css_selector& selector, bool apply_pseudo = true);
-		int select(const css_element_selector& selector, bool apply_pseudo = true);
-		element* find_ancestor(const css_selector& selector, bool apply_pseudo = true, bool* is_pseudo = nullptr);
-		void get_abs_position(position& pos, const element* root);
-		virtual void get_text(std::wstring& text);
-		virtual void finish();
-
-		bool is_first_child(const element* el);
-		bool is_last_child(const element* el);
-
-	protected:
-		virtual void get_content_size(size& sz, int max_width);
-		virtual void draw_content(uint_ptr hdc, const position& pos);
-		virtual void init();
-		void get_inline_boxes(position::vector& boxes);
+		virtual void select_all(const css_selector& selector, elements_list& res);
+		element::ptr _add_before_after(int type, const style& style);
 
 	private:
-		bool select_one(const std::wstring& selector);
-		int get_floats_height() const;
-		int get_left_floats_height() const;
-		int get_right_floats_height() const;
-		int get_line_left(int y) const;
-		int get_line_right(int y, int def_right) const;
-		void fix_line_width(int max_width);
-		void init_line(line::ptr& ln, int top, int def_right, element_clear el_clear = clear_none);
-		void add_float(element* el);
-		void add_absolute(element* el);
-		bool is_floats_holder() const;
-		int place_inline(element* el, int max_width);
-		int find_next_line_top(int top, int width, int def_right);
-		void parse_background();
-		bool collapse_top_margin() const;
-		bool collapse_bottom_margin() const;
+		std::map<string_id, int>	m_counter_values;
+
+	public:
+		explicit element(const std::shared_ptr<document>& doc);
+		virtual ~element() = default;
+
+		const css_properties&		css() const;
+		css_properties&				css_w();
+
+		bool						in_normal_flow()			const;
+		bool						is_inline()					const;	// returns true if element is inline
+		bool						is_inline_box()				const;	// returns true if element is inline box (inline-table, inline-box, inline-flex)
+		bool						is_block_box()				const;
+		position					get_placement()				const;
+		bool						is_positioned()				const;
+		bool						is_float()					const;
+		bool						is_block_formatting_context() const;
+
+		bool						is_root() const;
+		element::ptr				parent() const;
+		void						parent(const element::ptr& par);
+		// returns true for elements inside a table (but outside cells) that don't participate in table rendering
+		bool						is_table_skip() const;
+
+		std::shared_ptr<document>	get_document() const;
+		const std::list<std::shared_ptr<element>>& children() const;
+
+		virtual elements_list		select_all(const string& selector);
+		virtual elements_list		select_all(const css_selector& selector);
+
+		virtual element::ptr		select_one(const string& selector);
+		virtual element::ptr		select_one(const css_selector& selector);
+
+		virtual bool				appendChild(const ptr &el);
+		virtual bool				removeChild(const ptr &el);
+		virtual void				clearRecursive();
+
+		virtual string_id			id() const;
+		virtual string_id			tag() const;
+		virtual const char*			get_tagName() const;
+		virtual void				set_tagName(const char* tag);
+		virtual void				set_data(const char* data);
+
+		virtual void				set_attr(const char* name, const char* val);
+		virtual const char*			get_attr(const char* name, const char* def = nullptr) const;
+		virtual void				apply_stylesheet(const litehtml::css& stylesheet);
+		virtual void				refresh_styles();
+		virtual bool				is_white_space() const;
+		virtual bool				is_space() const;
+		virtual bool				is_comment() const;
+		virtual bool				is_body() const;
+		virtual bool				is_break() const;
+		virtual bool				is_text() const;
+
+		virtual bool				on_mouse_over();
+		virtual bool				on_mouse_leave();
+		virtual bool				on_lbutton_down();
+		virtual bool				on_lbutton_up(bool is_click = true);
+		virtual void				on_click();
+		virtual bool				set_pseudo_class(string_id cls, bool add);
+		virtual bool				set_class(const char* pclass, bool add);
+		virtual bool				is_replaced() const;
+		virtual void				compute_styles(bool recursive = true);
+		virtual void				draw(uint_ptr hdc, int x, int y, const position *clip, const std::shared_ptr<render_item>& ri);
+		virtual void				draw_background(uint_ptr hdc, int x, int y, const position *clip, const std::shared_ptr<render_item> &ri);
+
+		virtual void				get_text(string& text);
+		virtual void				parse_attributes();
+		virtual int					select(const css_selector::vector& selector_list, bool apply_pseudo = true);
+		virtual int					select(const string& selector);
+		virtual int					select(const css_selector& selector, bool apply_pseudo = true);
+		virtual int					select(const css_element_selector& selector, bool apply_pseudo = true);
+		virtual element::ptr		find_ancestor(const css_selector& selector, bool apply_pseudo = true, bool* is_pseudo = nullptr);
+		virtual bool				is_ancestor(const ptr &el) const;
+		virtual element::ptr		find_adjacent_sibling(const element::ptr& el, const css_selector& selector, bool apply_pseudo = true, bool* is_pseudo = nullptr);
+		virtual element::ptr		find_sibling(const element::ptr& el, const css_selector& selector, bool apply_pseudo = true, bool* is_pseudo = nullptr);
+		virtual void				get_content_size(size& sz, int max_width);
+		virtual bool				is_nth_child(const element::ptr& el, int num, int off, bool of_type, const css_selector::vector& selector_list = {}) const;
+		virtual bool				is_nth_last_child(const element::ptr& el, int num, int off, bool of_type, const css_selector::vector& selector_list = {}) const;
+		virtual bool				is_only_child(const element::ptr& el, bool of_type) const;
+		virtual void				add_style(const style& style);
+		virtual const background*	get_background(bool own_only = false);
+
+		virtual string				dump_get_name();
+		virtual std::vector<std::tuple<string, string>> dump_get_attrs();
+		void						dump(litehtml::dumper& cout);
+
+		std::tuple<element::ptr, element::ptr, element::ptr> split_inlines();
+		virtual std::shared_ptr<render_item> create_render_item(const std::shared_ptr<render_item>& parent_ri);
+		bool requires_styles_update();
+		void add_render(const std::shared_ptr<render_item>& ri);
+		bool find_styles_changes( position::vector& redraw_boxes);
+		element::ptr add_pseudo_before(const style& style)
+		{
+			return _add_before_after(0, style);
+		}
+		element::ptr add_pseudo_after(const style& style)
+		{
+			return _add_before_after(1, style);
+		}
+
+		string				get_counter_value(const string& counter_name);
+		string				get_counters_value(const string_vector& parameters);
+		void				increment_counter(const string_id& counter_name_id, const int increment = 1);
+		void				reset_counter(const string_id& counter_name_id, const int value = 0);
 
 	private:
-		bool m_second_pass;
+		std::vector<element::ptr> get_siblings_before() const;
+		bool				find_counter(const string_id& counter_name_id, std::map<string_id, int>::iterator& map_iterator);
+		void				parse_counter_tokens(const string_vector& tokens, const int default_value, std::function<void(const string_id&, const int)> handler) const;
 	};
 
-	/************************************************************************/
-	/*                        Inline Functions                              */
-	/************************************************************************/
+	//////////////////////////////////////////////////////////////////////////
+	//							INLINE FUNCTIONS							//
+	//////////////////////////////////////////////////////////////////////////
 
-	inline int element::right() const
+	inline bool litehtml::element::in_normal_flow() const
 	{
-		return left() + width();
-	}
-
-	inline int element::left() const
-	{
-		return m_pos.left() - margin_left() - m_padding.left - m_borders.left;
-	}
-
-	inline bool element::is_floats_holder() const
-	{
-		if (m_display == display_inline_block ||
-			m_display == display_table_cell ||
-			!m_parent ||
-			is_body() ||
-			m_float != float_none ||
-			m_el_position == element_position_absolute ||
-			m_overflow > overflow_visible)
+		if(css().get_position() != element_position_absolute &&
+		   css().get_display() != display_none &&
+		   css().get_position() != element_position_fixed)
 		{
 			return true;
 		}
 		return false;
 	}
 
-	inline style_display element::get_display() const
+	inline bool litehtml::element::is_root() const
 	{
-		return m_display;
+		return m_parent.expired();
 	}
 
-	inline elements_vector& element::children()
+	inline element::ptr litehtml::element::parent() const
+	{
+		return m_parent.lock();
+	}
+
+	inline void litehtml::element::parent(const element::ptr& par)
+	{
+		m_parent = par;
+	}
+
+	inline bool litehtml::element::is_positioned()	const
+	{
+		return (css().get_position() > element_position_static);
+	}
+
+	inline bool litehtml::element::is_float()	const
+	{
+		return (css().get_float() != float_none);
+	}
+
+	inline std::shared_ptr<document> element::get_document() const
+	{
+		return m_doc.lock();
+	}
+
+	inline const css_properties& element::css() const
+	{
+		return m_css;
+	}
+
+	inline css_properties& element::css_w()
+	{
+		return m_css;
+	}
+
+	inline bool element::is_block_box() const
+	{
+		if (css().get_display() == display_block ||
+			css().get_display() == display_flex ||
+			css().get_display() == display_table ||
+			css().get_display() == display_list_item)
+		{
+			return true;
+		}
+		return false;
+	}
+
+	inline const std::list<std::shared_ptr<element>>& element::children() const
 	{
 		return m_children;
 	}
-
-	inline int element::top() const
-	{
-		return m_pos.top() - margin_top() - m_padding.top - m_borders.top;
-	}
-
-	inline int element::bottom() const
-	{
-		return top() + width();
-	}
-
-	inline int element::height() const
-	{
-		return m_pos.height + margin_top() + margin_bottom() + m_padding.height() + m_borders.height();
-	}
-
-	inline int element::height_raw() const
-	{
-		return m_pos.height + (m_margins.top > 0 ? m_margins.top : 0) + (m_margins.bottom > 0 ? m_margins.bottom : 0) +
-			m_padding.height() + m_borders.height();
-	}
-
-	inline int element::width() const
-	{
-		return m_pos.width + margin_left() + margin_right() + m_padding.width() + m_borders.height();
-	}
-
-	inline int element::content_margins_top() const
-	{
-		return margin_top() + m_padding.top + m_borders.top;
-	}
-
-	inline int element::content_margins_bottom() const
-	{
-		return margin_bottom() + m_padding.bottom + m_borders.bottom;
-	}
-
-	inline int element::content_margins_left() const
-	{
-		return margin_left() + m_padding.left + m_borders.left;
-	}
-
-	inline int element::content_margins_right() const
-	{
-		return margin_right() + m_padding.right + m_borders.right;
-	}
-
-	inline margins element::content_margins() const
-	{
-		margins ret;
-		ret.left = content_margins_left();
-		ret.right = content_margins_right();
-		ret.top = content_margins_top();
-		ret.bottom = content_margins_bottom();
-		return ret;
-	}
-
-	inline margins element::get_paddings() const
-	{
-		return m_padding;
-	}
-
-	inline margins element::get_borders() const
-	{
-		return m_borders;
-	}
-
-	inline css_borders element::get_css_borders() const
-	{
-		return m_css_borders;
-	}
-
-	inline int element::padding_top() const
-	{
-		return m_padding.top;
-	}
-
-	inline int element::padding_bottom() const
-	{
-		return m_padding.bottom;
-	}
-
-	inline int element::padding_left() const
-	{
-		return m_padding.left;
-	}
-
-	inline int element::padding_right() const
-	{
-		return m_padding.right;
-	}
-
-	inline bool element::is_first_child(const element* el)
-	{
-		if (!m_children.empty())
-		{
-			if (el == m_children.front())
-			{
-				return true;
-			}
-		}
-		return false;
-	}
-
-	inline bool element::is_last_child(const element* el)
-	{
-		if (!m_children.empty())
-		{
-			if (el == m_children.back())
-			{
-				return true;
-			}
-		}
-		return false;
-	}
-
-	inline int element::border_top() const
-	{
-		return m_borders.top;
-	}
-
-	inline int element::border_bottom() const
-	{
-		return m_borders.bottom;
-	}
-
-	inline int element::border_left() const
-	{
-		return m_borders.left;
-	}
-
-	inline int element::border_right() const
-	{
-		return m_borders.right;
-	}
-
-	inline white_space element::get_white_space() const
-	{
-		return m_white_space;
-	}
 }
+
+#endif  // LH_ELEMENT_H

@@ -1,15 +1,18 @@
-#pragma once
-#include "element.h"
+#ifndef LH_EL_TITLE_H
+#define LH_EL_TITLE_H
+
+#include "html_tag.h"
 
 namespace litehtml
 {
-	class el_title : public element
+	class el_title : public html_tag
 	{
 	public:
-		el_title(document* doc);
-		~el_title() override;
+		explicit el_title(const std::shared_ptr<litehtml::document>& doc);
 
 	protected:
-		void finish() override;
+		void parse_attributes() override;
 	};
 }
+
+#endif  // LH_EL_TITLE_H

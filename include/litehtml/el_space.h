@@ -1,5 +1,6 @@
-#pragma once
-#include "element.h"
+#ifndef LH_EL_SPACE_H
+#define LH_EL_SPACE_H
+
 #include "el_text.h"
 
 namespace litehtml
@@ -7,9 +8,13 @@ namespace litehtml
 	class el_space : public el_text
 	{
 	public:
-		el_space(document* doc);
-		~el_space() override;
+		el_space(const char* text, const std::shared_ptr<document>& doc);
 
-		bool is_white_space() override;
+		bool is_white_space() const override;
+		bool is_break() const override;
+		bool is_space() const override;
+		string dump_get_name() override;
 	};
 }
+
+#endif  // LH_EL_SPACE_H

@@ -1,14 +1,28 @@
 # WiiBrowser Lite
-WiiBrowser Lite is a homebrew alternative to the Wii's Internet Channel, and it is a revival project of the original WiiBrowser by gave92. While I am not actively working on it, I would appreciate any contributions through pull requests.
+WiiBrowser Lite is a homebrew alternative to the Wii's Internet Channel and an updated version of the original WiiBrowser created by gave92. The main goal is to provide a more modern codebase to make it easier for other developers to work on. Although I am not doing much actual work on it myself, contributions through pull requests and similar methods are still welcome.
 
-### Currently supported
-- HTML 4.01
-- (very basic) CSS
-- HTTPS
-- Downloads
+## Features
+## Currently implemented:
+- View your own web pages
+- Support for HTTP and HTTPS connections
+- Support for links and forms
 - Bookmarks
-- PNG, JPEG, GIF and BMP
-- Web forms
+- Import/Export of bookmarks
+- Basic rendering of HTML 4.01 and CSS2
+- Download support to an SD/SDHC card
+- Upload support
+- Address bar with on-screen keyboard
+- Keyboard auto-completion
+- Forward and back navigation
+- Supports PNG/JPEG/GIF/BMP images
+- ZIP/RAR/7Z extraction
+- Images can be moved and resized
+- Auto-refresh
+### Planned
+- Better HTML/CSS rendering
+- JavaScript support
+- Flash videos
+- Multiple tabs
 
 ### Links
 - Official webpage: https://web.archive.org/web/20131002190414/http://wiibrowser.altervista.org/mainsite/index.html

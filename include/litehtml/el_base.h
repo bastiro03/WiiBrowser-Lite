@@ -1,14 +1,17 @@
-#pragma once
-#include "element.h"
+#ifndef LH_EL_BASE_H
+#define LH_EL_BASE_H
+
+#include "html_tag.h"
 
 namespace litehtml
 {
-	class el_base : public element
+	class el_base : public html_tag
 	{
 	public:
-		el_base(document* doc);
-		~el_base() override;
+		explicit el_base(const std::shared_ptr<litehtml::document>& doc);
 
-		void finish() override;
+		void parse_attributes() override;
 	};
 }
+
+#endif  // LH_EL_BASE_H

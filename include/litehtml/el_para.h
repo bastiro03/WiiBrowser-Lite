@@ -1,14 +1,18 @@
-#pragma once
-#include "element.h"
+#ifndef LH_EL_PARA_H
+#define LH_EL_PARA_H
+
+#include "html_tag.h"
 
 namespace litehtml
 {
-	class el_para : public element
+	class el_para : public html_tag
 	{
 	public:
-		el_para(document* doc);
-		~el_para() override;
+		explicit el_para(const std::shared_ptr<litehtml::document>& doc);
 
-		void parse_styles(bool is_reparse = false) override;
+		void parse_attributes() override;
+
 	};
 }
+
+#endif  // LH_EL_PARA_H

@@ -1,56 +1,38 @@
-#pragma once
+#ifndef LH_WEB_COLOR_H
+#define LH_WEB_COLOR_H
+
+#include "css_tokenizer.h"
+#include "types.h"
 
 namespace litehtml
 {
-	struct def_color
-	{
-		const wchar_t* name;
-		const wchar_t* rgb;
-	};
-
-	extern def_color g_def_colors[];
+	class document_container;
 
 	struct web_color
 	{
-		byte blue;
-		byte green;
-		byte red;
-		byte alpha;
+		byte red   = 0;
+		byte green = 0;
+		byte blue  = 0;
+		byte alpha = 255;
+		bool is_current_color = false;
 
-		web_color(byte r, byte g, byte b, byte a = 255)
-		{
-			blue = b;
-			green = g;
-			red = r;
-			alpha = a;
-		}
+		static const web_color transparent;
+		static const web_color black;
+		static const web_color white;
+		static const web_color current_color;
 
-		web_color()
-		{
-			blue = 0;
-			green = 0;
-			red = 0;
-			alpha = 0xFF;
-		}
+		web_color() {}
+		web_color(byte r, byte g, byte b, byte a = 255) : red(r), green(g), blue(b), alpha(a) {}
+		web_color(bool is_current_color) : is_current_color(is_current_color) {}
 
-		web_color(const web_color& val)
-		{
-			blue = val.blue;
-			green = val.green;
-			red = val.red;
-			alpha = val.alpha;
-		}
+		bool operator==(web_color color) const { return red == color.red && green == color.green && blue == color.blue && alpha == color.alpha; }
+		bool operator!=(web_color color) const { return !(*this == color); }
 
-		void operator=(const web_color& val)
-		{
-			blue = val.blue;
-			green = val.green;
-			red = val.red;
-			alpha = val.alpha;
-		}
-
-		static web_color from_string(const wchar_t* str);
-		static const wchar_t* resolve_name(const wchar_t* name);
-		static bool is_color(const wchar_t* str);
+		web_color darken(double fraction) const;
+		string to_string() const;
 	};
+
+	bool parse_color(const css_token& token, web_color& color, document_container* container);
 }
+
+#endif  // LH_WEB_COLOR_H

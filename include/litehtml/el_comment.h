@@ -1,21 +1,25 @@
-#pragma once
+#ifndef LH_EL_COMMENT_H
+#define LH_EL_COMMENT_H
+
 #include "element.h"
 
 namespace litehtml
 {
 	class el_comment : public element
 	{
-		std::wstring m_text;
-
+		string	m_text;
 	public:
-		el_comment(document* doc);
-		~el_comment() override;
+		explicit el_comment(const std::shared_ptr<document>& doc);
 
-		void get_text(std::wstring& text) override;
-		void set_data(const wchar_t* data) override;
-
-		void apply_stylesheet(const css& stylesheet) override;
-		void parse_styles(bool is_reparse) override;
-		int get_base_line() override;
+		bool is_comment() const override;
+		void get_text(string& text) override;
+		void set_data(const char* data) override;
+		std::shared_ptr<render_item> create_render_item(const std::shared_ptr<render_item>& /*parent_ri*/) override
+		{
+			// Comments are not rendered
+			return nullptr;
+		}
 	};
 }
+
+#endif  // LH_EL_COMMENT_H

@@ -24,7 +24,7 @@ WiiBrowser Lite is a homebrew alternative to the Wii's Internet Channel and an u
 - Flash videos
 - Multiple tabs
 
-### Links
+## Links
 - Official webpage: https://web.archive.org/web/20131002190414/http://wiibrowser.altervista.org/mainsite/index.html
 - GBATemp thread: https://gbatemp.net/threads/wii-browser.342634/
 - Source code: https://code.google.com/archive/p/wiibrowser/

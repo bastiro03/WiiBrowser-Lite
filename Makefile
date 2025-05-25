@@ -40,12 +40,14 @@ BUILD_DIR    := build
 # SOURCE_DIRS: List of directories containing your C/C++/Assembly source code.
 # Default is 'source'. Add more directories if your project is structured differently.
 # Example: SOURCE_DIRS := src frontend backend
-SOURCE_DIRS  := source
+SOURCE_DIRS  := src src/html src/css src/libwiigui \
+				src/lang src/utils src/textoperations \
+				src/network src/archiveoperations
 
 # ASSET_DIRS: List of directories containing your binary assets (images, sounds, fonts, etc.).
 # Default is 'assets'. Add more directories if needed.
 # Example: ASSET_DIRS := assets/images assets/sounds
-ASSET_DIRS   := assets
+ASSET_DIRS   := fonts images images/appbar sounds
 
 # Automatically find all .c, .cpp, and .S (Assembly) files in SOURCE_DIRS.
 C_FILES      := $(foreach dir,$(SOURCE_DIRS),$(wildcard $(dir)/*.c))
@@ -122,6 +124,7 @@ ARCH_FLAGS   := -mcpu=750 -meabi -mhard-float -DHW_RVL
 # $(DEVKITPRO)/libogc/include is essential for libogc.
 # $(DEVKITPRO)/portlibs/ppc/include is for ported libraries.
 INCLUDE_DIRS := -Iinclude \
+				-I$(SOURCE_DIRS) \
                 -I$(DEVKITPRO)/libogc/include \
                 -I$(DEVKITPRO)/portlibs/ppc/include
 # Add your project's include directories here, e.g., -I$(SOURCE_DIRS)/my_module
@@ -130,7 +133,8 @@ INCLUDE_DIRS := -Iinclude \
 # $(DEVKITPRO)/libogc/lib/wii for libogc.
 # $(DEVKITPRO)/portlibs/ppc/lib for ported libraries.
 LIB_DIRS     := -L$(DEVKITPRO)/libogc/lib/wii \
-                -L$(DEVKITPRO)/portlibs/ppc/lib
+                -L$(DEVKITPRO)/portlibs/ppc/lib \
+				-Llib 
 # Add your project's library directories here.
 
 # LIBS: Libraries to link against.
@@ -138,7 +142,9 @@ LIB_DIRS     := -L$(DEVKITPRO)/libogc/lib/wii \
 # -lm: Math library.
 # Common optional libraries: -lwiiuse (Wiimote), -lbte (Bluetooth), -lfat (FAT FS)
 # -lsysbase (low level access, usually included by -logc)
-LIBS         := -logc -lm
+LIBS         := -logc -lm -lfribidi -ljpeg -liconv -ldi -lpng -lunrar -lzip -lsevenzip -lz \
+				-lcurl -lcyassl -lnetport -lasnd -lvorbisidec \
+				-lmxml -llua -lm -lfat -lwiiuse -lwiikeyboard -lbte -logc -lfreetype \
 # Add other libraries: e.g., LIBS += -lwiiuse -lbte -lfat
 
 # COMMON_FLAGS: Flags used by both C and C++ compilers.

@@ -15,7 +15,7 @@
  * with MPlayer; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
-
+/*
 #include "config.h"
 
 #include <sys/time.h>
@@ -27,3 +27,4 @@ int gettimeofday(struct timeval* t, struct timezone* timezone)
         t->tv_usec=1000*timebuffer.millitm;
         return 0;
 }
+*/

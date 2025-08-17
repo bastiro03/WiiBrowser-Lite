@@ -21,15 +21,15 @@
  */
 
 #include "libavutil/intreadwrite.h"
+#include "libavutil/dict.h"
 #include "avformat.h"
 #include "apetag.h"
-
-#define ENABLE_DEBUG 0
 
 #define APE_TAG_VERSION               2000
 #define APE_TAG_FOOTER_BYTES          32
 #define APE_TAG_FLAG_CONTAINS_HEADER  (1 << 31)
 #define APE_TAG_FLAG_IS_HEADER        (1 << 29)
+#define APE_TAG_FLAG_IS_BINARY        (1 << 1)
 
 static int ape_tag_read_field(AVFormatContext *s)
 {
@@ -54,19 +54,41 @@ static int ape_tag_read_field(AVFormatContext *s)
     }
     if (size >= UINT_MAX)
         return -1;
-    value = av_malloc(size+1);
-    if (!value)
-        return AVERROR(ENOMEM);
-    avio_read(pb, value, size);
-    value[size] = 0;
-    av_metadata_set2(&s->metadata, key, value, AV_METADATA_DONT_STRDUP_VAL);
+    if (flags & APE_TAG_FLAG_IS_BINARY) {
+        uint8_t filename[1024];
+        AVStream *st = avformat_new_stream(s, NULL);
+        if (!st)
+            return AVERROR(ENOMEM);
+        avio_get_str(pb, INT_MAX, filename, sizeof(filename));
+        st->codec->extradata = av_malloc(size + FF_INPUT_BUFFER_PADDING_SIZE);
+        if (!st->codec->extradata)
+            return AVERROR(ENOMEM);
+        if (avio_read(pb, st->codec->extradata, size) != size) {
+            av_freep(&st->codec->extradata);
+            return AVERROR(EIO);
+        }
+        st->codec->extradata_size = size;
+        av_dict_set(&st->metadata, key, filename, 0);
+        st->codec->codec_type = AVMEDIA_TYPE_ATTACHMENT;
+    } else {
+        value = av_malloc(size+1);
+        if (!value)
+            return AVERROR(ENOMEM);
+        c = avio_read(pb, value, size);
+        if (c < 0) {
+            av_free(value);
+            return c;
+        }
+        value[c] = 0;
+        av_dict_set(&s->metadata, key, value, AV_DICT_DONT_STRDUP_VAL);
+    }
     return 0;
 }
 
 void ff_ape_parse_tag(AVFormatContext *s)
 {
     AVIOContext *pb = s->pb;
-    int file_size = url_fsize(pb);
+    int file_size = avio_size(pb);
     uint32_t val, fields, tag_bytes;
     uint8_t buf[8];
     int i;

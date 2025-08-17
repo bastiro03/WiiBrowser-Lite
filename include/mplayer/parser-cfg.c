@@ -50,9 +50,10 @@ static int recursion_depth = 0;
 /// Setup the \ref Config from a config file.
 /** \param config The config object.
  *  \param conffile Path to the config file.
+ *  \param silent print message when failing to open file only at verbose level
  *  \return 1 on sucess, -1 on error.
  */
-int m_config_parse_config_file(m_config_t* config, const char *conffile)
+int m_config_parse_config_file(m_config_t* config, const char *conffile, int silent)
 {
 #define PRINT_LINENUM	mp_msg(MSGT_CFGPARSER,MSGL_V,"%s(%d): ", conffile, line_num)
 #define MAX_LINE_LEN	10000
@@ -79,7 +80,7 @@ int m_config_parse_config_file(m_config_t* config, const char *conffile)
 #endif
 	mp_msg(MSGT_CFGPARSER,MSGL_V,"Reading config file %s", conffile);
 
-	if (recursion_depth > MAX_RECURSION_DEPTH) {
+	if (++recursion_depth > MAX_RECURSION_DEPTH) {
 		mp_msg(MSGT_CFGPARSER,MSGL_ERR,": too deep 'include'. check your configfiles\n");
 		ret = -1;
 		goto out;
@@ -96,19 +97,17 @@ int m_config_parse_config_file(m_config_t* config, const char *conffile)
 	mp_msg(MSGT_CFGPARSER,MSGL_V,"\n");
 
 	if ((fp = fopen(conffile, "r")) == NULL) {
-	  mp_msg(MSGT_CFGPARSER,MSGL_V,": %s\n", strerror(errno));
+	  mp_msg(MSGT_CFGPARSER,silent?MSGL_V:MSGL_ERR,"Failed to read %s: %s\n", conffile, strerror(errno));
 		free(line);
-		ret = 0;
+		ret = silent ? 0 : -1;
 		goto out;
 	}
 
 	while (fgets(line, MAX_LINE_LEN, fp)) {
-#ifndef GEKKO
 		if (errors >= 16) {
 			mp_msg(MSGT_CFGPARSER,MSGL_FATAL,"too many errors\n");
 			goto out;
 		}
-#endif
 
 		line_num++;
 		line_pos = 0;
@@ -165,10 +164,8 @@ int m_config_parse_config_file(m_config_t* config, const char *conffile)
 
 		/* check '=' */
 		if (line[line_pos++] != '=') {
-#ifndef GEKKO
 			PRINT_LINENUM;
 			mp_msg(MSGT_CFGPARSER,MSGL_ERR,"Option %s needs a parameter at line %d\n",opt,line_num);
-#endif
 			ret = -1;
 			errors++;
 			continue;
@@ -210,10 +207,8 @@ int m_config_parse_config_file(m_config_t* config, const char *conffile)
 
 		/* did we read a parameter? */
 		if (param_pos == 0) {
-#ifndef GEKKO
 			PRINT_LINENUM;
 			mp_msg(MSGT_CFGPARSER,MSGL_ERR,"Option %s needs a parameter at line %d\n",opt,line_num);
-#endif
 			ret = -1;
 			errors++;
 			continue;
@@ -247,9 +242,7 @@ int m_config_parse_config_file(m_config_t* config, const char *conffile)
 		if (tmp < 0) {
 			PRINT_LINENUM;
 			if(tmp == M_OPT_UNKNOWN) {
-#ifndef GEKKO
 				mp_msg(MSGT_CFGPARSER,MSGL_WARN,"Warning unknown option %s at line %d\n", opt,line_num);
-#endif
 				continue;
 			}
 			mp_msg(MSGT_CFGPARSER,MSGL_ERR,"Error parsing option %s=%s at line %d\n",opt,param,line_num);

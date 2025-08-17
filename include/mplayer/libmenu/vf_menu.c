@@ -56,17 +56,12 @@ struct vf_priv_s {
 
 static int put_image(struct vf_instance *vf, mp_image_t *mpi, double pts);
 
-void clear_pause_mpi()
-{
-	clear_mpi(pause_mpi);
-}
-
 void vf_menu_pause_update(struct vf_instance *vf) {
   const vo_functions_t *video_out = mpctx_get_video_out(vf->priv->current->ctx);
   if(pause_mpi) {
     put_image(vf,pause_mpi, MP_NOPTS_VALUE);
     // Don't draw the osd atm
-    vf->control(vf,VFCTRL_DRAW_OSD,NULL);
+    //vf->control(vf,VFCTRL_DRAW_OSD,NULL);
     video_out->flip_page();
   }
 }
@@ -141,10 +136,7 @@ static void get_image(struct vf_instance *vf, mp_image_t *mpi){
 static int key_cb(int code) {
   return menu_read_key(st_priv->current,code);
 }
-menu_t * get_vf_menu()
-{
-	return st_priv->current;
-}
+
 static int put_image(struct vf_instance *vf, mp_image_t *mpi, double pts){
   mp_image_t *dmpi = NULL;
 
@@ -215,24 +207,20 @@ static int put_image(struct vf_instance *vf, mp_image_t *mpi, double pts){
 
 static void uninit(vf_instance_t *vf) {
      vf->priv=NULL;
-	 /*
      if(pause_mpi) {
        free_mp_image(pause_mpi);
        pause_mpi = NULL;
      }
-	 */
 }
 
 static int config(struct vf_instance *vf, int width, int height, int d_width, int d_height,
 		  unsigned int flags, unsigned int outfmt) {
 #ifdef CONFIG_FREETYPE
-/*
   // here is the right place to get screen dimensions
   if (force_load_font) {
     force_load_font = 0;
     load_font_ft(width,height,&vo_font,font_name,osd_font_scale_factor);
   }
-  */
 #endif
   if(outfmt == IMGFMT_MPEGPES)
     vf->priv->passthrough = 1;

@@ -19,11 +19,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+#include "libavutil/mathematics.h"
 #include "avformat.h"
 #include "pcm.h"
 
-int pcm_read_seek(AVFormatContext *s,
-                  int stream_index, int64_t timestamp, int flags)
+int ff_pcm_read_seek(AVFormatContext *s,
+                     int stream_index, int64_t timestamp, int flags)
 {
     AVStream *st;
     int block_align, byte_rate;

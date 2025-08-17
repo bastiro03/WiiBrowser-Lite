@@ -19,24 +19,64 @@
    Boston, MA 02110-1301 USA.
 */
 
-#include <gctypes.h>
+
+#include <unistd.h>
+
 #include <ogc/lwp_watchdog.h>
+#include <sys/time.h>
 #include "timer.h"
 
 const char timer_name[] = "gekko";
 
-static u64 RelativeTime = 0;
 
-u64 GetRelativeTime(void)
-{
-    u64 t,r;
-    t = gettime();
-    r = t - RelativeTime;
-    RelativeTime = t;
-    return ticks_to_microsecs(r);
+/*
+int usec_sleep(unsigned int usec_delay) {
+	return usleep(usec_delay);
+}*
+// Returns current time in microseconds
+u64 GetTimer(void) {
+	return ticks_to_microsecs(gettime());
 }
 
-void InitTimer(void)
-{
+// Returns current time in milliseconds
+u64 GetTimerMS(void) {
+	return ticks_to_millisecs(gettime());
+}
+*/
+
+static u64 RelativeTime=0;
+/*
+double GetRelativeTime(void){
+  u64 t,r;
+  t=GetTimer();
+
+  r=t-RelativeTime;
+  RelativeTime=t;
+  return (double)(r * (double)0.000001);
+}
+*/
+u64 GetRelativeTime(void){
+  u64 t,r;
+  t=GetTimer();
+
+  r=t-RelativeTime;
+  RelativeTime=t;
+  return r;
+}
+/*
+double GetRelativeTime(void) {
+	u64 t;
+	float res;
+
+	t = gettime();
+	res = (double) ticks_to_nanosecs(diff_ticks(t, RelativeTime)) /
+			(double) TB_NSPERSEC;
+	RelativeTime = t;
+
+	return res;
+}
+*/
+
+void InitTimer(void) {
 	GetRelativeTime();
 }

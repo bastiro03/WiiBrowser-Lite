@@ -66,7 +66,7 @@ Known Issues:
 #include "img_format.h"
 #include "mp_image.h"
 #include "vf.h"
-#include "vd_ffmpeg.h"
+#include "av_helpers.h"
 
 #define MIN(a,b) ((a) > (b) ? (b) : (a))
 #define MAX(a,b) ((a) < (b) ? (b) : (a))
@@ -92,7 +92,6 @@ struct vf_priv_s {
 
 static void filter(struct vf_priv_s *p, uint8_t *dst[3], uint8_t *src[3], int dst_stride[3], int src_stride[3], int width, int height){
     int x, y, i;
-    int out_size;
 
     for(i=0; i<3; i++){
         p->frame->data[i]= src[i];
@@ -102,7 +101,7 @@ static void filter(struct vf_priv_s *p, uint8_t *dst[3], uint8_t *src[3], int ds
     p->avctx_enc->me_cmp=
     p->avctx_enc->me_sub_cmp= FF_CMP_SAD /*| (p->parity ? FF_CMP_ODD : FF_CMP_EVEN)*/;
     p->frame->quality= p->qp*FF_QP2LAMBDA;
-    out_size = avcodec_encode_video(p->avctx_enc, p->outbuf, p->outbuf_size, p->frame);
+    avcodec_encode_video(p->avctx_enc, p->outbuf, p->outbuf_size, p->frame);
     p->frame_dec = p->avctx_enc->coded_frame;
 
     for(i=0; i<3; i++){
@@ -187,6 +186,7 @@ static int config(struct vf_instance *vf,
 
         for(i=0; i<3; i++){
             AVCodecContext *avctx_enc;
+            AVDictionary *opts = NULL;
 #if 0
             int is_chroma= !!i;
             int w= ((width  + 31) & (~31))>>is_chroma;
@@ -197,7 +197,7 @@ static int config(struct vf_instance *vf,
             vf->priv->src [i]= malloc(vf->priv->temp_stride[i]*h*sizeof(uint8_t));
 #endif
             avctx_enc=
-            vf->priv->avctx_enc= avcodec_alloc_context();
+            vf->priv->avctx_enc= avcodec_alloc_context3(enc);
             avctx_enc->width = width;
             avctx_enc->height = height;
             avctx_enc->time_base= (AVRational){1,25};  // meaningless
@@ -207,7 +207,7 @@ static int config(struct vf_instance *vf,
             avctx_enc->flags = CODEC_FLAG_QSCALE | CODEC_FLAG_LOW_DELAY;
             avctx_enc->strict_std_compliance = FF_COMPLIANCE_EXPERIMENTAL;
             avctx_enc->global_quality= 1;
-            avctx_enc->flags2= CODEC_FLAG2_MEMC_ONLY;
+            av_dict_set(&opts, "memc_only", "1", 0);
             avctx_enc->me_cmp=
             avctx_enc->me_sub_cmp= FF_CMP_SAD; //SSE;
             avctx_enc->mb_cmp= FF_CMP_SSE;
@@ -225,7 +225,8 @@ static int config(struct vf_instance *vf,
                 avctx_enc->flags |= CODEC_FLAG_QPEL;
             }
 
-            avcodec_open(avctx_enc, enc);
+            avcodec_open2(avctx_enc, enc, &opts);
+            av_dict_free(&opts);
 
         }
         vf->priv->frame= avcodec_alloc_frame();

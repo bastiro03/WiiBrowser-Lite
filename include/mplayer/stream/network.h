@@ -28,6 +28,7 @@
 #include <sys/types.h>
 
 #include "config.h"
+
 #if !defined(GEKKO)
 #if !HAVE_WINSOCK2_H
 #include <netdb.h>
@@ -35,39 +36,19 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #endif
-#else
-#include <errno.h>
+#endif
+
+#if defined(GEKKO)
 #include <network.h>
-
-#define MSG_OOB 0x01
-
-static inline int _net_result(s32 ret)
-{
-	if (ret < 0) errno = -ret;
-	return ret < 0 ? SOCKET_ERROR : ret;
-}
-
-#define socket(domain, type, protocol) \
-	_net_result(net_socket(domain, type, IPPROTO_IP))
-#define bind(sockfd, my_addr, addrlen) \
-	_net_result(net_bind(sockfd, my_addr, addrlen))
-#define connect(sockfd, serv_addr, addrlen) \
-	_net_result(net_connect(sockfd, serv_addr, addrlen))
-#define send(s, buf, len, flags) \
-	_net_result(net_send(s, buf, len, flags))
-#define sendto(s, buf, len, flags, to, tolen) \
-	_net_result(net_sendto(s, buf, len, flags, to, tolen))
-#define recv(s, buf, len, flags) \
-	_net_result(net_recv(s, buf, len, flags))
-#define recvfrom(s, buf, len, flags, from, fromlen) \
-	_net_result(net_recvfrom(s, buf, len, flags, from, fromlen))
-#define closesocket(sockfd) \
-	_net_result(net_close(sockfd))
-#define select(nfds, readfds, writefds, exceptfds, timeout) \
-	_net_result(net_select(nfds, readfds, writefds, exceptfds, timeout))
-#define setsockopt(s, level, optname, optval, optlen) \
-	_net_result(net_setsockopt(s, level, optname, optval, optlen))
-#define gethostbyname(name) net_gethostbyname(name)
+#define send(a, b, c, d) net_send(a, b, c, d)
+#define recv(a, b, c, d) net_recv(a, b, c, d)
+#define select(a, b, c, d, e) net_select(a, b, c, d, e)
+#define socket(a, b, c) net_socket(a, b, c)
+#define gethostbyname(a) net_gethostbyname(a)
+#define closesocket(a) net_close(a)
+#define setsockopt(a, b, c, d, e) net_setsockopt(a, b, c, d, e)
+#define bind(a, b, c) net_bind(a, b, c)
+#define connect(a, b, c) net_connect(a, b, c)
 #endif
 
 #include "stream.h"
@@ -80,8 +61,10 @@ static inline int _net_result(s32 ret)
 #define DEFAULT_SEND_FLAGS 0
 #endif
 
+#ifndef GEKKO
 #if !HAVE_CLOSESOCKET
 #define closesocket close
+#endif
 #endif
 #if !HAVE_SOCKLEN_T
 typedef int socklen_t;
@@ -101,6 +84,7 @@ extern char *network_password;
 extern char *network_referrer;
 extern char *network_useragent;
 extern char *network_username;
+extern char **network_http_header_fields;
 
 extern int   network_bandwidth;
 extern int   network_cookies_enabled;

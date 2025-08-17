@@ -28,7 +28,7 @@
 #include "libao2/audio_out.h"
 #include "libaf/af.h"
 #include "mixer.h"
-
+#include "mp_msg.h"
 #include "help_mp.h"
 
 char * mixer_device=NULL;
@@ -89,6 +89,7 @@ void mixer_setvolume(mixer_t *mixer, float l, float r)
               mp_msg(MSGT_GLOBAL, MSGL_ERR, MSGTR_NoVolume);
               return;
             }
+            soft_vol = 1;
           }
 	}
       }

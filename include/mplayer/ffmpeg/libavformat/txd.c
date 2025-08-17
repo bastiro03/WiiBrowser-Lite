@@ -37,10 +37,10 @@ static int txd_probe(AVProbeData * pd) {
     return 0;
 }
 
-static int txd_read_header(AVFormatContext *s, AVFormatParameters *ap) {
+static int txd_read_header(AVFormatContext *s) {
     AVStream *st;
 
-    st = av_new_stream(s, 0);
+    st = avformat_new_stream(s, NULL);
     if (!st)
         return AVERROR(ENOMEM);
     st->codec->codec_type = AVMEDIA_TYPE_VIDEO;
@@ -48,6 +48,7 @@ static int txd_read_header(AVFormatContext *s, AVFormatParameters *ap) {
     st->codec->time_base.den = 5;
     st->codec->time_base.num = 1;
     /* the parameters will be extracted from the compressed bitstream */
+
     return 0;
 }
 
@@ -73,7 +74,7 @@ next_chunk:
             if (chunk_size > 100)
                 break;
         case TXD_EXTRA:
-            avio_seek(s->pb, chunk_size, SEEK_CUR);
+            avio_skip(s->pb, chunk_size);
         case TXD_FILE:
         case TXD_TEXTURE:
             goto next_chunk;
@@ -90,12 +91,10 @@ next_chunk:
     return 0;
 }
 
-AVInputFormat ff_txd_demuxer =
-{
-    "txd",
-    NULL_IF_CONFIG_SMALL("Renderware TeXture Dictionary"),
-    0,
-    txd_probe,
-    txd_read_header,
-    txd_read_packet,
+AVInputFormat ff_txd_demuxer = {
+    .name        = "txd",
+    .long_name   = NULL_IF_CONFIG_SMALL("Renderware TeXture Dictionary"),
+    .read_probe  = txd_probe,
+    .read_header = txd_read_header,
+    .read_packet = txd_read_packet,
 };

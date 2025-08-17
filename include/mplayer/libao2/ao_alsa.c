@@ -34,25 +34,15 @@
 #include <math.h>
 #include <string.h>
 #include <alloca.h>
+#define ALSA_PCM_NEW_HW_PARAMS_API
+#define ALSA_PCM_NEW_SW_PARAMS_API
+#include <alsa/asoundlib.h>
 
 #include "config.h"
 #include "subopt-helper.h"
 #include "mixer.h"
 #include "mp_msg.h"
 #include "help_mp.h"
-
-#define ALSA_PCM_NEW_HW_PARAMS_API
-#define ALSA_PCM_NEW_SW_PARAMS_API
-
-#ifdef HAVE_SYS_ASOUNDLIB_H
-#include <sys/asoundlib.h>
-#elif defined(HAVE_ALSA_ASOUNDLIB_H)
-#include <alsa/asoundlib.h>
-#else
-#error "asoundlib.h is not in sys/ or alsa/ - please bugreport"
-#endif
-
-
 #include "audio_out.h"
 #include "audio_out_internal.h"
 #include "libaf/af_format.h"
@@ -75,6 +65,7 @@ static snd_pcm_sw_params_t *alsa_swparams;
 static size_t bytes_per_sample;
 
 static int alsa_can_pause;
+static int prepause_space;
 
 #define ALSA_DEVICE_SIZE 256
 
@@ -87,7 +78,6 @@ static void alsa_error_handler(const char *file, int line, const char *function,
   va_start(va, format);
   vsnprintf(tmp, sizeof tmp, format, va);
   va_end(va);
-  tmp[sizeof tmp - 1] = '\0';
 
   if (err)
     mp_msg(MSGT_AO, MSGL_ERR, "[AO_ALSA] alsa-lib: %s:%i:(%s) %s: %s\n",
@@ -121,7 +111,7 @@ static int control(int cmd, void *arg)
       long get_vol, set_vol;
       float f_multi;
 
-      if(AF_FORMAT_IS_AC3(ao_data.format))
+      if(AF_FORMAT_IS_AC3(ao_data.format) || AF_FORMAT_IS_IEC61937(ao_data.format))
 	return CONTROL_TRUE;
 
       if(mixer_channel) {
@@ -300,11 +290,10 @@ static int try_open_device(const char *device, int open_mode, int try_ac3)
     err = snd_pcm_open(&alsa_handler, ac3_device, SND_PCM_STREAM_PLAYBACK,
 		       open_mode);
     free(ac3_device);
+    if (err >= 0)
+      return err;
   }
-  if (!try_ac3 || err < 0)
-    err = snd_pcm_open(&alsa_handler, device, SND_PCM_STREAM_PLAYBACK,
-		       open_mode);
-  return err;
+  return snd_pcm_open(&alsa_handler, device, SND_PCM_STREAM_PLAYBACK, open_mode);
 }
 
 /*
@@ -362,10 +351,12 @@ static int init(int rate_hz, int channels, int format, int flags)
 	break;
       case AF_FORMAT_AC3_LE:
       case AF_FORMAT_S16_LE:
+      case AF_FORMAT_IEC61937_LE:
 	alsa_format = SND_PCM_FORMAT_S16_LE;
 	break;
       case AF_FORMAT_AC3_BE:
       case AF_FORMAT_S16_BE:
+      case AF_FORMAT_IEC61937_BE:
 	alsa_format = SND_PCM_FORMAT_S16_BE;
 	break;
       case AF_FORMAT_U32_LE:
@@ -419,9 +410,9 @@ static int init(int rate_hz, int channels, int format, int flags)
      * while opening the abstract alias for the spdif subdevice
      * 'iec958'
      */
-    if (AF_FORMAT_IS_AC3(format)) {
+    if (AF_FORMAT_IS_AC3(format) || AF_FORMAT_IS_IEC61937(format)) {
 	device.str = "iec958";
-	mp_msg(MSGT_AO,MSGL_V,"alsa-spdif-init: playing AC3, %i channels\n", channels);
+	mp_msg(MSGT_AO,MSGL_V,"alsa-spdif-init: playing AC3/iec61937/iec958, %i channels\n", channels);
     }
   else
         /* in any case for multichannel playback we should select
@@ -470,8 +461,9 @@ static int init(int rate_hz, int channels, int format, int flags)
 
     if (!alsa_handler) {
       int open_mode = block ? 0 : SND_PCM_NONBLOCK;
-      int isac3 =  AF_FORMAT_IS_AC3(format);
+      int isac3 =  AF_FORMAT_IS_AC3(format) || AF_FORMAT_IS_IEC61937(format);
       //modes = 0, SND_PCM_NONBLOCK, SND_PCM_ASYNC
+      mp_msg(MSGT_AO,MSGL_V,"alsa-init: opening device in %sblocking mode\n", block ? "" : "non-");
       if ((err = try_open_device(alsa_device, open_mode, isac3)) < 0)
 	{
 	  if (err != -EBUSY && !block) {
@@ -489,7 +481,7 @@ static int init(int rate_hz, int channels, int format, int flags)
       if ((err = snd_pcm_nonblock(alsa_handler, 0)) < 0) {
          mp_msg(MSGT_AO,MSGL_ERR,MSGTR_AO_ALSA_ErrorSetBlockMode, snd_strerror(err));
       } else {
-	mp_msg(MSGT_AO,MSGL_V,"alsa-init: pcm opened in blocking mode\n");
+	mp_msg(MSGT_AO,MSGL_V,"alsa-init: device reopened in blocking mode\n");
       }
 
       snd_pcm_hw_params_alloca(&alsa_hwparams);
@@ -521,6 +513,8 @@ static int init(int rate_hz, int channels, int format, int flags)
          alsa_format = SND_PCM_FORMAT_S16_LE;
          if (AF_FORMAT_IS_AC3(ao_data.format))
            ao_data.format = AF_FORMAT_AC3_LE;
+         else if (AF_FORMAT_IS_IEC61937(ao_data.format))
+           ao_data.format = AF_FORMAT_IEC61937_LE;
          else
          ao_data.format = AF_FORMAT_S16_LE;
       }
@@ -699,6 +693,7 @@ static void audio_pause(void)
         }
           mp_msg(MSGT_AO,MSGL_V,"alsa-pause: pause supported by hardware\n");
     } else {
+        prepause_space = get_space();
         if ((err = snd_pcm_drop(alsa_handler)) < 0)
         {
             mp_msg(MSGT_AO,MSGL_ERR,MSGTR_AO_ALSA_PcmDropError, snd_strerror(err));
@@ -728,6 +723,7 @@ static void audio_resume(void)
            mp_msg(MSGT_AO,MSGL_ERR,MSGTR_AO_ALSA_PcmPrepareError, snd_strerror(err));
             return;
         }
+        mp_ao_resume_refill(&audio_out_alsa, prepause_space);
     }
 }
 

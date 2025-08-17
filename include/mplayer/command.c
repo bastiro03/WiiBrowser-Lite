@@ -28,6 +28,7 @@
 #include "libmpdemux/demuxer.h"
 #include "libmpdemux/stheader.h"
 #include "codec-cfg.h"
+#include "mp_msg.h"
 #include "mplayer.h"
 #include "sub/sub.h"
 #include "m_option.h"
@@ -44,6 +45,7 @@
 #include "mixer.h"
 #include "libmpcodecs/dec_video.h"
 #include "libmpcodecs/dec_teletext.h"
+#include "osdep/strsep.h"
 #include "sub/vobsub.h"
 #include "sub/spudec.h"
 #include "path.h"
@@ -69,6 +71,10 @@
 #include "mp_fifo.h"
 #include "libavutil/avstring.h"
 #include "edl.h"
+
+#ifdef GEKKO
+extern int copyScreen;
+#endif
 
 static void rescale_input_coordinates(int ix, int iy, double *dx, double *dy)
 {
@@ -213,7 +219,7 @@ static void log_sub(void)
 }
 
 
-/// \defgroup Properties
+/// \defgroup properties Properties
 ///@{
 
 /// \defgroup GeneralProperties General properties
@@ -513,6 +519,17 @@ static int mp_property_chapter(m_option_t *prop, int action, void *arg,
     return M_PROPERTY_OK;
 }
 
+/// Number of titles in file
+static int mp_property_titles(m_option_t *prop, int action, void *arg,
+                              MPContext *mpctx)
+{
+    if (!mpctx->demuxer)
+        return M_PROPERTY_UNAVAILABLE;
+    if (mpctx->demuxer->num_titles == 0)
+        stream_control(mpctx->demuxer->stream, STREAM_CTRL_GET_NUM_TITLES, &mpctx->demuxer->num_titles);
+    return m_property_int_ro(prop, action, arg, mpctx->demuxer->num_titles);
+}
+
 /// Number of chapters in file
 static int mp_property_chapters(m_option_t *prop, int action, void *arg,
                                MPContext *mpctx)
@@ -573,6 +590,8 @@ static int mp_property_angle(m_option_t *prop, int action, void *arg,
         angle += step;
         if (angle < 1) //cycle
             angle = angles;
+        else if (angle > angles)
+            angle = 1;
         break;
     }
     default:
@@ -878,12 +897,14 @@ static int mp_property_audio(m_option_t *prop, int action, void *arg,
     if (!mpctx->demuxer || !mpctx->demuxer->audio)
         return M_PROPERTY_UNAVAILABLE;
     current_id = mpctx->demuxer->audio->id;
+    if (current_id >= 0)
+        audio_id = ((sh_audio_t *)mpctx->demuxer->a_streams[current_id])->aid;
 
     switch (action) {
     case M_PROPERTY_GET:
         if (!arg)
             return M_PROPERTY_ERROR;
-        *(int *) arg = current_id;
+        *(int *) arg = audio_id;
         return M_PROPERTY_OK;
     case M_PROPERTY_PRINT:
         if (!arg)
@@ -893,32 +914,9 @@ static int mp_property_audio(m_option_t *prop, int action, void *arg,
             *(char **) arg = strdup(MSGTR_Disabled);
         else {
             char lang[40] = MSGTR_Unknown;
-            sh_audio_t* sh = mpctx->sh_audio;
-            if (sh && sh->lang)
-                av_strlcpy(lang, sh->lang, 40);
-            // TODO: use a proper STREAM_CTRL instead of this mess
-            else if (sh && mpctx->stream->type == STREAMTYPE_BD) {
-                const char *l = bd_lang_from_id(mpctx->stream, sh->aid);
-                if (l)
-                    av_strlcpy(lang, l, sizeof(lang));
-            }
-#ifdef CONFIG_DVDREAD
-            else if (mpctx->stream->type == STREAMTYPE_DVD) {
-                int code = dvd_lang_from_aid(mpctx->stream, current_id);
-                if (code) {
-                    lang[0] = code >> 8;
-                    lang[1] = code;
-                    lang[2] = 0;
-                }
-            }
-#endif
-
-#ifdef CONFIG_DVDNAV
-            else if (mpctx->stream->type == STREAMTYPE_DVDNAV)
-                mp_dvdnav_lang_from_aid(mpctx->stream, current_id, lang);
-#endif
+            demuxer_audio_lang(mpctx->demuxer, current_id, lang, sizeof(lang));
             *(char **) arg = malloc(64);
-            snprintf(*(char **) arg, 64, "(%d) %s", current_id, lang);
+            snprintf(*(char **) arg, 64, "(%d) %s", audio_id, lang);
         }
         return M_PROPERTY_OK;
 
@@ -928,15 +926,18 @@ static int mp_property_audio(m_option_t *prop, int action, void *arg,
             tmp = *((int *) arg);
         else
             tmp = -1;
-        audio_id = demuxer_switch_audio(mpctx->demuxer, tmp);
-        if (audio_id == -2
-            || (audio_id > -1
-                && mpctx->demuxer->audio->id != current_id && current_id != -2))
+        tmp = demuxer_switch_audio(mpctx->demuxer, tmp);
+        if (tmp == -2
+            || (tmp > -1
+                && mpctx->demuxer->audio->id != current_id && current_id != -2)) {
             uninit_player(INITIALIZED_AO | INITIALIZED_ACODEC);
-        if (audio_id > -1 && mpctx->demuxer->audio->id != current_id) {
+            audio_id = tmp;
+        }
+        if (tmp > -1 && mpctx->demuxer->audio->id != current_id) {
             sh_audio_t *sh2;
             sh2 = mpctx->demuxer->a_streams[mpctx->demuxer->audio->id];
             if (sh2) {
+                audio_id = sh2->aid;
                 sh2->ds = mpctx->demuxer->audio;
                 mpctx->sh_audio = sh2;
                 reinit_audio_chain();
@@ -958,12 +959,14 @@ static int mp_property_video(m_option_t *prop, int action, void *arg,
     if (!mpctx->demuxer || !mpctx->demuxer->video)
         return M_PROPERTY_UNAVAILABLE;
     current_id = mpctx->demuxer->video->id;
+    if (current_id >= 0)
+        video_id = ((sh_video_t *)mpctx->demuxer->v_streams[current_id])->vid;
 
     switch (action) {
     case M_PROPERTY_GET:
         if (!arg)
             return M_PROPERTY_ERROR;
-        *(int *) arg = current_id;
+        *(int *) arg = video_id;
         return M_PROPERTY_OK;
     case M_PROPERTY_PRINT:
         if (!arg)
@@ -974,7 +977,7 @@ static int mp_property_video(m_option_t *prop, int action, void *arg,
         else {
             char lang[40] = MSGTR_Unknown;
             *(char **) arg = malloc(64);
-            snprintf(*(char **) arg, 64, "(%d) %s", current_id, lang);
+            snprintf(*(char **) arg, 64, "(%d) %s", video_id, lang);
         }
         return M_PROPERTY_OK;
 
@@ -984,16 +987,19 @@ static int mp_property_video(m_option_t *prop, int action, void *arg,
             tmp = *((int *) arg);
         else
             tmp = -1;
-        video_id = demuxer_switch_video(mpctx->demuxer, tmp);
-        if (video_id == -2
-            || (video_id > -1 && mpctx->demuxer->video->id != current_id
-                && current_id != -2))
+        tmp = demuxer_switch_video(mpctx->demuxer, tmp);
+        if (tmp == -2
+            || (tmp > -1 && mpctx->demuxer->video->id != current_id
+                && current_id != -2)) {
             uninit_player(INITIALIZED_VCODEC |
-                          (fixed_vo && video_id != -2 ? 0 : INITIALIZED_VO));
-        if (video_id > -1 && mpctx->demuxer->video->id != current_id) {
+                          (fixed_vo && tmp != -2 ? 0 : INITIALIZED_VO));
+            video_id = tmp;
+        }
+        if (tmp > -1 && mpctx->demuxer->video->id != current_id) {
             sh_video_t *sh2;
             sh2 = mpctx->demuxer->v_streams[mpctx->demuxer->video->id];
             if (sh2) {
+                video_id = sh2->vid;
                 sh2->ds = mpctx->demuxer->video;
                 mpctx->sh_video = sh2;
                 reinit_video_chain();
@@ -1062,7 +1068,7 @@ static int mp_property_fullscreen(m_option_t *prop, int action, void *arg,
     case M_PROPERTY_STEP_DOWN:
 #ifdef CONFIG_GUI
         if (use_gui)
-            guiGetEvent(guiIEvent, (char *) MP_CMD_VO_FULLSCREEN);
+            gui(GUI_RUN_COMMAND, (void *) MP_CMD_VO_FULLSCREEN);
         else
 #endif
         if (vo_config_count)
@@ -1472,36 +1478,6 @@ static int mp_property_sub(m_option_t *prop, int action, void *arg,
                      strlen(tmp) < 20 ? tmp : tmp + strlen(tmp) - 19);
             return M_PROPERTY_OK;
         }
-#ifdef CONFIG_DVDNAV
-        if (mpctx->stream->type == STREAMTYPE_DVDNAV) {
-            if (vo_spudec && dvdsub_id >= 0) {
-                unsigned char lang[3];
-                if (mp_dvdnav_lang_from_sid(mpctx->stream, dvdsub_id, lang)) {
-                    snprintf(*(char **) arg, 63, "(%d) %s", dvdsub_id, lang);
-                    return M_PROPERTY_OK;
-                }
-            }
-        }
-#endif
-
-        if (mpctx->stream->type == STREAMTYPE_BD
-            && d_sub && d_sub->sh && dvdsub_id >= 0) {
-            const char *lang = bd_lang_from_id(mpctx->stream, ((sh_sub_t*)d_sub->sh)->sid);
-            if (!lang) lang = MSGTR_Unknown;
-            snprintf(*(char **) arg, 63, "(%d) %s", dvdsub_id, lang);
-            return M_PROPERTY_OK;
-        }
-
-        if ((mpctx->demuxer->type == DEMUXER_TYPE_MATROSKA
-             || mpctx->demuxer->type == DEMUXER_TYPE_LAVF
-             || mpctx->demuxer->type == DEMUXER_TYPE_LAVF_PREFERRED
-             || mpctx->demuxer->type == DEMUXER_TYPE_OGG)
-             && d_sub && d_sub->sh && dvdsub_id >= 0) {
-            const char* lang = ((sh_sub_t*)d_sub->sh)->lang;
-            if (!lang) lang = MSGTR_Unknown;
-            snprintf(*(char **) arg, 63, "(%d) %s", dvdsub_id, lang);
-            return M_PROPERTY_OK;
-        }
 
         if (vo_vobsub && vobsub_id >= 0) {
             const char *language = MSGTR_Unknown;
@@ -1510,20 +1486,10 @@ static int mp_property_sub(m_option_t *prop, int action, void *arg,
                      vobsub_id, language ? language : MSGTR_Unknown);
             return M_PROPERTY_OK;
         }
-#ifdef CONFIG_DVDREAD
-        if (vo_spudec && mpctx->stream->type == STREAMTYPE_DVD
-            && dvdsub_id >= 0) {
-            char lang[3];
-            int code = dvd_lang_from_sid(mpctx->stream, dvdsub_id);
-            lang[0] = code >> 8;
-            lang[1] = code;
-            lang[2] = 0;
-            snprintf(*(char **) arg, 63, "(%d) %s", dvdsub_id, lang);
-            return M_PROPERTY_OK;
-        }
-#endif
         if (dvdsub_id >= 0) {
-            snprintf(*(char **) arg, 63, "(%d) %s", dvdsub_id, MSGTR_Unknown);
+            char lang[40] = MSGTR_Unknown;
+            demuxer_sub_lang(mpctx->demuxer, dvdsub_id, lang, sizeof(lang));
+            snprintf(*(char **) arg, 63, "(%d) %s", dvdsub_id, lang);
             return M_PROPERTY_OK;
         }
         snprintf(*(char **) arg, 63, MSGTR_Disabled);
@@ -1611,7 +1577,7 @@ static int mp_property_sub(m_option_t *prop, int action, void *arg,
             if (d_sub->sh && d_sub->id >= 0) {
                 sh_sub_t *sh = d_sub->sh;
                 if (sh->type == 'v')
-                    init_vo_spudec();
+                    init_vo_spudec(mpctx->stream, mpctx->sh_video, sh);
 #ifdef CONFIG_ASS
                 else if (ass_enabled)
                     ass_track = sh->ass_track;
@@ -2128,6 +2094,8 @@ static const m_option_t mp_properties[] = {
      M_OPT_MIN, 0, 0, NULL },
     { "chapter", mp_property_chapter, CONF_TYPE_INT,
      M_OPT_MIN, 0, 0, NULL },
+    { "titles", mp_property_titles, CONF_TYPE_INT,
+     0, 0, 0, NULL },
     { "chapters", mp_property_chapters, CONF_TYPE_INT,
      0, 0, 0, NULL },
     { "angle", mp_property_angle, CONF_TYPE_INT,
@@ -2482,6 +2450,7 @@ static const char *property_error_string(int error_value)
     }
     return "UNKNOWN";
 }
+///@}
 
 static void remove_subtitle_range(MPContext *mpctx, int start, int count)
 {
@@ -2545,7 +2514,7 @@ static struct mp_eosd_source overlay_source = {
 static void overlay_add(char *file, int id, int x, int y, unsigned col)
 {
     FILE *f;
-    unsigned w, h, bpp, maxval;
+    int w, h, bpp, maxval;
     uint8_t *data;
     struct mp_eosd_image *img;
 
@@ -2776,9 +2745,16 @@ int run_command(MPContext *mpctx, mp_cmd_t *cmd)
             break;
 
         case MP_CMD_QUIT:
+#ifdef GEKKO
+			//like pause
+	    	cmd->pausing = 1;
+	    	brk_cmd = 1;
+	    	copyScreen = 1;
+	    	break;
+#else
             exit_player_with_rc(EXIT_QUIT,
                                 (cmd->nargs > 0) ? cmd->args[0].v.i : 0);
-
+#endif
         case MP_CMD_PLAY_TREE_STEP:{
                 int n = cmd->args[0].v.i == 0 ? 1 : cmd->args[0].v.i;
                 int force = cmd->args[1].v.i;
@@ -2788,10 +2764,10 @@ int run_command(MPContext *mpctx, mp_cmd_t *cmd)
                     int i = 0;
                     if (n > 0)
                         for (i = 0; i < n; i++)
-                            mplNext();
+                            gui(GUI_RUN_COMMAND, (void *)MP_CMD_PLAY_TREE_STEP);
                     else
                         for (i = 0; i < -1 * n; i++)
-                            mplPrev();
+                            gui(GUI_RUN_COMMAND, (void *)-MP_CMD_PLAY_TREE_STEP);
                 } else
 #endif
                 {
@@ -2950,6 +2926,12 @@ int run_command(MPContext *mpctx, mp_cmd_t *cmd)
             break;
 
         case MP_CMD_STOP:
+#ifdef CONFIG_GUI
+            // playtree_iter isn't used by the GUI
+            if (use_gui)
+                gui(GUI_RUN_COMMAND, (void *)MP_CMD_STOP);
+            else
+#endif
             // Go back to the starting point.
             while (play_tree_iter_up_step
                    (mpctx->playtree_iter, 0, 1) != PLAY_TREE_ITER_END)
@@ -3490,6 +3472,11 @@ int run_command(MPContext *mpctx, mp_cmd_t *cmd)
         break;
 
         default:
+#ifdef CONFIG_GUI
+                if (use_gui && cmd->id == MP_CMD_GUI)
+                    gui(GUI_RUN_MESSAGE, cmd->args[0].v.s);
+                else
+#endif
                 mp_msg(MSGT_CPLAYER, MSGL_V,
                        "Received unknown cmd %s\n", cmd->name);
         }

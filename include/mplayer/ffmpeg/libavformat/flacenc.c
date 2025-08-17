@@ -22,7 +22,6 @@
 #include "libavcodec/flac.h"
 #include "avformat.h"
 #include "flacenc.h"
-#include "metadata.h"
 #include "vorbiscomment.h"
 #include "libavcodec/bytestream.h"
 
@@ -39,7 +38,7 @@ static int flac_write_block_padding(AVIOContext *pb, unsigned int n_padding_byte
     return 0;
 }
 
-static int flac_write_block_comment(AVIOContext *pb, AVMetadata **m,
+static int flac_write_block_comment(AVIOContext *pb, AVDictionary **m,
                                     int last_block, int bitexact)
 {
     const char *vendor = bitexact ? "ffmpeg" : LIBAVFORMAT_IDENT;
@@ -95,16 +94,16 @@ static int flac_write_trailer(struct AVFormatContext *s)
     enum FLACExtradataFormat format;
     int64_t file_size;
 
-    if (!ff_flac_is_extradata_valid(s->streams[0]->codec, &format, &streaminfo))
+    if (!avpriv_flac_is_extradata_valid(s->streams[0]->codec, &format, &streaminfo))
         return -1;
 
-    if (!url_is_streamed(pb)) {
+    if (pb->seekable) {
         /* rewrite the STREAMINFO header block data */
-        file_size = url_ftell(pb);
+        file_size = avio_tell(pb);
         avio_seek(pb, 8, SEEK_SET);
         avio_write(pb, streaminfo, FLAC_STREAMINFO_SIZE);
         avio_seek(pb, file_size, SEEK_SET);
-        put_flush_packet(pb);
+        avio_flush(pb);
     } else {
         av_log(s, AV_LOG_WARNING, "unable to rewrite FLAC header.\n");
     }
@@ -114,20 +113,19 @@ static int flac_write_trailer(struct AVFormatContext *s)
 static int flac_write_packet(struct AVFormatContext *s, AVPacket *pkt)
 {
     avio_write(s->pb, pkt->data, pkt->size);
-    put_flush_packet(s->pb);
+    avio_flush(s->pb);
     return 0;
 }
 
 AVOutputFormat ff_flac_muxer = {
-    "flac",
-    NULL_IF_CONFIG_SMALL("raw FLAC"),
-    "audio/x-flac",
-    "flac",
-    0,
-    CODEC_ID_FLAC,
-    CODEC_ID_NONE,
-    flac_write_header,
-    flac_write_packet,
-    flac_write_trailer,
-    .flags= AVFMT_NOTIMESTAMPS,
+    .name              = "flac",
+    .long_name         = NULL_IF_CONFIG_SMALL("raw FLAC"),
+    .mime_type         = "audio/x-flac",
+    .extensions        = "flac",
+    .audio_codec       = CODEC_ID_FLAC,
+    .video_codec       = CODEC_ID_NONE,
+    .write_header      = flac_write_header,
+    .write_packet      = flac_write_packet,
+    .write_trailer     = flac_write_trailer,
+    .flags             = AVFMT_NOTIMESTAMPS,
 };

@@ -23,7 +23,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
-#include <locale.h>
 
 #include "config.h"
 #include "mp_msg.h"
@@ -36,11 +35,9 @@
 #include "m_option.h"
 #include "stream.h"
 #include "libmpdemux/demuxer.h"
-#include "libmenu/fsysloc.h"
 
 
 /// We keep these 2 for the gui atm, but they will be removed.
-int vcd_track=0;
 char* cdrom_device=NULL;
 int dvd_chapter=1;
 int dvd_last_chapter=0;
@@ -50,13 +47,29 @@ char *bluray_device=NULL;
 
 // Open a new stream  (stdin/file/vcd/url)
 
-stream_t* open_stream(const char* filename,char** options, int* file_format){
-   stream_t* ret;
-   extern fsysloc_table_t *fsysloc_table;
-   char *locale_changed = NULL ;
-   const fsysloc_t *fsysloc = NULL;
-   char* filename_iconv = NULL;
+#ifdef GEKKO
+static void CleanFileName(const char *file)  //clean (//) exacmple smb1://film.avi -> smb1:/film.avi
+{
+	char buf[1024];
+	if(strncmp(file, "smb", 3)==0 || strncmp(file, "sd", 2)==0 || strncmp(file, "usb", 3)==0)
+	{
+		int i=0,j=0;
+		while(file[i]!='\0')
+		{
+			buf[j]=file[i];
+			j++;
+			if(file[i]=='/')
+				while(file[i]=='/' && file[i]!='\0')i++;
+			else
+				i++;
+		}
+		buf[j]='\0';
+		strcpy((char*)file,buf);
+	}	
+}
+#endif
 
+stream_t* open_stream(const char* filename,char** options, int* file_format){
   int dummy = DEMUXER_TYPE_UNKNOWN;
   if (!file_format) file_format = &dummy;
   // Check if playlist or unknown
@@ -70,17 +83,9 @@ if(!filename) {
 }
 
 //============ Open STDIN or plain FILE ============
+#ifdef GEKKO
+  CleanFileName(filename);
+#endif  
 
-
-  fsysloc = fsysloc_table_locate( fsysloc_table, filename);
-  locale_changed = fsysloc_setlocale( fsysloc);
-  filename_iconv = fsysloc_iconv_to_fsys( fsysloc, filename);
-
-  ret = open_stream_full(filename_iconv,STREAM_READ,options,file_format);
-
-  fsysloc_restorelocale( fsysloc, locale_changed);
-  if ( filename_iconv != filename ){
-     free( filename_iconv);
-  }
-  return ret;
+  return open_stream_full(filename,STREAM_READ,options,file_format);
 }

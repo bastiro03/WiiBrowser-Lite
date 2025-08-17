@@ -23,6 +23,7 @@
 
 #include "avformat.h"
 #include "ffmeta.h"
+#include "libavutil/dict.h"
 
 
 static void write_escape_str(AVIOContext *s, const uint8_t *str)
@@ -37,10 +38,10 @@ static void write_escape_str(AVIOContext *s, const uint8_t *str)
     }
 }
 
-static void write_tags(AVIOContext *s, AVMetadata *m)
+static void write_tags(AVIOContext *s, AVDictionary *m)
 {
-    AVMetadataTag *t = NULL;
-    while ((t = av_metadata_get(m, "", t, AV_METADATA_IGNORE_SUFFIX))) {
+    AVDictionaryEntry *t = NULL;
+    while ((t = av_dict_get(m, "", t, AV_DICT_IGNORE_SUFFIX))) {
         write_escape_str(s, t->key);
         avio_w8(s, '=');
         write_escape_str(s, t->value);
@@ -53,7 +54,7 @@ static int write_header(AVFormatContext *s)
     avio_write(s->pb, ID_STRING, sizeof(ID_STRING) - 1);
     avio_w8(s->pb, '1');          // version
     avio_w8(s->pb, '\n');
-    put_flush_packet(s->pb);
+    avio_flush(s->pb);
     return 0;
 }
 
@@ -73,13 +74,13 @@ static int write_trailer(AVFormatContext *s)
         AVChapter *ch = s->chapters[i];
         avio_write(s->pb, ID_CHAPTER, sizeof(ID_CHAPTER) - 1);
         avio_w8(s->pb, '\n');
-        url_fprintf(s->pb, "TIMEBASE=%d/%d\n", ch->time_base.num, ch->time_base.den);
-        url_fprintf(s->pb, "START=%"PRId64"\n", ch->start);
-        url_fprintf(s->pb, "END=%"PRId64"\n",   ch->end);
+        avio_printf(s->pb, "TIMEBASE=%d/%d\n", ch->time_base.num, ch->time_base.den);
+        avio_printf(s->pb, "START=%"PRId64"\n", ch->start);
+        avio_printf(s->pb, "END=%"PRId64"\n",   ch->end);
         write_tags(s->pb, ch->metadata);
     }
 
-    put_flush_packet(s->pb);
+    avio_flush(s->pb);
 
     return 0;
 }

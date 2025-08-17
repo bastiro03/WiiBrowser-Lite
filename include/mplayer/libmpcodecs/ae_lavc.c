@@ -30,7 +30,7 @@
 #include "stream/stream.h"
 #include "libmpdemux/muxer.h"
 #include "ae_lavc.h"
-#include "vd_ffmpeg.h"
+#include "av_helpers.h"
 #include "ve.h"
 #include "help_mp.h"
 #include "av_opts.h"
@@ -122,11 +122,12 @@ static int encode_lavc(audio_encoder_t *encoder, uint8_t *dest, void *src, int s
 			(!strcmp(lavc_acodec->name,"ac3") ||
 			!strcmp(lavc_acodec->name,"libfaac"))) {
 		int isac3 = !strcmp(lavc_acodec->name,"ac3");
+		int bps = av_get_bytes_per_sample(lavc_actx->sample_fmt);
 		reorder_channel_nch(src, AF_CHANNEL_LAYOUT_MPLAYER_DEFAULT,
 		                    isac3 ? AF_CHANNEL_LAYOUT_LAVC_DEFAULT
 		                          : AF_CHANNEL_LAYOUT_AAC_DEFAULT,
 		                    encoder->params.channels,
-		                    size / 2, 2);
+		                    size / bps, bps);
 	}
 	n = avcodec_encode_audio(lavc_actx, dest, size, src);
         compressed_frame_size = n;
@@ -169,7 +170,7 @@ int mpae_init_lavc(audio_encoder_t *encoder)
 	}
 	if(lavc_param_atag == 0)
 	{
-		lavc_param_atag = av_codec_get_tag(mp_wav_taglists, lavc_acodec->id);
+		lavc_param_atag = mp_codec_id2tag(lavc_acodec->id, 0, 1);
 		if(!lavc_param_atag)
 		{
 			mp_msg(MSGT_MENCODER, MSGL_FATAL, "Couldn't find wav tag for specified codec, exit\n");
@@ -177,17 +178,26 @@ int mpae_init_lavc(audio_encoder_t *encoder)
 		}
 	}
 
-	lavc_actx = avcodec_alloc_context();
+	lavc_actx = avcodec_alloc_context3(lavc_acodec);
 	if(lavc_actx == NULL)
 	{
 		mp_msg(MSGT_MENCODER, MSGL_FATAL, MSGTR_CouldntAllocateLavcContext);
 		return 0;
 	}
 
-	lavc_actx->codec_type = AVMEDIA_TYPE_AUDIO;
 	lavc_actx->codec_id = lavc_acodec->id;
 	// put sample parameters
-	lavc_actx->sample_fmt = lavc_acodec->sample_fmts ? lavc_acodec->sample_fmts[0] : AV_SAMPLE_FMT_S16;
+	lavc_actx->sample_fmt = AV_SAMPLE_FMT_S16;
+	if (lavc_acodec->sample_fmts) {
+		const enum AVSampleFormat *fmts;
+		lavc_actx->sample_fmt = lavc_acodec->sample_fmts[0]; // fallback to first format
+		for (fmts = lavc_acodec->sample_fmts; *fmts != AV_SAMPLE_FMT_NONE; fmts++) {
+			if (samplefmt2affmt(*fmts) == encoder->params.sample_format) { // preferred format found
+				lavc_actx->sample_fmt = *fmts;
+				break;
+			}
+		}
+	}
 	encoder->input_format = samplefmt2affmt(lavc_actx->sample_fmt);
 	lavc_actx->channels = encoder->params.channels;
 	lavc_actx->sample_rate = encoder->params.sample_rate;
@@ -227,7 +237,7 @@ int mpae_init_lavc(audio_encoder_t *encoder)
                 lavc_actx->flags2 |= CODEC_FLAG2_LOCAL_HEADER;
         }
 
-	if(avcodec_open(lavc_actx, lavc_acodec) < 0)
+	if(avcodec_open2(lavc_actx, lavc_acodec, NULL) < 0)
 	{
 		mp_msg(MSGT_MENCODER, MSGL_FATAL, MSGTR_CouldntOpenCodec, lavc_param_acodec, lavc_param_abitrate);
 		return 0;
@@ -238,7 +248,9 @@ int mpae_init_lavc(audio_encoder_t *encoder)
 		lavc_actx->frame_size = (lavc_actx->block_align - 4 * lavc_actx->channels) * 8 / (4 * lavc_actx->channels) + 1;
 	}
 
-	encoder->decode_buffer_size = lavc_actx->frame_size * 2 * encoder->params.channels;
+	encoder->decode_buffer_size = lavc_actx->frame_size *
+	                              av_get_bytes_per_sample(lavc_actx->sample_fmt) *
+	                              encoder->params.channels;
 	while (encoder->decode_buffer_size < 1024) encoder->decode_buffer_size *= 2;
 	encoder->bind = bind_lavc;
 	encoder->get_frame_size = get_frame_size;

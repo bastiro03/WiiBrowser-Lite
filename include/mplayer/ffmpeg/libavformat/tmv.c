@@ -20,14 +20,15 @@
  */
 
 /**
- * 8088flex TMV file demuxer
  * @file
+ * 8088flex TMV file demuxer
  * @author Daniel Verkamp
- * @sa http://www.oldskool.org/pc/8088_Corruption
+ * @see http://www.oldskool.org/pc/8088_Corruption
  */
 
 #include "libavutil/intreadwrite.h"
 #include "avformat.h"
+#include "internal.h"
 
 enum {
     TMV_PADDING = 0x01,
@@ -62,7 +63,7 @@ static int tmv_probe(AVProbeData *p)
     return 0;
 }
 
-static int tmv_read_header(AVFormatContext *s, AVFormatParameters *ap)
+static int tmv_read_header(AVFormatContext *s)
 {
     TMVContext *tmv   = s->priv_data;
     AVIOContext *pb = s->pb;
@@ -73,10 +74,10 @@ static int tmv_read_header(AVFormatContext *s, AVFormatParameters *ap)
     if (avio_rl32(pb) != TMV_TAG)
         return -1;
 
-    if (!(vst = av_new_stream(s, 0)))
+    if (!(vst = avformat_new_stream(s, NULL)))
         return AVERROR(ENOMEM);
 
-    if (!(ast = av_new_stream(s, 0)))
+    if (!(ast = avformat_new_stream(s, NULL)))
         return AVERROR(ENOMEM);
 
     ast->codec->sample_rate = avio_rl16(pb);
@@ -115,7 +116,7 @@ static int tmv_read_header(AVFormatContext *s, AVFormatParameters *ap)
     ast->codec->bits_per_coded_sample = 8;
     ast->codec->bit_rate              = ast->codec->sample_rate *
                                         ast->codec->bits_per_coded_sample;
-    av_set_pts_info(ast, 32, 1, ast->codec->sample_rate);
+    avpriv_set_pts_info(ast, 32, 1, ast->codec->sample_rate);
 
     fps.num = ast->codec->sample_rate * ast->codec->channels;
     fps.den = tmv->audio_chunk_size;
@@ -126,7 +127,7 @@ static int tmv_read_header(AVFormatContext *s, AVFormatParameters *ap)
     vst->codec->pix_fmt    = PIX_FMT_PAL8;
     vst->codec->width      = char_cols * 8;
     vst->codec->height     = char_rows * 8;
-    av_set_pts_info(vst, 32, fps.den, fps.num);
+    avpriv_set_pts_info(vst, 32, fps.den, fps.num);
 
     if (features & TMV_PADDING)
         tmv->padding =
@@ -152,7 +153,7 @@ static int tmv_read_packet(AVFormatContext *s, AVPacket *pkt)
     ret = av_get_packet(pb, pkt, pkt_size);
 
     if (tmv->stream_index)
-        avio_seek(pb, tmv->padding, SEEK_CUR);
+        avio_skip(pb, tmv->padding);
 
     pkt->stream_index  = tmv->stream_index;
     tmv->stream_index ^= 1;
@@ -173,19 +174,19 @@ static int tmv_read_seek(AVFormatContext *s, int stream_index,
     pos = timestamp *
           (tmv->audio_chunk_size + tmv->video_chunk_size + tmv->padding);
 
-    avio_seek(s->pb, pos + TMV_HEADER_SIZE, SEEK_SET);
+    if (avio_seek(s->pb, pos + TMV_HEADER_SIZE, SEEK_SET) < 0)
+        return -1;
     tmv->stream_index = 0;
     return 0;
 }
 
 AVInputFormat ff_tmv_demuxer = {
-    "tmv",
-    NULL_IF_CONFIG_SMALL("8088flex TMV"),
-    sizeof(TMVContext),
-    tmv_probe,
-    tmv_read_header,
-    tmv_read_packet,
-    NULL,
-    tmv_read_seek,
-    .flags = AVFMT_GENERIC_INDEX,
+    .name           = "tmv",
+    .long_name      = NULL_IF_CONFIG_SMALL("8088flex TMV"),
+    .priv_data_size = sizeof(TMVContext),
+    .read_probe     = tmv_probe,
+    .read_header    = tmv_read_header,
+    .read_packet    = tmv_read_packet,
+    .read_seek      = tmv_read_seek,
+    .flags          = AVFMT_GENERIC_INDEX,
 };

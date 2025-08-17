@@ -44,6 +44,16 @@
 
 #include "libavutil/base64.h"
 
+#ifdef GEKKO
+char streamtitle[128] = { 0 }; // ICY stream title
+char streamurl[128] = { 0 }; // ICY stream url
+char streamname[128] = { 0 }; // ICY stream name
+int streamtitle_changed = 0;
+int streamurl_changed = 0;
+int streamname_changed = 0;
+extern int controlledbygui;
+#endif
+
 typedef struct {
   unsigned metaint;
   unsigned metapos;
@@ -71,6 +81,10 @@ static unsigned my_read(int fd, char *buffer, int len, streaming_ctrl_t *sc) {
     if (ret <= 0)
       break;
     pos += ret;
+#ifdef GEKKO
+    if(controlledbygui == 2)
+	  break;
+#endif
   }
   return pos;
 }
@@ -80,6 +94,9 @@ static unsigned my_read(int fd, char *buffer, int len, streaming_ctrl_t *sc) {
  * \param fd file descriptor to read from
  * \param sc streaming_ctrl_t whose buffer is consumed before reading from fd
  * \return number of real data before next metadata block starts or 0 on error
+ *
+ * You can use unsv://samples.mplayerhq.hu/V-codecs/VP5/vp5_artefacts.nsv to
+ * test.
  */
 static unsigned uvox_meta_read(int fd, streaming_ctrl_t *sc) {
   unsigned metaint;
@@ -130,6 +147,25 @@ static void scast_meta_read(int fd, streaming_ctrl_t *sc) {
       if (info[i] && info[i] < 32) info[i] = '?';
     info[nlen] = 0;
     mp_msg(MSGT_DEMUXER, MSGL_INFO, "\nICY Info: %s\n", info);
+#ifdef GEKKO
+    streamtitle[0] = 0;
+    if(info[0] != 0)
+    {
+    	char *title = strstr(info, "StreamTitle");
+    	if(title)
+    	{
+    		title+=13;
+    		char *title_end = strchr(title, ';');
+    		if(title_end && title_end-title > 1)
+			{
+    			int len = title_end-title;
+    			if(len > 128) len=128;
+    			snprintf(streamtitle, len, "%s", title);
+			}
+    	}
+    }
+    streamtitle_changed = 1;
+#endif
     free(info);
   }
 }
@@ -146,6 +182,10 @@ static int scast_streaming_read(int fd, char *buffer, int size,
   scast_data_t *sd = (scast_data_t *)sc->data;
   unsigned block, ret;
   unsigned done = 0;
+#ifdef GEKKO
+  if(controlledbygui == 2)
+	return 0;
+#endif
 
   // first read remaining data up to next metadata
   block = sd->metaint - sd->metapos;
@@ -674,7 +714,7 @@ http_debug_hdr( HTTP_header_t *http_hdr ) {
 	mp_msg(MSGT_NETWORK,MSGL_V,"method:             [%s]\n", http_hdr->method );
 	mp_msg(MSGT_NETWORK,MSGL_V,"status code:        [%d]\n", http_hdr->status_code );
 	mp_msg(MSGT_NETWORK,MSGL_V,"reason phrase:      [%s]\n", http_hdr->reason_phrase );
-	mp_msg(MSGT_NETWORK,MSGL_V,"body size:          [%zd]\n", http_hdr->body_size );
+	mp_msg(MSGT_NETWORK,MSGL_V,"body size:          [%zu]\n", http_hdr->body_size );
 
 	mp_msg(MSGT_NETWORK,MSGL_V,"Fields:\n");
 	field = http_hdr->first_field;
@@ -689,13 +729,23 @@ static void print_icy_metadata(HTTP_header_t *http_hdr) {
 	const char *field_data;
 	// note: I skip icy-notice1 and 2, as they contain html <BR>
 	// and are IMHO useless info ::atmos
-	if( (field_data = http_get_field(http_hdr, "icy-name")) != NULL )
+	if( (field_data = http_get_field(http_hdr, "icy-name")) != NULL ) {
 		mp_msg(MSGT_NETWORK,MSGL_INFO,"Name   : %s\n", field_data);
+#ifdef GEKKO		
+		snprintf(streamname, 128, "%s", field_data);
+		streamname_changed = 1;
+#endif
+    }
 	if( (field_data = http_get_field(http_hdr, "icy-genre")) != NULL )
 		mp_msg(MSGT_NETWORK,MSGL_INFO,"Genre  : %s\n", field_data);
-	if( (field_data = http_get_field(http_hdr, "icy-url")) != NULL )
+	if( (field_data = http_get_field(http_hdr, "icy-url")) != NULL ) {
 		mp_msg(MSGT_NETWORK,MSGL_INFO,"Website: %s\n", field_data);
 	// XXX: does this really mean public server? ::atmos
+#ifdef GEKKO
+    	snprintf(streamurl, 128, "%s", field_data);
+    	streamurl_changed = 1;
+#endif
+    }
 	if( (field_data = http_get_field(http_hdr, "icy-pub")) != NULL )
 		mp_msg(MSGT_NETWORK,MSGL_INFO,"Public : %s\n", atoi(field_data)?"yes":"no");
 	if( (field_data = http_get_field(http_hdr, "icy-br")) != NULL )

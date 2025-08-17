@@ -49,10 +49,13 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#ifdef HAVE_SYS_MMAN_H
+#if HAVE_SYS_MMAN_H
 #include <sys/mman.h>
 #else
 #include "osdep/mmap.h"
+#endif
+#ifdef HAVE_ALLOCA_H
+#  include <alloca.h>
 #endif
 #include "wine/windef.h"
 #include "wine/winbase.h"

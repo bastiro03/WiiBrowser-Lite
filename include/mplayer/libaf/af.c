@@ -20,9 +20,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include "osdep/strsep.h"
 #include "libmpcodecs/dec_audio.h"
-
+#include "mp_msg.h"
 #include "af.h"
 
 // Static list of filters
@@ -66,15 +67,13 @@ static const af_info_t * const filter_list[] = {
    &af_info_pan,
    &af_info_surround,
    &af_info_sub,
-#ifdef HAVE_SYS_MMAN_H
+#if HAVE_SYS_MMAN_H
    &af_info_export,
 #endif
    &af_info_volnorm,
    &af_info_extrastereo,
-#ifdef CONFIG_FFMPEG_A
-   &af_info_lavcac3enc,
-#endif
 #ifdef CONFIG_FFMPEG
+   &af_info_lavcac3enc,
    &af_info_lavcresample,
 #endif
    &af_info_sweep,
@@ -318,7 +317,7 @@ int af_reinit(af_stream_t* s, af_instance_t* af)
 	}
 	if(!new){ // Should _never_ happen
 	  mp_msg(MSGT_AFILTER, MSGL_ERR, "[libaf] Unable to correct audio format. "
-		 "This error should never uccur, please send bugreport.\n");
+		 "This error should never occur, please send a bug report.\n");
 	  return AF_ERROR;
 	}
 	af=new->next;
@@ -491,7 +490,7 @@ int af_init(af_stream_t* s)
       af = af_control_any_rev(s, AF_CONTROL_RESAMPLE_RATE | AF_CONTROL_SET,
                &(s->output.rate));
       if (!af) {
-        char *resampler = "resample";
+        const char *resampler = "resample";
 #ifdef CONFIG_FFMPEG
         if ((AF_INIT_TYPE_MASK & s->cfg.force) == AF_INIT_SLOW)
           resampler = "lavcresample";
@@ -531,7 +530,7 @@ int af_init(af_stream_t* s)
     if (AF_OK != fixup_output_format(s)) {
       // Something is stuffed audio out will not work
       mp_msg(MSGT_AFILTER, MSGL_ERR, "[libaf] Unable to setup filter system can not"
-	     " meet sound-card demands, please send bugreport. \n");
+	     " meet sound-card demands, please send a bug report. \n");
       af_uninit(s);
       return -1;
     }
@@ -548,7 +547,7 @@ af_instance_t* af_add(af_stream_t* s, char* name){
   // Sanity check
   if(!s || !s->first || !name)
     return NULL;
-  // Insert the filter somwhere nice
+  // Insert the filter somewhere nice
   if(!strcmp(s->first->info->name,"format"))
     new = af_append(s, s->first, name);
   else
@@ -605,7 +604,6 @@ double af_calc_filter_multiplier(af_stream_t* s)
 /* Calculate the total delay [bytes output] caused by the filters */
 double af_calc_delay(af_stream_t* s)
 {
-  if(!s) return 0.0;
   af_instance_t* af=s->first;
   register double delay = 0.0;
   // Iterate through all filters
@@ -664,5 +662,9 @@ void af_help (void) {
 
 void af_fix_parameters(af_data_t *data)
 {
+    if (data->nch < 0 || data->nch > AF_NCH) {
+      mp_msg(MSGT_AFILTER, MSGL_ERR, "Invalid number of channels %i, assuming 2.\n", data->nch);
+      data->nch = 2;
+    }
     data->bps = af_fmt2bits(data->format)/8;
 }

@@ -19,11 +19,12 @@
 #ifndef MPLAYER_GUI_SKIN_H
 #define MPLAYER_GUI_SKIN_H
 
-#include "gui/bitmap.h"
+#include "gui/util/bitmap.h"
 
-int skinBPRead(char *, txSample *);
-int skinRead(char *);
-char *strswap(char *, char, char);
-char *trim(char *);
+extern char *skinDirInHome;
+extern char *skinMPlayerDir;
+
+int skinImageRead(char *fname, guiImage *img);
+int skinRead(char *dname);
 
 #endif /* MPLAYER_GUI_SKIN_H */

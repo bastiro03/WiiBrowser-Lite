@@ -27,9 +27,9 @@
 void * fast_memcpy(void * to, const void * from, size_t len);
 void * mem2agpcpy(void * to, const void * from, size_t len);
 
+#ifndef GEKKO
 #if ! defined(CONFIG_FASTMEMCPY) || ! (HAVE_MMX || HAVE_MMX2 || HAVE_AMD3DNOW /* || HAVE_SSE || HAVE_SSE2 */)
 #define mem2agpcpy(a,b,c) memcpy(a,b,c)
-#ifndef GEKKO
 #define fast_memcpy(a,b,c) memcpy(a,b,c)
 #endif
 #endif
@@ -42,7 +42,7 @@ static inline void * mem2agpcpy_pic(void * dst, const void * src, int bytesPerLi
     if(dstStride == srcStride)
     {
         if (srcStride < 0) {
-                src = (uint8_t*)src + (height-1)*srcStride;
+                src = (const uint8_t*)src + (height-1)*srcStride;
                 dst = (uint8_t*)dst + (height-1)*dstStride;
                 srcStride = -srcStride;
         }
@@ -54,7 +54,7 @@ static inline void * mem2agpcpy_pic(void * dst, const void * src, int bytesPerLi
         for(i=0; i<height; i++)
         {
             mem2agpcpy(dst, src, bytesPerLine);
-            src = (uint8_t*)src + srcStride;
+            src = (const uint8_t*)src + srcStride;
             dst = (uint8_t*)dst + dstStride;
         }
     }
@@ -79,7 +79,7 @@ static inline void * memcpy_pic2(void * dst, const void * src,
     if(!limit2width && dstStride == srcStride)
     {
         if (srcStride < 0) {
-                src = (uint8_t*)src + (height-1)*srcStride;
+                src = (const uint8_t*)src + (height-1)*srcStride;
                 dst = (uint8_t*)dst + (height-1)*dstStride;
                 srcStride = -srcStride;
         }
@@ -91,7 +91,7 @@ static inline void * memcpy_pic2(void * dst, const void * src,
         for(i=0; i<height; i++)
         {
             fast_memcpy(dst, src, bytesPerLine);
-            src = (uint8_t*)src + srcStride;
+            src = (const uint8_t*)src + srcStride;
             dst = (uint8_t*)dst + dstStride;
         }
     }

@@ -35,7 +35,7 @@
 #include "img_format.h"
 #include "mp_image.h"
 #include "vf.h"
-#include "vd_ffmpeg.h"
+#include "av_helpers.h"
 #include "libvo/fastmemcpy.h"
 
 #define XMIN(a,b) ((a) < (b) ? (a) : (b))
@@ -175,12 +175,12 @@ static void filter(struct vf_priv_s *p, uint8_t *dst[3], uint8_t *src[3], int ds
     for(i=0; i<count; i++){
         const int x1= offset[i+count-1][0];
         const int y1= offset[i+count-1][1];
-        int offset, out_size;
+        int offset;
         p->frame->data[0]= p->src[0] + x1 + y1 * p->frame->linesize[0];
         p->frame->data[1]= p->src[1] + x1/2 + y1/2 * p->frame->linesize[1];
         p->frame->data[2]= p->src[2] + x1/2 + y1/2 * p->frame->linesize[2];
 
-        out_size = avcodec_encode_video(p->avctx_enc[i], p->outbuf, p->outbuf_size, p->frame);
+        avcodec_encode_video(p->avctx_enc[i], p->outbuf, p->outbuf_size, p->frame);
         p->frame_dec = p->avctx_enc[i]->coded_frame;
 
         offset= (BLOCK-x1) + (BLOCK-y1)*p->frame_dec->linesize[0];
@@ -201,6 +201,8 @@ static void filter(struct vf_priv_s *p, uint8_t *dst[3], uint8_t *src[3], int ds
 
     for(j=0; j<3; j++){
         int is_chroma= !!j;
+        if (!dst[j])
+            continue; // HACK avoid crash for Y8 colourspace
         store_slice_c(dst[j], p->temp[j], dst_stride[j], p->temp_stride[j], width>>is_chroma, height>>is_chroma, 8-p->log2_count);
     }
 }
@@ -222,9 +224,10 @@ static int config(struct vf_instance *vf,
         }
         for(i=0; i< (1<<vf->priv->log2_count); i++){
             AVCodecContext *avctx_enc;
+            AVDictionary *opts = NULL;
 
             avctx_enc=
-            vf->priv->avctx_enc[i]= avcodec_alloc_context();
+            vf->priv->avctx_enc[i]= avcodec_alloc_context3(NULL);
             avctx_enc->width = width + BLOCK;
             avctx_enc->height = height + BLOCK;
             avctx_enc->time_base= (AVRational){1,25};  // meaningless
@@ -234,7 +237,9 @@ static int config(struct vf_instance *vf,
             avctx_enc->flags = CODEC_FLAG_QSCALE | CODEC_FLAG_LOW_DELAY;
             avctx_enc->strict_std_compliance = FF_COMPLIANCE_EXPERIMENTAL;
             avctx_enc->global_quality= 123;
-            avcodec_open(avctx_enc, enc);
+            av_dict_set(&opts, "no_bitstream", "1", 0);
+            avcodec_open2(avctx_enc, enc, &opts);
+            av_dict_free(&opts);
             assert(avctx_enc->codec);
         }
         vf->priv->frame= avcodec_alloc_frame();

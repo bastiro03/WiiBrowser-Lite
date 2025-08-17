@@ -2,29 +2,30 @@
  * Copyright (c) 2002 Brian Foley
  * Copyright (c) 2002 Dieter Shirley
  * Copyright (c) 2003-2004 Romain Dolbeau <romain@dolbeau.org>
- * Copyright (c) 2010-2011 Extrems <metaradil@gmail.com>
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include "libavutil/cpu.h"
 #include "libavcodec/dsputil.h"
 #include "dsputil_altivec.h"
+#ifdef GEKKO
 #include "dsputil_paired.h"
+#endif
 
 /* ***** WARNING ***** WARNING ***** WARNING ***** */
 /*
@@ -50,7 +51,6 @@ static void clear_blocks_dcbz32_ppc(DCTELEM *blocks)
 {
     register int misal = ((unsigned long)blocks & 0x00000010);
     register int i = 0;
-#if 1
     if (misal) {
         ((unsigned long*)blocks)[0] = 0L;
         ((unsigned long*)blocks)[1] = 0L;
@@ -66,11 +66,8 @@ static void clear_blocks_dcbz32_ppc(DCTELEM *blocks)
         ((unsigned long*)blocks)[189] = 0L;
         ((unsigned long*)blocks)[190] = 0L;
         ((unsigned long*)blocks)[191] = 0L;
-        i += 16;
+        //i += 16;
     }
-#else
-    memset(blocks, 0, sizeof(DCTELEM)*6*64);
-#endif
 }
 
 /* same as above, when dcbzl clear a whole 128B cache line
@@ -80,7 +77,6 @@ static void clear_blocks_dcbz128_ppc(DCTELEM *blocks)
 {
     register int misal = ((unsigned long)blocks & 0x0000007f);
     register int i = 0;
-#if 1
     if (misal) {
         // we could probably also optimize this case,
         // but there's not much point as the machines
@@ -91,9 +87,6 @@ static void clear_blocks_dcbz128_ppc(DCTELEM *blocks)
         for ( ; i < sizeof(DCTELEM)*6*64 ; i += 128) {
             __asm__ volatile("dcbzl %0,%1" : : "b" (blocks), "r" (i) : "memory");
         }
-#else
-    memset(blocks, 0, sizeof(DCTELEM)*6*64);
-#endif
 }
 #else
 static void clear_blocks_dcbz128_ppc(DCTELEM *blocks)
@@ -140,7 +133,7 @@ static long check_dcbzl_effect(void)
 #else
 static long check_dcbzl_effect(void)
 {
-  return 32;
+  return 0;
 }
 #endif
 
@@ -193,10 +186,21 @@ static void fill_block8_gekko(uint8_t *block, uint8_t value, int line_size, int 
 }
 #endif /* GEKKO */
 
-void dsputil_init_ppc(DSPContext* c, AVCodecContext *avctx)
+void ff_dsputil_init_ppc(DSPContext* c, AVCodecContext *avctx)
 {
+    const int high_bit_depth = avctx->bits_per_raw_sample > 8;
+    int mm_flags = av_get_cpu_flags();
+
+    if (avctx->dsp_mask) {
+        if (avctx->dsp_mask & AV_CPU_FLAG_FORCE)
+            mm_flags |= (avctx->dsp_mask & 0xffff);
+        else
+            mm_flags &= ~(avctx->dsp_mask & 0xffff);
+    }
+
     // Common optimizations whether AltiVec is available or not
     c->prefetch = prefetch_ppc;
+    if (!high_bit_depth) {
     switch (check_dcbzl_effect()) {
         case 32:
             c->clear_blocks = clear_blocks_dcbz32_ppc;
@@ -207,29 +211,32 @@ void dsputil_init_ppc(DSPContext* c, AVCodecContext *avctx)
         default:
             break;
     }
+    }
 
 #if defined(GEKKO)
     c->fill_block_tab[0] = fill_block16_gekko;
     c->fill_block_tab[1] = fill_block8_gekko;
+    c->clear_blocks = clear_blocks_dcbz32_ppc;
 #endif
 
 #if HAVE_ALTIVEC
     if(CONFIG_H264_DECODER) dsputil_h264_init_ppc(c, avctx);
 
-    if (av_get_cpu_flags() & AV_CPU_FLAG_ALTIVEC) {
+    if (mm_flags & AV_CPU_FLAG_ALTIVEC) {
         dsputil_init_altivec(c, avctx);
         float_init_altivec(c, avctx);
         int_init_altivec(c, avctx);
         c->gmc1 = gmc1_altivec;
 
 #if CONFIG_ENCODERS
-        if (avctx->dct_algo == FF_DCT_AUTO ||
-            avctx->dct_algo == FF_DCT_ALTIVEC) {
+        if (avctx->bits_per_raw_sample <= 8 &&
+            (avctx->dct_algo == FF_DCT_AUTO ||
+             avctx->dct_algo == FF_DCT_ALTIVEC)) {
             c->fdct = fdct_altivec;
         }
 #endif //CONFIG_ENCODERS
 
-        if (avctx->lowres==0) {
+        if (avctx->lowres == 0 && avctx->bits_per_raw_sample <= 8) {
             if ((avctx->idct_algo == FF_IDCT_AUTO) ||
                 (avctx->idct_algo == FF_IDCT_ALTIVEC)) {
                 c->idct_put = idct_put_altivec;
@@ -248,10 +255,10 @@ void dsputil_init_ppc(DSPContext* c, AVCodecContext *avctx)
 #endif /* HAVE_ALTIVEC */
 
 #if HAVE_PAIRED
-    dsputil_init_paired(c, avctx);
-    float_init_paired(c, avctx);
+    ff_dsputil_init_paired(c, avctx);
+    ff_float_init_paired(c, avctx);
 
     if (CONFIG_H264_DECODER)
-        dsputil_h264_init_ppc(c, avctx);
+        ff_dsputil_h264_init_ppc(c, avctx);
 #endif /* HAVE_PAIRED */
 }

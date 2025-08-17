@@ -57,7 +57,7 @@ static int spdif_get_offset_and_codec(AVFormatContext *s,
         break;
     case IEC61937_MPEG2_AAC:
         init_get_bits(&gbc, buf, AAC_ADTS_HEADER_SIZE * 8);
-        if (ff_aac_parse_header(&gbc, &aac_hdr)) {
+        if (avpriv_aac_parse_header(&gbc, &aac_hdr)) {
             if (s) /* be silent during a probe */
                 av_log(s, AV_LOG_ERROR, "Invalid AAC packet in IEC 61937\n");
             return AVERROR_INVALIDDATA;
@@ -155,7 +155,7 @@ static int spdif_probe(AVProbeData *p)
     return AVPROBE_SCORE_MAX / 8;
 }
 
-static int spdif_read_header(AVFormatContext *s, AVFormatParameters *ap)
+static int spdif_read_header(AVFormatContext *s)
 {
     s->ctx_flags |= AVFMTCTX_NOHEADER;
     return 0;
@@ -185,7 +185,7 @@ static int spdif_read_packet(AVFormatContext *s, AVPacket *pkt)
     if (ret)
         return ret;
 
-    pkt->pos = url_ftell(pb) - BURST_HEADER_SIZE;
+    pkt->pos = avio_tell(pb) - BURST_HEADER_SIZE;
 
     if (avio_read(pb, pkt->data, pkt->size) < pkt->size) {
         av_free_packet(pkt);
@@ -201,11 +201,11 @@ static int spdif_read_packet(AVFormatContext *s, AVPacket *pkt)
     }
 
     /* skip over the padding to the beginning of the next frame */
-    avio_seek(pb, offset - pkt->size - BURST_HEADER_SIZE, SEEK_CUR);
+    avio_skip(pb, offset - pkt->size - BURST_HEADER_SIZE);
 
     if (!s->nb_streams) {
         /* first packet, create a stream */
-        AVStream *st = av_new_stream(s, 0);
+        AVStream *st = avformat_new_stream(s, NULL);
         if (!st) {
             av_free_packet(pkt);
             return AVERROR(ENOMEM);
@@ -226,11 +226,10 @@ static int spdif_read_packet(AVFormatContext *s, AVPacket *pkt)
 }
 
 AVInputFormat ff_spdif_demuxer = {
-    "spdif",
-    NULL_IF_CONFIG_SMALL("IEC 61937 (compressed data in S/PDIF)"),
-    0,
-    spdif_probe,
-    spdif_read_header,
-    spdif_read_packet,
-    .flags = AVFMT_GENERIC_INDEX,
+    .name           = "spdif",
+    .long_name      = NULL_IF_CONFIG_SMALL("IEC 61937 (compressed data in S/PDIF)"),
+    .read_probe     = spdif_probe,
+    .read_header    = spdif_read_header,
+    .read_packet    = spdif_read_packet,
+    .flags          = AVFMT_GENERIC_INDEX,
 };

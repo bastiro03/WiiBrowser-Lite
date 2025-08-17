@@ -42,10 +42,10 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <inttypes.h>
-#if !defined(GEKKO)
 #if HAVE_WINSOCK2_H
 #include <winsock2.h>
 #else
+#if !defined(GEKKO)
 #include <sys/socket.h>
 #endif
 #endif

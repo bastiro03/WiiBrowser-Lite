@@ -45,12 +45,13 @@
 #include "img_format.h"
 #include "mp_image.h"
 #include "vf.h"
-#include "vd_ffmpeg.h"
+#include "av_helpers.h"
 #include "libvo/fastmemcpy.h"
 
 #include "libavutil/internal.h"
 #include "libavutil/intreadwrite.h"
 #include "libavutil/mem.h"
+#include "libavutil/x86_cpu.h"
 #include "libavcodec/avcodec.h"
 #include "libavcodec/dsputil.h"
 
@@ -640,7 +641,7 @@ static int vf_open(vf_instance_t *vf, char *args)
     init_avcodec();
 
     //vf->priv->avctx= avcodec_alloc_context();
-    //dsputil_init(&vf->priv->dsp, vf->priv->avctx);
+    //ff_dsputil_init(&vf->priv->dsp, vf->priv->avctx);
 
     vf->priv->log2_count= 4;
     vf->priv->bframes = 0;

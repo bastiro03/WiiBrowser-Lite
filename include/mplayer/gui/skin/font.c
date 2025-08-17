@@ -16,21 +16,40 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+/**
+ * @file
+ * @brief Font file parser and font rendering
+ */
+
 #include <gtk/gtk.h>
-#include <inttypes.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "font.h"
-#include "cut.h"
-#include "gui/interface.h"
+#include "gui/util/cut.h"
+#include "gui/util/mem.h"
+#include "gui/util/string.h"
 #include "skin.h"
 
 #include "libavutil/avstring.h"
 #include "mp_msg.h"
 
+#define MAX_FONTS 25
+
+#define fntAlignLeft   0
+#define fntAlignCenter 1
+#define fntAlignRight  2
+
 static bmpFont *Fonts[MAX_FONTS];
 
+/**
+ * @brief Add a font to #Fonts.
+ *
+ * @param name name of the font
+ *
+ * @return an identification >= 0 (ok), -1 (out of memory) or -2 (#MAX_FONTS exceeded)
+ */
 static int fntAddNewFont(char *name)
 {
     int id, i;
@@ -59,6 +78,9 @@ static int fntAddNewFont(char *name)
     return id;
 }
 
+/**
+ * @brief Free all memory allocated to fonts.
+ */
 void fntFreeFont(void)
 {
     int i;
@@ -66,17 +88,25 @@ void fntFreeFont(void)
     for (i = 0; i < MAX_FONTS; i++) {
         if (Fonts[i]) {
             bpFree(&Fonts[i]->Bitmap);
-            gfree((void **)&Fonts[i]);
+            nfree(Fonts[i]);
         }
     }
 }
 
+/**
+ * @brief Read and parse a font file.
+ *
+ * @param path directory the font file is in
+ * @param fname name of the font
+ *
+ * @return 0 (ok), -1 or -2 (return code of #fntAddNewFont()),
+ *                 -3 (file error) or -4 (#skinImageRead() error)
+ */
 int fntRead(char *path, char *fname)
 {
-    FILE *f;
-    unsigned char tmp[512];
-    unsigned char *ptmp;
-    unsigned char command[32];
+    FILE *file;
+    unsigned char buf[512];
+    unsigned char item[32];
     unsigned char param[256];
     int id, n, i;
 
@@ -85,44 +115,40 @@ int fntRead(char *path, char *fname)
     if (id < 0)
         return id;
 
-    av_strlcpy(tmp, path, sizeof(tmp));
-    av_strlcat(tmp, fname, sizeof(tmp));
-    av_strlcat(tmp, ".fnt", sizeof(tmp));
-    f = fopen(tmp, "rt");
+    av_strlcpy(buf, path, sizeof(buf));
+    av_strlcat(buf, fname, sizeof(buf));
+    av_strlcat(buf, ".fnt", sizeof(buf));
+    file = fopen(buf, "rt");
 
-    if (!f) {
-        gfree((void **)&Fonts[id]);
+    if (!file) {
+        nfree(Fonts[id]);
         return -3;
     }
 
-    while (fgets(tmp, sizeof(tmp), f)) {
-        tmp[strcspn(tmp, "\n\r")] = 0; // remove any kind of newline, if any
-        strswap(tmp, '\t', ' ');
-        trim(tmp);
-        ptmp = strchr(tmp, ';');
+    while (fgetstr(buf, sizeof(buf), file)) {
+        strswap(buf, '\t', ' ');
+        trim(buf);
+        decomment(buf);
 
-        if (ptmp && !(ptmp == tmp + 1 && tmp[0] == '"' && tmp[2] == '"'))
-            *ptmp = 0;
-
-        if (!*tmp)
+        if (!*buf)
             continue;
 
-        n = (strncmp(tmp, "\"=", 2) == 0 ? 1 : 0);
-        cutItem(tmp, command, '=', n);
-        cutItem(tmp, param, '=', n + 1);
+        n = (strncmp(buf, "\"=", 2) == 0 ? 1 : 0);
+        cutItem(buf, item, '=', n);
+        cutItem(buf, param, '=', n + 1);
 
-        if (command[0] == '"') {
-            if (!command[1])
-                command[0] = '=';
-            else if (command[1] == '"')
-                command[1] = 0;
+        if (item[0] == '"') {
+            if (!item[1])
+                item[0] = '=';
+            else if (item[1] == '"')
+                item[1] = 0;
             else
-                cutItem(command, command, '"', 1);
+                cutItem(item, item, '"', 1);
 
-            if (command[0] & 0x80) {
+            if (item[0] & 0x80) {
                 for (i = 0; i < EXTRA_CHRS; i++) {
                     if (!Fonts[id]->nonASCIIidx[i][0]) {
-                        strncpy(Fonts[id]->nonASCIIidx[i], command, UTF8LENGTH);
+                        strncpy(Fonts[id]->nonASCIIidx[i], item, UTF8LENGTH);
                         break;
                     }
                 }
@@ -132,40 +158,48 @@ int fntRead(char *path, char *fname)
 
                 i += ASCII_CHRS;
             } else
-                i = command[0];
+                i = item[0];
 
-            cutItem(param, tmp, ',', 0);
-            Fonts[id]->Fnt[i].x = atoi(tmp);
+            cutItem(param, buf, ',', 0);
+            Fonts[id]->Fnt[i].x = atoi(buf);
 
-            cutItem(param, tmp, ',', 1);
-            Fonts[id]->Fnt[i].y = atoi(tmp);
+            cutItem(param, buf, ',', 1);
+            Fonts[id]->Fnt[i].y = atoi(buf);
 
-            cutItem(param, tmp, ',', 2);
-            Fonts[id]->Fnt[i].sx = atoi(tmp);
+            cutItem(param, buf, ',', 2);
+            Fonts[id]->Fnt[i].sx = atoi(buf);
 
-            cutItem(param, tmp, ',', 3);
-            Fonts[id]->Fnt[i].sy = atoi(tmp);
+            cutItem(param, buf, ',', 3);
+            Fonts[id]->Fnt[i].sy = atoi(buf);
 
-            mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[font]  char: '%s' params: %d,%d %dx%d\n", command, Fonts[id]->Fnt[i].x, Fonts[id]->Fnt[i].y, Fonts[id]->Fnt[i].sx, Fonts[id]->Fnt[i].sy);
-        } else if (!strcmp(command, "image")) {
-            av_strlcpy(tmp, path, sizeof(tmp));
-            av_strlcat(tmp, param, sizeof(tmp));
+            mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[font]  char: '%s' params: %d,%d %dx%d\n", item, Fonts[id]->Fnt[i].x, Fonts[id]->Fnt[i].y, Fonts[id]->Fnt[i].sx, Fonts[id]->Fnt[i].sy);
+        } else if (!strcmp(item, "image")) {
+            av_strlcpy(buf, path, sizeof(buf));
+            av_strlcat(buf, param, sizeof(buf));
 
-            mp_dbg(MSGT_GPLAYER, MSGL_DBG2, "[font] image file: %s\n", tmp);
+            mp_msg(MSGT_GPLAYER, MSGL_DBG2, "[font] image file: %s\n", buf);
 
-            if (skinBPRead(tmp, &Fonts[id]->Bitmap) != 0) {
+            if (skinImageRead(buf, &Fonts[id]->Bitmap) != 0) {
                 bpFree(&Fonts[id]->Bitmap);
-                gfree((void **)&Fonts[id]);
-                fclose(f);
+                nfree(Fonts[id]);
+                fclose(file);
                 return -4;
             }
         }
     }
 
-    fclose(f);
+    fclose(file);
+
     return 0;
 }
 
+/**
+ * @brief Find the ID of a font by its name.
+ *
+ * @param name name of the font
+ *
+ * @return an identification >= 0 (ok) or -1 (not found)
+ */
 int fntFindID(char *name)
 {
     int i;
@@ -178,8 +212,19 @@ int fntFindID(char *name)
     return -1;
 }
 
-// get Fnt index of character (utf8 or normal one) *str points to,
-// then move pointer to next/previous character
+/**
+ * @brief Get the #bmpFont::Fnt index of the character @a *str points to.
+ *
+ *        Move pointer @a *str to the character according to @a direction
+ *        afterwards.
+ *
+ * @param id font ID
+ * @param str pointer to the string
+ * @param uft8 flag indicating whether @a str contains UTF-8 characters
+ * @param direction +1 (forward) or -1 (backward)
+ *
+ * @return index >= 0 (ok) or -1 (not found)
+ */
 static int fntGetCharIndex(int id, unsigned char **str, gboolean utf8, int direction)
 {
     unsigned char *p, uchar[6] = "";   // glib implements 31-bit UTF-8
@@ -220,6 +265,14 @@ static int fntGetCharIndex(int id, unsigned char **str, gboolean utf8, int direc
     return c;
 }
 
+/**
+ * @brief Get the rendering width of a text.
+ *
+ * @param id font ID
+ * @param str string to be examined
+ *
+ * @return width of the rendered string (in pixels)
+ */
 int fntTextWidth(int id, char *str)
 {
     int size = 0, c;
@@ -242,6 +295,14 @@ int fntTextWidth(int id, char *str)
     return size;
 }
 
+/**
+ * @brief Get the rendering height of a text.
+ *
+ * @param id font ID
+ * @param str string to be examined
+ *
+ * @return height of the rendered string (in pixels)
+ */
 static int fntTextHeight(int id, char *str)
 {
     int max = 0, c, h;
@@ -266,7 +327,16 @@ static int fntTextHeight(int id, char *str)
     return max;
 }
 
-txSample *fntRender(wItem *item, int px, char *txt)
+/**
+ * @brief Render a text on an item.
+ *
+ * @param item item the text shall be placed on
+ * @param px x position for the text in case it is wider than the item width
+ * @param txt text to be rendered
+ *
+ * @return image containing the rendered text
+ */
+guiImage *fntTextRender(wItem *item, int px, char *txt)
 {
     unsigned char *u;
     unsigned int i;
@@ -297,7 +367,7 @@ txSample *fntRender(wItem *item, int px, char *txt)
         if (!item->Bitmap.ImageSize)
             return NULL;
 
-        item->Bitmap.BPP   = 32;
+        item->Bitmap.Bpp   = 32;
         item->Bitmap.Image = malloc(item->Bitmap.ImageSize);
 
         if (!item->Bitmap.Image)
@@ -308,7 +378,7 @@ txSample *fntRender(wItem *item, int px, char *txt)
     ibuf = (uint32_t *)Fonts[id]->Bitmap.Image;
 
     for (i = 0; i < item->Bitmap.ImageSize / 4; i++)
-        obuf[i] = 0x00ff00ff;
+        obuf[i] = GUI_TRANSPARENT;
 
     if (tw <= iw) {
         switch (item->align) {

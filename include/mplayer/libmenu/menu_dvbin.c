@@ -32,6 +32,7 @@
 
 #include "m_struct.h"
 #include "m_option.h"
+#include "mp_msg.h"
 
 #include "libmpcodecs/img_format.h"
 #include "libmpcodecs/mp_image.h"
@@ -125,7 +126,7 @@ static int fill_channels_menu(menu_t *menu, dvb_channels_list  *dvb_list_ptr)
 		}
 		else
 		{
-			mp_msg(MSGT_DEMUX, MSGL_ERR, "dvb_menu: fill_menu: couldn't malloc %d bytes for menu item: %s, exit\n",
+			mp_msg(MSGT_DEMUX, MSGL_ERR, "dvb_menu: fill_menu: couldn't malloc %zu bytes for menu item: %s, exit\n",
 					sizeof(list_entry_t), strerror(errno));
 			break;
 		}
@@ -155,7 +156,7 @@ static int fill_cards_menu(menu_t *menu, dvb_config_t *conf)
 		}
 		else
 		{
-			fprintf(stderr, "dvb_menu: fill_menu: couldn't malloc %d bytes for menu item: %s, exit\n",
+			fprintf(stderr, "dvb_menu: fill_menu: couldn't malloc %zu bytes for menu item: %s, exit\n",
 				sizeof(list_entry_t), strerror(errno));
 			if(n)
 				return 1;

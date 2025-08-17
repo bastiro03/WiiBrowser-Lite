@@ -33,6 +33,10 @@
 #include "demux_ogg.h"
 #include "aviheader.h"
 
+#ifdef GEKKO
+#include "osdep/mem_index.h"
+#endif
+
 extern const demuxer_desc_t demuxer_desc_avi_ni;
 extern const demuxer_desc_t demuxer_desc_avi_nini;
 
@@ -776,7 +780,11 @@ static void demux_close_avi(demuxer_t *demuxer)
     return;
 
   if(priv->idx_size > 0)
-    free(priv->idx);
+#ifndef GEKKO
+	free(priv->idx);
+#else  
+	free_index();
+#endif
   free(priv);
 }
 

@@ -25,9 +25,7 @@
 #include <string.h>
 
 #include "stream/stream.h"
-#ifdef CONFIG_ASS
 #include "sub/ass_mp.h"
-#endif
 #include "m_option.h"
 
 #ifdef HAVE_BUILTIN_EXPECT
@@ -87,7 +85,7 @@
 #define DEMUXER_TYPE_RTP_NEMESI 45
 #define DEMUXER_TYPE_MNG 46
 
-// This should always match the higest demuxer type number.
+// This should always match the highest demuxer type number.
 // Unless you want to disallow users to force the demuxer to some types
 #define DEMUXER_TYPE_MIN 0
 #define DEMUXER_TYPE_MAX 46
@@ -259,11 +257,13 @@ typedef struct demuxer {
 
   // stream headers:
   void* a_streams[MAX_A_STREAMS]; // audio streams (sh_audio_t)
-  void* v_streams[MAX_V_STREAMS]; // video sterams (sh_video_t)
+  void* v_streams[MAX_V_STREAMS]; // video streams (sh_video_t)
   void *s_streams[MAX_S_STREAMS];   // dvd subtitles (flag)
 
   // pointer to teletext decoder private data, if demuxer stream contains teletext
   void *teletext;
+
+  int num_titles;
 
   demux_chapter_t* chapters;
   int num_chapters;
@@ -358,6 +358,7 @@ static inline void *realloc_struct(void *ptr, size_t nmemb, size_t size) {
 }
 
 demux_stream_t* new_demuxer_stream(struct demuxer *demuxer,int id);
+demuxer_t *alloc_demuxer(stream_t *stream, int type, const char *filename);
 demuxer_t* new_demuxer(stream_t *stream,int type,int a_id,int v_id,int s_id,char *filename);
 void free_demuxer_stream(demux_stream_t *ds);
 void free_demuxer(demuxer_t *demuxer);
@@ -409,7 +410,7 @@ double ds_get_next_pts(demux_stream_t *ds);
 int ds_parse(demux_stream_t *sh, uint8_t **buffer, int *len, double pts, off_t pos);
 void ds_clear_parser(demux_stream_t *sh);
 
-// This is defined here because demux_stream_t ins't defined in stream.h
+// This is defined here because demux_stream_t isn't defined in stream.h
 stream_t* new_ds_stream(demux_stream_t *ds);
 
 static inline int avi_stream_id(unsigned int id){
@@ -426,7 +427,7 @@ int demux_seek(demuxer_t *demuxer,float rel_seek_secs,float audio_delay,int flag
 demuxer_t*  new_demuxers_demuxer(demuxer_t* vd, demuxer_t* ad, demuxer_t* sd);
 
 // AVI demuxer params:
-extern int index_mode;  // -1=untouched  0=don't use index  1=use (geneate) index
+extern int index_mode;  // -1=untouched  0=don't use index  1=use (generate) index
 extern char *index_file_save, *index_file_load;
 extern int force_ni;
 extern int pts_from_bps;
@@ -438,7 +439,7 @@ char* demux_info_get(demuxer_t *demuxer, const char *opt);
 int demux_info_print(demuxer_t *demuxer);
 int demux_control(demuxer_t *demuxer, int cmd, void *arg);
 
-int demuxer_get_current_time(demuxer_t *demuxer);
+double demuxer_get_current_time(demuxer_t *demuxer);
 double demuxer_get_time_length(demuxer_t *demuxer);
 int demuxer_get_percent_pos(demuxer_t *demuxer);
 int demuxer_switch_audio(demuxer_t *demuxer, int index);
@@ -471,6 +472,9 @@ int demuxer_get_current_angle(demuxer_t *demuxer);
 int demuxer_set_angle(demuxer_t *demuxer, int angle);
 /// Get number of angles.
 int demuxer_angles_count(demuxer_t *demuxer);
+
+int demuxer_audio_lang(demuxer_t *d, int id, char *buf, int buf_len);
+int demuxer_sub_lang(demuxer_t *d, int id, char *buf, int buf_len);
 
 // get the index of a track
 // lang is a comma-separated list

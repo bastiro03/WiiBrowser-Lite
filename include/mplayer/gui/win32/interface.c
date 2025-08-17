@@ -21,7 +21,27 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+#include "config.h"
+
+#if defined(CONFIG_LIBCDIO)
+#include <cdio/cdda.h>
+#elif defined(CONFIG_CDDA)
+#include <cdda_interface.h>
+#endif
+
 #include <windows.h>
+
+#if defined(__CYGWIN__) || defined(__WINE__)
+#define _beginthreadex CreateThread
+#ifdef __WINE__
+#include <winioctl.h>
+#define WINE_MOUNTMGR_EXTENSIONS
+#include <ddk/mountmgr.h>
+#endif
+#else
+#include <process.h>
+#endif
+
 #include "path.h"
 #include "gui/interface.h"
 #include "m_option.h"
@@ -41,22 +61,25 @@
 #include "access_mpcontext.h"
 #include "libmpcodecs/vd.h"
 #include "libmpcodecs/dec_audio.h"
-#include "gui/mplayer/gmplayer.h"
+#include "gui/ui/actions.h"
+#include "gui/ui/gmplayer.h"
+#include "gui/util/mem.h"
+#include "gui/util/list.h"
+#include "gui/util/string.h"
 #include "mp_core.h"
 #include "mpcommon.h"
 #include "gui.h"
 #include "dialogs.h"
-#ifdef CONFIG_LIBCDIO
-#include <cdio/cdio.h>
-#endif
+
+#define SAME_STREAMTYPE (STREAMTYPE_DUMMY - 1)
 
 int guiWinID = 0;
 
 char *skinName = NULL;
 char *codecname = NULL;
-int mplGotoTheNext = 1;
+int uiGotoTheNext = 1;
 static gui_t *mygui = NULL;
-static int update_subwindow(void);
+static int update_videowindow(void);
 static RECT old_rect;
 static DWORD style;
 static HANDLE hThread;
@@ -64,6 +87,89 @@ static unsigned threadId;
 const ao_functions_t *audio_out = NULL;
 const vo_functions_t *video_out = NULL;
 mixer_t *mixer = NULL;
+
+#ifdef __WINE__
+/**
+ * @brief Convert a Windows style path to a file name into an Unix style one.
+ *
+ * @param filename pointer to the file path to be converted
+ *
+ * @return pointer to the converted file path
+ */
+static char *unix_name (char *filename)
+{
+    static char *unix_filename;
+    LPSTR (*CDECL wine_get_unix_file_name_ptr)(LPCWSTR);
+    int wchar_conv;
+
+    if (*filename && (filename[1] == ':'))
+    {
+        wine_get_unix_file_name_ptr = (void *) GetProcAddress(GetModuleHandleA("KERNEL32"), "wine_get_unix_file_name");
+        wchar_conv = MultiByteToWideChar(CP_UNIXCP, 0, filename, -1, NULL, 0);
+
+        if (wine_get_unix_file_name_ptr && wchar_conv)
+        {
+            WCHAR *ntpath;
+            char *unix_name;
+
+            ntpath = HeapAlloc(GetProcessHeap(), 0, sizeof(*ntpath) * (wchar_conv + 1));
+            MultiByteToWideChar(CP_UNIXCP, 0, filename, -1, ntpath, wchar_conv);
+            unix_name = wine_get_unix_file_name_ptr(ntpath);
+            setdup(&unix_filename, unix_name);
+            filename = unix_filename;
+            HeapFree(GetProcessHeap(), 0, unix_name);
+            HeapFree(GetProcessHeap(), 0, ntpath);
+        }
+    }
+
+    return filename;
+}
+
+/**
+ * @brief Convert a Windows style device name into an Unix style one.
+ *
+ * @param device pointer to the device name to be converted
+ *
+ * @return pointer to the converted device name
+ */
+static char *unix_device (char *device)
+{
+    static char *unix_devname;
+    HANDLE mgr;
+    DWORD size = 1024;
+
+    mgr = CreateFileW(MOUNTMGR_DOS_DEVICE_NAME, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, 0);
+
+    if (mgr != INVALID_HANDLE_VALUE)
+    {
+        struct mountmgr_unix_drive input;
+        struct mountmgr_unix_drive *data;
+
+        data = HeapAlloc(GetProcessHeap(), 0, size);
+
+        if (data)
+        {
+            memset(&input, 0, sizeof(input));
+            input.letter = *device;
+
+            if (DeviceIoControl(mgr, IOCTL_MOUNTMGR_QUERY_UNIX_DRIVE, &input, sizeof(input), data, size, NULL, NULL))
+            {
+                if (data->device_offset)
+                {
+                    setdup(&unix_devname, (char *) data + data->device_offset);
+                    device = unix_devname;
+                }
+            }
+
+            HeapFree(GetProcessHeap(), 0, data);
+        }
+
+        CloseHandle(mgr);
+    }
+
+    return device;
+}
+#endif
 
 /* test for playlist files, no need to specify -playlist on the commandline.
  * add any conceivable playlist extensions here.
@@ -77,114 +183,89 @@ int parse_filename(char *file, play_tree_t *playtree, m_config_t *mconfig, int c
     if(strstr(file, ".m3u") || strstr(file, ".pls"))
     {
         playtree = parse_playlist_file(file);
-        import_playtree_playlist_into_gui(playtree, mconfig);
+        guiPlaylistAdd(playtree, mconfig);
         return 1;
     }
     return 0;
 }
 
-/**
- * \brief this actually creates a new list containing only one element...
- */
-void gaddlist( char ***list, const char *entry)
-{
-    int i;
-
-    if (*list)
-    {
-        for (i=0; (*list)[i]; i++) free((*list)[i]);
-        free(*list);
-    }
-
-    *list = malloc(2 * sizeof(char **));
-    (*list)[0] = gstrdup(entry);
-    (*list)[1] = NULL;
-}
-
-char *gstrdup(const char *str)
-{
-    if (!str) return NULL;
-    return strdup(str);
-}
-
-/**
- * \brief this replaces a string starting with search by replace.
- * If not found, replace is appended.
- */
-void greplace(char ***list, char *search, char *replace)
-{
-    int i = 0;
-    int len = (search) ? strlen(search) : 0;
-
-    if (*list)
-    {
-        for (i = 0; (*list)[i]; i++)
-        {
-            if (search && (!strncmp((*list)[i], search, len)))
-            {
-                free((*list)[i]);
-                (*list)[i] = gstrdup(replace);
-                return;
-            }
-        }
-    *list = realloc(*list, (i + 2) * sizeof(char *));
-    }
-    else
-        *list = malloc(2 * sizeof(char *));
-
-    (*list)[i] = gstrdup(replace);
-    (*list)[i + 1] = NULL;
-}
-
 /* this function gets called by the gui to update mplayer */
 static void guiSetEvent(int event)
 {
-    if(guiIntfStruct.mpcontext)
-        mixer = mpctx_get_mixer(guiIntfStruct.mpcontext);
+    if(guiInfo.mpcontext)
+        mixer = mpctx_get_mixer(guiInfo.mpcontext);
 
     switch(event)
     {
         case evPlay:
         case evPlaySwitchToPause:
         case evPauseSwitchToPlay:
-            mplPlay();
+            uiPlay();
             break;
         case evPause:
-            mplPause();
+            uiPause();
             break;
 #ifdef CONFIG_DVDREAD
         case evPlayDVD:
         {
             static char dvdname[MAX_PATH];
-            guiIntfStruct.DVD.current_title = dvd_title;
-            guiIntfStruct.DVD.current_chapter = dvd_chapter;
-            guiIntfStruct.DVD.current_angle = dvd_angle;
-            guiIntfStruct.DiskChanged = 1;
+            guiInfo.Track = 1;
+            guiInfo.Chapter = 1;
+            guiInfo.Angle = 1;
+            guiInfo.NewPlay = GUI_FILE_SAME;
 
-            mplSetFileName(NULL, dvd_device, STREAMTYPE_DVD);
+#ifdef __WINE__
+            // dvd_device is in the Windows style (D:\), which needs to be
+            // converted for MPlayer, so that it will find the device in the
+            // Linux filesystem.
+            dvd_device = unix_device(dvd_device);
+#endif
+            uiSetFileName(NULL, dvd_device, STREAMTYPE_DVD);
             dvdname[0] = 0;
             strcat(dvdname, "DVD Movie");
             GetVolumeInformation(dvd_device, dvdname, MAX_PATH, NULL, NULL, NULL, NULL, 0);
             capitalize(dvdname);
             mp_msg(MSGT_GPLAYER, MSGL_V, "Opening DVD %s -> %s\n", dvd_device, dvdname);
-            guiGetEvent(guiSetParameters, (char *) STREAMTYPE_DVD);
             mygui->playlist->clear_playlist(mygui->playlist);
             mygui->playlist->add_track(mygui->playlist, filename, NULL, dvdname, 0);
-            mygui->startplay(mygui);
+            uiPlay();
             break;
         }
 #endif
-#ifdef CONFIG_LIBCDIO
+#ifdef CONFIG_CDDA
         case evPlayCD:
         {
             int i;
             char track[10];
             char trackname[10];
-            CdIo_t *p_cdio = cdio_open(NULL, DRIVER_UNKNOWN);
-            track_t i_tracks;
+#ifdef CONFIG_LIBCDIO
+            cdrom_drive_t *cd;
+#else
+            cdrom_drive *cd;
+#endif
+            int i_tracks;
 
-            if(p_cdio == NULL) printf("Couldn't find a driver.\n");
-            i_tracks = cdio_get_num_tracks(p_cdio);
+#ifdef __WINE__
+            // cdrom_device is in the Windows style (D:\), which needs to be
+            // converted for MPlayer, so that it will find the device in the
+            // Linux filesystem.
+            cdrom_device = unix_device(cdrom_device);
+#endif
+            cd = cdda_identify(cdrom_device, 0, NULL);
+            if (cd)
+            {
+                if (cdda_open(cd) != 0)
+                {
+                    cdda_close(cd);
+                    cd = NULL;
+                }
+            }
+            if(!cd)
+            {
+                printf("Couldn't find a driver.\n");
+                break;
+            }
+            i_tracks = cdda_tracks(cd);
 
             mygui->playlist->clear_playlist(mygui->playlist);
             for(i=0;i<i_tracks;i++)
@@ -193,7 +274,7 @@ static void guiSetEvent(int event)
                 sprintf(trackname, "Track %d", i+1);
                 mygui->playlist->add_track(mygui->playlist, track, NULL, trackname, 0);
             }
-            cdio_destroy(p_cdio);
+            cdda_close(cd);
             mygui->startplay(mygui);
             break;
         }
@@ -210,12 +291,12 @@ static void guiSetEvent(int event)
             break;
         }
         case evStop:
-            if(guiIntfStruct.Playing)
-                guiGetEvent(guiCEvent, (void *) guiSetStop);
+            if(guiInfo.Playing)
+                gui(GUI_SET_STATE, (void *) GUI_STOP);
             break;
         case evSetMoviePosition:
         {
-            rel_seek_secs = guiIntfStruct.Position / 100.0f;
+            rel_seek_secs = guiInfo.Position / 100.0f;
             abs_seek_pos = 3;
             break;
         }
@@ -236,17 +317,17 @@ static void guiSetEvent(int event)
         {
             float l,r;
 
-            if (guiIntfStruct.Playing == 0)
+            if (guiInfo.Playing == GUI_STOP)
                 break;
 
-            if (guiIntfStruct.Balance == 50.0f)
-                mixer_setvolume(mixer, guiIntfStruct.Volume, guiIntfStruct.Volume);
+            if (guiInfo.Balance == 50.0f)
+                mixer_setvolume(mixer, guiInfo.Volume, guiInfo.Volume);
 
-            l = guiIntfStruct.Volume * ((100.0f - guiIntfStruct.Balance) / 50.0f);
-            r = guiIntfStruct.Volume * ((guiIntfStruct.Balance) / 50.0f);
+            l = guiInfo.Volume * ((100.0f - guiInfo.Balance) / 50.0f);
+            r = guiInfo.Volume * ((guiInfo.Balance) / 50.0f);
 
-            if (l > guiIntfStruct.Volume) l=guiIntfStruct.Volume;
-            if (r > guiIntfStruct.Volume) r=guiIntfStruct.Volume;
+            if (l > guiInfo.Volume) l=guiInfo.Volume;
+            if (r > guiInfo.Volume) r=guiInfo.Volume;
             mixer_setvolume(mixer, l, r);
             /* Check for balance support on mixer - there is a better way ?? */
             if (r != l)
@@ -255,8 +336,8 @@ static void guiSetEvent(int event)
                 if (r == l)
                 {
                     mp_msg(MSGT_GPLAYER, MSGL_V, "[GUI] Mixer doesn't support balanced audio\n");
-                    mixer_setvolume(mixer, guiIntfStruct.Volume, guiIntfStruct.Volume);
-                    guiIntfStruct.Balance = 50.0f;
+                    mixer_setvolume(mixer, guiInfo.Volume, guiInfo.Volume);
+                    guiInfo.Balance = 50.0f;
                 }
             }
             break;
@@ -269,182 +350,137 @@ static void guiSetEvent(int event)
             mp_input_queue_cmd(cmd);
             break;
         }
-        case evDropFile:
         case evLoadPlay:
         {
-            switch(guiIntfStruct.StreamType)
+            switch(guiInfo.StreamType)
             {
-#ifdef CONFIG_DVDREAD
                 case STREAMTYPE_DVD:
                 {
-                    guiIntfStruct.Title = guiIntfStruct.DVD.current_title;
-                    guiIntfStruct.Chapter = guiIntfStruct.DVD.current_chapter;
-                    guiIntfStruct.Angle = guiIntfStruct.DVD.current_angle;
-                    guiIntfStruct.DiskChanged = 1;
-                    guiGetEvent(guiCEvent, (void *) guiSetPlay);
+                    guiInfo.NewPlay = GUI_FILE_SAME;
+                    gui(GUI_SET_STATE, (void *) GUI_PLAY);
                     break;
                 }
-#endif
                 default:
                 {
-                    guiIntfStruct.FilenameChanged = guiIntfStruct.NewPlay = 1;
+                    guiInfo.NewPlay = GUI_FILE_NEW;
                     update_playlistwindow();
-                    mplGotoTheNext = guiIntfStruct.Playing? 0 : 1;
-                    guiGetEvent(guiCEvent, (void *) guiSetStop);
-                    guiGetEvent(guiCEvent, (void *) guiSetPlay);
+                    uiGotoTheNext = guiInfo.Playing? 0 : 1;
+                    gui(GUI_SET_STATE, (void *) GUI_STOP);
+                    gui(GUI_SET_STATE, (void *) GUI_PLAY);
                     break;
                }
            }
            break;
         }
         case evNext:
-            mplNext();
+            uiNext();
             break;
         case evPrev:
-            mplPrev();
+            uiPrev();
             break;
     }
 }
 
-void mplPlay( void )
+void uiPlay( void )
 {
-   if((!guiIntfStruct.Filename ) || (guiIntfStruct.Filename[0] == 0))
+   if((!guiInfo.Filename ) || (guiInfo.Filename[0] == 0))
      return;
 
-   if(guiIntfStruct.Playing > 0)
+   if(guiInfo.Playing > GUI_STOP)
    {
-       mplPause();
+       uiPause();
        return;
    }
-   guiIntfStruct.NewPlay = 1;
-   guiGetEvent(guiCEvent, (void *) guiSetPlay);
+   guiInfo.NewPlay = GUI_FILE_NEW;
+   gui(GUI_SET_STATE, (void *) GUI_PLAY);
 }
 
-void mplPause( void )
+void uiPause( void )
 {
-   if(!guiIntfStruct.Playing) return;
+   if(!guiInfo.Playing) return;
 
-   if(guiIntfStruct.Playing == 1)
+   if(guiInfo.Playing == GUI_PLAY)
    {
        mp_cmd_t * cmd = calloc(1, sizeof(*cmd));
        cmd->id=MP_CMD_PAUSE;
        cmd->name=strdup("pause");
        mp_input_queue_cmd(cmd);
-   } else guiIntfStruct.Playing = 1;
+   } else guiInfo.Playing = GUI_PLAY;
 }
 
-void mplNext(void)
+void uiNext(void)
 {
-    if(guiIntfStruct.Playing == 2) return;
-    switch(guiIntfStruct.StreamType)
+    if(guiInfo.Playing == GUI_PAUSE) return;
+    switch(guiInfo.StreamType)
     {
-#ifdef CONFIG_DVDREAD
         case STREAMTYPE_DVD:
-            if(guiIntfStruct.DVD.current_chapter == (guiIntfStruct.DVD.chapters - 1))
+            if(guiInfo.Chapter == (guiInfo.Chapters - 1))
                 return;
-            guiIntfStruct.DVD.current_chapter++;
+            guiInfo.Chapter++;
             break;
-#endif
         default:
             if(mygui->playlist->current == (mygui->playlist->trackcount - 1))
                 return;
-            mplSetFileName(NULL, mygui->playlist->tracks[(mygui->playlist->current)++]->filename,
-                           STREAMTYPE_STREAM);
+            uiSetFileName(NULL, mygui->playlist->tracks[(mygui->playlist->current)++]->filename,
+                           STREAMTYPE_FILE);
             break;
     }
     mygui->startplay(mygui);
 }
 
-void mplPrev(void)
+void uiPrev(void)
 {
-    if(guiIntfStruct.Playing == 2) return;
-    switch(guiIntfStruct.StreamType)
+    if(guiInfo.Playing == GUI_PAUSE) return;
+    switch(guiInfo.StreamType)
     {
-#ifdef CONFIG_DVDREAD
         case STREAMTYPE_DVD:
-            if(guiIntfStruct.DVD.current_chapter == 1)
+            if(guiInfo.Chapter == 1)
                 return;
-            guiIntfStruct.DVD.current_chapter--;
+            guiInfo.Chapter--;
             break;
-#endif
         default:
             if(mygui->playlist->current == 0)
                 return;
-            mplSetFileName(NULL, mygui->playlist->tracks[(mygui->playlist->current)--]->filename,
-                           STREAMTYPE_STREAM);
+            uiSetFileName(NULL, mygui->playlist->tracks[(mygui->playlist->current)--]->filename,
+                           STREAMTYPE_FILE);
             break;
     }
     mygui->startplay(mygui);
 }
 
-void mplEnd( void )
-{
-    if(!mplGotoTheNext && guiIntfStruct.Playing)
-    {
-        mplGotoTheNext = 1;
-        return;
-    }
-
-    if(mplGotoTheNext && guiIntfStruct.Playing &&
-      (mygui->playlist->current < (mygui->playlist->trackcount - 1)) &&
-      guiIntfStruct.StreamType != STREAMTYPE_DVD &&
-      guiIntfStruct.StreamType != STREAMTYPE_DVDNAV)
-    {
-        /* we've finished this file, reset the aspect */
-        if(movie_aspect >= 0)
-            movie_aspect = -1;
-
-        mplGotoTheNext = guiIntfStruct.FilenameChanged = guiIntfStruct.NewPlay = 1;
-        mplSetFileName(NULL, mygui->playlist->tracks[(mygui->playlist->current)++]->filename, STREAMTYPE_STREAM);
-        //sprintf(guiIntfStruct.Filename, mygui->playlist->tracks[(mygui->playlist->current)++]->filename);
-    }
-
-    if(guiIntfStruct.FilenameChanged && guiIntfStruct.NewPlay)
-        return;
-
-    guiIntfStruct.TimeSec = 0;
-    guiIntfStruct.Position = 0;
-    guiIntfStruct.AudioType = 0;
-
-#ifdef CONFIG_DVDREAD
-    guiIntfStruct.DVD.current_title = 1;
-    guiIntfStruct.DVD.current_chapter = 1;
-    guiIntfStruct.DVD.current_angle = 1;
-#endif
-
-    if (mygui->playlist->current == (mygui->playlist->trackcount - 1))
-        mygui->playlist->current = 0;
-
-    fullscreen = 0;
-    if(style == WS_VISIBLE | WS_POPUP)
-    {
-        style = WS_OVERLAPPEDWINDOW | WS_SIZEBOX;
-        SetWindowLong(mygui->subwindow, GWL_STYLE, style);
-    }
-    guiGetEvent(guiCEvent, (void *) guiSetStop);
-}
-
-void mplSetFileName(char *dir, char *name, int type)
+void uiSetFileName(char *dir, char *name, int type)
 {
     if(!name) return;
     if(!dir)
-        guiSetFilename(guiIntfStruct.Filename, name)
+        setdup(&guiInfo.Filename, name);
     else
-        guiSetDF(guiIntfStruct.Filename, dir, name);
+        setddup(&guiInfo.Filename, dir, name);
 
-    guiIntfStruct.StreamType = type;
-    free((void **) &guiIntfStruct.AudioFile);
-    free((void **) &guiIntfStruct.Subtitlename);
+    filename = guiInfo.Filename;
+#ifdef __WINE__
+    // When the GUI receives the files to be played in guiPlaylistInitialize()
+    // and guiPlaylistAdd(), it calls import_file_into_gui() where the call of
+    // Wine's GetFullPathName() converts each file name into the Windows style
+    // (C:\path\to\file), which needs to be reconverted for MPlayer, so that
+    // it will find the filename in the Linux filesystem.
+    filename = unix_name(filename);
+#endif
+
+    if (type != SAME_STREAMTYPE)
+        guiInfo.StreamType = type;
+
+    nfree(guiInfo.AudioFilename);
+    nfree(guiInfo.SubtitleFilename);
 }
 
-void mplFullScreen( void )
+void uiFullScreen( void )
 {
-    if(!guiIntfStruct.sh_video) return;
+    if(!guiInfo.sh_video) return;
 
-    if(sub_window)
+    if(video_window)
     {
-        if(!fullscreen && IsWindowVisible(mygui->subwindow) && !IsIconic(mygui->subwindow))
-           GetWindowRect(mygui->subwindow, &old_rect);
+        if(!fullscreen && IsWindowVisible(mygui->videowindow) && !IsIconic(mygui->videowindow))
+           GetWindowRect(mygui->videowindow, &old_rect);
 
         if(fullscreen)
         {
@@ -454,11 +490,11 @@ void mplFullScreen( void )
             fullscreen = 1;
             style = WS_VISIBLE | WS_POPUP;
         }
-        SetWindowLong(mygui->subwindow, GWL_STYLE, style);
-        update_subwindow();
+        SetWindowLong(mygui->videowindow, GWL_STYLE, style);
+        update_videowindow();
     }
     video_out->control(VOCTRL_FULLSCREEN, 0);
-    if(sub_window) ShowWindow(mygui->subwindow, SW_SHOW);
+    if(video_window) ShowWindow(mygui->videowindow, SW_SHOW);
 }
 
 static unsigned __stdcall GuiThread(void* param)
@@ -466,7 +502,7 @@ static unsigned __stdcall GuiThread(void* param)
     MSG msg;
 
     if(!skinName) skinName = strdup("Blue");
-    if(!mygui) mygui = create_gui(get_path("skins"), skinName, guiSetEvent);
+    if(!mygui) mygui = create_gui(get_path("skins"), guiSetEvent);
     if(!mygui) exit_player(EXIT_ERROR);
 
     if(autosync && autosync != gtkAutoSync)
@@ -487,7 +523,7 @@ static unsigned __stdcall GuiThread(void* param)
 
 void guiInit(void)
 {
-    memset(&guiIntfStruct, 0, sizeof(guiIntfStruct));
+    memset(&guiInfo, 0, sizeof(guiInfo));
     /* Create The gui thread */
     if (!mygui)
     {
@@ -510,8 +546,7 @@ void guiDone(void)
         WaitForSingleObject(hThread, INFINITE);
         CloseHandle(hThread);
         mygui->uninit(mygui);
-        free(mygui);
-        mygui = NULL;
+        nfree(mygui);
     }
     /* Remove tray icon */
     Shell_NotifyIcon(NIM_DELETE, &nid);
@@ -519,183 +554,25 @@ void guiDone(void)
 }
 
 /* this function gets called by mplayer to update the gui */
-int guiGetEvent(int type, void *arg)
+int gui(int what, void *data)
 {
-    stream_t *stream = arg;
+    stream_t *stream = data;
 #ifdef CONFIG_DVDREAD
-    dvd_priv_t *dvdp = arg;
+    dvd_priv_t *dvdp;
 #endif
     if(!mygui || !mygui->skin) return 0;
 
-    if(guiIntfStruct.mpcontext)
+    if(guiInfo.mpcontext)
     {
-        audio_out = mpctx_get_audio_out(guiIntfStruct.mpcontext);
-        video_out = mpctx_get_video_out(guiIntfStruct.mpcontext);
-        mixer = mpctx_get_mixer(guiIntfStruct.mpcontext);
-        playtree = mpctx_get_playtree_iter(guiIntfStruct.mpcontext);
+        audio_out = mpctx_get_audio_out(guiInfo.mpcontext);
+        video_out = mpctx_get_video_out(guiInfo.mpcontext);
+        mixer = mpctx_get_mixer(guiInfo.mpcontext);
+        playtree = mpctx_get_playtree_iter(guiInfo.mpcontext);
     }
 
-    switch (type)
+    switch (what)
     {
-        case guiSetFileFormat:
-            guiIntfStruct.FileFormat = (int) arg;
-            break;
-        case guiSetParameters:
-        {
-            guiGetEvent(guiSetDefaults, NULL);
-            guiIntfStruct.DiskChanged = 0;
-            guiIntfStruct.FilenameChanged = 0;
-            guiIntfStruct.NewPlay = 0;
-            switch(guiIntfStruct.StreamType)
-            {
-                case STREAMTYPE_PLAYLIST:
-                    break;
-#ifdef CONFIG_DVDREAD
-                case STREAMTYPE_DVD:
-                {
-                    char tmp[512];
-                    dvd_title = guiIntfStruct.DVD.current_title;
-                    dvd_chapter = guiIntfStruct.DVD.current_chapter;
-                    dvd_angle = guiIntfStruct.DVD.current_angle;
-                    sprintf(tmp,"dvd://%d", guiIntfStruct.Title);
-                    guiSetFilename(guiIntfStruct.Filename, tmp);
-                    break;
-                }
-#endif
-            }
-            if(guiIntfStruct.Filename)
-                filename = strdup(guiIntfStruct.Filename);
-            else if(filename)
-                strcpy(guiIntfStruct.Filename, filename);
-            break;
-        }
-        case guiSetAudioOnly:
-        {
-            guiIntfStruct.AudioOnly = (int) arg;
-            if(IsWindowVisible(mygui->subwindow))
-                ShowWindow(mygui->subwindow, SW_HIDE);
-            break;
-        }
-        case guiSetContext:
-            guiIntfStruct.mpcontext = arg;
-            break;
-        case guiSetDemuxer:
-            guiIntfStruct.demuxer = arg;
-            break;
-        case guiSetValues:
-        {
-            guiIntfStruct.sh_video = arg;
-            if (arg)
-            {
-                sh_video_t *sh = arg;
-                codecname = sh->codec->name;
-                guiIntfStruct.FPS = sh->fps;
-
-                /* we have video, show the subwindow */
-                if(!IsWindowVisible(mygui->subwindow) || IsIconic(mygui->subwindow))
-                    ShowWindow(mygui->subwindow, SW_SHOWNORMAL);
-                if(WinID == -1)
-                    update_subwindow();
-
-            }
-            break;
-        }
-        case guiSetShVideo:
-        {
-            guiIntfStruct.MovieWidth = vo_dwidth;
-            guiIntfStruct.MovieHeight = vo_dheight;
-
-            sub_aspect = (float)guiIntfStruct.MovieWidth/guiIntfStruct.MovieHeight;
-            if(WinID != -1)
-               update_subwindow();
-            break;
-        }
-        case guiSetStream:
-        {
-            guiIntfStruct.StreamType = stream->type;
-            switch(stream->type)
-            {
-#ifdef CONFIG_DVDREAD
-                case STREAMTYPE_DVD:
-                    guiGetEvent(guiSetDVD, (char *) stream->priv);
-                    break;
-#endif
-            }
-            break;
-        }
-#ifdef CONFIG_DVDREAD
-        case guiSetDVD:
-        {
-            guiIntfStruct.DVD.titles = dvdp->vmg_file->tt_srpt->nr_of_srpts;
-            guiIntfStruct.DVD.chapters = dvdp->vmg_file->tt_srpt->title[dvd_title].nr_of_ptts;
-            guiIntfStruct.DVD.angles = dvdp->vmg_file->tt_srpt->title[dvd_title].nr_of_angles;
-            guiIntfStruct.DVD.nr_of_audio_channels = dvdp->nr_of_channels;
-            memcpy(guiIntfStruct.DVD.audio_streams, dvdp->audio_streams, sizeof(dvdp->audio_streams));
-            guiIntfStruct.DVD.nr_of_subtitles = dvdp->nr_of_subtitles;
-            memcpy(guiIntfStruct.DVD.subtitles, dvdp->subtitles, sizeof(dvdp->subtitles));
-            guiIntfStruct.DVD.current_title = dvd_title + 1;
-            guiIntfStruct.DVD.current_chapter = dvd_chapter + 1;
-            guiIntfStruct.DVD.current_angle = dvd_angle + 1;
-            guiIntfStruct.Track = dvd_title + 1;
-            break;
-        }
-#endif
-        case guiReDraw:
-            mygui->updatedisplay(mygui, mygui->mainwindow);
-            break;
-        case guiSetAfilter:
-            guiIntfStruct.afilter = arg;
-            break;
-        case guiCEvent:
-        {
-            guiIntfStruct.Playing = (int) arg;
-            switch (guiIntfStruct.Playing)
-            {
-                case guiSetPlay:
-                {
-                    guiIntfStruct.Playing = 1;
-                    break;
-                }
-                case guiSetStop:
-                {
-                    guiIntfStruct.Playing = 0;
-                    if(movie_aspect >= 0)
-                        movie_aspect = -1;
-                    update_subwindow();
-                    break;
-                }
-                case guiSetPause:
-                    guiIntfStruct.Playing = 2;
-                    break;
-            }
-            break;
-        }
-        case guiIEvent:
-        {
-            mp_msg(MSGT_GPLAYER,MSGL_V, "cmd: %d\n", (int) arg);
-            /* MPlayer asks us to quit */
-            switch((int) arg)
-            {
-                case MP_CMD_VO_FULLSCREEN:
-                    mplFullScreen();
-                    break;
-                case MP_CMD_QUIT:
-                {
-                    mygui->uninit(mygui);
-                    free(mygui);
-                    mygui = NULL;
-                    exit_player(EXIT_QUIT);
-                    return 0;
-                }
-                default:
-                    break;
-            }
-            break;
-        }
-        case guiSetFileName:
-            if (arg) guiIntfStruct.Filename = arg;
-            break;
-        case guiSetDefaults:
+        case GUI_PREPARE:
         {
             audio_id = -1;
             video_id = -1;
@@ -703,26 +580,169 @@ int guiGetEvent(int type, void *arg)
             vobsub_id = -1;
             stream_cache_size = -1;
             autosync = 0;
-            vcd_track = 0;
             dvd_title = 0;
             force_fps = 0;
             if(!mygui->playlist->tracks) return 0;
-            filename = guiIntfStruct.Filename = mygui->playlist->tracks[mygui->playlist->current]->filename;
-            guiIntfStruct.Track = mygui->playlist->current + 1;
-            if(gtkAONorm) greplace(&af_cfg.list, "volnorm", "volnorm");
+            switch(guiInfo.StreamType)
+            {
+                case STREAMTYPE_FILE:
+                case STREAMTYPE_STREAM:
+                    uiSetFileName(NULL, mygui->playlist->tracks[mygui->playlist->current]->filename, SAME_STREAMTYPE);
+                    guiInfo.Track = mygui->playlist->current + 1;
+                    break;
+                case STREAMTYPE_DVD:
+                {
+                    char tmp[512];
+                    dvd_chapter = guiInfo.Chapter;
+                    dvd_angle = guiInfo.Angle;
+                    sprintf(tmp,"dvd://%d", guiInfo.Track);
+                    uiSetFileName(NULL, tmp, SAME_STREAMTYPE);
+                    break;
+                }
+            }
+            guiInfo.VideoWindow = 1;
+            if(gtkAONorm) listRepl(&af_cfg.list, "volnorm", "volnorm");
             if(gtkAOExtraStereo)
             {
                 char *name = malloc(12 + 20 + 1);
                 snprintf(name, 12 + 20, "extrastereo=%f", gtkAOExtraStereoMul);
                 name[12 + 20] = 0;
-                greplace(&af_cfg.list, "extrastereo", name);
+                listRepl(&af_cfg.list, "extrastereo", name);
                 free(name);
             }
             if(gtkCacheOn) stream_cache_size = gtkCacheSize;
             if(gtkAutoSyncOn) autosync = gtkAutoSync;
+            guiInfo.NewPlay = 0;
             break;
         }
-        case guiSetVolume:
+        case GUI_SET_AUDIO:
+        {
+            if (data && !guiInfo.sh_video) guiInfo.VideoWindow = 0;
+            if(IsWindowVisible(mygui->videowindow) && !guiInfo.VideoWindow)
+                ShowWindow(mygui->videowindow, SW_HIDE);
+            break;
+        }
+        case GUI_SET_CONTEXT:
+            guiInfo.mpcontext = data;
+            break;
+        case GUI_SET_VIDEO:
+        {
+            guiInfo.sh_video = data;
+            if (data)
+            {
+                sh_video_t *sh = data;
+                codecname = sh->codec->name;
+
+                /* we have video, show the video window */
+                if(!IsWindowVisible(mygui->videowindow) || IsIconic(mygui->videowindow))
+                    ShowWindow(mygui->videowindow, SW_SHOWNORMAL);
+                if(WinID == -1)
+                    update_videowindow();
+
+            }
+            break;
+        }
+        case GUI_SETUP_VIDEO_WINDOW:
+        {
+            guiInfo.VideoWidth = vo_dwidth;
+            guiInfo.VideoHeight = vo_dheight;
+
+            video_aspect = (float)guiInfo.VideoWidth/guiInfo.VideoHeight;
+            if(WinID != -1)
+               update_videowindow();
+            break;
+        }
+        case GUI_SET_STREAM:
+        {
+            guiInfo.StreamType = stream->type;
+            switch(stream->type)
+            {
+                case STREAMTYPE_DVD:
+                    guiInfo.Tracks = 0;
+                    stream_control(stream, STREAM_CTRL_GET_NUM_TITLES, &guiInfo.Tracks);
+                    guiInfo.Chapters = 0;
+                    stream_control(stream, STREAM_CTRL_GET_NUM_CHAPTERS, &guiInfo.Chapters);
+                    guiInfo.Angles = 0;
+                    stream_control(stream, STREAM_CTRL_GET_NUM_ANGLES, &guiInfo.Angles);
+#ifdef CONFIG_DVDREAD
+                    dvdp = stream->priv;
+                    guiInfo.AudioStreams = dvdp->nr_of_channels;
+                    memcpy(guiInfo.AudioStream, dvdp->audio_streams, sizeof(dvdp->audio_streams));
+                    guiInfo.Subtitles = dvdp->nr_of_subtitles;
+                    memcpy(guiInfo.Subtitle, dvdp->subtitles, sizeof(dvdp->subtitles));
+#endif
+                    guiInfo.Chapter = dvd_chapter + 1;
+                    guiInfo.Angle = dvd_angle + 1;
+                    guiInfo.Track = dvd_title + 1;
+                    break;
+            }
+            break;
+        }
+        case GUI_REDRAW:
+            mygui->updatedisplay(mygui, mygui->mainwindow);
+            break;
+        case GUI_SET_AFILTER:
+            guiInfo.afilter = data;
+            break;
+        case GUI_SET_STATE:
+        {
+            guiInfo.Playing = (int) data;
+            switch (guiInfo.Playing)
+            {
+                case GUI_PLAY:
+                {
+                    guiInfo.Playing = GUI_PLAY;
+                    break;
+                }
+                case GUI_STOP:
+                {
+                    guiInfo.Playing = GUI_STOP;
+                    if(movie_aspect >= 0)
+                        movie_aspect = -1;
+                    update_videowindow();
+                    break;
+                }
+                case GUI_PAUSE:
+                    guiInfo.Playing = GUI_PAUSE;
+                    break;
+            }
+            break;
+        }
+        case GUI_RUN_COMMAND:
+        {
+            mp_msg(MSGT_GPLAYER,MSGL_V, "cmd: %d\n", (int) data);
+            /* MPlayer asks us to quit */
+            switch((int) data)
+            {
+                case MP_CMD_VO_FULLSCREEN:
+                    uiFullScreen();
+                    break;
+                case MP_CMD_QUIT:
+                {
+                    mygui->uninit(mygui);
+                    nfree(mygui);
+                    exit_player(EXIT_QUIT);
+                    return 1;
+                }
+                case MP_CMD_PLAY_TREE_STEP:
+                  guiSetEvent(evNext);
+                  break;
+                case -MP_CMD_PLAY_TREE_STEP:
+                  guiSetEvent(evPrev);
+                  break;
+                case MP_CMD_STOP:
+                  guiSetEvent(evStop);
+                  break;
+                default:
+                    break;
+            }
+            break;
+        }
+        case GUI_RUN_MESSAGE:
+          break;
+        case GUI_HANDLE_EVENTS:
+          break;
+        case GUI_SET_MIXER:
         {
             if(audio_out)
             {
@@ -730,22 +750,68 @@ int guiGetEvent(int type, void *arg)
                 /* FIXME this algo is not correct */
                 float l, r;
                 mixer_getvolume(mixer, &l, &r);
-                guiIntfStruct.Volume = (r > l ? r : l); /* max(r,l) */
+                guiInfo.Volume = (r > l ? r : l); /* max(r,l) */
                 if (r != l)
-                    guiIntfStruct.Balance = ((r-l) + 100.0f) * 0.5f;
+                    guiInfo.Balance = ((r-l) + 100.0f) * 0.5f;
                 else
-                    guiIntfStruct.Balance = 50.0f;
+                    guiInfo.Balance = 50.0f;
             }
             break;
         }
+        case GUI_END_FILE:
+        {
+          if(!uiGotoTheNext && guiInfo.Playing)
+          {
+              uiGotoTheNext = 1;
+              break;
+          }
+
+          if(uiGotoTheNext && guiInfo.Playing &&
+            (mygui->playlist->current < (mygui->playlist->trackcount - 1)) &&
+            guiInfo.StreamType != STREAMTYPE_DVD &&
+            guiInfo.StreamType != STREAMTYPE_DVDNAV)
+          {
+              /* we've finished this file, reset the aspect */
+              if(movie_aspect >= 0)
+                  movie_aspect = -1;
+
+              uiGotoTheNext = 1;
+              guiInfo.NewPlay = GUI_FILE_NEW;
+              uiSetFileName(NULL, mygui->playlist->tracks[(mygui->playlist->current)++]->filename, STREAMTYPE_FILE);
+              //sprintf(guiInfo.Filename, mygui->playlist->tracks[(mygui->playlist->current)++]->filename);
+          }
+
+          if(guiInfo.NewPlay == GUI_FILE_NEW)
+              break;
+
+          guiInfo.ElapsedTime = 0;
+          guiInfo.Position = 0;
+          guiInfo.AudioChannels = 0;
+
+          guiInfo.Track = 1;
+          guiInfo.Chapter = 1;
+          guiInfo.Angle = 1;
+
+          if (mygui->playlist->current == (mygui->playlist->trackcount - 1))
+              mygui->playlist->current = 0;
+
+          fullscreen = 0;
+          if(style == WS_VISIBLE | WS_POPUP)
+          {
+              style = WS_OVERLAPPEDWINDOW | WS_SIZEBOX;
+              SetWindowLong(mygui->videowindow, GWL_STYLE, style);
+          }
+          gui(GUI_SET_STATE, (void *) GUI_STOP);
+          break;
+        }
         default:
-            mp_msg(MSGT_GPLAYER, MSGL_ERR, "[GUI] GOT UNHANDLED EVENT %i\n", type);
+            mp_msg(MSGT_GPLAYER, MSGL_ERR, "[GUI] GOT UNHANDLED EVENT %i\n", what);
     }
-    return 0;
+    return 1;
 }
 
 /* This function adds/inserts one file into the gui playlist */
-int import_file_into_gui(char *pathname, int insert)
+static int import_file_into_gui(char *pathname, int insert)
 {
     char filename[MAX_PATH];
     char *filepart = filename;
@@ -775,7 +841,7 @@ int import_file_into_gui(char *pathname, int insert)
     by either:
     - overwriting gui pl (enqueue=0) */
 
-int import_initial_playtree_into_gui(play_tree_t *my_playtree, m_config_t *config, int enqueue)
+int guiPlaylistInitialize(play_tree_t *my_playtree, m_config_t *config, int enqueue)
 {
     play_tree_iter_t *my_pt_iter = NULL;
     int result = 0;
@@ -792,13 +858,16 @@ int import_initial_playtree_into_gui(play_tree_t *my_playtree, m_config_t *confi
                 result = 1;
         }
     }
-    mplGotoTheNext = 1;
+    uiGotoTheNext = 1;
 
     if (result)
     {
         mygui->playlist->current = 0;
-        filename = mygui->playlist->tracks[0]->filename;
+        uiSetFileName(NULL, mygui->playlist->tracks[0]->filename, STREAMTYPE_FILE);
     }
+
+    if (enqueue) filename = NULL;
+
     return result;
 }
 
@@ -806,7 +875,7 @@ int import_initial_playtree_into_gui(play_tree_t *my_playtree, m_config_t *confi
    parsing some MOV-Reference-File; or by loading an playlist with "File Open"
    The file which contained the playlist is thereby replaced with it's contents. */
 
-int import_playtree_playlist_into_gui(play_tree_t *my_playtree, m_config_t *config)
+int guiPlaylistAdd(play_tree_t *my_playtree, m_config_t *config)
 {
     play_tree_iter_t *my_pt_iter = NULL;
     int result = 0;
@@ -818,93 +887,70 @@ int import_playtree_playlist_into_gui(play_tree_t *my_playtree, m_config_t *conf
                 result = 1;
         pt_iter_destroy(&my_pt_iter);
     }
-    filename = NULL;
     return result;
 }
 
-inline void gtkMessageBox(int type, const char *str)
-{
-    if (type & GTK_MB_FATAL)
-        MessageBox(NULL, str, "MPlayer GUI for Windows Error", MB_OK | MB_ICONERROR);
-
-    fprintf(stderr, "[GUI] MessageBox: %s\n", str);
-    fflush(stderr);
-}
-
-void guiMessageBox(int level, char *str)
-{
-    switch(level)
-    {
-        case MSGL_FATAL:
-            gtkMessageBox(GTK_MB_FATAL | GTK_MB_SIMPLE, str);
-            break;
-        case MSGL_ERR:
-            gtkMessageBox(GTK_MB_ERROR | GTK_MB_SIMPLE, str);
-            break;
-    }
-}
-
-static int update_subwindow(void)
+static int update_videowindow(void)
 {
     int x,y;
     RECT rd;
     WINDOWPOS wp;
 
-    if(!sub_window)
+    if(!video_window)
     {
-        WinID = -1; // so far only directx supports WinID in windows
+        WinID = -1;
 
-        if(IsWindowVisible(mygui->subwindow) && guiIntfStruct.sh_video && guiIntfStruct.Playing)
+        if(IsWindowVisible(mygui->videowindow) && guiInfo.sh_video && guiInfo.Playing)
         {
-            ShowWindow(mygui->subwindow, SW_HIDE);
+            ShowWindow(mygui->videowindow, SW_HIDE);
             return 0;
         }
-        else if(guiIntfStruct.AudioOnly)
+        else if(!guiInfo.VideoWindow)
             return 0;
-        else ShowWindow(mygui->subwindow, SW_SHOW);
+        else ShowWindow(mygui->videowindow, SW_SHOW);
     }
 
     /* we've come out of fullscreen at the end of file */
-    if((!IsWindowVisible(mygui->subwindow) || IsIconic(mygui->subwindow)) && !guiIntfStruct.AudioOnly)
-        ShowWindow(mygui->subwindow, SW_SHOWNORMAL);
+    if((!IsWindowVisible(mygui->videowindow) || IsIconic(mygui->videowindow)) && guiInfo.VideoWindow)
+        ShowWindow(mygui->videowindow, SW_SHOWNORMAL);
 
     /* get our current window coordinates */
-    GetWindowRect(mygui->subwindow, &rd);
+    GetWindowRect(mygui->videowindow, &rd);
 
     x = rd.left;
     y = rd.top;
 
-    /* restore sub window position when coming out of fullscreen */
+    /* restore video window position when coming out of fullscreen */
     if(x <= 0) x = old_rect.left;
     if(y <= 0) y = old_rect.top;
 
-    if(!guiIntfStruct.Playing)
+    if(!guiInfo.Playing)
     {
         window *desc = NULL;
         int i;
 
         for (i=0; i<mygui->skin->windowcount; i++)
-            if(mygui->skin->windows[i]->type == wiSub)
+            if(mygui->skin->windows[i]->type == wiVideo)
                 desc = mygui->skin->windows[i];
 
         rd.right = rd.left+desc->base->bitmap[0]->width;
         rd.bottom = rd.top+desc->base->bitmap[0]->height;
-        sub_aspect = (float)(rd.right-rd.left)/(rd.bottom-rd.top);
+        video_aspect = (float)(rd.right-rd.left)/(rd.bottom-rd.top);
     }
     else
     {
-        rd.right = rd.left+guiIntfStruct.MovieWidth;
-        rd.bottom = rd.top+guiIntfStruct.MovieHeight;
+        rd.right = rd.left+guiInfo.VideoWidth;
+        rd.bottom = rd.top+guiInfo.VideoHeight;
 
         if (movie_aspect > 0.0)       // forced aspect from the cmdline
-            sub_aspect = movie_aspect;
+            video_aspect = movie_aspect;
     }
 
 
     AdjustWindowRect(&rd, WS_OVERLAPPEDWINDOW | WS_SIZEBOX, 0);
-    SetWindowPos(mygui->subwindow, 0, x, y, rd.right-rd.left, rd.bottom-rd.top, SWP_NOOWNERZORDER);
+    SetWindowPos(mygui->videowindow, 0, x, y, rd.right-rd.left, rd.bottom-rd.top, SWP_NOOWNERZORDER);
 
-    wp.hwnd = mygui->subwindow;
+    wp.hwnd = mygui->videowindow;
     wp.x = rd.left;
     wp.y = rd.top;
     wp.cx = rd.right-rd.left;
@@ -912,12 +958,10 @@ static int update_subwindow(void)
     wp.flags = SWP_NOOWNERZORDER | SWP_SHOWWINDOW;
 
     /* erase the bitmap image if there's video */
-    if(guiIntfStruct.Playing != 0 && guiIntfStruct.sh_video)
-        SendMessage(mygui->subwindow, WM_ERASEBKGND, (WPARAM)GetDC(mygui->subwindow), 0);
+    if(guiInfo.Playing != GUI_STOP && guiInfo.sh_video)
+        SendMessage(mygui->videowindow, WM_ERASEBKGND, (WPARAM)GetDC(mygui->videowindow), 0);
 
     /* reset the window aspect */
-    SendMessage(mygui->subwindow, WM_WINDOWPOSCHANGED, 0, (LPARAM)&wp);
+    SendMessage(mygui->videowindow, WM_WINDOWPOSCHANGED, 0, (LPARAM)&wp);
     return 0;
 }
-
-void guiEventHandling(void) {}

@@ -26,11 +26,9 @@
 
 #include "ad_internal.h"
 #include "dec_audio.h"
-#include "vd_ffmpeg.h"
+#include "av_helpers.h"
 #include "libaf/reorder_ch.h"
 #include "fmt-conversion.h"
-
-#include "mpbswap.h"
 
 static const ad_info_t info =
 {
@@ -46,11 +44,12 @@ LIBAD_EXTERN(ffmpeg)
 #define assert(x)
 
 #include "libavcodec/avcodec.h"
+#include "libavutil/dict.h"
 
 
 static int preinit(sh_audio_t *sh)
 {
-  sh->audio_out_minsize=AVCODEC_MAX_AUDIO_FRAME_SIZE;
+  sh->audio_out_minsize=AF_NCH*AVCODEC_MAX_AUDIO_FRAME_SIZE;
   return 1;
 }
 
@@ -92,6 +91,8 @@ static int init(sh_audio_t *sh_audio)
     int x;
     AVCodecContext *lavc_context;
     AVCodec *lavc_codec;
+    AVDictionary *opts = NULL;
+    char tmpstr[50];
 
     mp_msg(MSGT_DECAUDIO,MSGL_V,"FFmpeg's libavcodec audio codec\n");
     init_avcodec();
@@ -102,10 +103,11 @@ static int init(sh_audio_t *sh_audio)
 	return 0;
     }
 
-    lavc_context = avcodec_alloc_context();
+    lavc_context = avcodec_alloc_context3(lavc_codec);
     sh_audio->context=lavc_context;
 
-    lavc_context->drc_scale = drc_level;
+    snprintf(tmpstr, sizeof(tmpstr), "%f", drc_level);
+    av_dict_set(&opts, "drc_scale", tmpstr, 0);
     lavc_context->sample_rate = sh_audio->samplerate;
     lavc_context->bit_rate = sh_audio->i_bps * 8;
     if(sh_audio->wf){
@@ -117,7 +119,6 @@ static int init(sh_audio_t *sh_audio)
     }
     lavc_context->request_channels = audio_output_channels;
     lavc_context->codec_tag = sh_audio->format; //FOURCC
-    lavc_context->codec_type = AVMEDIA_TYPE_AUDIO;
     lavc_context->codec_id = lavc_codec->id; // not sure if required, imho not --A'rpi
 
     /* alloc extra data */
@@ -138,10 +139,11 @@ static int init(sh_audio_t *sh_audio)
     }
 
     /* open it */
-    if (avcodec_open(lavc_context, lavc_codec) < 0) {
+    if (avcodec_open2(lavc_context, lavc_codec, &opts) < 0) {
         mp_msg(MSGT_DECAUDIO,MSGL_ERR, MSGTR_CantOpenCodec);
         return 0;
     }
+    av_dict_free(&opts);
    mp_msg(MSGT_DECAUDIO,MSGL_V,"INFO: libavcodec \"%s\" init OK!\n", lavc_codec->name);
 
 //   printf("\nFOURCC: 0x%X\n",sh_audio->format);
@@ -220,6 +222,7 @@ static int decode_audio(sh_audio_t *sh_audio,unsigned char *buf,int minlen,int m
 	    int consumed = ds_parse(sh_audio->ds, &start, &x, pts, 0);
 	    sh_audio->ds->buffer_pos -= in_size - consumed;
 	}
+
 	av_init_packet(&pkt);
 	pkt.data = start;
 	pkt.size = x;
@@ -237,8 +240,8 @@ static int decode_audio(sh_audio_t *sh_audio,unsigned char *buf,int minlen,int m
 	    sh_audio->ds->buffer_pos+=y-x;  // put back data (HACK!)
 	if(len2>0){
 	  if (((AVCodecContext *)sh_audio->context)->channels >= 5) {
-            int samplesize = av_get_bits_per_sample_fmt(((AVCodecContext *)
-                                    sh_audio->context)->sample_fmt) / 8;
+            int samplesize = av_get_bytes_per_sample(((AVCodecContext *)
+                                    sh_audio->context)->sample_fmt);
             reorder_channel_nch(buf, AF_CHANNEL_LAYOUT_LAVC_DEFAULT,
                                 AF_CHANNEL_LAYOUT_MPLAYER_DEFAULT,
                                 ((AVCodecContext *)sh_audio->context)->channels,

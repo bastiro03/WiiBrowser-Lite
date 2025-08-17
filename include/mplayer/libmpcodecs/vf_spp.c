@@ -49,7 +49,7 @@
 #include "img_format.h"
 #include "mp_image.h"
 #include "vf.h"
-#include "vd_ffmpeg.h"
+#include "av_helpers.h"
 #include "libvo/fastmemcpy.h"
 
 #define XMIN(a,b) ((a) < (b) ? (a) : (b))
@@ -578,8 +578,8 @@ static int vf_open(vf_instance_t *vf, char *args){
 
     init_avcodec();
 
-    vf->priv->avctx= avcodec_alloc_context();
-    dsputil_init(&vf->priv->dsp, vf->priv->avctx);
+    vf->priv->avctx= avcodec_alloc_context3(NULL);
+    ff_dsputil_init(&vf->priv->dsp, vf->priv->avctx);
 
     vf->priv->log2_count= 3;
 

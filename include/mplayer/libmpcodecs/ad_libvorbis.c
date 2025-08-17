@@ -23,6 +23,7 @@
 #include <math.h>
 
 #include "config.h"
+#include "mp_msg.h"
 #include "ad_internal.h"
 #include "libaf/reorder_ch.h"
 
@@ -42,7 +43,11 @@ static const ad_info_t info =
 LIBAD_EXTERN(libvorbis)
 
 #ifdef CONFIG_TREMOR
+#ifdef GEKKO
+#include "../tremor/ivorbiscodec.h"
+#else
 #include <tremor/ivorbiscodec.h>
+#endif
 #else
 #include <vorbis/codec.h>
 #endif

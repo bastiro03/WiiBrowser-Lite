@@ -39,7 +39,6 @@ extern const ao_functions_t audio_out_pulse;
 extern const ao_functions_t audio_out_jack;
 extern const ao_functions_t audio_out_openal;
 extern const ao_functions_t audio_out_null;
-extern const ao_functions_t audio_out_alsa5;
 extern const ao_functions_t audio_out_alsa;
 extern const ao_functions_t audio_out_nas;
 extern const ao_functions_t audio_out_sdl;
@@ -55,8 +54,9 @@ extern const ao_functions_t audio_out_v4l2;
 extern const ao_functions_t audio_out_mpegpes;
 extern const ao_functions_t audio_out_pcm;
 extern const ao_functions_t audio_out_pss;
-extern const ao_functions_t audio_out_aesnd;
+#ifdef GEKKO
 extern const ao_functions_t audio_out_gekko;
+#endif
 
 const ao_functions_t* const audio_out_drivers[] =
 {
@@ -82,20 +82,11 @@ const ao_functions_t* const audio_out_drivers[] =
 #ifdef CONFIG_ALSA
         &audio_out_alsa,
 #endif
-#ifdef CONFIG_ALSA5
-        &audio_out_alsa5,
-#endif
 #ifdef CONFIG_SGI_AUDIO
         &audio_out_sgi,
 #endif
 #ifdef CONFIG_SUN_AUDIO
         &audio_out_sun,
-#endif
-#ifdef CONFIG_AESND
-        &audio_out_aesnd,
-#endif
-#if defined(GEKKO) && defined(HW_RVL)
-        &audio_out_gekko,
 #endif
 // wrappers:
 #ifdef CONFIG_ARTS
@@ -128,6 +119,9 @@ const ao_functions_t* const audio_out_drivers[] =
 #endif
 #ifdef CONFIG_V4L2_DECODER
         &audio_out_v4l2,
+#endif
+#ifdef GEKKO
+		&audio_out_gekko,
 #endif
         &audio_out_null,
 // should not be auto-selected:
@@ -167,7 +161,7 @@ const ao_functions_t* init_best_audio_out(char** ao_list,int use_plugin,int rate
         else
             ao_len = strlen(ao);
 
-        mp_msg(MSGT_AO, MSGL_V, MSGTR_AO_TryingPreferredAudioDriver,
+        mp_msg(MSGT_AO, MSGL_V, "Trying preferred audio driver '%.*s', options '%s'\n",
                ao_len, ao, ao_subdevice ? ao_subdevice : "[none]");
 
         for(i=0;audio_out_drivers[i];i++){
@@ -190,7 +184,7 @@ const ao_functions_t* init_best_audio_out(char** ao_list,int use_plugin,int rate
     free(ao_subdevice);
     ao_subdevice = NULL;
 
-    mp_msg(MSGT_AO, MSGL_V, MSGTR_AO_TryingEveryKnown);
+    mp_msg(MSGT_AO, MSGL_V, "Trying every known audio driver...\n");
 
     // now try the rest...
     for(i=0;audio_out_drivers[i];i++){
@@ -200,4 +194,14 @@ const ao_functions_t* init_best_audio_out(char** ao_list,int use_plugin,int rate
             return audio_out; // success!
     }
     return NULL;
+}
+
+void mp_ao_resume_refill(const ao_functions_t *ao, int prepause_space)
+{
+    int fillcnt = ao->get_space() - prepause_space;
+    if (fillcnt > 0 && !(ao_data.format & AF_FORMAT_SPECIAL_MASK)) {
+      void *silence = calloc(fillcnt, 1);
+      ao->play(silence, fillcnt, 0);
+      free(silence);
+    }
 }

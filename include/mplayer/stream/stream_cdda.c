@@ -70,7 +70,7 @@ static struct cdda_params {
   char* device;
   m_span_t span;
 } cdda_dflts = {
-  -1,
+  0,
   0,
   NULL,
   0,
@@ -84,11 +84,11 @@ static struct cdda_params {
 
 #define ST_OFF(f) M_ST_OFF(struct cdda_params,f)
 static const m_option_t cdda_params_fields[] = {
-  { "speed", ST_OFF(speed), CONF_TYPE_INT, M_OPT_RANGE,1,100, NULL },
+  { "speed", ST_OFF(speed), CONF_TYPE_INT, M_OPT_RANGE,0,100, NULL },
   { "paranoia", ST_OFF(paranoia_mode), CONF_TYPE_INT,M_OPT_RANGE, 0, 2, NULL },
   { "generic-dev", ST_OFF(generic_dev), CONF_TYPE_STRING, 0, 0, 0, NULL },
   { "sector-size", ST_OFF(sector_size), CONF_TYPE_INT, M_OPT_RANGE,1,100, NULL },
-  { "overlap", ST_OFF(search_overlap), CONF_TYPE_INT, M_OPT_RANGE,0,75, NULL },
+  { "overlap", ST_OFF(search_overlap), CONF_TYPE_INT, M_OPT_RANGE,-1,75, NULL },
   { "toc-bias", ST_OFF(toc_bias), CONF_TYPE_INT, 0, 0, 0, NULL },
   { "toc-offset", ST_OFF(toc_offset), CONF_TYPE_INT, 0, 0, 0, NULL },
   { "noskip", ST_OFF(no_skip), CONF_TYPE_FLAG, 0 , 0, 1, NULL },
@@ -182,6 +182,7 @@ static int seek(stream_t* s,off_t newpos) {
   sec = s->pos/CD_FRAMESIZE_RAW;
   if (s->pos < 0 || sec > p->end_sector) {
     s->eof = 1;
+    p->sector = p->end_sector + 1;
     return 0;
   }
 
@@ -242,10 +243,16 @@ static int get_track_by_sector(cdda_priv *p, unsigned int sector) {
 static int control(stream_t *stream, int cmd, void *arg) {
   cdda_priv* p = stream->priv;
   switch(cmd) {
+    case STREAM_CTRL_GET_NUM_TITLES:
+    {
+      *(unsigned int *)arg = p->cd->tracks;
+      return STREAM_OK;
+    }
     case STREAM_CTRL_GET_NUM_CHAPTERS:
     {
       int start_track = get_track_by_sector(p, p->start_sector);
       int end_track = get_track_by_sector(p, p->end_sector);
+      if (start_track == -1 || end_track == -1) return STREAM_ERROR;
       *(unsigned int *)arg = end_track + 1 - start_track;
       return STREAM_OK;
     }
@@ -254,11 +261,16 @@ static int control(stream_t *stream, int cmd, void *arg) {
       int r;
       unsigned int track = *(unsigned int *)arg;
       int start_track = get_track_by_sector(p, p->start_sector);
+      int end_track = get_track_by_sector(p, p->end_sector);
       int seek_sector;
+      if (start_track == -1 || end_track == -1) return STREAM_ERROR;
       track += start_track;
-      if (track >= p->cd->tracks) {
-        stream->eof = 1;
-        return STREAM_ERROR;
+      if (track > end_track) {
+        seek(stream, (p->end_sector + 1) * CD_FRAMESIZE_RAW);
+        // seeking beyond EOF should not be an error,
+        // the cache cannot handle changing stream pos and
+        // returning error.
+        return STREAM_OK;
       }
       seek_sector = track <= 0 ? p->start_sector
                                : p->cd->disc_toc[track].dwStartSector;
@@ -271,6 +283,7 @@ static int control(stream_t *stream, int cmd, void *arg) {
     {
       int start_track = get_track_by_sector(p, p->start_sector);
       int cur_track = get_track_by_sector(p, p->sector);
+      if (start_track == -1 || cur_track == -1) return STREAM_ERROR;
       *(unsigned int *)arg = cur_track - start_track;
       return STREAM_OK;
     }
@@ -382,7 +395,7 @@ static int open_cdda(stream_t *st,int m, void* opts, int* file_format) {
       cdd->disc_toc[i].dwStartSector += offset;
   }
 
-  if(p->speed)
+  if(p->speed > 0)
     cdda_speed_set(cdd,p->speed);
 
   last_track = cdda_tracks(cdd);
@@ -418,15 +431,28 @@ static int open_cdda(stream_t *st,int m, void* opts, int* file_format) {
 
   if(p->no_skip)
     mode |= PARANOIA_MODE_NEVERSKIP;
-#ifndef CONFIG_LIBCDIO
-  paranoia_modeset(cdd, mode);
+  else
+    mode &= ~PARANOIA_MODE_NEVERSKIP;
 
-  if(p->search_overlap >= 0)
+  if(p->search_overlap > 0)
+    mode |= PARANOIA_MODE_OVERLAP;
+  else if(p->search_overlap == 0)
+    mode &= ~PARANOIA_MODE_OVERLAP;
+#ifndef CONFIG_LIBCDIO
+  // HACK against libcdparanoia's stupid caching model that
+  // queues up a huge number of requests leading to stuttering
+  paranoia_cachemodel_size(priv->cdp, 24);
+  // For some incomprehensible reason cdparanoia breaks the
+  // track->sector lookup of calling paranoia_modeset with
+  // PARANOIA_MODE_DISABLE
+  if (mode != PARANOIA_MODE_DISABLE) paranoia_modeset(cdd, mode);
+
+  if(p->search_overlap > 0)
     paranoia_overlapset(cdd,p->search_overlap);
 #else
   paranoia_modeset(priv->cdp, mode);
 
-  if(p->search_overlap >= 0)
+  if(p->search_overlap > 0)
     paranoia_overlapset(priv->cdp,p->search_overlap);
 #endif
 

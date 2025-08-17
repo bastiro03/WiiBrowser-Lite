@@ -28,7 +28,7 @@
  */
 
 /**
- * \file gl_common.c
+ * \file
  * \brief OpenGL helper functions used by vo_gl.c and vo_gl2.c
  */
 
@@ -37,20 +37,20 @@
 #include <string.h>
 #include <ctype.h>
 #include <math.h>
+
+#include "mp_msg.h"
 #include "gl_common.h"
 #include "csputils.h"
 #include "aspect.h"
 #include "pnm_loader.h"
 
+GLenum (GLAPIENTRY *mpglGetError)(void);
 void (GLAPIENTRY *mpglBegin)(GLenum);
 void (GLAPIENTRY *mpglEnd)(void);
 void (GLAPIENTRY *mpglViewport)(GLint, GLint, GLsizei, GLsizei);
 void (GLAPIENTRY *mpglMatrixMode)(GLenum);
 void (GLAPIENTRY *mpglLoadIdentity)(void);
-void (GLAPIENTRY *mpglTranslated)(double, double, double);
-void (GLAPIENTRY *mpglScaled)(double, double, double);
-void (GLAPIENTRY *mpglOrtho)(double, double, double, double, double, double);
-void (GLAPIENTRY *mpglFrustum)(double, double, double, double, double, double);
+void (GLAPIENTRY *mpglLoadMatrixf)(float *);
 void (GLAPIENTRY *mpglPushMatrix)(void);
 void (GLAPIENTRY *mpglPopMatrix)(void);
 void (GLAPIENTRY *mpglClear)(GLbitfield);
@@ -65,7 +65,6 @@ void (GLAPIENTRY *mpglDeleteTextures)(GLsizei, const GLuint *);
 void (GLAPIENTRY *mpglTexEnvf)(GLenum, GLenum, GLfloat);
 void (GLAPIENTRY *mpglTexEnvi)(GLenum, GLenum, GLint);
 void (GLAPIENTRY *mpglColor4ub)(GLubyte, GLubyte, GLubyte, GLubyte);
-void (GLAPIENTRY *mpglColor3f)(GLfloat, GLfloat, GLfloat);
 void (GLAPIENTRY *mpglColor4f)(GLfloat, GLfloat, GLfloat, GLfloat);
 void (GLAPIENTRY *mpglClearColor)(GLclampf, GLclampf, GLclampf, GLclampf);
 void (GLAPIENTRY *mpglClearDepth)(GLclampd);
@@ -141,6 +140,14 @@ void* (GLAPIENTRY *mpglAllocateMemoryMESA)(void *, int, size_t, float, float, fl
 void (GLAPIENTRY *mpglFreeMemoryMESA)(void *, int, void *);
 /** \} */ // end of glextfunctions group
 
+
+void (GLAPIENTRY *mpglVertexPointer)(GLint, GLenum, GLsizei, const GLvoid *);
+void (GLAPIENTRY *mpglTexCoordPointer)(GLint, GLenum, GLsizei, const GLvoid *);
+void (GLAPIENTRY *mpglClientActiveTexture)(GLenum);
+void (GLAPIENTRY *mpglEnableClientState)(GLenum);
+void (GLAPIENTRY *mpglDisableClientState)(GLenum);
+void (GLAPIENTRY *mpglDrawArrays)(GLenum, GLint, GLsizei);
+
 //! \defgroup glgeneral OpenGL general helper functions
 
 //! \defgroup glcontext OpenGL context management helper functions
@@ -182,7 +189,7 @@ static const struct gl_name_map_struct gl_name_map[] = {
   MAP(GL_R3_G3_B2), MAP(GL_RGB4), MAP(GL_RGB5), MAP(GL_RGB8),
   MAP(GL_RGB10), MAP(GL_RGB12), MAP(GL_RGB16), MAP(GL_RGBA2),
   MAP(GL_RGBA4), MAP(GL_RGB5_A1), MAP(GL_RGBA8), MAP(GL_RGB10_A2),
-  MAP(GL_RGBA12), MAP(GL_RGBA16), MAP(GL_LUMINANCE8),
+  MAP(GL_RGBA12), MAP(GL_RGBA16), MAP(GL_LUMINANCE8), MAP(GL_LUMINANCE16),
 
   // format
   MAP(GL_RGB), MAP(GL_RGBA), MAP(GL_RED), MAP(GL_GREEN), MAP(GL_BLUE),
@@ -253,7 +260,7 @@ int glFindFormat(uint32_t fmt, int *bpp, GLint *gl_texfmt,
   if (!gl_format) gl_format = &dummy2;
   if (!gl_type) gl_type = &dummy2;
 
-  if (mp_get_chroma_shift(fmt, NULL, NULL)) {
+  if (mp_get_chroma_shift(fmt, NULL, NULL, NULL)) {
     // reduce the possible cases a bit
     if (IMGFMT_IS_YUVP16_LE(fmt))
       fmt = IMGFMT_420P16_LE;
@@ -264,8 +271,10 @@ int glFindFormat(uint32_t fmt, int *bpp, GLint *gl_texfmt,
   }
 
   *bpp = IMGFMT_IS_BGR(fmt)?IMGFMT_BGR_DEPTH(fmt):IMGFMT_RGB_DEPTH(fmt);
-  *gl_texfmt = 3;
+  *gl_texfmt = GL_RGB;
   switch (fmt) {
+    case IMGFMT_RGB64NE:
+      *gl_texfmt = GL_RGBA16;
     case IMGFMT_RGB48NE:
       *gl_format = GL_RGB;
       *gl_type = GL_UNSIGNED_SHORT;
@@ -275,13 +284,13 @@ int glFindFormat(uint32_t fmt, int *bpp, GLint *gl_texfmt,
       *gl_type = GL_UNSIGNED_BYTE;
       break;
     case IMGFMT_RGBA:
-      *gl_texfmt = 4;
+      *gl_texfmt = GL_RGBA;
       *gl_format = GL_RGBA;
       *gl_type = GL_UNSIGNED_BYTE;
       break;
     case IMGFMT_420P16:
       supported = 0; // no native YUV support
-      *gl_texfmt = 1;
+      *gl_texfmt = GL_LUMINANCE16;
       *bpp = 16;
       *gl_format = GL_LUMINANCE;
       *gl_type = GL_UNSIGNED_SHORT;
@@ -290,13 +299,15 @@ int glFindFormat(uint32_t fmt, int *bpp, GLint *gl_texfmt,
       supported = 0; // no native YV12 support
     case IMGFMT_Y800:
     case IMGFMT_Y8:
-      *gl_texfmt = 1;
+      *gl_texfmt = GL_LUMINANCE;
       *bpp = 8;
       *gl_format = GL_LUMINANCE;
       *gl_type = GL_UNSIGNED_BYTE;
       break;
     case IMGFMT_UYVY:
-    case IMGFMT_YUY2:
+    // IMGFMT_YUY2 would be more logical for the _REV format,
+    // but gives clearly swapped colors.
+    case IMGFMT_YVYU:
       *gl_texfmt = GL_YCBCR_MESA;
       *bpp = 16;
       *gl_format = GL_YCBCR_MESA;
@@ -306,8 +317,8 @@ int glFindFormat(uint32_t fmt, int *bpp, GLint *gl_texfmt,
     // we do not support palettized formats, although the format the
     // swscale produces works
     case IMGFMT_RGB8:
-      gl_format = GL_RGB;
-      gl_type = GL_UNSIGNED_BYTE_2_3_3_REV;
+      *gl_format = GL_RGB;
+      *gl_type = GL_UNSIGNED_BYTE_2_3_3_REV;
       break;
 #endif
     case IMGFMT_RGB15:
@@ -320,12 +331,12 @@ int glFindFormat(uint32_t fmt, int *bpp, GLint *gl_texfmt,
       break;
 #if 0
     case IMGFMT_BGR8:
-      // special case as red and blue have a differen number of bits.
+      // special case as red and blue have a different number of bits.
       // GL_BGR and GL_UNSIGNED_BYTE_3_3_2 isn't supported at least
       // by nVidia drivers, and in addition would give more bits to
       // blue than to red, which isn't wanted
-      gl_format = GL_RGB;
-      gl_type = GL_UNSIGNED_BYTE_3_3_2;
+      *gl_format = GL_RGB;
+      *gl_type = GL_UNSIGNED_BYTE_3_3_2;
       break;
 #endif
     case IMGFMT_BGR15:
@@ -341,12 +352,12 @@ int glFindFormat(uint32_t fmt, int *bpp, GLint *gl_texfmt,
       *gl_type = GL_UNSIGNED_BYTE;
       break;
     case IMGFMT_BGRA:
-      *gl_texfmt = 4;
+      *gl_texfmt = GL_RGBA;
       *gl_format = GL_BGRA;
       *gl_type = GL_UNSIGNED_BYTE;
       break;
     default:
-      *gl_texfmt = 4;
+      *gl_texfmt = GL_RGBA;
       *gl_format = GL_RGBA;
       *gl_type = GL_UNSIGNED_BYTE;
       supported = 0;
@@ -384,19 +395,21 @@ typedef struct {
   void *fallback;
 } extfunc_desc_t;
 
+#if !defined(CONFIG_GL_WIN32) && !defined(CONFIG_GL_X11)
+#define DEF_FUNC_DESC(name) {&mpgl##name, NULL, {"gl"#name, NULL}, NULL}
+#else
 #define DEF_FUNC_DESC(name) {&mpgl##name, NULL, {"gl"#name, NULL}, gl ##name}
+#endif
 static const extfunc_desc_t extfuncs[] = {
   // these aren't extension functions but we query them anyway to allow
   // different "backends" with one binary
+  DEF_FUNC_DESC(GetError),
   DEF_FUNC_DESC(Begin),
   DEF_FUNC_DESC(End),
   DEF_FUNC_DESC(Viewport),
   DEF_FUNC_DESC(MatrixMode),
   DEF_FUNC_DESC(LoadIdentity),
-  DEF_FUNC_DESC(Translated),
-  DEF_FUNC_DESC(Scaled),
-  DEF_FUNC_DESC(Ortho),
-  DEF_FUNC_DESC(Frustum),
+  DEF_FUNC_DESC(LoadMatrixf),
   DEF_FUNC_DESC(PushMatrix),
   DEF_FUNC_DESC(PopMatrix),
   DEF_FUNC_DESC(Clear),
@@ -411,7 +424,6 @@ static const extfunc_desc_t extfuncs[] = {
   DEF_FUNC_DESC(TexEnvf),
   DEF_FUNC_DESC(TexEnvi),
   DEF_FUNC_DESC(Color4ub),
-  DEF_FUNC_DESC(Color3f),
   DEF_FUNC_DESC(Color4f),
   DEF_FUNC_DESC(ClearColor),
   DEF_FUNC_DESC(ClearDepth),
@@ -470,6 +482,14 @@ static const extfunc_desc_t extfuncs[] = {
   {&mpglTexImage3D, NULL, {"glTexImage3D", NULL}},
   {&mpglAllocateMemoryMESA, "GLX_MESA_allocate_memory", {"glXAllocateMemoryMESA", NULL}},
   {&mpglFreeMemoryMESA, "GLX_MESA_allocate_memory", {"glXFreeMemoryMESA", NULL}},
+
+  // Things needed to run on GLES
+  {&mpglVertexPointer, NULL, {"glVertexPointer", NULL}},
+  {&mpglTexCoordPointer, NULL, {"glTexCoordPointer", NULL}},
+  {&mpglClientActiveTexture, NULL, {"glClientActiveTexture", NULL}},
+  {&mpglEnableClientState, NULL, {"glEnableClientState", NULL}},
+  {&mpglDisableClientState, NULL, {"glDisableClientState", NULL}},
+  {&mpglDrawArrays, NULL, {"glDrawArrays", NULL}},
   {NULL}
 };
 
@@ -481,7 +501,7 @@ static const extfunc_desc_t extfuncs[] = {
 static void getFunctions(void *(*getProcAddress)(const GLubyte *),
                          const char *ext2) {
   const extfunc_desc_t *dsc;
-  const char *extensions;
+  const char *extensions = NULL;
   char *allexts;
 
   if (!getProcAddress)
@@ -489,10 +509,13 @@ static void getFunctions(void *(*getProcAddress)(const GLubyte *),
 
   // special case, we need glGetString before starting to find the other functions
   mpglGetString = getProcAddress("glGetString");
+#if defined(CONFIG_GL_WIN32) || defined(CONFIG_GL_X11)
   if (!mpglGetString)
       mpglGetString = glGetString;
+#endif
 
-  extensions = (const char *)mpglGetString(GL_EXTENSIONS);
+  if (mpglGetString)
+    extensions = (const char *)mpglGetString(GL_EXTENSIONS);
   if (!extensions) extensions = "";
   if (!ext2) ext2 = "";
   allexts = malloc(strlen(extensions) + strlen(ext2) + 2);
@@ -895,7 +918,37 @@ static void gen_spline_lookup_tex(GLenum unit) {
   free(tex);
 }
 
-static const char *bilin_filt_template =
+#define NOISE_RES 2048
+
+/**
+ * \brief creates the 1D lookup texture needed to generate pseudo-random numbers.
+ * \param unit texture unit to attach texture to
+ */
+static void gen_noise_lookup_tex(GLenum unit) {
+  GLfloat *tex = calloc(NOISE_RES, sizeof(*tex));
+  uint32_t lcg = 0x79381c11;
+  int i;
+  for (i = 0; i < NOISE_RES; i++)
+    tex[i] = (double)i / (NOISE_RES - 1);
+  for (i = 0; i < NOISE_RES - 1; i++) {
+    int remain = NOISE_RES - i;
+    int idx = i + (lcg >> 16) % remain;
+    GLfloat tmp = tex[i];
+    tex[i] = tex[idx];
+    tex[idx] = tmp;
+    lcg = lcg * 1664525 + 1013904223;
+  }
+  mpglActiveTexture(unit);
+  mpglTexImage1D(GL_TEXTURE_1D, 0, 1, NOISE_RES, 0, GL_RED, GL_FLOAT, tex);
+  mpglTexParameterf(GL_TEXTURE_1D, GL_TEXTURE_PRIORITY, 1.0);
+  mpglTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  mpglTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  mpglTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+  mpglActiveTexture(GL_TEXTURE0);
+  free(tex);
+}
+
+static const char bilin_filt_template[] =
   "TEX yuv.%c, fragment.texcoord[%c], texture[%c], %s;\n";
 
 #define BICUB_FILT_MAIN(textype) \
@@ -912,7 +965,7 @@ static const char *bilin_filt_template =
   /* x-interpolation */ \
   "LRP yuv.%c, parmx.b, a.bbbb, a.aaaa;\n"
 
-static const char *bicub_filt_template_2D =
+static const char bicub_filt_template_2D[] =
   "MAD coord.xy, fragment.texcoord[%c], {%e, %e}, {0.5, 0.5};\n"
   "TEX parmx, coord.x, texture[%c], 1D;\n"
   "MUL cdelta.xz, parmx.rrgg, {-%e, 0, %e, 0};\n"
@@ -920,7 +973,7 @@ static const char *bicub_filt_template_2D =
   "MUL cdelta.yw, parmy.rrgg, {0, -%e, 0, %e};\n"
   BICUB_FILT_MAIN("2D");
 
-static const char *bicub_filt_template_RECT =
+static const char bicub_filt_template_RECT[] =
   "ADD coord, fragment.texcoord[%c], {0.5, 0.5};\n"
   "TEX parmx, coord.x, texture[%c], 1D;\n"
   "MUL cdelta.xz, parmx.rrgg, {-1, 0, 1, 0};\n"
@@ -938,7 +991,7 @@ static const char *bicub_filt_template_RECT =
   "ADD "t".x, "t".xxxx, "s";\n" \
   "SUB "t".y, "t".yyyy, "s";\n"
 
-static const char *bicub_notex_filt_template_2D =
+static const char bicub_notex_filt_template_2D[] =
   "MAD coord.xy, fragment.texcoord[%c], {%e, %e}, {0.5, 0.5};\n"
   "FRC coord.xy, coord.xyxy;\n"
   CALCWEIGHTS("parmx", "coord.xxxx")
@@ -947,7 +1000,7 @@ static const char *bicub_notex_filt_template_2D =
   "MUL cdelta.yw, parmy.rrgg, {0, -%e, 0, %e};\n"
   BICUB_FILT_MAIN("2D");
 
-static const char *bicub_notex_filt_template_RECT =
+static const char bicub_notex_filt_template_RECT[] =
   "ADD coord, fragment.texcoord[%c], {0.5, 0.5};\n"
   "FRC coord.xy, coord.xyxy;\n"
   CALCWEIGHTS("parmx", "coord.xxxx")
@@ -964,19 +1017,19 @@ static const char *bicub_notex_filt_template_RECT =
   /* x-interpolation */ \
   "LRP yuv.%c, parmx.b, a.rrrr, b.rrrr;\n"
 
-static const char *bicub_x_filt_template_2D =
+static const char bicub_x_filt_template_2D[] =
   "MAD coord.x, fragment.texcoord[%c], {%e}, {0.5};\n"
   "TEX parmx, coord, texture[%c], 1D;\n"
   "MUL cdelta.xyz, parmx.rrgg, {-%e, 0, %e};\n"
   BICUB_X_FILT_MAIN("2D");
 
-static const char *bicub_x_filt_template_RECT =
+static const char bicub_x_filt_template_RECT[] =
   "ADD coord.x, fragment.texcoord[%c], {0.5};\n"
   "TEX parmx, coord, texture[%c], 1D;\n"
   "MUL cdelta.xyz, parmx.rrgg, {-1, 0, 1};\n"
   BICUB_X_FILT_MAIN("RECT");
 
-static const char *unsharp_filt_template =
+static const char unsharp_filt_template[] =
   "PARAM dcoord%c = {%e, %e, %e, %e};\n"
   "ADD coord, fragment.texcoord[%c].xyxy, dcoord%c;\n"
   "SUB coord2, fragment.texcoord[%c].xyxy, dcoord%c;\n"
@@ -988,9 +1041,11 @@ static const char *unsharp_filt_template =
   "TEX b.g, coord2.zwzw, texture[%c], %s;\n"
   "DP3 b, b, {0.25, 0.25, 0.25};\n"
   "SUB b.r, a.r, b.r;\n"
-  "MAD yuv.%c, b.r, {%e}, a.r;\n";
+  // NOTE: destination component is only write mask, not swizzle
+  // so calculate result in all three components
+  "MAD yuv.%c, b.rrrr, {%e, %e, %e}, a.rrrr;\n";
 
-static const char *unsharp_filt_template2 =
+static const char unsharp_filt_template2[] =
   "PARAM dcoord%c = {%e, %e, %e, %e};\n"
   "PARAM dcoord2%c = {%e, 0, 0, %e};\n"
   "ADD coord, fragment.texcoord[%c].xyxy, dcoord%c;\n"
@@ -1012,9 +1067,11 @@ static const char *unsharp_filt_template2 =
   "TEX b.g, coord2.zwzw, texture[%c], %s;\n"
   "DP4 b.r, b, {-0.1171875, -0.1171875, -0.1171875, -0.09765625};\n"
   "MAD b.r, a.r, {0.859375}, b.r;\n"
-  "MAD yuv.%c, b.r, {%e}, a.r;\n";
+  // NOTE: destination component is only write mask, not swizzle
+  // so calculate result in all three components
+  "MAD yuv.%c, b.rrrr, {%e, %e, %e}, a.rrrr;\n";
 
-static const char *yuv_prog_template =
+static const char yuv_prog_template[] =
   "PARAM ycoef = {%e, %e, %e};\n"
   "PARAM ucoef = {%e, %e, %e};\n"
   "PARAM vcoef = {%e, %e, %e};\n"
@@ -1022,10 +1079,9 @@ static const char *yuv_prog_template =
   "TEMP res;\n"
   "MAD res.rgb, yuv.rrrr, ycoef, offsets;\n"
   "MAD res.rgb, yuv.gggg, ucoef, res;\n"
-  "MAD result.color.rgb, yuv.bbbb, vcoef, res;\n"
-  "END";
+  "MAD res.rgb, yuv.bbbb, vcoef, res;\n";
 
-static const char *yuv_pow_prog_template =
+static const char yuv_pow_prog_template[] =
   "PARAM ycoef = {%e, %e, %e};\n"
   "PARAM ucoef = {%e, %e, %e};\n"
   "PARAM vcoef = {%e, %e, %e};\n"
@@ -1035,12 +1091,11 @@ static const char *yuv_pow_prog_template =
   "MAD res.rgb, yuv.rrrr, ycoef, offsets;\n"
   "MAD res.rgb, yuv.gggg, ucoef, res;\n"
   "MAD_SAT res.rgb, yuv.bbbb, vcoef, res;\n"
-  "POW result.color.r, res.r, gamma.r;\n"
-  "POW result.color.g, res.g, gamma.g;\n"
-  "POW result.color.b, res.b, gamma.b;\n"
-  "END";
+  "POW res.r, res.r, gamma.r;\n"
+  "POW res.g, res.g, gamma.g;\n"
+  "POW res.b, res.b, gamma.b;\n";
 
-static const char *yuv_lookup_prog_template =
+static const char yuv_lookup_prog_template[] =
   "PARAM ycoef = {%e, %e, %e, 0};\n"
   "PARAM ucoef = {%e, %e, %e, 0};\n"
   "PARAM vcoef = {%e, %e, %e, 0};\n"
@@ -1049,16 +1104,23 @@ static const char *yuv_lookup_prog_template =
   "MAD res, yuv.rrrr, ycoef, offsets;\n"
   "MAD res.rgb, yuv.gggg, ucoef, res;\n"
   "MAD res.rgb, yuv.bbbb, vcoef, res;\n"
-  "TEX result.color.r, res.raaa, texture[%c], 2D;\n"
+  "TEX res.r, res.raaa, texture[%c], 2D;\n"
   "ADD res.a, res.a, 0.25;\n"
-  "TEX result.color.g, res.gaaa, texture[%c], 2D;\n"
+  "TEX res.g, res.gaaa, texture[%c], 2D;\n"
   "ADD res.a, res.a, 0.25;\n"
-  "TEX result.color.b, res.baaa, texture[%c], 2D;\n"
-  "END";
+  "TEX res.b, res.baaa, texture[%c], 2D;\n";
 
-static const char *yuv_lookup3d_prog_template =
-  "TEX result.color, yuv, texture[%c], 3D;\n"
-  "END";
+static const char yuv_lookup3d_prog_template[] =
+  "TEMP res;\n"
+  "TEX res, yuv, texture[%c], 3D;\n";
+
+static const char noise_filt_template[] =
+  "MUL coord.xy, fragment.texcoord[0], {%e, %e};\n"
+  "TEMP rand;\n"
+  "TEX rand.r, coord.x, texture[%c], 1D;\n"
+  "ADD rand.r, rand.r, coord.y;\n"
+  "TEX rand.r, rand.r, texture[%c], 1D;\n"
+  "MAD res.rgb, rand.rrrr, {%e, %e, %e}, res;\n";
 
 /**
  * \brief creates and initializes helper textures needed for scaling texture read
@@ -1207,7 +1269,7 @@ static void add_scaler(int scaler, char **prog_pos, int *remain, char *texs,
                out_comp, 0.5 * ptw, 0.5 * pth, 0.5 * ptw, -0.5 * pth,
                in_tex, out_comp, in_tex, out_comp, in_tex,
                in_tex, ttype, in_tex, ttype, in_tex, ttype, in_tex, ttype,
-               in_tex, ttype, out_comp, strength);
+               in_tex, ttype, out_comp, strength, strength, strength);
       break;
     case YUV_SCALER_UNSHARP2:
       snprintf(*prog_pos, *remain, unsharp_filt_template2,
@@ -1217,7 +1279,7 @@ static void add_scaler(int scaler, char **prog_pos, int *remain, char *texs,
                in_tex, ttype, in_tex, ttype, in_tex, ttype, in_tex, ttype,
                in_tex, ttype, in_tex, out_comp, in_tex, out_comp,
                in_tex, ttype, in_tex, ttype, in_tex, ttype,
-               in_tex, ttype, out_comp, strength);
+               in_tex, ttype, out_comp, strength, strength, strength);
       break;
   }
   *remain -= strlen(*prog_pos);
@@ -1304,16 +1366,24 @@ static void glSetupYUVFragprog(gl_conversion_params_t *params) {
   char lum_scale_texs[1];
   char chrom_scale_texs[1];
   char conv_texs[1];
+  char filt_texs[1] = {0};
   GLint i;
   // this is the conversion matrix, with y, u, v factors
   // for red, green, blue and the constant offsets
   float yuv2rgb[3][4];
+  int noise = params->noise_strength != 0;
   create_conv_textures(params, &cur_texu, conv_texs);
   create_scaler_textures(YUV_LUM_SCALER(type), &cur_texu, lum_scale_texs);
   if (YUV_CHROM_SCALER(type) == YUV_LUM_SCALER(type))
     memcpy(chrom_scale_texs, lum_scale_texs, sizeof(chrom_scale_texs));
   else
     create_scaler_textures(YUV_CHROM_SCALER(type), &cur_texu, chrom_scale_texs);
+
+  if (noise) {
+    gen_noise_lookup_tex(cur_texu);
+    filt_texs[0] = '0' + cur_texu++;
+  }
+
   mpglGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &i);
   if (i < cur_texu)
     mp_msg(MSGT_VO, MSGL_ERR,
@@ -1365,6 +1435,27 @@ static void glSetupYUVFragprog(gl_conversion_params_t *params) {
       mp_msg(MSGT_VO, MSGL_ERR, "[gl] unknown conversion type %i\n", YUV_CONVERSION(type));
       break;
   }
+  prog_remain -= strlen(prog_pos);
+  prog_pos    += strlen(prog_pos);
+
+  if (noise) {
+    // 1.0 strength is suitable for dithering 8 to 6 bit
+    double str = params->noise_strength * (1.0 / 64);
+    double scale_x = (double)NOISE_RES / texw;
+    double scale_y = (double)NOISE_RES / texh;
+    if (rect) {
+      scale_x /= texw;
+      scale_y /= texh;
+    }
+    snprintf(prog_pos, prog_remain, noise_filt_template,
+             scale_x, scale_y,
+             filt_texs[0], filt_texs[0],
+             str, str, str);
+    prog_remain -= strlen(prog_pos);
+    prog_pos    += strlen(prog_pos);
+  }
+  snprintf(prog_pos, prog_remain, "MOV result.color.rgb, res;\nEND");
+
   mp_msg(MSGT_VO, MSGL_DBG2, "[gl] generated fragment program:\n%s\n", yuv_prog);
   loadGPUProgram(GL_FRAGMENT_PROGRAM, yuv_prog);
   free(yuv_prog);
@@ -1510,6 +1601,8 @@ void glDisableYUVConversion(GLenum target, int type) {
 
 void glEnable3DLeft(int type) {
   GLint buffer;
+  if (type & GL_3D_SWAP)
+    return glEnable3DRight(type & ~GL_3D_SWAP);
   switch (type) {
     case GL_3D_RED_CYAN:
       mpglColorMask(GL_TRUE,  GL_FALSE, GL_FALSE, GL_FALSE);
@@ -1538,6 +1631,8 @@ void glEnable3DLeft(int type) {
 
 void glEnable3DRight(int type) {
   GLint buffer;
+  if (type & GL_3D_SWAP)
+    return glEnable3DLeft(type & ~GL_3D_SWAP);
   switch (type) {
     case GL_3D_RED_CYAN:
       mpglColorMask(GL_FALSE, GL_TRUE,  GL_TRUE,  GL_FALSE);
@@ -1625,6 +1720,36 @@ void glDrawTex(GLfloat x, GLfloat y, GLfloat w, GLfloat h,
     y += h;
     h = -h;
   }
+
+  if (!mpglBegin) {
+    GLfloat vertices  [8] = { x,   y,   x,   y  +  h,   x  +  w,   y,   x  +  w,   y  +  h};
+    GLfloat texcoords [8] = {tx,  ty,  tx,  ty  + th,  tx  + tw,  ty,  tx  + tw,  ty  + th};
+    GLfloat texcoords2[8] = {tx2, ty2, tx2, ty2 + th2, tx2 + tw2, ty2, tx2 + tw2, ty2 + th2};
+    mpglEnableClientState(GL_VERTEX_ARRAY);
+    mpglVertexPointer(2, GL_FLOAT, 0, vertices);
+    mpglEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    mpglTexCoordPointer(2, GL_FLOAT, 0, texcoords);
+    if (is_yv12) {
+      mpglClientActiveTexture(GL_TEXTURE1);
+      mpglEnableClientState(GL_TEXTURE_COORD_ARRAY);
+      mpglTexCoordPointer(2, GL_FLOAT, 0, texcoords2);
+      mpglClientActiveTexture(GL_TEXTURE2);
+      mpglEnableClientState(GL_TEXTURE_COORD_ARRAY);
+      mpglTexCoordPointer(2, GL_FLOAT, 0, texcoords2);
+      mpglClientActiveTexture(GL_TEXTURE0);
+    }
+    mpglDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    if (is_yv12) {
+      mpglClientActiveTexture(GL_TEXTURE1);
+      mpglDisableClientState(GL_TEXTURE_COORD_ARRAY);
+      mpglClientActiveTexture(GL_TEXTURE2);
+      mpglDisableClientState(GL_TEXTURE_COORD_ARRAY);
+      mpglClientActiveTexture(GL_TEXTURE0);
+    }
+    mpglDisableClientState(GL_VERTEX_ARRAY);
+    return;
+  }
+
   mpglBegin(GL_QUADS);
   mpglTexCoord2f(tx, ty);
   if (is_yv12) {
@@ -1897,7 +2022,9 @@ static void releaseGlContext_x11(MPGLContext *ctx) {
 static void swapGlBuffers_x11(MPGLContext *ctx) {
   glXSwapBuffers(mDisplay, vo_window);
 }
+#endif
 
+#if defined(CONFIG_GL_X11) || defined(CONFIG_GL_EGL_X11)
 static int x11_check_events(void) {
   return vo_x11_check_events(mDisplay);
 }
@@ -1915,7 +2042,7 @@ static void *sdlgpa(const GLubyte *name) {
 }
 
 static int setGlWindow_sdl(MPGLContext *ctx) {
-  if (sdl_set_mode(0, SDL_OPENGL | SDL_RESIZABLE) < 0)
+  if (!sdl_set_mode(0, SDL_OPENGL | SDL_RESIZABLE))
     return SET_WINDOW_FAILED;
   SDL_GL_LoadLibrary(NULL);
   getFunctions(sdlgpa, NULL);
@@ -1933,6 +2060,99 @@ static int sdl_check_events(void) {
   if (res & VO_EVENT_RESIZE)
     sdl_set_mode(0, SDL_OPENGL | SDL_RESIZABLE);
   return res;
+}
+
+#endif
+
+#ifdef CONFIG_GL_EGL_X11
+static EGLDisplay eglDisplay = EGL_NO_DISPLAY;
+static EGLSurface eglSurface = EGL_NO_SURFACE;
+
+/*
+ * Some genius thought it a good idea to make
+ * eglGetProcAddress not work for core functions.
+ * So we have to use a non-portable way that in addition
+ * might also return symbols from a different library
+ * that the one providing the current context, great job!
+ */
+static void *eglgpa(const GLubyte *name) {
+  void *res = eglGetProcAddress(name);
+  if (!res) {
+    void *h = dlopen("/usr/lib/libGLESv1_CM.so", RTLD_LAZY);
+    res = dlsym(h, name);
+    dlclose(h);
+  }
+  return res;
+}
+
+static int setGlWindow_egl(MPGLContext *ctx)
+{
+  static const EGLint cfg_attribs[] = { EGL_NONE };
+  static const EGLint ctx_attribs[] = { EGL_NONE };
+  EGLContext *context = &ctx->context.egl;
+  Window win = vo_window;
+  EGLContext new_context = NULL;
+  EGLConfig eglConfig;
+  int num_configs;
+  if (eglDisplay == EGL_NO_DISPLAY) {
+    eglDisplay = eglGetDisplay(mDisplay);
+    if (eglDisplay == EGL_NO_DISPLAY) {
+      mp_msg(MSGT_VO, MSGL_FATAL, "eglGetDisplay failed: 0x%x\n", eglGetError());
+      return SET_WINDOW_FAILED;
+    }
+    if (!eglInitialize(eglDisplay, NULL, NULL)) {
+      mp_msg(MSGT_VO, MSGL_FATAL, "eglInitialize failed: 0x%x\n", eglGetError());
+      return SET_WINDOW_FAILED;
+    }
+  }
+  if (*context != EGL_NO_CONTEXT) {
+    eglMakeCurrent(eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+    eglDestroyContext(eglDisplay, *context);
+    eglDestroySurface(eglDisplay, eglSurface);
+  }
+  if (!eglChooseConfig(eglDisplay, cfg_attribs, &eglConfig, 1, &num_configs) ||
+      num_configs != 1)
+    return SET_WINDOW_FAILED;
+  eglSurface = eglCreateWindowSurface(eglDisplay, eglConfig, win, NULL);
+  if (eglSurface == EGL_NO_SURFACE)
+    return SET_WINDOW_FAILED;
+
+  new_context = eglCreateContext(eglDisplay, eglConfig, EGL_NO_CONTEXT, ctx_attribs);
+  if (new_context == EGL_NO_CONTEXT)
+    return SET_WINDOW_FAILED;
+  if (!eglMakeCurrent(eglDisplay, eglSurface, eglSurface, new_context))
+    return SET_WINDOW_FAILED;
+
+  // set new values
+  vo_window = win;
+  vo_x11_update_geometry();
+  *context = new_context;
+
+  getFunctions(eglgpa, eglQueryString(eglDisplay, EGL_EXTENSIONS));
+  mpglBegin = NULL;
+  mpglDrawBuffer = NULL;
+
+  // and inform that reinit is necessary
+  return SET_WINDOW_REINIT;
+}
+
+/**
+ * \brief free the VisualInfo and GLXContext of an OpenGL context.
+ * \ingroup glcontext
+ */
+static void releaseGlContext_egl(MPGLContext *ctx) {
+  EGLContext *context = &ctx->context.egl;
+  if (*context != EGL_NO_CONTEXT)
+  {
+    mpglFinish();
+    eglMakeCurrent(eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+    eglDestroyContext(eglDisplay, *context);
+  }
+  *context = EGL_NO_CONTEXT;
+}
+
+static void swapGlBuffers_egl(MPGLContext *ctx) {
+  eglSwapBuffers(eglDisplay, eglSurface);
 }
 
 #endif
@@ -1966,6 +2186,8 @@ int init_mpglcontext(MPGLContext *ctx, enum MPGLType type) {
     res = init_mpglcontext(ctx, GLTYPE_X11);
     if (res) return res;
     res = init_mpglcontext(ctx, GLTYPE_SDL);
+    if (res) return res;
+    res = init_mpglcontext(ctx, GLTYPE_EGL_X11);
     return res;
   }
   memset(ctx, 0, sizeof(*ctx));
@@ -2007,6 +2229,18 @@ int init_mpglcontext(MPGLContext *ctx, enum MPGLType type) {
     ctx->check_events = sdl_check_events;
     ctx->fullscreen = vo_sdl_fullscreen;
     return vo_sdl_init();
+#endif
+#ifdef CONFIG_GL_EGL_X11
+  case GLTYPE_EGL_X11:
+    ctx->setGlWindow = setGlWindow_egl;
+    ctx->releaseGlContext = releaseGlContext_egl;
+    ctx->swapGlBuffers = swapGlBuffers_egl;
+    ctx->update_xinerama_info = update_xinerama_info;
+    ctx->border = vo_x11_border;
+    ctx->check_events = x11_check_events;
+    ctx->fullscreen = vo_x11_fullscreen;
+    ctx->ontop = vo_x11_ontop;
+    return vo_init();
 #endif
   default:
     return 0;

@@ -40,6 +40,8 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #endif
+#else
+#include "stream.h"
 #endif
 
 #include "mp_msg.h"
@@ -58,9 +60,9 @@ udp_open_socket (URL_t *url)
   socklen_t err_len;
   fd_set set;
   struct sockaddr_in server_address;
-#if !defined(GEKKO)
+  #if !defined(GEKKO)
   struct ip_mreq mcast;
-#endif
+  #endif
   struct timeval tv;
   struct hostent *hp;
   int reuse=reuse_socket;

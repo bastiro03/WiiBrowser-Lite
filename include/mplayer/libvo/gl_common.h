@@ -28,8 +28,6 @@
 #include <stdint.h>
 
 #include "config.h"
-#include "mp_msg.h"
-
 #include "video_out.h"
 #include "csputils.h"
 
@@ -40,6 +38,10 @@
 #ifdef CONFIG_GL_X11
 #include <X11/Xlib.h>
 #include <GL/glx.h>
+#include "x11_common.h"
+#endif
+#ifdef CONFIG_GL_EGL_X11
+#include <EGL/egl.h>
 #include "x11_common.h"
 #endif
 #include <GL/gl.h>
@@ -264,6 +266,9 @@
 #ifndef GL_FLOAT_RGB32_NV
 #define GL_FLOAT_RGB32_NV 0x8889
 #endif
+#ifndef GL_LUMINANCE16
+#define GL_LUMINANCE16 0x8042
+#endif
 #ifndef GL_UNPACK_CLIENT_STORAGE_APPLE
 #define GL_UNPACK_CLIENT_STORAGE_APPLE 0x85B2
 #endif
@@ -348,6 +353,20 @@ int loadGPUProgram(GLenum target, char *prog);
 #define SET_YUV_CONVERSION(c)   ((c) & YUV_CONVERSION_MASK)
 #define SET_YUV_LUM_SCALER(s)   (((s) & YUV_SCALER_MASK) << YUV_LUM_SCALER_SHIFT)
 #define SET_YUV_CHROM_SCALER(s) (((s) & YUV_SCALER_MASK) << YUV_CHROM_SCALER_SHIFT)
+//! returns whether the yuv conversion supports large brightness range etc.
+static inline int glYUVLargeRange(int conv)
+{
+  switch (conv)
+  {
+  case YUV_CONVERSION_NONE:
+  case YUV_CONVERSION_COMBINERS:
+  case YUV_CONVERSION_COMBINERS_ATI:
+  case YUV_CONVERSION_FRAGMENT_LOOKUP3D:
+  case YUV_CONVERSION_TEXT_FRAGMENT:
+    return 0;
+  }
+  return 1;
+}
 /** \} */
 
 typedef struct {
@@ -359,6 +378,7 @@ typedef struct {
   int chrom_texw;
   int chrom_texh;
   float filter_strength;
+  float noise_strength;
 } gl_conversion_params_t;
 
 int glAutodetectYUVConversion(void);
@@ -366,6 +386,7 @@ void glSetupYUVConversion(gl_conversion_params_t *params);
 void glEnableYUVConversion(GLenum target, int type);
 void glDisableYUVConversion(GLenum target, int type);
 
+#define GL_3D_SWAP           32
 #define GL_3D_RED_CYAN        1
 #define GL_3D_GREEN_MAGENTA   2
 #define GL_3D_QUADBUFFER      3
@@ -385,10 +406,12 @@ void glDisable3D(int type);
 /** \} */
 
 enum MPGLType {
-  GLTYPE_AUTO,
+  GLTYPE_AUTO = -1,
   GLTYPE_W32,
   GLTYPE_X11,
   GLTYPE_SDL,
+  GLTYPE_EGL_X11,
+  GLTYPE_COUNT
 };
 
 typedef struct MPGLContext {
@@ -406,6 +429,9 @@ typedef struct MPGLContext {
 #ifdef CONFIG_GL_X11
     GLXContext x11;
 #endif
+#ifdef CONFIG_GL_EGL_X11
+    EGLContext egl;
+#endif
   } context;
   int (*setGlWindow)(struct MPGLContext *);
   void (*releaseGlContext)(struct MPGLContext *);
@@ -420,15 +446,13 @@ typedef struct MPGLContext {
 int init_mpglcontext(MPGLContext *ctx, enum MPGLType type);
 void uninit_mpglcontext(MPGLContext *ctx);
 
+extern GLenum (GLAPIENTRY *mpglGetError)(void);
 extern void (GLAPIENTRY *mpglBegin)(GLenum);
 extern void (GLAPIENTRY *mpglEnd)(void);
 extern void (GLAPIENTRY *mpglViewport)(GLint, GLint, GLsizei, GLsizei);
 extern void (GLAPIENTRY *mpglMatrixMode)(GLenum);
 extern void (GLAPIENTRY *mpglLoadIdentity)(void);
-extern void (GLAPIENTRY *mpglTranslated)(double, double, double);
-extern void (GLAPIENTRY *mpglScaled)(double, double, double);
-extern void (GLAPIENTRY *mpglOrtho)(double, double, double, double, double, double);
-extern void (GLAPIENTRY *mpglFrustum)(double, double, double, double, double, double);
+extern void (GLAPIENTRY *mpglLoadMatrixf)(float *);
 extern void (GLAPIENTRY *mpglPushMatrix)(void);
 extern void (GLAPIENTRY *mpglPopMatrix)(void);
 extern void (GLAPIENTRY *mpglClear)(GLbitfield);
@@ -443,7 +467,6 @@ extern void (GLAPIENTRY *mpglDeleteTextures)(GLsizei, const GLuint *);
 extern void (GLAPIENTRY *mpglTexEnvf)(GLenum, GLenum, GLfloat);
 extern void (GLAPIENTRY *mpglTexEnvi)(GLenum, GLenum, GLint);
 extern void (GLAPIENTRY *mpglColor4ub)(GLubyte, GLubyte, GLubyte, GLubyte);
-extern void (GLAPIENTRY *mpglColor3f)(GLfloat, GLfloat, GLfloat);
 extern void (GLAPIENTRY *mpglColor4f)(GLfloat, GLfloat, GLfloat, GLfloat);
 extern void (GLAPIENTRY *mpglClearColor)(GLclampf, GLclampf, GLclampf, GLclampf);
 extern void (GLAPIENTRY *mpglClearDepth)(GLclampd);

@@ -26,9 +26,11 @@
 
 #include "config.h"
 #include "libaf/af_format.h"
+#include "osdep/timer.h"
 #include "mp_msg.h"
 #include "audio_out.h"
 #include "audio_out_internal.h"
+#include "subopt-helper.h"
 
 #define PULSE_CLIENT_NAME "MPlayer"
 
@@ -133,6 +135,11 @@ static const struct format_map_s {
     {AF_FORMAT_UNKNOWN, 0}
 };
 
+static const opt_t subopts[] = {
+    {"broken_pause", OPT_ARG_BOOL, &broken_pause, NULL},
+    {NULL}
+};
+
 static int init(int rate_hz, int channels, int format, int flags) {
     struct pa_sample_spec ss;
     struct pa_channel_map map;
@@ -142,22 +149,31 @@ static int init(int rate_hz, int channels, int format, int flags) {
     char *sink = NULL;
     const char *version = pa_get_library_version();
 
+    broken_pause = -1;
     if (ao_subdevice) {
+        char *opts;
         devarg = strdup(ao_subdevice);
         sink = strchr(devarg, ':');
         if (sink) *sink++ = 0;
         if (devarg[0]) host = devarg;
+        opts = strchr(sink, ':');
+        if (opts) {
+            *opts++ = 0;
+            if (!sink[0]) sink = NULL;
+            if (subopt_parse(opts, subopts))
+                goto fail;
+        }
     }
 
-    broken_pause = 0;
     // not sure which versions are affected, assume 0.9.11* to 0.9.14*
     // known bad: 0.9.14, 0.9.13
     // known good: 0.9.9, 0.9.10, 0.9.15
     // to test: pause, wait ca. 5 seconds framestep and see if MPlayer hangs somewhen
-    if (strncmp(version, "0.9.1", 5) == 0 && version[5] >= '1' && version[5] <= '4') {
+    if (broken_pause == -1)
+        broken_pause = strncmp(version, "0.9.1", 5) == 0 && version[5] >= '1' && version[5] <= '4';
+    if (broken_pause) {
         mp_msg(MSGT_AO, MSGL_WARN, "[pulse] working around probably broken pause functionality,\n"
                                    "        see http://www.pulseaudio.org/ticket/440\n");
-        broken_pause = 1;
     }
 
     ss.channels = channels;
@@ -165,6 +181,7 @@ static int init(int rate_hz, int channels, int format, int flags) {
 
     ao_data.samplerate = rate_hz;
     ao_data.channels = channels;
+    ao_data.outburst = 8 * channels * (rate_hz / 64);
 
     fmt_map = format_maps;
     while (fmt_map->mp_format != format) {
@@ -249,6 +266,10 @@ fail:
 /** Destroy libao driver */
 static void uninit(int immed) {
     if (stream && !immed) {
+            /* Workaround the bug in pa_stream_drain that causes
+               a delay of 2 second if the buffer is not empty    */
+            usec_sleep(get_delay() * 1000 * 1000);
+
             pa_threaded_mainloop_lock(mainloop);
             waitop(pa_stream_drain(stream, success_cb, NULL));
     }

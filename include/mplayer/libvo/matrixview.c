@@ -50,8 +50,8 @@ static const uint8_t flare[4][4] = {
 #define MAX_TEXT_Y 0x4000
 static int text_x = 0;
 static int text_y = 0;
-#define _text_x text_x/2
-#define _text_y text_y/2
+#define _text_x (text_x/2)
+#define _text_y (text_y/2)
 
 // Scene position
 #define Z_Off -128.0f
@@ -297,25 +297,6 @@ void matrixview_init(int w, int h)
     // Allow adjusting of texture color via glColor
     mpglTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
-    matrixview_reshape(w, h);
-}
-
-
-void matrixview_reshape(int w, int h)
-{
-    mpglViewport(0, 0, w, h);
-
-    mpglMatrixMode(GL_PROJECTION);
-    mpglLoadIdentity();
-    mpglFrustum(-_text_x, _text_x, -_text_y, _text_y, -Z_Off - Z_Depth, -Z_Off);
-
-    mpglMatrixMode(GL_MODELVIEW);
-}
-
-
-void matrixview_draw(int w, int h, double currentTime, float frameTime,
-                     uint8_t *data)
-{
     mpglEnable(GL_BLEND);
     mpglEnable(GL_TEXTURE_2D);
 
@@ -323,10 +304,35 @@ void matrixview_draw(int w, int h, double currentTime, float frameTime,
     mpglBlendFunc(GL_SRC_ALPHA, GL_ONE);
     mpglDisable(GL_DEPTH_TEST);
 
+    matrixview_reshape(w, h);
+}
+
+
+void matrixview_reshape(int w, int h)
+{
+    double nearplane = -Z_Off - Z_Depth;
+    // perspective projection, also adjusting vertex position
+    // by Z_Off and with simplified Z equation since the absolute
+    // Z value does not matter, only relative to other pixels
+    float matrix[16] = {
+      nearplane / _text_x, 0, 0, 0,
+      0, nearplane / _text_y, 0, 0,
+      0, 0,  1, -1,
+      0, 0,  0, -Z_Off
+    };
+    mpglViewport(0, 0, w, h);
+
+    mpglMatrixMode(GL_PROJECTION);
+    mpglLoadMatrixf(matrix);
+
     mpglMatrixMode(GL_MODELVIEW);
     mpglLoadIdentity();
-    mpglTranslated(0.0f, 0.0f, Z_Off);
+}
 
+
+void matrixview_draw(int w, int h, double currentTime, float frameTime,
+                     uint8_t *data)
+{
     // Clear the color and depth buffers.
     mpglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -342,9 +348,6 @@ void matrixview_draw(int w, int h, double currentTime, float frameTime,
     mpglBindTexture(GL_TEXTURE_2D, 0);
 
     make_change(currentTime);
-
-    mpglLoadIdentity();
-    mpglMatrixMode(GL_PROJECTION);
 }
 
 void matrixview_contrast_set(float contrast)

@@ -878,7 +878,7 @@ static void ff_h264_idct_add8_paired(uint8_t **dest, const int *block_offset, DC
 	}
 }
 
-#if 0
+#if 1
 // FIXME: Rounding errors.
 static void ff_h264_idct8_add_paired(uint8_t *dst, DCTELEM *block, int stride)
 {
@@ -1061,7 +1061,7 @@ static void ff_h264_idct8_add4_paired(uint8_t *dst, const int *block_offset, DCT
 		if (nnz) {
 			if (nnz == 1 && block[i*16])
 				ff_h264_idct8_dc_add_paired(dst + block_offset[i], block + i*16, stride);
-			else ff_h264_idct8_add_c(dst + block_offset[i], block + i*16, stride);
+			else ff_h264_idct8_add_8_c(dst + block_offset[i], block + i*16, stride);
 		}
 	}
 }
@@ -1200,7 +1200,7 @@ H264_WEIGHT(4,2)
 H264_WEIGHT(2,4)
 H264_WEIGHT(2,2)
 
-void dsputil_h264_init_ppc(DSPContext *c, AVCodecContext *avctx)
+void ff_dsputil_h264_init_ppc(DSPContext *c, AVCodecContext *avctx)
 {
 	c->put_h264_chroma_pixels_tab[0] = put_h264_chroma_mc8_paired;
 	c->put_h264_chroma_pixels_tab[1] = put_h264_chroma_mc4_paired;
@@ -1208,14 +1208,14 @@ void dsputil_h264_init_ppc(DSPContext *c, AVCodecContext *avctx)
 	c->avg_h264_chroma_pixels_tab[1] = avg_h264_chroma_mc4_paired;
 }
 
-void ff_h264dsp_init_ppc(H264DSPContext *c)
+void ff_h264dsp_init_ppc(H264DSPContext *c, const int bit_depth, const int chroma_format_idc)
 {
 	c->h264_idct_add = ff_h264_idct_add_paired;
 	c->h264_idct_add8 = ff_h264_idct_add8_paired;
 	c->h264_idct_add16 = ff_h264_idct_add16_paired;
 	c->h264_idct_add16intra = ff_h264_idct_add16intra_paired;
 	c->h264_idct_dc_add = ff_h264_idct_dc_add_paired;
-	//c->h264_idct8_add = ff_h264_idct8_add_paired;
+	c->h264_idct8_add = ff_h264_idct8_add_paired;
 	c->h264_idct8_dc_add = ff_h264_idct8_dc_add_paired;
 	c->h264_idct8_add4 = ff_h264_idct8_add4_paired;
 	

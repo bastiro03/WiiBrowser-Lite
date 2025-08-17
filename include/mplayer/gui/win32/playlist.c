@@ -29,22 +29,22 @@
 
 /* TODO: implement sort_playlist */
 
-BOOL adddirtoplaylist(playlist_t *playlist, const char *path, BOOL recursive)
+int adddirtoplaylist(playlist_t *playlist, const char *path, int recursive)
 {
     HANDLE findHandle = INVALID_HANDLE_VALUE;
     WIN32_FIND_DATA finddata;
     char findpath[MAX_PATH], filename[MAX_PATH];
     char *filepart;
 
-    sprintf(findpath, "%s\\*.*", path);
+    sprintf(findpath, "%s/*.*", path);
 
     findHandle = FindFirstFile(findpath, &finddata);
 
-    if (findHandle == INVALID_HANDLE_VALUE) return FALSE;
+    if (findHandle == INVALID_HANDLE_VALUE) return 0;
     do
     {
         if (finddata.cFileName[0] == '.' || strstr(finddata.cFileName, "Thumbs.db")) continue;
-        sprintf(findpath, "%s\\%s", path, finddata.cFileName);
+        sprintf(findpath, "%s/%s", path, finddata.cFileName);
 
         if (GetFileAttributes(findpath) & FILE_ATTRIBUTE_DIRECTORY)
         {
@@ -58,7 +58,7 @@ BOOL adddirtoplaylist(playlist_t *playlist, const char *path, BOOL recursive)
         }
     } while (FindNextFile(findHandle, &finddata));
     FindClose(findHandle);
-    return TRUE;
+    return 1;
 }
 
 static void add_track(playlist_t *playlist, const char *filename, const char *artist, const char *title, int duration)

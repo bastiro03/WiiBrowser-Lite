@@ -20,6 +20,7 @@
  */
 
 #include "avformat.h"
+#include "internal.h"
 
 #define MVI_FRAC_BITS 10
 
@@ -35,18 +36,18 @@ typedef struct MviDemuxContext {
     int video_frame_size;
 } MviDemuxContext;
 
-static int read_header(AVFormatContext *s, AVFormatParameters *ap)
+static int read_header(AVFormatContext *s)
 {
     MviDemuxContext *mvi = s->priv_data;
     AVIOContext *pb = s->pb;
     AVStream *ast, *vst;
     unsigned int version, frames_count, msecs_per_frame, player_version;
 
-    ast = av_new_stream(s, 0);
+    ast = avformat_new_stream(s, NULL);
     if (!ast)
         return AVERROR(ENOMEM);
 
-    vst = av_new_stream(s, 0);
+    vst = avformat_new_stream(s, NULL);
     if (!vst)
         return AVERROR(ENOMEM);
 
@@ -76,14 +77,14 @@ static int read_header(AVFormatContext *s, AVFormatParameters *ap)
         return AVERROR_INVALIDDATA;
     }
 
-    av_set_pts_info(ast, 64, 1, ast->codec->sample_rate);
+    avpriv_set_pts_info(ast, 64, 1, ast->codec->sample_rate);
     ast->codec->codec_type      = AVMEDIA_TYPE_AUDIO;
     ast->codec->codec_id        = CODEC_ID_PCM_U8;
     ast->codec->channels        = 1;
     ast->codec->bits_per_coded_sample = 8;
     ast->codec->bit_rate        = ast->codec->sample_rate * 8;
 
-    av_set_pts_info(vst, 64, msecs_per_frame, 1000000);
+    avpriv_set_pts_info(vst, 64, msecs_per_frame, 1000000);
     vst->codec->codec_type = AVMEDIA_TYPE_VIDEO;
     vst->codec->codec_id   = CODEC_ID_MOTIONPIXELS;
 
@@ -124,11 +125,10 @@ static int read_packet(AVFormatContext *s, AVPacket *pkt)
 }
 
 AVInputFormat ff_mvi_demuxer = {
-    "mvi",
-    NULL_IF_CONFIG_SMALL("Motion Pixels MVI format"),
-    sizeof(MviDemuxContext),
-    NULL,
-    read_header,
-    read_packet,
-    .extensions = "mvi"
+    .name           = "mvi",
+    .long_name      = NULL_IF_CONFIG_SMALL("Motion Pixels MVI format"),
+    .priv_data_size = sizeof(MviDemuxContext),
+    .read_header    = read_header,
+    .read_packet    = read_packet,
+    .extensions     = "mvi",
 };

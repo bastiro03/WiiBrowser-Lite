@@ -62,7 +62,7 @@ int vo_nomouse_input = 0;
 int vo_grabpointer = 1;
 int vo_doublebuffering = 1;
 int vo_vsync = 0;
-int vo_fs = 1;
+int vo_fs = 0;
 int vo_fsmode = 0;
 float vo_panscan = 0.0f;
 int vo_ontop = 0;
@@ -135,7 +135,10 @@ extern const vo_functions_t video_out_corevideo;
 extern const vo_functions_t video_out_quartz;
 extern const vo_functions_t video_out_pnm;
 extern const vo_functions_t video_out_md5sum;
-extern const vo_functions_t video_out_gx;
+extern const vo_functions_t video_out_mng;
+#ifdef GEKKO
+extern const vo_functions_t video_out_gekko;
+#endif
 
 /* The following declarations are _not_ const because functions pointers
  * get overloaded during (re)initialization. */
@@ -206,10 +209,9 @@ const vo_functions_t* const video_out_drivers[] =
 #endif
 #ifdef CONFIG_GL
         &video_out_gl,
-        &video_out_gl2,
 #endif
-#ifdef CONFIG_GX
-        &video_out_gx,
+#if defined(CONFIG_GL_WIN32) || defined(CONFIG_GL_X11)
+        &video_out_gl2,
 #endif
 #ifdef CONFIG_DGA
         &video_out_dga,
@@ -268,6 +270,9 @@ const vo_functions_t* const video_out_drivers[] =
 #endif
         &video_out_cvidix,
 #endif
+#ifdef GEKKO
+    	&video_out_gekko,
+#endif
         &video_out_null,
         // should not be auto-selected
 #if CONFIG_XVMC
@@ -294,6 +299,9 @@ const vo_functions_t* const video_out_drivers[] =
 #endif
 #ifdef CONFIG_MD5SUM
         &video_out_md5sum,
+#endif
+#ifdef CONFIG_MNG
+        &video_out_mng,
 #endif
         NULL
 };
@@ -372,7 +380,7 @@ int config_video_out(const vo_functions_t *vo, uint32_t width, uint32_t height,
 #ifdef CONFIG_GUI
     if (use_gui) {
       // GUI creates and manages window for us
-      guiGetEvent(guiSetShVideo, 0);
+      gui(GUI_SETUP_VIDEO_WINDOW, 0);
     }
 #endif
   }

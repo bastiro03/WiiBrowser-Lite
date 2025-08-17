@@ -239,7 +239,7 @@ static void draw(menu_t* menu, mp_image_t* mpi) {
 }
 
 static void check_child(menu_t* menu) {
-#if !defined (__MINGW32__) && !defined (GEKKO)
+#ifndef __MINGW32__
   fd_set rfd;
   struct timeval tv;
   int max_fd = mpriv->child_fd[2] > mpriv->child_fd[1] ? mpriv->child_fd[2] :
@@ -293,7 +293,7 @@ static void check_child(menu_t* menu) {
 #define close_pipe(pipe) close(pipe[0]); close(pipe[1])
 
 static int run_shell_cmd(menu_t* menu, char* cmd) {
-#if !defined (__MINGW32__) && !defined (GEKKO)
+#ifndef __MINGW32__
   int in[2],out[2],err[2];
 
   mp_msg(MSGT_GLOBAL,MSGL_INFO,MSGTR_LIBMENU_ConsoleRun,cmd);

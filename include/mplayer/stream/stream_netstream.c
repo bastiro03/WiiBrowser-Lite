@@ -92,7 +92,7 @@ static const struct m_struct_st stream_opts = {
 //// When the cache is running we need a lock as
 //// fill_buffer is called from another proccess
 static int lock_fd(int fd) {
-#if !HAVE_WINSOCK2_H && !defined(GEKKO)
+#if !HAVE_WINSOCK2_H
   struct flock lock;
 
   memset(&lock,0,sizeof(struct flock));
@@ -115,7 +115,7 @@ printf("FIXME? should lock here\n");
 }
 
 static int unlock_fd(int fd) {
-#if !HAVE_WINSOCK2_H && !defined(GEKKO)
+#if !HAVE_WINSOCK2_H
   struct flock lock;
 
   memset(&lock,0,sizeof(struct flock));

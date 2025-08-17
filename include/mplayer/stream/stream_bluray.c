@@ -116,7 +116,7 @@ static int bluray_stream_control(stream_t *s, int cmd, void *arg)
     case STREAM_CTRL_GET_NUM_CHAPTERS: {
         BLURAY_TITLE_INFO *ti;
 
-        ti = bd_get_title_info(b->bd, b->current_title);
+        ti = bd_get_title_info(b->bd, b->current_title, b->current_angle);
         if (!ti)
             return STREAM_UNSUPPORTED;
 
@@ -137,7 +137,7 @@ static int bluray_stream_control(stream_t *s, int cmd, void *arg)
         int64_t pos;
         int r;
 
-        ti = bd_get_title_info(b->bd, b->current_title);
+        ti = bd_get_title_info(b->bd, b->current_title, b->current_angle);
         if (!ti)
             return STREAM_UNSUPPORTED;
 
@@ -156,7 +156,7 @@ static int bluray_stream_control(stream_t *s, int cmd, void *arg)
     case STREAM_CTRL_GET_NUM_ANGLES: {
         BLURAY_TITLE_INFO *ti;
 
-        ti = bd_get_title_info(b->bd, b->current_title);
+        ti = bd_get_title_info(b->bd, b->current_title, b->current_angle);
         if (!ti)
             return STREAM_UNSUPPORTED;
 
@@ -175,7 +175,7 @@ static int bluray_stream_control(stream_t *s, int cmd, void *arg)
         BLURAY_TITLE_INFO *ti;
         int angle = *((int *) arg);
 
-        ti = bd_get_title_info(b->bd, b->current_title);
+        ti = bd_get_title_info(b->bd, b->current_title, b->current_angle);
         if (!ti)
             return STREAM_UNSUPPORTED;
 
@@ -189,6 +189,36 @@ static int bluray_stream_control(stream_t *s, int cmd, void *arg)
         bd_free_title_info(ti);
 
         return 1;
+    }
+
+    case STREAM_CTRL_GET_LANG: {
+        struct stream_lang_req *req = arg;
+        BLURAY_TITLE_INFO *ti = bd_get_title_info(b->bd, b->current_title, b->current_angle);
+        if (ti->clip_count) {
+            BLURAY_STREAM_INFO *si = NULL;
+            int count = 0;
+            switch (req->type) {
+            case stream_ctrl_audio:
+                count = ti->clips[0].audio_stream_count;
+                si = ti->clips[0].audio_streams;
+                break;
+            case stream_ctrl_sub:
+                count = ti->clips[0].pg_stream_count;
+                si = ti->clips[0].pg_streams;
+                break;
+            }
+            while (count-- > 0) {
+                if (si->pid == req->id) {
+                    memcpy(req->buf, si->lang, 4);
+                    req->buf[4] = 0;
+                    bd_free_title_info(ti);
+                    return STREAM_OK;
+                }
+                si++;
+            }
+        }
+        bd_free_title_info(ti);
+        return STREAM_ERROR;
     }
 
     default:
@@ -236,7 +266,7 @@ static int bluray_stream_open(stream_t *s, int mode,
     }
 
     /* check for available titles on disc */
-    title_count = bd_get_titles(bd, TITLES_RELEVANT);
+    title_count = bd_get_titles(bd, TITLES_RELEVANT, angle);
     mp_msg(MSGT_IDENTIFY, MSGL_INFO, "ID_BLURAY_TITLES=%d\n", title_count);
     if (!title_count) {
         mp_msg(MSGT_OPEN, MSGL_ERR, MSGTR_BlurayNoTitles);
@@ -250,7 +280,7 @@ static int bluray_stream_open(stream_t *s, int mode,
         BLURAY_TITLE_INFO *ti;
         int sec, msec;
 
-        ti = bd_get_title_info(bd, i);
+        ti = bd_get_title_info(bd, i, angle);
         if (!ti)
             continue;
 
@@ -284,7 +314,7 @@ static int bluray_stream_open(stream_t *s, int mode,
            "ID_BLURAY_CURRENT_TITLE=%d\n", title + 1);
 
     /* Get current title information */
-    info = bd_get_title_info(bd, title);
+    info = bd_get_title_info(bd, title, angle);
     if (!info)
         goto err_no_info;
 
@@ -329,7 +359,7 @@ err_no_info:
     s->type        = STREAMTYPE_BLURAY;
     s->url         = strdup("br://");
 
-    mp_msg(MSGT_OPEN, MSGL_V, MSGTR_BlurayOK);
+    mp_msg(MSGT_OPEN, MSGL_V, "Blu-ray successfully opened.\n");
 
     return STREAM_OK;
 }

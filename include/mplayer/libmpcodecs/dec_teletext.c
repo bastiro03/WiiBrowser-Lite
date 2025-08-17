@@ -94,20 +94,10 @@
 // thread as e.g. with DVB teletext
 #include <pthread.h>
 #else
-#ifdef GEKKO
-#define HAVE_PTHREADS 1
-#include <ogc/mutex.h>
-typedef mutex_t pthread_mutex_t;
-#define pthread_mutex_init(a, b) LWP_MutexInit(a, false)
-#define pthread_mutex_lock(a)    LWP_MutexLock(*a)
-#define pthread_mutex_unlock(a)  LWP_MutexUnlock(*a)
-#define pthread_mutex_destroy(a) LWP_MutexDestroy(*a)
-#else
 #define pthread_mutex_init(m, p)
 #define pthread_mutex_destroy(m)
 #define pthread_mutex_lock(m)
 #define pthread_mutex_unlock(m)
-#endif
 #endif
 
 #include "dec_teletext.h"
@@ -1649,7 +1639,7 @@ static int teletext_set_format(priv_vbi_t * priv, teletext_format flag)
  */
 static void vbi_add_dec(priv_vbi_t * priv, char *dec)
 {
-    int count, shift;
+    int count;
     if (!dec)
         return;
     if (!priv->on)
@@ -1668,7 +1658,6 @@ static void vbi_add_dec(priv_vbi_t * priv, char *dec)
         else
             priv->pagenumdec=0;
     } else {
-        shift = count * 4;
         count++;
         priv->pagenumdec=
             (((priv->pagenumdec)<<4|(*dec-'0'))&0xfff)|(count<<12);

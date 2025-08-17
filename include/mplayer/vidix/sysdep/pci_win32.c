@@ -29,15 +29,11 @@
 #include <windows.h>
 #include <ddk/ntddk.h>
 #include "vidix/dhahelperwin/dhahelper.h"
+#include "libdha_win32.h"
 
 static HANDLE hDriver;
-int IsWinNT(void);
 
-
-
-
-
-static __inline__ int enable_os_io(void)
+static inline int enable_os_io(void)
 {
     if(IsWinNT()){
       DWORD dwBytesReturned;
@@ -50,7 +46,7 @@ static __inline__ int enable_os_io(void)
     return 0;
 }
 
-static __inline__ int disable_os_io(void)
+static inline int disable_os_io(void)
 {
     if(IsWinNT()){
       DWORD dwBytesReturned;

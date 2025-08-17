@@ -21,6 +21,7 @@
 #include "avformat.h"
 #include "avio_internal.h"
 #include "rm.h"
+#include "libavutil/dict.h"
 
 typedef struct {
     int nb_packets;
@@ -71,7 +72,7 @@ static int rv10_write_header(AVFormatContext *ctx,
     const char *desc, *mimetype;
     int nb_packets, packet_total_size, packet_max_size, size, packet_avg_size, i;
     int bit_rate, v, duration, flags, data_pos;
-    AVMetadataTag *tag;
+    AVDictionaryEntry *tag;
 
     start_ptr = s->buf_ptr;
 
@@ -118,7 +119,7 @@ static int rv10_write_header(AVFormatContext *ctx,
     avio_wb32(s, 0);           /* data offset : will be patched after */
     avio_wb16(s, ctx->nb_streams);    /* num streams */
     flags = 1 | 2; /* save allowed & perfect play */
-    if (url_is_streamed(s))
+    if (!s->seekable)
         flags |= 4; /* live broadcast */
     avio_wb16(s, flags);
 
@@ -127,13 +128,13 @@ static int rv10_write_header(AVFormatContext *ctx,
     ffio_wfourcc(s,"CONT");
     size =  4 * 2 + 10;
     for(i=0; i<FF_ARRAY_ELEMS(ff_rm_metadata); i++) {
-        tag = av_metadata_get(ctx->metadata, ff_rm_metadata[i], NULL, 0);
+        tag = av_dict_get(ctx->metadata, ff_rm_metadata[i], NULL, 0);
         if(tag) size += strlen(tag->value);
     }
     avio_wb32(s,size);
     avio_wb16(s,0);
     for(i=0; i<FF_ARRAY_ELEMS(ff_rm_metadata); i++) {
-        tag = av_metadata_get(ctx->metadata, ff_rm_metadata[i], NULL, 0);
+        tag = av_dict_get(ctx->metadata, ff_rm_metadata[i], NULL, 0);
         put_str(s, tag ? tag->value : "");
     }
 
@@ -170,7 +171,7 @@ static int rv10_write_header(AVFormatContext *ctx,
         avio_wb32(s, 0);           /* start time */
         avio_wb32(s, BUFFER_DURATION);           /* preroll */
         /* duration */
-        if (url_is_streamed(s) || !stream->total_frames)
+        if (!s->seekable || !stream->total_frames)
             avio_wb32(s, (int)(3600 * 1000));
         else
             avio_wb32(s, (int)(stream->total_frames * 1000 / stream->frame_rate));
@@ -308,6 +309,11 @@ static int rm_write_header(AVFormatContext *s)
     int n;
     AVCodecContext *codec;
 
+    if (s->nb_streams > 2) {
+        av_log(s, AV_LOG_ERROR, "At most 2 streams are currently supported for muxing in RM\n");
+        return AVERROR_PATCHWELCOME;
+    }
+
     for(n=0;n<s->nb_streams;n++) {
         s->streams[n]->id = n;
         codec = s->streams[n]->codec;
@@ -341,7 +347,7 @@ static int rm_write_header(AVFormatContext *s)
 
     if (rv10_write_header(s, 0, 0))
         return AVERROR_INVALIDDATA;
-    put_flush_packet(s->pb);
+    avio_flush(s->pb);
     return 0;
 }
 
@@ -354,7 +360,7 @@ static int rm_write_audio(AVFormatContext *s, const uint8_t *buf, int size, int 
     int i;
 
     /* XXX: suppress this malloc */
-    buf1= (uint8_t*) av_malloc( size * sizeof(uint8_t) );
+    buf1 = av_malloc(size * sizeof(uint8_t));
 
     write_packet_header(s, stream, size, !!(flags & AV_PKT_FLAG_KEY));
 
@@ -368,7 +374,7 @@ static int rm_write_audio(AVFormatContext *s, const uint8_t *buf, int size, int 
     } else {
         avio_write(pb, buf, size);
     }
-    put_flush_packet(pb);
+    avio_flush(pb);
     stream->nb_frames++;
     av_free(buf1);
     return 0;
@@ -413,7 +419,7 @@ static int rm_write_video(AVFormatContext *s, const uint8_t *buf, int size, int 
     avio_w8(pb, stream->nb_frames & 0xff);
 
     avio_write(pb, buf, size);
-    put_flush_packet(pb);
+    avio_flush(pb);
 
     stream->nb_frames++;
     return 0;
@@ -434,9 +440,9 @@ static int rm_write_trailer(AVFormatContext *s)
     int data_size, index_pos, i;
     AVIOContext *pb = s->pb;
 
-    if (!url_is_streamed(s->pb)) {
+    if (s->pb->seekable) {
         /* end of file: finish to write header */
-        index_pos = avio_seek(pb, 0, SEEK_CUR);
+        index_pos = avio_tell(pb);
         data_size = index_pos - rm->data_pos;
 
         /* FIXME: write index */
@@ -454,21 +460,21 @@ static int rm_write_trailer(AVFormatContext *s)
         avio_wb32(pb, 0);
         avio_wb32(pb, 0);
     }
-    put_flush_packet(pb);
+    avio_flush(pb);
     return 0;
 }
 
 
 AVOutputFormat ff_rm_muxer = {
-    "rm",
-    NULL_IF_CONFIG_SMALL("RealMedia format"),
-    "application/vnd.rn-realmedia",
-    "rm,ra",
-    sizeof(RMMuxContext),
-    CODEC_ID_AC3,
-    CODEC_ID_RV10,
-    rm_write_header,
-    rm_write_packet,
-    rm_write_trailer,
-    .codec_tag= (const AVCodecTag* const []){ff_rm_codec_tags, 0},
+    .name              = "rm",
+    .long_name         = NULL_IF_CONFIG_SMALL("RealMedia format"),
+    .mime_type         = "application/vnd.rn-realmedia",
+    .extensions        = "rm,ra",
+    .priv_data_size    = sizeof(RMMuxContext),
+    .audio_codec       = CODEC_ID_AC3,
+    .video_codec       = CODEC_ID_RV10,
+    .write_header      = rm_write_header,
+    .write_packet      = rm_write_packet,
+    .write_trailer     = rm_write_trailer,
+    .codec_tag         = (const AVCodecTag* const []){ ff_rm_codec_tags, 0 },
 };

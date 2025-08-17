@@ -26,6 +26,7 @@
  */
 
 #include "avformat.h"
+#include "internal.h"
 #include "avio_internal.h"
 #include "rtp.h"
 #include "rtpdec.h"
@@ -98,7 +99,7 @@ static int qt_rtp_parse_packet(AVFormatContext *s, PayloadContext *qt,
         if (!is_start || !is_finish) {
             av_log_missing_feature(s, "RTP-X-QT with payload description "
                                       "split over several packets", 1);
-            return AVERROR_NOTSUPP;
+            return AVERROR(ENOSYS);
         }
         skip_bits(&gb, 12); // reserved
         data_len = get_bits(&gb, 16);
@@ -110,15 +111,15 @@ static int qt_rtp_parse_packet(AVFormatContext *s, PayloadContext *qt,
             (st->codec->codec_type == AVMEDIA_TYPE_AUDIO &&
                  tag != MKTAG('s','o','u','n')))
             return AVERROR_INVALIDDATA;
-        av_set_pts_info(st, 32, 1, avio_rb32(&pb));
+        avpriv_set_pts_info(st, 32, 1, avio_rb32(&pb));
 
         if (pos + data_len > len)
             return AVERROR_INVALIDDATA;
         /* TLVs */
-        while (url_ftell(&pb) + 4 < pos + data_len) {
+        while (avio_tell(&pb) + 4 < pos + data_len) {
             int tlv_len = avio_rb16(&pb);
             tag = avio_rl16(&pb);
-            if (url_ftell(&pb) + tlv_len > pos + data_len)
+            if (avio_tell(&pb) + tlv_len > pos + data_len)
                 return AVERROR_INVALIDDATA;
 
 #define MKTAG16(a,b) MKTAG(a,b,0,0)
@@ -149,22 +150,22 @@ static int qt_rtp_parse_packet(AVFormatContext *s, PayloadContext *qt,
                 break;
             }
             default:
-                avio_seek(&pb, tlv_len, SEEK_CUR);
+                avio_skip(&pb, tlv_len);
                 break;
             }
         }
 
         /* 32-bit alignment */
-        avio_seek(&pb, ((url_ftell(&pb) + 3) & ~3) - url_ftell(&pb), SEEK_CUR);
+        avio_skip(&pb, ((avio_tell(&pb) + 3) & ~3) - avio_tell(&pb));
     } else
         avio_seek(&pb, 4, SEEK_SET);
 
     if (has_packet_info) {
         av_log_missing_feature(s, "RTP-X-QT with packet specific info", 1);
-        return AVERROR_NOTSUPP;
+        return AVERROR(ENOSYS);
     }
 
-    alen = len - url_ftell(&pb);
+    alen = len - avio_tell(&pb);
     if (alen <= 0)
         return AVERROR_INVALIDDATA;
 
@@ -182,7 +183,7 @@ static int qt_rtp_parse_packet(AVFormatContext *s, PayloadContext *qt,
         }
         if (!qt->pkt.data)
             return AVERROR(ENOMEM);
-        memcpy(qt->pkt.data + qt->pkt.size, buf + url_ftell(&pb), alen);
+        memcpy(qt->pkt.data + qt->pkt.size, buf + avio_tell(&pb), alen);
         qt->pkt.size += alen;
         if (has_marker_bit) {
             *pkt = qt->pkt;
@@ -203,7 +204,7 @@ static int qt_rtp_parse_packet(AVFormatContext *s, PayloadContext *qt,
         qt->remaining = (alen / qt->bytes_per_frame) - 1;
         if (av_new_packet(pkt, qt->bytes_per_frame))
             return AVERROR(ENOMEM);
-        memcpy(pkt->data, buf + url_ftell(&pb), qt->bytes_per_frame);
+        memcpy(pkt->data, buf + avio_tell(&pb), qt->bytes_per_frame);
         pkt->flags = flags & RTP_FLAG_KEY ? AV_PKT_FLAG_KEY : 0;
         pkt->stream_index = st->index;
         if (qt->remaining > 0) {
@@ -215,7 +216,7 @@ static int qt_rtp_parse_packet(AVFormatContext *s, PayloadContext *qt,
             }
             qt->pkt.size = qt->remaining * qt->bytes_per_frame;
             memcpy(qt->pkt.data,
-                   buf + url_ftell(&pb) + qt->bytes_per_frame,
+                   buf + avio_tell(&pb) + qt->bytes_per_frame,
                    qt->remaining * qt->bytes_per_frame);
             qt->pkt.flags = pkt->flags;
             return 1;
@@ -224,7 +225,7 @@ static int qt_rtp_parse_packet(AVFormatContext *s, PayloadContext *qt,
 
     default:  /* unimplemented */
         av_log_missing_feature(NULL, "RTP-X-QT with packing scheme 2", 1);
-        return AVERROR_NOTSUPP;
+        return AVERROR(ENOSYS);
     }
 }
 
@@ -244,8 +245,8 @@ RTPDynamicProtocolHandler ff_ ## m ## _rtp_ ## n ## _handler = { \
     .enc_name         = s, \
     .codec_type       = t, \
     .codec_id         = CODEC_ID_NONE, \
-    .open             = qt_rtp_new,    \
-    .close            = qt_rtp_free,   \
+    .alloc            = qt_rtp_new,    \
+    .free             = qt_rtp_free,   \
     .parse_packet     = qt_rtp_parse_packet, \
 }
 

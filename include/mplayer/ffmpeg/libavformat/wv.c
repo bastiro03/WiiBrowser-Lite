@@ -21,7 +21,9 @@
 
 #include "libavutil/audioconvert.h"
 #include "libavutil/intreadwrite.h"
+#include "libavutil/dict.h"
 #include "avformat.h"
+#include "internal.h"
 #include "apetag.h"
 #include "id3v1.h"
 
@@ -84,7 +86,7 @@ static int wv_read_block_header(AVFormatContext *ctx, AVIOContext *pb, int appen
     int rate, bpp, chan;
     uint32_t chmask;
 
-    wc->pos = url_ftell(pb);
+    wc->pos = avio_tell(pb);
     if(!append){
         tag = avio_rl32(pb);
         if (tag != MKTAG('w', 'v', 'p', 'k'))
@@ -109,6 +111,9 @@ static int wv_read_block_header(AVFormatContext *ctx, AVIOContext *pb, int appen
         size = wc->blksize;
     }
     wc->flags = AV_RL32(wc->extra + 4);
+    // blocks with zero samples don't contain actual audio information and should be ignored
+    if (!AV_RN32(wc->extra))
+        return 0;
     //parse flags
     bpp = ((wc->flags & 3) + 1) << 3;
     chan = 1 + !(wc->flags & WV_MONO);
@@ -120,12 +125,12 @@ static int wv_read_block_header(AVFormatContext *ctx, AVIOContext *pb, int appen
         chmask = wc->chmask;
     }
     if((rate == -1 || !chan) && !wc->block_parsed){
-        int64_t block_end = url_ftell(pb) + wc->blksize - 24;
-        if(url_is_streamed(pb)){
+        int64_t block_end = avio_tell(pb) + wc->blksize - 24;
+        if(!pb->seekable){
             av_log(ctx, AV_LOG_ERROR, "Cannot determine additional parameters\n");
             return -1;
         }
-        while(url_ftell(pb) < block_end){
+        while(avio_tell(pb) < block_end){
             int id, size;
             id = avio_r8(pb);
             size = (id & 0x80) ? avio_rl24(pb) : avio_r8(pb);
@@ -153,7 +158,7 @@ static int wv_read_block_header(AVFormatContext *ctx, AVIOContext *pb, int appen
                     chmask = avio_rl32(pb);
                     break;
                 case 5:
-                    avio_seek(pb, 1, SEEK_CUR);
+                    avio_skip(pb, 1);
                     chan |= (avio_r8(pb) & 0xF) << 8;
                     chmask = avio_rl24(pb);
                     break;
@@ -166,10 +171,10 @@ static int wv_read_block_header(AVFormatContext *ctx, AVIOContext *pb, int appen
                 rate = avio_rl24(pb);
                 break;
             default:
-                avio_seek(pb, size, SEEK_CUR);
+                avio_skip(pb, size);
             }
             if(id&0x40)
-                avio_seek(pb, 1, SEEK_CUR);
+                avio_skip(pb, 1);
         }
         if(rate == -1){
             av_log(ctx, AV_LOG_ERROR, "Cannot determine custom sampling rate\n");
@@ -198,19 +203,24 @@ static int wv_read_block_header(AVFormatContext *ctx, AVIOContext *pb, int appen
     return 0;
 }
 
-static int wv_read_header(AVFormatContext *s,
-                          AVFormatParameters *ap)
+static int wv_read_header(AVFormatContext *s)
 {
     AVIOContext *pb = s->pb;
     WVContext *wc = s->priv_data;
     AVStream *st;
 
     wc->block_parsed = 0;
-    if(wv_read_block_header(s, pb, 0) < 0)
-        return -1;
+    for(;;){
+        if(wv_read_block_header(s, pb, 0) < 0)
+            return -1;
+        if(!AV_RN32(wc->extra))
+            avio_skip(pb, wc->blksize - 24);
+        else
+            break;
+    }
 
     /* now we are ready: build format streams */
-    st = av_new_stream(s, 0);
+    st = avformat_new_stream(s, NULL);
     if (!st)
         return -1;
     st->codec->codec_type = AVMEDIA_TYPE_AUDIO;
@@ -219,14 +229,14 @@ static int wv_read_header(AVFormatContext *s,
     st->codec->channel_layout = wc->chmask;
     st->codec->sample_rate = wc->rate;
     st->codec->bits_per_coded_sample = wc->bpp;
-    av_set_pts_info(st, 64, 1, wc->rate);
+    avpriv_set_pts_info(st, 64, 1, wc->rate);
     st->start_time = 0;
     st->duration = wc->samples;
 
-    if(!url_is_streamed(s->pb)) {
-        int64_t cur = url_ftell(s->pb);
+    if(s->pb->seekable) {
+        int64_t cur = avio_tell(s->pb);
         ff_ape_parse_tag(s);
-        if(!av_metadata_get(s->metadata, "", NULL, AV_METADATA_IGNORE_SUFFIX))
+        if(!av_dict_get(s->metadata, "", NULL, AV_DICT_IGNORE_SUFFIX))
             ff_id3v1_read(s);
         avio_seek(s->pb, cur, SEEK_SET);
     }
@@ -240,6 +250,8 @@ static int wv_read_packet(AVFormatContext *s,
     WVContext *wc = s->priv_data;
     int ret;
     int size, ver, off;
+    int64_t pos;
+    uint32_t block_samples;
 
     if (url_feof(s->pb))
         return AVERROR(EIO);
@@ -248,6 +260,7 @@ static int wv_read_packet(AVFormatContext *s,
             return -1;
     }
 
+    pos = wc->pos;
     off = wc->multichannel ? 4 : 0;
     if(av_new_packet(pkt, wc->blksize + WV_EXTRA_SIZE + off) < 0)
         return AVERROR(ENOMEM);
@@ -304,7 +317,13 @@ static int wv_read_packet(AVFormatContext *s,
     pkt->stream_index = 0;
     wc->block_parsed = 1;
     pkt->pts = wc->soff;
-    av_add_index_entry(s->streams[0], wc->pos, pkt->pts, 0, 0, AVINDEX_KEYFRAME);
+    block_samples = AV_RN32(wc->extra);
+    if (block_samples > INT32_MAX)
+        av_log(s, AV_LOG_WARNING, "Too many samples in block: %"PRIu32"\n", block_samples);
+    else
+        pkt->duration = block_samples;
+
+    av_add_index_entry(s->streams[0], pos, pkt->pts, 0, 0, AVINDEX_KEYFRAME);
     return 0;
 }
 
@@ -318,7 +337,8 @@ static int wv_read_seek(AVFormatContext *s, int stream_index, int64_t timestamp,
     int64_t pos, pts;
 
     /* if found, seek there */
-    if (index >= 0){
+    if (index >= 0 &&
+        timestamp <= st->index_entries[st->nb_index_entries - 1].timestamp) {
         wc->block_parsed = 1;
         avio_seek(s->pb, st->index_entries[index].pos, SEEK_SET);
         return 0;
@@ -327,7 +347,7 @@ static int wv_read_seek(AVFormatContext *s, int stream_index, int64_t timestamp,
     if(timestamp < 0 || timestamp >= s->duration)
         return -1;
 
-    pos = url_ftell(s->pb);
+    pos = avio_tell(s->pb);
     do{
         ret = av_read_frame(s, pkt);
         if (ret < 0){
@@ -341,12 +361,11 @@ static int wv_read_seek(AVFormatContext *s, int stream_index, int64_t timestamp,
 }
 
 AVInputFormat ff_wv_demuxer = {
-    "wv",
-    NULL_IF_CONFIG_SMALL("WavPack"),
-    sizeof(WVContext),
-    wv_probe,
-    wv_read_header,
-    wv_read_packet,
-    NULL,
-    wv_read_seek,
+    .name           = "wv",
+    .long_name      = NULL_IF_CONFIG_SMALL("WavPack"),
+    .priv_data_size = sizeof(WVContext),
+    .read_probe     = wv_probe,
+    .read_header    = wv_read_header,
+    .read_packet    = wv_read_packet,
+    .read_seek      = wv_read_seek,
 };

@@ -203,13 +203,17 @@ connect2Server_with_af(char *host, int port, int af,int verb) {
 
 	// Turn the socket as non blocking so we can timeout on the connection
 #if defined(GEKKO)
+	// turn off Nagle
+	u32 nodelay = 1;
+	net_setsockopt(socket_server_fd,IPPROTO_TCP,TCP_NODELAY,&nodelay,sizeof(nodelay));
+
 	net_fcntl(socket_server_fd, F_SETFL, net_fcntl(socket_server_fd, F_GETFL, 0) | IOS_O_NONBLOCK);
 	u64 t1,t2;
 	t1=ticks_to_millisecs(gettime());
 	do {
 		ret = net_connect(socket_server_fd,(struct sockaddr*)&server_address,server_address_size);
 		t2=ticks_to_millisecs(gettime());
-		if(t2-t1 > 5000) break; // 5 secs to try to connect
+		if(t2-t1 > 8000) break; // 8 secs to try to connect
 		usleep(500);
 	}while(ret != -EISCONN);
 	if(ret != -EISCONN)
@@ -217,14 +221,15 @@ connect2Server_with_af(char *host, int port, int af,int verb) {
 		closesocket(socket_server_fd);
 		return TCP_ERROR_PORT;
 	}
-	net_fcntl(socket_server_fd, F_SETFL, net_fcntl(socket_server_fd, F_GETFL, 0) & ~IOS_O_NONBLOCK);
-#else
-#if !HAVE_WINSOCK2_H
+	net_fcntl(socket_server_fd, F_SETFL, net_fcntl(socket_server_fd, F_GETFL, 0) & ~IOS_O_NONBLOCK);		
+#elif !HAVE_WINSOCK2_H
 	fcntl( socket_server_fd, F_SETFL, fcntl(socket_server_fd, F_GETFL) | O_NONBLOCK );
 #else
 	val = 1;
 	ioctlsocket( socket_server_fd, FIONBIO, &val );
 #endif
+
+#if !defined(GEKKO)
 	if( connect( socket_server_fd, (struct sockaddr*)&server_address, server_address_size )==-1 ) {
 #if !HAVE_WINSOCK2_H
 		if( errno!=EINPROGRESS ) {
@@ -275,7 +280,7 @@ connect2Server_with_af(char *host, int port, int af,int verb) {
 		mp_msg(MSGT_NETWORK,MSGL_ERR,MSGTR_MPDEMUX_NW_ConnectError,strerror(err));
 		return TCP_ERROR_PORT;
 	}
-#endif
+#endif	
 	return socket_server_fd;
 }
 

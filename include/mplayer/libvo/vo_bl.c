@@ -27,6 +27,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+#include "config.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,12 +38,10 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/time.h>
-#ifdef HAVE_SYS_MMAN_H
+#if HAVE_SYS_MMAN_H
 #include <sys/mman.h>
 #endif
 #include <sys/ioctl.h>
-
-#include "config.h"
 
 #include <netdb.h>
 #include <sys/socket.h>
@@ -328,12 +328,10 @@ static void check_events(void) {
 }
 
 static int draw_slice(uint8_t *srcimg[], int stride[],
-		int wf, int hf, int xf, int yf) {
-	int i, w, h, x, y;
-	uint8_t *dst;
+		int w, int h, int x, int y) {
+	int i;
+	uint8_t *dst = image + y * bl->width + x;
 	uint8_t *src=srcimg[0];
-	w = wf; h = hf; x = xf; y = yf;
-	dst=image; /* + zr->off_y + zr->image_width*(y/zr->vdec)+x;*/
 	// copy Y:
 	for (i = 0; i < h; i++) {
 		fast_memcpy(dst,src,w);
@@ -470,7 +468,7 @@ static int preinit(const char *arg) {
 	return 0;
 }
 
-static int control(uint32_t request, void *data, ...) {
+static int control(uint32_t request, void *data) {
 	switch (request) {
 		case VOCTRL_QUERY_FORMAT:
 			return query_format(*((uint32_t*)data));

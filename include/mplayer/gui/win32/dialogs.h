@@ -34,8 +34,6 @@
 #define SOLID_GREY (HBRUSH) CreateSolidBrush(RGB(232, 232, 232))
 #define SOLID_GREY2 (HBRUSH) CreateSolidBrush(RGB(175, 175, 175))
 
-#define gfree free
-
 #define MAXFILE 1024
 
 #define COPYRIGHT   "               MPlayer GUI for Windows\n\n" \
@@ -70,8 +68,6 @@
 #define ID_OSD1              34
 #define ID_OSD2              35
 #define ID_OSD3              36
-#define ID_DVDDEVICE         37
-#define ID_CDDEVICE          38
 #define ID_PRIO              39
 #define ID_URL               40
 #define ID_TITLESEL          41
@@ -120,10 +116,11 @@
 #define ID_ASPECT2           84
 #define ID_ASPECT3           85
 #define ID_ASPECT4           86
-#define ID_SUBWINDOW         87
+#define ID_VIDEOWINDOW       87
 #define ID_TIMER             88
 #define ID_MUTE              89
 #define ID_FULLSCREEN        90
+#define ID_IDLE              91
 
 /* gtk emulation */
 #define GTK_MB_FATAL         0x1

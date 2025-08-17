@@ -1493,7 +1493,26 @@ static demuxer_t* demux_open_real(demuxer_t* demuxer)
 
 		    ++a_streams;
 	  } else if (strstr(mimet,"x-ralf-mpeg4")) {
-		 mp_msg(MSGT_DEMUX,MSGL_ERR,"Real lossless audio not supported yet\n");
+		    sh_audio_t *sh = new_sh_audio(demuxer, stream_id, NULL);
+    		    mp_msg(MSGT_DEMUX, MSGL_INFO, MSGTR_AudioID, "real", stream_id);
+
+		    // Check extradata len, we can't store bigger values in cbSize anyway
+		    if ((unsigned)codec_data_size > 0xffff) {
+		        mp_msg(MSGT_DEMUX,MSGL_ERR,"Extradata too big (%d)\n", codec_data_size);
+			goto skip_this_chunk;
+		    }
+		    /* Emulate WAVEFORMATEX struct: */
+		    sh->wf = calloc(1, sizeof(*sh->wf)+codec_data_size);
+		    sh->wf->nChannels = 0;
+		    sh->wf->wBitsPerSample = 16;
+		    sh->wf->nSamplesPerSec = 0;
+		    sh->wf->nAvgBytesPerSec = 0;
+		    sh->wf->nBlockAlign = 0;
+		    sh->wf->wFormatTag = sh->format = mmioFOURCC('L','S','D',':');
+		    sh->wf->cbSize = codec_data_size;
+		    stream_read(demuxer->stream, (char*)(sh->wf+1), codec_data_size);
+
+		    ++a_streams;
 	  } else if (strstr(mimet,"x-pn-encrypted-ra")) {
 		 mp_msg(MSGT_DEMUX,MSGL_ERR,"Encrypted audio is not supported\n");
 	  } else {
@@ -1519,6 +1538,8 @@ static demuxer_t* demux_open_real(demuxer_t* demuxer)
 	    	    sh->bih->biSize = sizeof(*sh->bih);
 		    sh->disp_w = sh->bih->biWidth = stream_read_word(demuxer->stream);
 		    sh->disp_h = sh->bih->biHeight = stream_read_word(demuxer->stream);
+		    if (sh->disp_w > 0 && sh->disp_h > 0)
+			sh->aspect = (float)sh->disp_w / sh->disp_h;
 		    sh->bih->biPlanes = 1;
 		    sh->bih->biBitCount = 24;
 		    sh->bih->biCompression = sh->format;
@@ -1687,7 +1708,7 @@ header_end:
   } else {
         priv->audio_curpos = priv->str_data_offset[demuxer->audio->id] + 18;
         stream_seek(demuxer->stream, priv->str_data_offset[demuxer->audio->id]+10);
-        priv->a_num_of_packets=priv->a_num_of_packets = stream_read_dword(demuxer->stream);
+        priv->a_num_of_packets = stream_read_dword(demuxer->stream);
         priv->video_curpos = priv->str_data_offset[demuxer->video->id] + 18;
         stream_seek(demuxer->stream, priv->str_data_offset[demuxer->video->id]+10);
         priv->v_num_of_packets = stream_read_dword(demuxer->stream);

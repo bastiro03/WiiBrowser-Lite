@@ -609,9 +609,6 @@ int vm_jump_menu(vm_t *vm, DVDMenuID_t menuid) {
     switch(menuid) {
     case DVD_MENU_Title:
     case DVD_MENU_Escape:
-      if(vm->vmgi == NULL || vm->vmgi->pgci_ut == NULL) {
-        return 0;
-      }
       (vm->state).domain = VMGM_DOMAIN;
       break;
     case DVD_MENU_Root:
@@ -619,13 +616,12 @@ int vm_jump_menu(vm_t *vm, DVDMenuID_t menuid) {
     case DVD_MENU_Audio:
     case DVD_MENU_Angle:
     case DVD_MENU_Part:
-      if(vm->vtsi == NULL || vm->vtsi->pgci_ut == NULL) {
-        return 0;
-      }
       (vm->state).domain = VTSM_DOMAIN;
       break;
     }
-    if(get_PGCIT(vm) && set_MENU(vm, menuid)) {
+    if(vm->vmgi == NULL || vm->vmgi->pgci_ut == NULL)
+      return 0;
+    else if(get_PGCIT(vm) && set_MENU(vm, menuid)) {
       process_command(vm, play_PGC(vm));
       return 1;  /* Jump */
     } else {
@@ -1441,9 +1437,8 @@ static int process_command(vm_t *vm, link_t link_values) {
       if(link_values.data2 != 0)
 	(vm->state).HL_BTNN_REG = link_values.data2 << 10;
       if(!set_VTS_PTT(vm, (vm->state).vtsN, (vm->state).VTS_TTN_REG, link_values.data1))
-        link_values.command = Exit;
-      else
-        link_values = play_PG(vm);
+	assert(0);
+      link_values = play_PG(vm);
       break;
     case LinkPGN:
       /* Link to Program Number:data1 */
@@ -1488,9 +1483,8 @@ static int process_command(vm_t *vm, link_t link_values) {
       /* Set SPRM1 and SPRM2 */
       assert((vm->state).domain == VTSM_DOMAIN || (vm->state).domain == VTS_DOMAIN); /* ?? */
       if(!set_VTS_TT(vm, (vm->state).vtsN, link_values.data1))
-        link_values.command = Exit;
-      else
-        link_values = play_PGC(vm);
+	assert(0);
+      link_values = play_PGC(vm);
       break;
     case JumpVTS_PTT:
       /* Jump to Part:data2 of Title:data1 in same VTS Title Domain */
@@ -1500,9 +1494,8 @@ static int process_command(vm_t *vm, link_t link_values) {
       /* Set SPRM1 and SPRM2 */
       assert((vm->state).domain == VTSM_DOMAIN || (vm->state).domain == VTS_DOMAIN); /* ?? */
       if(!set_VTS_PTT(vm, (vm->state).vtsN, link_values.data1, link_values.data2))
-        link_values.command = Exit;
-      else
-        link_values = play_PGC_PG(vm, (vm->state).pgN);
+	assert(0);
+      link_values = play_PGC_PG(vm, (vm->state).pgN);
       break;
 
     case JumpSS_FP:
@@ -1520,10 +1513,6 @@ static int process_command(vm_t *vm, link_t link_values) {
       /* Allowed from anywhere except the VTS Title domain */
       /* Stop SPRM9 Timer and any GPRM counters */
       assert((vm->state).domain != VTS_DOMAIN); /* ?? */
-      if(vm->vmgi == NULL || vm->vmgi->pgci_ut == NULL) {
-        link_values.command = Exit;
-        break;
-      }
       (vm->state).domain = VMGM_DOMAIN;
       if(!set_MENU(vm, link_values.data1))
 	assert(0);
@@ -1540,22 +1529,14 @@ static int process_command(vm_t *vm, link_t link_values) {
 	if (link_values.data1 != (vm->state).vtsN) {
 	  /* the normal case */
 	  assert((vm->state).domain == VMGM_DOMAIN || (vm->state).domain == FP_DOMAIN); /* ?? */
+	  (vm->state).domain = VTSM_DOMAIN;
 	  if (!ifoOpenNewVTSI(vm, vm->dvd, link_values.data1))  /* Also sets (vm->state).vtsN */
 	    assert(0);
-          if(vm->vtsi == NULL || vm->vtsi->pgci_ut == NULL) {
-            link_values.command = Exit;
-            break;
-          }
-	  (vm->state).domain = VTSM_DOMAIN;
 	} else {
 	  /* This happens on some discs like "Captain Scarlet & the Mysterons" or
 	   * the German RC2 of "Anatomie" in VTSM. */
 	  assert((vm->state).domain == VTSM_DOMAIN ||
 	    (vm->state).domain == VMGM_DOMAIN || (vm->state).domain == FP_DOMAIN); /* ?? */
-          if(vm->vtsi == NULL || vm->vtsi->pgci_ut == NULL) {
-            link_values.command = Exit;
-            break;
-          }
 	  (vm->state).domain = VTSM_DOMAIN;
 	}
       } else {
@@ -1577,10 +1558,6 @@ static int process_command(vm_t *vm, link_t link_values) {
       /* set_PGCN:data1 */
       /* Stop SPRM9 Timer and any GPRM counters */
       assert((vm->state).domain != VTS_DOMAIN); /* ?? */
-      if(vm->vmgi == NULL || vm->vmgi->pgci_ut == NULL) {
-        link_values.command = Exit;
-        break;
-      }
       (vm->state).domain = VMGM_DOMAIN;
       if(!set_PGCN(vm, link_values.data1))
 	assert(0);
@@ -1600,10 +1577,6 @@ static int process_command(vm_t *vm, link_t link_values) {
       /* set_RSMinfo:data2 */
       assert((vm->state).domain == VTS_DOMAIN); /* ?? */
       /* Must be called before domain is changed */
-      if(vm->vmgi == NULL || vm->vmgi->pgci_ut == NULL) {
-        link_values.command = Exit;
-        break;
-      }
       set_RSMinfo(vm, link_values.data2, /* We dont have block info */ 0);
       (vm->state).domain = VMGM_DOMAIN;
       if(!set_MENU(vm, link_values.data1))
@@ -1615,10 +1588,6 @@ static int process_command(vm_t *vm, link_t link_values) {
       /* set_RSMinfo:data2 */
       assert((vm->state).domain == VTS_DOMAIN); /* ?? */
       /* Must be called before domain is changed */
-      if(vm->vtsi == NULL || vm->vtsi->pgci_ut == NULL) {
-        link_values.command = Exit;
-        break;
-      }
       set_RSMinfo(vm, link_values.data2, /* We dont have block info */ 0);
       (vm->state).domain = VTSM_DOMAIN;
       if(!set_MENU(vm, link_values.data1))
@@ -1630,10 +1599,6 @@ static int process_command(vm_t *vm, link_t link_values) {
       /* set_RSMinfo:data2 */
       assert((vm->state).domain == VTS_DOMAIN); /* ?? */
       /* Must be called before domain is changed */
-      if(vm->vmgi == NULL || vm->vmgi->pgci_ut == NULL) {
-        link_values.command = Exit;
-        break;
-      }
       set_RSMinfo(vm, link_values.data2, /* We dont have block info */ 0);
       (vm->state).domain = VMGM_DOMAIN;
       if(!set_PGCN(vm, link_values.data1))
@@ -1694,9 +1659,7 @@ static int set_VTS_PTT(vm_t *vm, int vtsN, int vts_ttn, int part) {
   (vm->state).TT_PGCN_REG = pgcN;
   (vm->state).PTTN_REG    = part;
   (vm->state).TTN_REG     = get_TT(vm, vtsN, vts_ttn);
-  if( (vm->state.TTN_REG) == 0 )
-    return 0;
-
+  assert( (vm->state.TTN_REG) != 0 );
   (vm->state).VTS_TTN_REG = vts_ttn;
   (vm->state).vtsN        = vtsN;  /* Not sure about this one. We can get to it easily from TTN_REG */
   /* Any other registers? */

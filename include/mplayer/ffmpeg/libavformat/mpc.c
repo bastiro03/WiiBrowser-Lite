@@ -21,8 +21,10 @@
 
 #include "libavcodec/get_bits.h"
 #include "avformat.h"
+#include "internal.h"
 #include "apetag.h"
 #include "id3v1.h"
+#include "libavutil/dict.h"
 
 #define MPC_FRAMESIZE  1152
 #define DELAY_FRAMES   32
@@ -50,7 +52,7 @@ static int mpc_probe(AVProbeData *p)
     return 0;
 }
 
-static int mpc_read_header(AVFormatContext *s, AVFormatParameters *ap)
+static int mpc_read_header(AVFormatContext *s)
 {
     MPCContext *c = s->priv_data;
     AVStream *st;
@@ -69,13 +71,21 @@ static int mpc_read_header(AVFormatContext *s, AVFormatParameters *ap)
         av_log(s, AV_LOG_ERROR, "Too many frames, seeking is not possible\n");
         return -1;
     }
-    c->frames = av_malloc(c->fcount * sizeof(MPCFrame));
+    if(c->fcount){
+        c->frames = av_malloc(c->fcount * sizeof(MPCFrame));
+        if(!c->frames){
+            av_log(s, AV_LOG_ERROR, "Cannot allocate seektable\n");
+            return AVERROR(ENOMEM);
+        }
+    }else{
+        av_log(s, AV_LOG_WARNING, "Container reports no frames\n");
+    }
     c->curframe = 0;
     c->lastframe = -1;
     c->curbits = 8;
     c->frames_noted = 0;
 
-    st = av_new_stream(s, 0);
+    st = avformat_new_stream(s, NULL);
     if (!st)
         return AVERROR(ENOMEM);
     st->codec->codec_type = AVMEDIA_TYPE_AUDIO;
@@ -87,16 +97,16 @@ static int mpc_read_header(AVFormatContext *s, AVFormatParameters *ap)
     st->codec->extradata = av_mallocz(st->codec->extradata_size+FF_INPUT_BUFFER_PADDING_SIZE);
     avio_read(s->pb, st->codec->extradata, 16);
     st->codec->sample_rate = mpc_rate[st->codec->extradata[2] & 3];
-    av_set_pts_info(st, 32, MPC_FRAMESIZE, st->codec->sample_rate);
+    avpriv_set_pts_info(st, 32, MPC_FRAMESIZE, st->codec->sample_rate);
     /* scan for seekpoints */
     st->start_time = 0;
     st->duration = c->fcount;
 
     /* try to read APE tags */
-    if (!url_is_streamed(s->pb)) {
-        int64_t pos = url_ftell(s->pb);
+    if (s->pb->seekable) {
+        int64_t pos = avio_tell(s->pb);
         ff_ape_parse_tag(s);
-        if (!av_metadata_get(s->metadata, "", NULL, AV_METADATA_IGNORE_SUFFIX))
+        if (!av_dict_get(s->metadata, "", NULL, AV_DICT_IGNORE_SUFFIX))
             ff_id3v1_read(s);
         avio_seek(s->pb, pos, SEEK_SET);
     }
@@ -108,9 +118,10 @@ static int mpc_read_packet(AVFormatContext *s, AVPacket *pkt)
 {
     MPCContext *c = s->priv_data;
     int ret, size, size2, curbits, cur = c->curframe;
-    int64_t tmp, pos;
+    unsigned tmp;
+    int64_t pos;
 
-    if (c->curframe >= c->fcount)
+    if (c->curframe >= c->fcount && c->fcount)
         return -1;
 
     if(c->curframe != c->lastframe + 1){
@@ -120,19 +131,18 @@ static int mpc_read_packet(AVFormatContext *s, AVPacket *pkt)
     c->lastframe = c->curframe;
     c->curframe++;
     curbits = c->curbits;
-    pos = url_ftell(s->pb);
+    pos = avio_tell(s->pb);
     tmp = avio_rl32(s->pb);
     if(curbits <= 12){
         size2 = (tmp >> (12 - curbits)) & 0xFFFFF;
     }else{
-        tmp = (tmp << 32) | avio_rl32(s->pb);
-        size2 = (tmp >> (44 - curbits)) & 0xFFFFF;
+        size2 = (tmp << (curbits - 12) | avio_rl32(s->pb) >> (44 - curbits)) & 0xFFFFF;
     }
     curbits += 20;
     avio_seek(s->pb, pos, SEEK_SET);
 
     size = ((size2 + curbits + 31) & ~31) >> 3;
-    if(cur == c->frames_noted){
+    if(cur == c->frames_noted && c->fcount){
         c->frames[cur].pos = pos;
         c->frames[cur].size = size;
         c->frames[cur].skip = curbits - 20;
@@ -145,7 +155,7 @@ static int mpc_read_packet(AVFormatContext *s, AVPacket *pkt)
         return AVERROR(EIO);
 
     pkt->data[0] = curbits;
-    pkt->data[1] = (c->curframe > c->fcount);
+    pkt->data[1] = (c->curframe > c->fcount) && c->fcount;
     pkt->data[2] = 0;
     pkt->data[3] = 0;
 
@@ -213,13 +223,13 @@ static int mpc_read_seek(AVFormatContext *s, int stream_index, int64_t timestamp
 
 
 AVInputFormat ff_mpc_demuxer = {
-    "mpc",
-    NULL_IF_CONFIG_SMALL("Musepack"),
-    sizeof(MPCContext),
-    mpc_probe,
-    mpc_read_header,
-    mpc_read_packet,
-    mpc_read_close,
-    mpc_read_seek,
-    .extensions = "mpc",
+    .name           = "mpc",
+    .long_name      = NULL_IF_CONFIG_SMALL("Musepack"),
+    .priv_data_size = sizeof(MPCContext),
+    .read_probe     = mpc_probe,
+    .read_header    = mpc_read_header,
+    .read_packet    = mpc_read_packet,
+    .read_close     = mpc_read_close,
+    .read_seek      = mpc_read_seek,
+    .extensions     = "mpc",
 };

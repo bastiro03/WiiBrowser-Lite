@@ -134,7 +134,7 @@ static dvdnav_priv_t * new_dvdnav_stream(char * filename) {
     mp_msg(MSGT_OPEN,MSGL_ERR,"stream_dvdnav, failed to set PGC positioning\n");
   /* report the title?! */
   if (dvdnav_get_title_string(priv->dvdnav,&title_str)==DVDNAV_STATUS_OK) {
-    mp_msg(MSGT_IDENTIFY, MSGL_INFO,"Title: '%s'\n",title_str);
+    mp_msg(MSGT_IDENTIFY, MSGL_INFO, "ID_DVD_VOLUME_ID=%s\n", title_str);
   }
 
   //dvdnav_event_clear(priv);
@@ -156,7 +156,12 @@ static void dvdnav_get_highlight (dvdnav_priv_t *priv, int display_mode) {
 
   dvdnav_get_current_highlight (priv->dvdnav, &(hlev->buttonN));
   hlev->display = display_mode; /* show */
-
+#ifdef GEKKO
+  // always hide button highlight
+  hlev->sx = hlev->ex = 0;
+  hlev->sy = hlev->ey = 0;
+  hlev->palette = hlev->buttonN = 0;
+#else
   if (hlev->buttonN > 0 && pnavpci->hli.hl_gi.btn_ns > 0 && hlev->display) {
     for (btnum = 0; btnum < pnavpci->hli.hl_gi.btn_ns; btnum++) {
       btni_t *btni = &(pnavpci->hli.btnit[btnum]);
@@ -177,6 +182,7 @@ static void dvdnav_get_highlight (dvdnav_priv_t *priv, int display_mode) {
     hlev->sy = hlev->ey = 0;
     hlev->palette = hlev->buttonN = 0;
   }
+#endif
 }
 
 static inline int dvdnav_get_duration (int length) {
@@ -402,6 +408,9 @@ static int fill_buffer(stream_t *s, char *but, int len)
   return len;
 }
 
+static int mp_dvdnav_lang_from_sid(stream_t *stream, int sid);
+static int mp_dvdnav_lang_from_aid(stream_t *stream, int sid);
+
 static int control(stream_t *stream, int cmd, void* arg) {
   dvdnav_priv_t* priv=stream->priv;
   int tit, part;
@@ -410,7 +419,7 @@ static int control(stream_t *stream, int cmd, void* arg) {
   {
     case STREAM_CTRL_SEEK_TO_CHAPTER:
     {
-      int chap = *((unsigned int *)arg)+1;
+      int chap = *(unsigned int *)arg+1;
 
       if(chap < 1 || dvdnav_current_title_info(priv->dvdnav, &tit, &part) != DVDNAV_STATUS_OK)
         break;
@@ -426,21 +435,21 @@ static int control(stream_t *stream, int cmd, void* arg) {
         break;
       if(!part)
         break;
-      *((unsigned int *)arg) = part;
+      *(unsigned int *)arg = part;
       return 1;
     }
     case STREAM_CTRL_GET_CURRENT_CHAPTER:
     {
       if(dvdnav_current_title_info(priv->dvdnav, &tit, &part) != DVDNAV_STATUS_OK)
         break;
-      *((unsigned int *)arg) = part - 1;
+      *(unsigned int *)arg = part - 1;
       return 1;
     }
     case STREAM_CTRL_GET_TIME_LENGTH:
     {
       if(priv->duration || priv->still_length)
       {
-        *((double *)arg) = (double)priv->duration / 1000.0;
+        *(double *)arg = (double)priv->duration / 1000.0;
         return 1;
       }
       break;
@@ -448,7 +457,7 @@ static int control(stream_t *stream, int cmd, void* arg) {
     case STREAM_CTRL_GET_ASPECT_RATIO:
     {
       uint8_t ar = dvdnav_get_video_aspect(priv->dvdnav);
-      *((double *)arg) = !ar ? 4.0/3.0 : 16.0/9.0;
+      *(double *)arg = !ar ? 4.0/3.0 : 16.0/9.0;
       return 1;
     }
     case STREAM_CTRL_GET_CURRENT_TIME:
@@ -457,14 +466,14 @@ static int control(stream_t *stream, int cmd, void* arg) {
       tm = dvdnav_get_current_time(priv->dvdnav)/90000.0f;
       if(tm != -1)
       {
-        *((double *)arg) = tm;
+        *(double *)arg = tm;
         return 1;
       }
       break;
     }
     case STREAM_CTRL_SEEK_TO_TIME:
     {
-      uint64_t tm = (uint64_t) (*((double*)arg) * 90000);
+      uint64_t tm = *(double *)arg * 90000;
       if(dvdnav_time_search(priv->dvdnav, tm) == DVDNAV_STATUS_OK)
         return 1;
       break;
@@ -474,7 +483,7 @@ static int control(stream_t *stream, int cmd, void* arg) {
         uint32_t curr, angles;
         if(dvdnav_get_angle_info(priv->dvdnav, &curr, &angles) != DVDNAV_STATUS_OK)
           break;
-        *((int *)arg) = angles;
+        *(int *)arg = angles;
         return 1;
     }
     case STREAM_CTRL_GET_ANGLE:
@@ -482,19 +491,38 @@ static int control(stream_t *stream, int cmd, void* arg) {
         uint32_t curr, angles;
         if(dvdnav_get_angle_info(priv->dvdnav, &curr, &angles) != DVDNAV_STATUS_OK)
           break;
-        *((int *)arg) = curr;
+        *(int *)arg = curr;
         return 1;
     }
     case STREAM_CTRL_SET_ANGLE:
     {
         uint32_t curr, angles;
-        int new_angle = *((int *)arg);
+        int new_angle = *(int *)arg;
         if(dvdnav_get_angle_info(priv->dvdnav, &curr, &angles) != DVDNAV_STATUS_OK)
           break;
         if(new_angle>angles || new_angle<1)
             break;
         if(dvdnav_angle_change(priv->dvdnav, new_angle) != DVDNAV_STATUS_OK)
         return 1;
+    }
+    case STREAM_CTRL_GET_LANG:
+    {
+        struct stream_lang_req *req = arg;
+        int lang = 0;
+        switch(req->type) {
+        case stream_ctrl_audio:
+            lang = mp_dvdnav_lang_from_aid(stream, req->id);
+            break;
+        case stream_ctrl_sub:
+            lang = mp_dvdnav_lang_from_sid(stream, req->id);
+            break;
+        }
+        if (!lang)
+            break;
+        req->buf[0] = lang >> 8;
+        req->buf[1] = lang;
+        req->buf[2] = 0;
+        return STREAM_OK;
     }
   }
 
@@ -758,13 +786,12 @@ int mp_dvdnav_aid_from_lang(stream_t *stream, const unsigned char *language) {
 }
 
 /**
- * \brief mp_dvdnav_lang_from_aid() assigns to buf the language corresponding to audio id 'aid'
+ * \brief mp_dvdnav_lang_from_aid() returns the language corresponding to audio id 'aid'
  * \param stream: - stream pointer
  * \param sid: physical subtitle id
- * \param buf: buffer to contain the 2-chars language string
- * \return 0 on error, 1 if successful
+ * \return 0 on error, otherwise language id
  */
-int mp_dvdnav_lang_from_aid(stream_t *stream, int aid, unsigned char *buf) {
+static int mp_dvdnav_lang_from_aid(stream_t *stream, int aid) {
   uint8_t lg;
   uint16_t lang;
   dvdnav_priv_t * priv = stream->priv;
@@ -775,10 +802,7 @@ int mp_dvdnav_lang_from_aid(stream_t *stream, int aid, unsigned char *buf) {
   if(lg == 0xff) return 0;
   lang = dvdnav_audio_stream_to_lang(priv->dvdnav, lg);
   if(lang == 0xffff) return 0;
-  buf[0] = lang >> 8;
-  buf[1] = lang & 0xFF;
-  buf[2] = 0;
-  return 1;
+  return lang;
 }
 
 
@@ -810,13 +834,12 @@ int mp_dvdnav_sid_from_lang(stream_t *stream, const unsigned char *language) {
 }
 
 /**
- * \brief mp_dvdnav_lang_from_sid() assigns to buf the language corresponding to subtitle id 'sid'
+ * \brief mp_dvdnav_lang_from_sid() returns the language corresponding to subtitle id 'sid'
  * \param stream: - stream pointer
  * \param sid: physical subtitle id
- * \param buf: buffer to contain the 2-chars language string
- * \return 0 on error, 1 if successful
+ * \return 0 on error, otherwise language id
  */
-int mp_dvdnav_lang_from_sid(stream_t *stream, int sid, unsigned char *buf) {
+static int mp_dvdnav_lang_from_sid(stream_t *stream, int sid) {
     uint8_t k;
     uint16_t lang;
     dvdnav_priv_t *priv = stream->priv;
@@ -828,10 +851,7 @@ int mp_dvdnav_lang_from_sid(stream_t *stream, int sid, unsigned char *buf) {
         return 0;
     lang = dvdnav_spu_stream_to_lang(priv->dvdnav, k);
     if(lang == 0xffff) return 0;
-    buf[0] = lang >> 8;
-    buf[1] = lang & 0xFF;
-    buf[2] = 0;
-    return 1;
+    return lang;
 }
 
 /**

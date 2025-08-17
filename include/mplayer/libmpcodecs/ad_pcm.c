@@ -70,6 +70,7 @@ static int init(sh_audio_t * sh_audio)
             sh_audio->sample_format = AF_FORMAT_U8;
         break;
     case 0x736F7774: // 'twos'
+	//brstm: big-endian PCM16
         sh_audio->sample_format = AF_FORMAT_S16_BE;
         // intended fall-through
     case 0x74776F73: // 'sowt'
@@ -77,10 +78,12 @@ static int init(sh_audio_t * sh_audio)
             sh_audio->sample_format = AF_FORMAT_S8;
         break;
     case 0x32336c66: // 'fl32', bigendian float32
+    case 0x32334C46: // 'FL32', bigendian float32 in aiff
         sh_audio->sample_format = AF_FORMAT_FLOAT_BE;
         sh_audio->samplesize = 4;
         break;
     case 0x666c3332: // '23lf', little endian float32, MPlayer internal fourCC
+    case 0x6D63706C: // 'lpcm'
         sh_audio->sample_format = AF_FORMAT_FLOAT_LE;
         sh_audio->samplesize = 4;
         break;

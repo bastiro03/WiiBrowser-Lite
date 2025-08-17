@@ -32,8 +32,9 @@
 #else
 #include <winsock2.h>
 #endif
+#else
+#define MSG_OOB 0x01 //scip
 #endif
-
 #include "mp_msg.h"
 #include "network.h"
 #include "stream.h"

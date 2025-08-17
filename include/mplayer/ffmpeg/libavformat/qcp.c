@@ -23,7 +23,7 @@
  * @file
  * QCP format (.qcp) demuxer
  * @author Kenan Gillet
- * @sa RFC 3625: "The QCP File Format and Media Types for Speech Data"
+ * @see RFC 3625: "The QCP File Format and Media Types for Speech Data"
  *     http://tools.ietf.org/html/rfc3625
  */
 
@@ -80,11 +80,11 @@ static int qcp_probe(AVProbeData *pd)
     return 0;
 }
 
-static int qcp_read_header(AVFormatContext *s, AVFormatParameters *ap)
+static int qcp_read_header(AVFormatContext *s)
 {
     AVIOContext *pb = s->pb;
     QCPContext    *c  = s->priv_data;
-    AVStream      *st = av_new_stream(s, 0);
+    AVStream      *st = avformat_new_stream(s, NULL);
     uint8_t       buf[16];
     int           i, nb_rates;
 
@@ -92,8 +92,7 @@ static int qcp_read_header(AVFormatContext *s, AVFormatParameters *ap)
         return AVERROR(ENOMEM);
 
     avio_rb32(pb);                    // "RIFF"
-    s->file_size = avio_rl32(pb) + 8;
-    avio_seek(pb, 8 + 4 + 1 + 1, SEEK_CUR);    // "QLCMfmt " + chunk-size + major-version + minor-version
+    avio_skip(pb, 4 + 8 + 4 + 1 + 1);    // filesize + "QLCMfmt " + chunk-size + major-version + minor-version
 
     st->codec->codec_type = AVMEDIA_TYPE_AUDIO;
     st->codec->channels   = 1;
@@ -110,13 +109,13 @@ static int qcp_read_header(AVFormatContext *s, AVFormatParameters *ap)
         av_log(s, AV_LOG_ERROR, "Unknown codec GUID.\n");
         return AVERROR_INVALIDDATA;
     }
-    avio_seek(pb, 2 + 80, SEEK_CUR); // codec-version + codec-name
+    avio_skip(pb, 2 + 80); // codec-version + codec-name
     st->codec->bit_rate = avio_rl16(pb);
 
     s->packet_size = avio_rl16(pb);
-    avio_seek(pb, 2, SEEK_CUR); // block-size
+    avio_skip(pb, 2); // block-size
     st->codec->sample_rate = avio_rl16(pb);
-    avio_seek(pb, 2, SEEK_CUR); // sample-size
+    avio_skip(pb, 2); // sample-size
 
     memset(c->rates_per_mode, -1, sizeof(c->rates_per_mode));
     nb_rates = avio_rl32(pb);
@@ -129,7 +128,7 @@ static int qcp_read_header(AVFormatContext *s, AVFormatParameters *ap)
         } else
             c->rates_per_mode[mode] = size;
     }
-    avio_seek(pb, 16 - 2*nb_rates + 20, SEEK_CUR); // empty entries of rate-map-table + reserved
+    avio_skip(pb, 16 - 2*nb_rates + 20); // empty entries of rate-map-table + reserved
 
     return 0;
 }
@@ -165,7 +164,7 @@ static int qcp_read_packet(AVFormatContext *s, AVPacket *pkt)
             return ret;
         }
 
-        if (url_ftell(pb) & 1 && avio_r8(pb))
+        if (avio_tell(pb) & 1 && avio_r8(pb))
             av_log(s, AV_LOG_WARNING, "Padding should be 0.\n");
 
         tag        = avio_rl32(pb);
@@ -174,14 +173,14 @@ static int qcp_read_packet(AVFormatContext *s, AVPacket *pkt)
         case MKTAG('v', 'r', 'a', 't'):
             if (avio_rl32(pb)) // var-rate-flag
                 s->packet_size = 0;
-            avio_seek(pb, 4, SEEK_CUR); // size-in-packets
+            avio_skip(pb, 4); // size-in-packets
             break;
         case MKTAG('d', 'a', 't', 'a'):
             c->data_size = chunk_size;
             break;
 
         default:
-            avio_seek(pb, chunk_size, SEEK_CUR);
+            avio_skip(pb, chunk_size);
         }
     }
     return AVERROR_EOF;

@@ -59,7 +59,6 @@ static const char help_text[]=
 #define MSGTR_NoHomeDir "Kan inte lokalisera $HOME-katalog.\n"
 #define MSGTR_GetpathProblem "get_path(\"config\") problem\n"
 #define MSGTR_CreatingCfgFile "Skapar konfigfil: %s\n"
-#define MSGTR_BuiltinCodecsConf "Använder standardinbyggd codecs.conf.\n"
 #define MSGTR_CantLoadFont "Kan inte ladda font: %s\n"
 #define MSGTR_CantLoadSub "Kan inte ladda vald textning: %s\n"
 #define MSGTR_DumpSelectedStreamMissing "dump: FATALT: Vald ström ej tillgänglig!\n"
@@ -100,9 +99,6 @@ static const char help_text[]=
 #define MSGTR_Playing "Spelar %s.\n"
 #define MSGTR_NoSound "Audio: inget ljud\n"
 #define MSGTR_FPSforced "FPS forcerad att vara %5.3f  (ftime: %5.3f).\n"
-#define MSGTR_CompiledWithRuntimeDetection "Kompilerad med \"runtime CPU detection\" - VARNING - detta är inte optimalt!\n"\
-    "För att få bäst prestanda, omkompilera med '--disable-runtime-cpudetection'.\n"
-#define MSGTR_CompiledWithCPUExtensions "Kompilerad för x86 med tillägg:"
 #define MSGTR_AvailableVideoOutputDrivers "Tillgängliga video-ut-drivrutiner:\n"
 #define MSGTR_AvailableAudioOutputDrivers "Tillgängliga audio-ut-drivrutiner:\n"
 #define MSGTR_AvailableAudioCodecs "Tillgängliga audiocodec:\n"
@@ -110,7 +106,6 @@ static const char help_text[]=
 #define MSGTR_AvailableAudioFm "Tillgängliga (inkompilerade) audiocodec familjer/drivrutiner:\n"
 #define MSGTR_AvailableVideoFm "Tillgängliga (inkompilerade) videocodec familjer/drivrutiner:\n"
 #define MSGTR_AvailableFsType "Tillgängliga lägen för fullskärmslager:\n"
-#define MSGTR_UsingRTCTiming "Använder Linux's hårdvaru-RTC-tidtagning (%ldHz).\n"
 #define MSGTR_CannotReadVideoProperties "Video: Kan inte läsa inställningar.\n"
 #define MSGTR_NoStreamFound "Ingen ström funnen.\n"
 #define MSGTR_ErrorInitializingVODevice "Fel vid öppning/initiering av vald video_out-enhet (-vo).\n"
@@ -143,14 +138,11 @@ static const char help_text[]=
 #define MSGTR_LoadingConfig "Laddar konfiguration '%s'\n"
 #define MSGTR_AddedSubtitleFile "SUB: lade till textningsfil %d: %s \n"
 #define MSGTR_ErrorOpeningOutputFile "Fel vid öppning av fil [%s] för skrivning!\n"
-#define MSGTR_CommandLine "Kommandorad:"
 #define MSGTR_RTCDeviceNotOpenable "Misslyckades att öppna %s: %s (den borde vara läsbar av användaren.)\n"
 #define MSGTR_LinuxRTCInitErrorIrqpSet "'Linux RTC' initieringsfel i 'ioctl' rtc_irqp_set %lu: %s\n"
 #define MSGTR_IncreaseRTCMaxUserFreq "Försök lägg till \"echo %lu > /proc/sys/dev/rtc/max-user-freq\" till ditt systems uppstartningsscript.\n"
 #define MSGTR_LinuxRTCInitErrorPieOn "'Linux RTC init' fel i 'ioctl' [rtc_pie_on]: %s\n"
 #define MSGTR_UsingTimingType "Använder %s tidtagning.\n"
-#define MSGTR_MenuInitialized "Meny initierad: %s\n"
-#define MSGTR_MenuInitFailed "Menyinitiering misslyckades.\n"
 #define MSGTR_Getch2InitializedTwice "VARNING: getch2_init anropad dubbelt!\n"
 #define MSGTR_DumpstreamFdUnavailable "Kan inte dumpa denna ström - ingen 'fd' tillgänglig.\n"
 #define MSGTR_CantOpenLibmenuFilterWithThisRootMenu "Kan inte öppna 'libmenu video filter' med rotmeny %s.\n"
@@ -212,12 +204,9 @@ static const char help_text[]=
 #define MSGTR_MP3AudioSelected "MP3 audio valt\n"
 #define MSGTR_CannotAllocateBytes "Kunde inte allokera %d byte\n"
 #define MSGTR_SettingAudioDelay "Sätter AUDIO DELAY till %5.3f\n"
-#define MSGTR_SettingAudioInputGain "Sätter 'audio input gain' till %f\n" // FIXME to translate?
-#define MSGTR_LamePresetEquals "\npreset=%s\n\n" // FIXME translate?
 #define MSGTR_LimitingAudioPreload "Begränsar audioförinladdning till 0.4s\n" // preload?
 #define MSGTR_IncreasingAudioDensity "Höjer audiodensitet till 4\n"
 #define MSGTR_ZeroingAudioPreloadAndMaxPtsCorrection "Forcerar audioförinladdning till 0, 'max pts correction' till 0\n"
-#define MSGTR_CBRAudioByterate "\n\nCBR audio: %d byte/sec, %d byte/block\n"
 #define MSGTR_LameVersion "LAME version %s (%s)\n\n"
 #define MSGTR_InvalidBitrateForLamePreset "Fel: Angiven bitrate är utanför godkänd rymd för detta val\n"\
 "\n"\
@@ -399,8 +388,6 @@ static const char help_text[]=
 #define MSGTR_CodecNeedsOutfmt "\ncodec(%s) behöver en 'outfmt'!\n"
 #define MSGTR_CantAllocateComment "Kan inte allokera minne flr kommentar. "
 #define MSGTR_GetTokenMaxNotLessThanMAX_NR_TOKEN "get_token() \b: max >= MAX_MR_TOKEN!" //FIXME translate?
-#define MSGTR_ReadingFile "Läser %s: "
-#define MSGTR_CantOpenFileError "Kan inte öppna '%s': %s\n"
 #define MSGTR_CantGetMemoryForLine "Kan inte få minne för 'line': %s\n"
 #define MSGTR_CantReallocCodecsp "Kan inte realloc '*codecsp': %s\n"
 #define MSGTR_CodecNameNotUnique "Codec namn '%s' är inte unikt."
@@ -457,7 +444,6 @@ static const char help_text[]=
 #define MSGTR_SwitchToNi "\nSvårt interleaved AVI-fil detekterad, går över till '-ni'-läge...\n"
 #define MSGTR_Detected_XXX_FileFormat "%s filformat detekterat.\n"
 #define MSGTR_DetectedAudiofile "Audiofilformat detekterat.\n"
-#define MSGTR_NotSystemStream "Icke 'MPEG System Stream'-format... (kanske Transport Stream?)\n"
 #define MSGTR_InvalidMPEGES "Icke godkänd 'MPEG-ES'-ström??? Kontakta upphovsmannen, det kanske är en bugg :(\n" //FIXME author???
 #define MSGTR_FormatNotRecognized "================ Tyvärr, detta filformat är inte rekogniserbart/stött ==================\n"\
                                   "=== Om denna fil är en AVi, ASF eller MPEG-ström, var vänlig kontakta upphovsmannen! ===\n" //FIXME author???
@@ -479,11 +465,8 @@ static const char help_text[]=
 #define MSGTR_MOVcomprhdr "MOV: filhuvudkomprimeringssupport kräver ZLIB!\n"
 #define MSGTR_MOVvariableFourCC "MOV: VARNING: Variabel FOURCC påvisad!?\n"
 #define MSGTR_MOVtooManyTrk "MOV: VARNING: allt förmånga spår"
-#define MSGTR_FoundAudioStream "==> Fann audioström: %d\n"
-#define MSGTR_FoundVideoStream "==> Fann videoström: %d\n"
 #define MSGTR_DetectedTV "TV påvisad! ;-)\n"
 #define MSGTR_ErrorOpeningOGGDemuxer "Oförmögen att öppna oggdemuxern.\n"
-#define MSGTR_ASFSearchingForAudioStream "ASF: Söker efter audioström (id:%d).\n"
 #define MSGTR_CannotOpenAudioStream "Kan inte öppna audioström: %s\n"
 #define MSGTR_CannotOpenSubtitlesStream "Kan inte öppna textningsström: %s\n"
 #define MSGTR_OpeningAudioDemuxerFailed "Misslyckades att öppna audiodemuxern: %s\n"
@@ -515,21 +498,15 @@ static const char help_text[]=
 
 #define MSGTR_UsingExternalPP "[PP] Använder externt postprocesseringsfiler, max q = %d.\n"
 #define MSGTR_UsingCodecPP "[PP] Använder codecens postprocessing, max q = %d.\n"
-#define MSGTR_VideoAttributeNotSupportedByVO_VD "Videoattribut '%s' har inget stöd hos vald vo & vd.\n" // FIXME more info? vo & vd
 #define MSGTR_VideoCodecFamilyNotAvailableStr "Begärd videocodecfamilj [%s] (vfm=%s) är ej tillgänglig.\nAktivera det vil kompilation.\n"
 #define MSGTR_AudioCodecFamilyNotAvailableStr "Begärd audiocodecfamilj [%s] (afm=%s) är ej tillgänglig.\nAktivera det vil kompilation.\n"
 #define MSGTR_OpeningVideoDecoder "Öppnar videodecoder: [%s] %s\n"
 #define MSGTR_OpeningAudioDecoder "Öppnar audiodecoder: [%s] %s\n"
-#define MSGTR_UninitVideoStr "uninit video: %s\n" // FIXME translate?
-#define MSGTR_UninitAudioStr "uninit audio: %s\n" // -''-
 #define MSGTR_VDecoderInitFailed "VDecoder-initiering misslyckades :(\n" // FIXME VDecoder something special or just a shortcut?
 #define MSGTR_ADecoderInitFailed "ADecoder-initiering misslyckades :(\n" // -''-
 #define MSGTR_ADecoderPreinitFailed "ADecoder-preinitiering misslyckades :(\n" // -''-
-#define MSGTR_AllocatingBytesForInputBuffer "dec_audio: Allokerar %d byte för inbuffert.\n"
-#define MSGTR_AllocatingBytesForOutputBuffer "dec_audio: Allokerar %d + %d = %d byte för utbuffert.\n"
 
 // LIRC:
-#define MSGTR_SettingUpLIRC "Aktiverar LIRC-stöd...\n"
 #define MSGTR_LIRCopenfailed "Misslyckades med att aktivera LIRC-stöd.\n"
 #define MSGTR_LIRCcfgerr "Misslyckades med att läsa LIRC-konfigurationsfil %s.\n"
 
@@ -547,8 +524,6 @@ static const char help_text[]=
 
 // vd_dshow.c, vd_dmo.c
 #define MSGTR_DownloadCodecPackage "Du måste uppgradera/installera de binära codecspaketen.\nGå till http://www.mplayerhq.hu/dload.html\n"
-#define MSGTR_DShowInitOK "INFO: 'Win32/DShow'-videocodecinitiering: OK.\n"
-#define MSGTR_DMOInitOK "INFO: 'Win32/DMO'-videocodecinitiering: OK.\n"
 
 // x11_common.c
 #define MSGTR_EwmhFullscreenStateFailed "\nX11: Kunde inte sända EWMH-fullskärmshändelse!\n"
@@ -577,7 +552,6 @@ static const char help_text[]=
 #define MSGTR_Preferences "Inställningar"
 #define MSGTR_AudioPreferences "Audiodirvrutinskonfiguration"
 #define MSGTR_NoMediaOpened "Inget media öppnad"
-#define MSGTR_VCDTrack "VCD-spår %d"
 #define MSGTR_NoChapter "Inget kapitel"
 #define MSGTR_Chapter "Kapitel %d"
 #define MSGTR_NoFileLoaded "Ingen fil laddad"
@@ -602,21 +576,16 @@ static const char help_text[]=
 #define MSGTR_SKIN_ERRORMESSAGE "[skin] fel i skinkonfigureringsfil på rad %d: %s"
 #define MSGTR_SKIN_BITMAP_16bit  "16-bitar eller lägre bitmappar stödjs inte (%s).\n"
 #define MSGTR_SKIN_BITMAP_FileNotFound  "fil ej funnen (%s)\n"
-#define MSGTR_SKIN_BITMAP_BMPReadError "BMP läsfel (%s)\n"
-#define MSGTR_SKIN_BITMAP_TGAReadError "TGA läsfel (%s)\n"
 #define MSGTR_SKIN_BITMAP_PNGReadError "PNG läsfel (%s)\n"
-#define MSGTR_SKIN_BITMAP_RLENotSupported "RLE-packad TGA stödjs ej (%s)\n"
-#define MSGTR_SKIN_BITMAP_UnknownFileType "okänd filtyp (%s)\n"
 #define MSGTR_SKIN_BITMAP_ConversionError "24-bitars till 32-bitars konverteringsfel (%s)\n"
-#define MSGTR_SKIN_BITMAP_UnknownMessage "okänt meddelande: %s\n"
-#define MSGTR_SKIN_FONT_NotEnoughtMemory "ej tillräckligt minne\n"
+#define MSGTR_SKIN_UnknownMessage "okänt meddelande: %s\n"
+#define MSGTR_SKIN_NotEnoughMemory "ej tillräckligt minne\n"
 #define MSGTR_SKIN_FONT_TooManyFontsDeclared "Allt för många fonter deklarerade.\n"
 #define MSGTR_SKIN_FONT_FontFileNotFound "Fontfil ej funnen.\n"
 #define MSGTR_SKIN_FONT_FontImageNotFound "Fontbildsfil ej funnen.\n"
-#define MSGTR_SKIN_FONT_NonExistentFontID "icke-existerande fontidentifkator (%s)\n"
+#define MSGTR_SKIN_FONT_NonExistentFont "icke-existerande fontidentifkator (%s)\n"
 #define MSGTR_SKIN_UnknownParameter "okänd parameter (%s)\n"
 #define MSGTR_SKIN_SKINCFG_SkinNotFound "Skin ej funnen (%s).\n"
-#define MSGTR_SKIN_SKINCFG_SkinCfgReadError "skinkonfigurationsfilsläsfel (%s)\n"
 #define MSGTR_SKIN_LABEL "Skin:"
 
 // --- gtk menus
@@ -651,7 +620,7 @@ static const char help_text[]=
 #define MSGTR_MENU_AudioLanguages "Audiospråk"
 #define MSGTR_MENU_SubtitleLanguages "Textningsspråk"
 #define MSGTR_MENU_SkinBrowser "Skinläsare"
-#define MSGTR_MENU_Exit "Avsluta..."
+#define MSGTR_MENU_Exit "Avsluta"
 #define MSGTR_MENU_Mute "Dämpa"
 #define MSGTR_MENU_Original "Orginal"
 #define MSGTR_MENU_AspectRatio "Aspect ratio" // FIXME translate?
@@ -709,9 +678,6 @@ static const char help_text[]=
 #define MSGTR_PREFERENCES_HFrameDrop "Aktivera HÅRD frame dropping (dangerous)"
 #define MSGTR_PREFERENCES_Flip "Flippa bilden uppochner"
 #define MSGTR_PREFERENCES_Panscan "Panscan: "
-#define MSGTR_PREFERENCES_OSDTimer "Timers och indikatorer"
-#define MSGTR_PREFERENCES_OSDProgress "Tillståndsrad endast"
-#define MSGTR_PREFERENCES_OSDTimerPercentageTotalTime "Timer, procent och total tid"
 #define MSGTR_PREFERENCES_Subtitle "Textning:"
 #define MSGTR_PREFERENCES_SUB_Delay "Fördröjning: "
 #define MSGTR_PREFERENCES_SUB_FPS "FPS:"
@@ -825,9 +791,7 @@ static const char help_text[]=
 // vo_yuv4mpeg.c
 #define MSGTR_VO_YUV4MPEG_InterlacedHeightDivisibleBy4 "'Interlaced'-mode kräver bildhöjd som är delbar med 4." // FIXME interlaced?
 #define MSGTR_VO_YUV4MPEG_InterlacedLineBufAllocFail "Oförmögen att allokera linjebufferrt för interlaced-mode."
-#define MSGTR_VO_YUV4MPEG_InterlacedInputNotRGB "indata är ej i RGB-format, kan inte separera 'chrominance' via fält!" // FIXME chrominance
 #define MSGTR_VO_YUV4MPEG_WidthDivisibleBy2 "Bildbredd måste vara delbart med 2."
-#define MSGTR_VO_YUV4MPEG_NoMemRGBFrameBuf "Ej tillräckligt med minne för att allokera RGB-bildramsbuffert."
 #define MSGTR_VO_YUV4MPEG_OutFileOpenError "Kan inte få minnes- eller filhanterare att skriva till \"%s\"!"
 #define MSGTR_VO_YUV4MPEG_OutFileWriteError "Fel vid skrivning av bild till ut!" // FIXME output here?
 #define MSGTR_VO_YUV4MPEG_UnknownSubDev "Okänd subdevice: %s" // FIXME subdevice
@@ -916,31 +880,6 @@ static const char help_text[]=
 #define MSGTR_AO_SUN_UnsupSampleRate "[AO SUN] audio_setup: ditt kort hanterar inte %d kanaler, %s, %d Hz samplerate.\n" // FIXME samplerate
 #define MSGTR_AO_SUN_CantUseSelect "[AO SUN]\n   ***  Din ljudkortsenhet hanterar inte select()  ***\nKompilera om med '#undef HAVE_AUDIO_SELECT' i config.h !\n\n"
 #define MSGTR_AO_SUN_CantReopenReset "[AO SUN]\nFatalt fel: *** KAN INTE ÅTERÖPPNA / ÅTERSTÄLLA AUDIOENHET (%s) ***\n"
-
-// ao_alsa5.c
-#define MSGTR_AO_ALSA5_InitInfo "[AO ALSA5] alsa-init: önskat format: %d Hz, %d kanaler, %s\n"
-#define MSGTR_AO_ALSA5_SoundCardNotFound "[AO ALSA5] alsa-init: inga ljudkort funna.\n"
-#define MSGTR_AO_ALSA5_InvalidFormatReq "[AO ALSA5] alsa-init: icke godkänt format (%s) önskat - ut deaktiverat.\n" // FIXME output -> ut here?
-#define MSGTR_AO_ALSA5_PlayBackError "[AO ALSA5] alsa-init: uppspelningsöppningsfel: %s\n"
-#define MSGTR_AO_ALSA5_PcmInfoError "[AO ALSA5] alsa-init: pcm-infofel: %s\n"
-#define MSGTR_AO_ALSA5_SoundcardsFound "[AO ALSA5] alsa-init: %d ljurtkort funna, använder: %s\n"
-#define MSGTR_AO_ALSA5_PcmChanInfoError "[AO ALSA5] alsa-init: pcm-kanalinfofel: %s\n"
-#define MSGTR_AO_ALSA5_CantSetParms "[AO ALSA5] alsa-init: fel vid sättning av parametrarna: %s\n" // FIXME setting?
-#define MSGTR_AO_ALSA5_CantSetChan "[AO ALSA5] alsa-init: fel vid initiering av kanal: %s\n"
-#define MSGTR_AO_ALSA5_ChanPrepareError "[AO ALSA5] alsa-init: kanalprepareringsfel: %s\n"
-#define MSGTR_AO_ALSA5_DrainError "[AO ALSA5] alsa-uninit: uppspelningslänsningsfel: %s\n" // FIXME drain -> länsning?
-#define MSGTR_AO_ALSA5_FlushError "[AO ALSA5] alsa-uninit: uppspelningsspolningsfel: %s\n" // FIXME flush -> spolning?
-#define MSGTR_AO_ALSA5_PcmCloseError "[AO ALSA5] alsa-uninit: pcm-stängningsfel: %s\n"
-#define MSGTR_AO_ALSA5_ResetDrainError "[AO ALSA5] alsa-reset: uppspelningslänsningsfel: %s\n"
-#define MSGTR_AO_ALSA5_ResetFlushError "[AO ALSA5] alsa-reset: uppspelningsspolningsfel: %s\n"
-#define MSGTR_AO_ALSA5_ResetChanPrepareError "[AO ALSA5] alsa-reset: kanalprepareringsfel: %s\n"
-#define MSGTR_AO_ALSA5_PauseDrainError "[AO ALSA5] alsa-pause: uppspelningslänsningsfel: %s\n"
-#define MSGTR_AO_ALSA5_PauseFlushError "[AO ALSA5] alsa-pause: uppspelningsspolningsfel: %s\n"
-#define MSGTR_AO_ALSA5_ResumePrepareError "[AO ALSA5] alsa-resume: kanalprepareringsfel: %s\n"
-#define MSGTR_AO_ALSA5_Underrun "[AO ALSA5] alsa-play: alsa underrun, återställer ström.\n" // FIXME underun - translate?
-#define MSGTR_AO_ALSA5_PlaybackPrepareError "[AO ALSA5] alsa-play: uppspelningsprepareringsfel: %s\n"
-#define MSGTR_AO_ALSA5_WriteErrorAfterReset "[AO ALSA5] alsa-play: skrivfel efter återställning: %s - ger upp.\n"
-#define MSGTR_AO_ALSA5_OutPutError "[AO ALSA5] alsa-play: utfel: %s\n" // FIXME output -> ut her?
 
 // ao_plugin.c
 

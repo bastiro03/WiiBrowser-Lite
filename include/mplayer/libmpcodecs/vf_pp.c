@@ -34,7 +34,6 @@
 #include "img_format.h"
 #include "mp_image.h"
 #include "vf.h"
-#include "libavutil/internal.h"
 #include "libpostproc/postprocess.h"
 
 #ifdef CONFIG_FFMPEG_A
@@ -46,7 +45,7 @@
 
 struct vf_priv_s {
     int pp;
-    pp_mode_t *ppMode[PP_QUALITY_MAX+1];
+    pp_mode *ppMode[PP_QUALITY_MAX+1];
     void *context;
     unsigned int outfmt;
 };
@@ -81,6 +80,7 @@ static void uninit(struct vf_instance *vf){
 	    pp_free_mode(vf->priv->ppMode[i]);
     }
     if(vf->priv->context) pp_free_context(vf->priv->context);
+    free(vf->priv);
 }
 
 static int query_format(struct vf_instance *vf, unsigned int fmt){

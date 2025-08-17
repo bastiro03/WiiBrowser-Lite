@@ -35,37 +35,32 @@ static int ingenient_read_packet(AVFormatContext *s, AVPacket *pkt)
     w = avio_rl16(s->pb);
     h = avio_rl16(s->pb);
 
-    avio_seek(s->pb, 8, SEEK_CUR); // zero + size (padded?)
-    avio_seek(s->pb, 2, SEEK_CUR);
+    avio_skip(s->pb, 8); // zero + size (padded?)
+    avio_skip(s->pb, 2);
     unk1 = avio_rl16(s->pb);
     unk2 = avio_rl16(s->pb);
-    avio_seek(s->pb, 22, SEEK_CUR); // ASCII timestamp
+    avio_skip(s->pb, 22); // ASCII timestamp
 
     av_log(s, AV_LOG_DEBUG, "Ingenient packet: size=%d, width=%d, height=%d, unk1=%d unk2=%d\n",
         size, w, h, unk1, unk2);
 
-    if (av_new_packet(pkt, size) < 0)
-        return AVERROR(ENOMEM);
-
-    pkt->pos = url_ftell(s->pb);
-    pkt->stream_index = 0;
-    ret = avio_read(s->pb, pkt->data, size);
-    if (ret < 0) {
-        av_free_packet(pkt);
+    ret = av_get_packet(s->pb, pkt, size);
+    if (ret < 0)
         return ret;
-    }
-    pkt->size = ret;
+    pkt->stream_index = 0;
     return ret;
 }
 
+FF_RAWVIDEO_DEMUXER_CLASS(ingenient)
+
 AVInputFormat ff_ingenient_demuxer = {
-    "ingenient",
-    NULL_IF_CONFIG_SMALL("raw Ingenient MJPEG"),
-    0,
-    NULL,
-    ff_raw_video_read_header,
-    ingenient_read_packet,
-    .flags= AVFMT_GENERIC_INDEX,
-    .extensions = "cgi", // FIXME
-    .value = CODEC_ID_MJPEG,
+    .name           = "ingenient",
+    .long_name      = NULL_IF_CONFIG_SMALL("raw Ingenient MJPEG"),
+    .priv_data_size = sizeof(FFRawVideoDemuxerContext),
+    .read_header    = ff_raw_video_read_header,
+    .read_packet    = ingenient_read_packet,
+    .flags          = AVFMT_GENERIC_INDEX,
+    .extensions     = "cgi", // FIXME
+    .raw_codec_id   = CODEC_ID_MJPEG,
+    .priv_class     = &ingenient_demuxer_class,
 };

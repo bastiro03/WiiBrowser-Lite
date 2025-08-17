@@ -21,63 +21,45 @@
 #ifndef AVFORMAT_NETWORK_H
 #define AVFORMAT_NETWORK_H
 
+#include <errno.h>
+
 #include "config.h"
+#include "libavutil/error.h"
+#include "os_support.h"
 
 #if HAVE_WINSOCK2_H
 #include <winsock2.h>
 #include <ws2tcpip.h>
 
+#ifdef EPROTONOSUPPORT
+# undef EPROTONOSUPPORT
+#endif
 #define EPROTONOSUPPORT WSAEPROTONOSUPPORT
+#ifdef ETIMEDOUT
+# undef ETIMEDOUT
+#endif
 #define ETIMEDOUT       WSAETIMEDOUT
+#ifdef ECONNREFUSED
+# undef ECONNREFUSED
+#endif
 #define ECONNREFUSED    WSAECONNREFUSED
+#ifdef EINPROGRESS
+# undef EINPROGRESS
+#endif
 #define EINPROGRESS     WSAEINPROGRESS
 
-static inline int ff_neterrno() {
-    int err = WSAGetLastError();
-    switch (err) {
-    case WSAEWOULDBLOCK:
-        return AVERROR(EAGAIN);
-    case WSAEINTR:
-        return AVERROR(EINTR);
-    }
-    return -err;
-}
+int ff_neterrno(void);
 #else
+#ifndef GEKKO
 #include <sys/types.h>
-#if !defined(GEKKO)
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
 #else
 #include <network.h>
-
-#define INADDR_LOOPBACK 0x7f000001
-
-static inline int _net_result(s32 ret)
-{
-	if (ret < 0) errno = AVUNERROR(ret);
-	return ret < 0 ? SOCKET_ERROR : ret;
-}
-
-#define socket(domain, type, protocol) \
-	_net_result(net_socket(domain, type, IPPROTO_IP))
-#define bind(sockfd, my_addr, addrlen) \
-	_net_result(net_bind(sockfd, my_addr, addrlen))
-#define connect(sockfd, serv_addr, addrlen) \
-	_net_result(net_connect(sockfd, serv_addr, addrlen))
-#define send(s, buf, len, flags) \
-	_net_result(net_send(s, buf, len, flags))
-#define sendto(s, buf, len, flags, to, tolen) \
-	_net_result(net_sendto(s, buf, len, flags, to, tolen))
-#define recv(s, buf, len, flags) \
-	_net_result(net_recv(s, buf, len, flags))
-#define closesocket(sockfd) \
-	_net_result(net_close(sockfd))
-#define setsockopt(s, level, optname, optval, optlen) \
-	_net_result(net_setsockopt(s, level, optname, optval, optlen))
-#define poll(fds, nfds, timeout) \
-	_net_result(net_poll((struct pollsd *)fds, nfds, timeout))
-#define gethostbyname(name) net_gethostbyname(name)
+#define INADDR_LOOPBACK    ((unsigned long) 0x7f000001)  /* 127.0.0.1 */
+#define INET_ADDRSTRLEN 16
+#define gethostbyname net_gethostbyname
 #endif
 
 #define ff_neterrno() AVERROR(errno)
@@ -87,24 +69,20 @@ static inline int _net_result(s32 ret)
 #include <arpa/inet.h>
 #endif
 
+#if HAVE_POLL_H
+#include <poll.h>
+#endif
+
 int ff_socket_nonblock(int socket, int enable);
 
-static inline int ff_network_init(void)
-{
-#if HAVE_WINSOCK2_H
-    WSADATA wsaData;
-    if (WSAStartup(MAKEWORD(1,1), &wsaData))
-        return 0;
-#endif
-    return 1;
-}
+extern int ff_network_inited_globally;
+int ff_network_init(void);
+void ff_network_close(void);
 
-static inline void ff_network_close(void)
-{
-#if HAVE_WINSOCK2_H
-    WSACleanup();
-#endif
-}
+void ff_tls_init(void);
+void ff_tls_deinit(void);
+
+int ff_network_wait_fd(int fd, int write);
 
 int ff_inet_aton (const char * str, struct in_addr * add);
 
@@ -205,18 +183,6 @@ const char *ff_gai_strerror(int ecode);
 #define IN6_IS_ADDR_MULTICAST(a) (((uint8_t *) (a))[0] == 0xff)
 #endif
 
-static inline int ff_is_multicast_address(struct sockaddr *addr)
-{
-    if (addr->sa_family == AF_INET) {
-        return IN_MULTICAST(ntohl(((struct sockaddr_in *)addr)->sin_addr.s_addr));
-    }
-#if HAVE_STRUCT_SOCKADDR_IN6
-    if (addr->sa_family == AF_INET6) {
-        return IN6_IS_ADDR_MULTICAST(&((struct sockaddr_in6 *)addr)->sin6_addr);
-    }
-#endif
-
-    return 0;
-}
+int ff_is_multicast_address(struct sockaddr *addr);
 
 #endif /* AVFORMAT_NETWORK_H */

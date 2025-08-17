@@ -19,12 +19,30 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+#include "libavutil/intfloat.h"
+#include "libavutil/opt.h"
+#include "libavutil/mathematics.h"
+#include "libavutil/timecode.h"
 #include "avformat.h"
+#include "internal.h"
 #include "gxf.h"
 #include "riff.h"
 #include "audiointerleave.h"
 
 #define GXF_AUDIO_PACKET_SIZE 65536
+
+#define GXF_TIMECODE(c, d, h, m, s, f) \
+    ((c) << 30 | (d) << 29 | (h) << 24 | (m) << 16 | (s) << 8 | (f))
+
+typedef struct GXFTimecode{
+    int hh;
+    int mm;
+    int ss;
+    int ff;
+    int color;
+    int drop;
+    char *str;
+} GXFTimecode;
 
 typedef struct GXFStreamContext {
     AudioInterleaveContext aic;
@@ -46,6 +64,7 @@ typedef struct GXFStreamContext {
 } GXFStreamContext;
 
 typedef struct GXFContext {
+    AVClass *av_class;
     uint32_t nb_fields;
     uint16_t audio_tracks;
     uint16_t mpeg_tracks;
@@ -64,6 +83,7 @@ typedef struct GXFContext {
     uint64_t *map_offsets;    ///< offset of map packets
     unsigned map_offsets_nb;
     unsigned packet_count;
+    GXFTimecode tc;
 } GXFContext;
 
 static const struct {
@@ -125,12 +145,12 @@ static int64_t updatePacketSize(AVIOContext *pb, int64_t pos)
     int64_t curpos;
     int size;
 
-    size = url_ftell(pb) - pos;
+    size = avio_tell(pb) - pos;
     if (size % 4) {
         gxf_write_padding(pb, 4 - size % 4);
-        size = url_ftell(pb) - pos;
+        size = avio_tell(pb) - pos;
     }
-    curpos = url_ftell(pb);
+    curpos = avio_tell(pb);
     avio_seek(pb, pos + 6, SEEK_SET);
     avio_wb32(pb, size);
     avio_seek(pb, curpos, SEEK_SET);
@@ -141,7 +161,7 @@ static int64_t updateSize(AVIOContext *pb, int64_t pos)
 {
     int64_t curpos;
 
-    curpos = url_ftell(pb);
+    curpos = avio_tell(pb);
     avio_seek(pb, pos, SEEK_SET);
     avio_wb16(pb, curpos - pos - 2);
     avio_seek(pb, curpos, SEEK_SET);
@@ -197,19 +217,21 @@ static int gxf_write_mpeg_auxiliary(AVIOContext *pb, AVStream *st)
     return size + 3;
 }
 
-static int gxf_write_timecode_auxiliary(AVIOContext *pb, GXFStreamContext *sc)
+static int gxf_write_timecode_auxiliary(AVIOContext *pb, GXFContext *gxf)
 {
-    avio_w8(pb, 0); /* fields */
-    avio_w8(pb, 0); /* seconds */
-    avio_w8(pb, 0); /* minutes */
-    avio_w8(pb, 0); /* flags + hours */
+    uint32_t timecode = GXF_TIMECODE(gxf->tc.color, gxf->tc.drop,
+                                     gxf->tc.hh, gxf->tc.mm,
+                                     gxf->tc.ss, gxf->tc.ff);
+
+    avio_wl32(pb, timecode);
     /* reserved */
-    avio_wb32(pb, 0);
+    avio_wl32(pb, 0);
     return 8;
 }
 
 static int gxf_write_track_description(AVFormatContext *s, GXFStreamContext *sc, int index)
 {
+    GXFContext *gxf = s->priv_data;
     AVIOContext *pb = s->pb;
     int64_t pos;
     int mpeg = sc->track_type == 4 || sc->track_type == 9;
@@ -218,7 +240,7 @@ static int gxf_write_track_description(AVFormatContext *s, GXFStreamContext *sc,
     avio_w8(pb, sc->media_type + 0x80);
     avio_w8(pb, index + 0xC0);
 
-    pos = url_ftell(pb);
+    pos = avio_tell(pb);
     avio_wb16(pb, 0); /* size */
 
     /* media file name */
@@ -233,7 +255,7 @@ static int gxf_write_track_description(AVFormatContext *s, GXFStreamContext *sc,
         avio_w8(pb, TRACK_AUX);
         avio_w8(pb, 8);
         if (sc->track_type == 3)
-            gxf_write_timecode_auxiliary(pb, sc);
+            gxf_write_timecode_auxiliary(pb, gxf);
         else
             avio_wl64(pb, 0);
     }
@@ -272,7 +294,7 @@ static int gxf_write_material_data_section(AVFormatContext *s)
     int len;
     const char *filename = strrchr(s->filename, '/');
 
-    pos = url_ftell(pb);
+    pos = avio_tell(pb);
     avio_wb16(pb, 0); /* size */
 
     /* name */
@@ -310,7 +332,7 @@ static int gxf_write_material_data_section(AVFormatContext *s)
     /* estimated size */
     avio_w8(pb, MAT_SIZE);
     avio_w8(pb, 4);
-    avio_wb32(pb, url_fsize(pb) / 1024);
+    avio_wb32(pb, avio_size(pb) / 1024);
 
     return updateSize(pb, pos);
 }
@@ -322,7 +344,7 @@ static int gxf_write_track_description_section(AVFormatContext *s)
     int64_t pos;
     int i;
 
-    pos = url_ftell(pb);
+    pos = avio_tell(pb);
     avio_wb16(pb, 0); /* size */
     for (i = 0; i < s->nb_streams; ++i)
         gxf_write_track_description(s, s->streams[i]->priv_data, i);
@@ -336,12 +358,13 @@ static int gxf_write_map_packet(AVFormatContext *s, int rewrite)
 {
     GXFContext *gxf = s->priv_data;
     AVIOContext *pb = s->pb;
-    int64_t pos = url_ftell(pb);
+    int64_t pos = avio_tell(pb);
 
     if (!rewrite) {
         if (!(gxf->map_offsets_nb % 30)) {
-            gxf->map_offsets = av_realloc(gxf->map_offsets,
-                                          (gxf->map_offsets_nb+30)*sizeof(*gxf->map_offsets));
+            gxf->map_offsets = av_realloc_f(gxf->map_offsets,
+                                            sizeof(*gxf->map_offsets),
+                                            gxf->map_offsets_nb+30);
             if (!gxf->map_offsets) {
                 av_log(s, AV_LOG_ERROR, "could not realloc map offsets\n");
                 return -1;
@@ -366,7 +389,7 @@ static int gxf_write_flt_packet(AVFormatContext *s)
 {
     GXFContext *gxf = s->priv_data;
     AVIOContext *pb = s->pb;
-    int64_t pos = url_ftell(pb);
+    int64_t pos = avio_tell(pb);
     int fields_per_flt = (gxf->nb_fields+1) / 1000 + 1;
     int flt_entries = gxf->nb_fields / fields_per_flt;
     int i = 0;
@@ -392,23 +415,40 @@ static int gxf_write_umf_material_description(AVFormatContext *s)
     GXFContext *gxf = s->priv_data;
     AVIOContext *pb = s->pb;
     int timecode_base = gxf->time_base.den == 60000 ? 60 : 50;
+    int64_t timestamp = 0;
+    AVDictionaryEntry *t;
+    uint64_t nb_fields;
+    uint32_t timecode_in; // timecode at mark in
+    uint32_t timecode_out; // timecode at mark out
 
-    // XXX drop frame
-    uint32_t timecode =
-        gxf->nb_fields / (timecode_base * 3600) % 24 << 24 | // hours
-        gxf->nb_fields / (timecode_base * 60) % 60   << 16 | // minutes
-        gxf->nb_fields /  timecode_base % 60         <<  8 | // seconds
-        gxf->nb_fields %  timecode_base;                     // fields
+    if (t = av_dict_get(s->metadata, "creation_time", NULL, 0))
+        timestamp = ff_iso8601_to_unix_time(t->value);
+
+    timecode_in = GXF_TIMECODE(gxf->tc.color, gxf->tc.drop,
+                               gxf->tc.hh, gxf->tc.mm,
+                               gxf->tc.ss, gxf->tc.ff);
+
+    nb_fields = gxf->nb_fields +
+                gxf->tc.hh * (timecode_base * 3600) +
+                gxf->tc.mm * (timecode_base * 60)   +
+                gxf->tc.ss * timecode_base          +
+                gxf->tc.ff;
+
+    timecode_out = GXF_TIMECODE(gxf->tc.color, gxf->tc.drop,
+                                nb_fields / (timecode_base * 3600) % 24,
+                                nb_fields / (timecode_base * 60)   % 60,
+                                nb_fields /  timecode_base % 60,
+                                nb_fields %  timecode_base);
 
     avio_wl32(pb, gxf->flags);
     avio_wl32(pb, gxf->nb_fields); /* length of the longest track */
     avio_wl32(pb, gxf->nb_fields); /* length of the shortest track */
     avio_wl32(pb, 0); /* mark in */
     avio_wl32(pb, gxf->nb_fields); /* mark out */
-    avio_wl32(pb, 0); /* timecode mark in */
-    avio_wl32(pb, timecode); /* timecode mark out */
-    avio_wl64(pb, s->timestamp); /* modification time */
-    avio_wl64(pb, s->timestamp); /* creation time */
+    avio_wl32(pb, timecode_in); /* timecode mark in */
+    avio_wl32(pb, timecode_out); /* timecode mark out */
+    avio_wl64(pb, timestamp); /* modification time */
+    avio_wl64(pb, timestamp); /* creation time */
     avio_wl16(pb, 0); /* reserved */
     avio_wl16(pb, 0); /* reserved */
     avio_wl16(pb, gxf->audio_tracks);
@@ -442,7 +482,7 @@ static int gxf_write_umf_track_description(AVFormatContext *s)
 {
     AVIOContext *pb = s->pb;
     GXFContext *gxf = s->priv_data;
-    int64_t pos = url_ftell(pb);
+    int64_t pos = avio_tell(pb);
     int i;
 
     gxf->umf_track_offset = pos - gxf->umf_start_offset;
@@ -455,7 +495,7 @@ static int gxf_write_umf_track_description(AVFormatContext *s)
     avio_wl16(pb, gxf->timecode_track.media_info);
     avio_wl16(pb, 1);
 
-    return url_ftell(pb) - pos;
+    return avio_tell(pb) - pos;
 }
 
 static int gxf_write_umf_media_mpeg(AVIOContext *pb, AVStream *st)
@@ -481,9 +521,9 @@ static int gxf_write_umf_media_mpeg(AVIOContext *pb, AVStream *st)
     return 32;
 }
 
-static int gxf_write_umf_media_timecode(AVIOContext *pb, GXFStreamContext *sc)
+static int gxf_write_umf_media_timecode(AVIOContext *pb, int drop)
 {
-    avio_wl32(pb, 1); /* non drop frame */
+    avio_wl32(pb, drop); /* drop frame */
     avio_wl32(pb, 0); /* reserved */
     avio_wl32(pb, 0); /* reserved */
     avio_wl32(pb, 0); /* reserved */
@@ -506,25 +546,14 @@ static int gxf_write_umf_media_dv(AVIOContext *pb, GXFStreamContext *sc)
 
 static int gxf_write_umf_media_audio(AVIOContext *pb, GXFStreamContext *sc)
 {
-    avio_wl64(pb, av_dbl2int(1)); /* sound level to begin to */
-    avio_wl64(pb, av_dbl2int(1)); /* sound level to begin to */
+    avio_wl64(pb, av_double2int(1)); /* sound level to begin to */
+    avio_wl64(pb, av_double2int(1)); /* sound level to begin to */
     avio_wl32(pb, 0); /* number of fields over which to ramp up sound level */
     avio_wl32(pb, 0); /* number of fields over which to ramp down sound level */
     avio_wl32(pb, 0); /* reserved */
     avio_wl32(pb, 0); /* reserved */
     return 32;
 }
-
-#if 0
-static int gxf_write_umf_media_mjpeg(AVIOContext *pb, GXFStreamContext *sc)
-{
-    avio_wb64(pb, 0); /* FIXME FLOAT max chroma quant level */
-    avio_wb64(pb, 0); /* FIXME FLOAT max luma quant level */
-    avio_wb64(pb, 0); /* FIXME FLOAT min chroma quant level */
-    avio_wb64(pb, 0); /* FIXME FLOAT min luma quant level */
-    return 32;
-}
-#endif
 
 static int gxf_write_umf_media_description(AVFormatContext *s)
 {
@@ -533,7 +562,7 @@ static int gxf_write_umf_media_description(AVFormatContext *s)
     int64_t pos;
     int i, j;
 
-    pos = url_ftell(pb);
+    pos = avio_tell(pb);
     gxf->umf_media_offset = pos - gxf->umf_start_offset;
     for (i = 0; i <= s->nb_streams; ++i) {
         GXFStreamContext *sc;
@@ -544,7 +573,7 @@ static int gxf_write_umf_media_description(AVFormatContext *s)
         else
             sc = s->streams[i]->priv_data;
 
-        startpos = url_ftell(pb);
+        startpos = avio_tell(pb);
         avio_wl16(pb, 0); /* length */
         avio_wl16(pb, sc->media_info);
         avio_wl16(pb, 0); /* reserved */
@@ -563,7 +592,7 @@ static int gxf_write_umf_media_description(AVFormatContext *s)
         avio_wl32(pb, 0); /* reserved */
 
         if (sc == &gxf->timecode_track)
-            gxf_write_umf_media_timecode(pb, sc); /* 8 0bytes */
+            gxf_write_umf_media_timecode(pb, gxf->tc.drop);
         else {
             AVStream *st = s->streams[i];
             switch (st->codec->codec_id) {
@@ -580,19 +609,19 @@ static int gxf_write_umf_media_description(AVFormatContext *s)
             }
         }
 
-        curpos = url_ftell(pb);
+        curpos = avio_tell(pb);
         avio_seek(pb, startpos, SEEK_SET);
         avio_wl16(pb, curpos - startpos);
         avio_seek(pb, curpos, SEEK_SET);
     }
-    return url_ftell(pb) - pos;
+    return avio_tell(pb) - pos;
 }
 
 static int gxf_write_umf_packet(AVFormatContext *s)
 {
     GXFContext *gxf = s->priv_data;
     AVIOContext *pb = s->pb;
-    int64_t pos = url_ftell(pb);
+    int64_t pos = avio_tell(pb);
 
     gxf_write_packet_header(pb, PKT_UMF);
 
@@ -600,12 +629,12 @@ static int gxf_write_umf_packet(AVFormatContext *s)
     avio_w8(pb, 3); /* first and last (only) packet */
     avio_wb32(pb, gxf->umf_length); /* data length */
 
-    gxf->umf_start_offset = url_ftell(pb);
+    gxf->umf_start_offset = avio_tell(pb);
     gxf_write_umf_payload(s);
     gxf_write_umf_material_description(s);
     gxf->umf_track_size = gxf_write_umf_track_description(s);
     gxf->umf_media_size = gxf_write_umf_media_description(s);
-    gxf->umf_length = url_ftell(pb) - gxf->umf_start_offset;
+    gxf->umf_length = avio_tell(pb) - gxf->umf_start_offset;
     return updatePacketSize(pb, pos);
 }
 
@@ -626,6 +655,25 @@ static void gxf_init_timecode_track(GXFStreamContext *sc, GXFStreamContext *vsc)
     sc->fields = vsc->fields;
 }
 
+static int gxf_init_timecode(AVFormatContext *s, GXFTimecode *tc, int fields)
+{
+    char c;
+
+    if (sscanf(tc->str, "%d:%d:%d%c%d", &tc->hh, &tc->mm, &tc->ss, &c, &tc->ff) != 5) {
+        av_log(s, AV_LOG_ERROR, "unable to parse timecode, "
+                                "syntax: hh:mm:ss[:;.]ff\n");
+        return -1;
+    }
+
+    tc->color = 0;
+    tc->drop = c != ':';
+
+    if (fields == 2)
+        tc->ff = tc->ff * 2;
+
+    return 0;
+}
+
 static int gxf_write_header(AVFormatContext *s)
 {
     AVIOContext *pb = s->pb;
@@ -634,7 +682,7 @@ static int gxf_write_header(AVFormatContext *s)
     uint8_t tracks[255] = {0};
     int i, media_info = 0;
 
-    if (url_is_streamed(pb)) {
+    if (!pb->seekable) {
         av_log(s, AV_LOG_ERROR, "gxf muxer does not support streamed output, patch welcome");
         return -1;
     }
@@ -663,7 +711,7 @@ static int gxf_write_header(AVFormatContext *s)
             }
             sc->track_type = 2;
             sc->sample_rate = st->codec->sample_rate;
-            av_set_pts_info(st, 64, 1, sc->sample_rate);
+            avpriv_set_pts_info(st, 64, 1, sc->sample_rate);
             sc->sample_size = 16;
             sc->frame_rate_index = -2;
             sc->lines_index = -2;
@@ -693,7 +741,7 @@ static int gxf_write_header(AVFormatContext *s)
                        "gxf muxer only accepts PAL or NTSC resolutions currently\n");
                 return -1;
             }
-            av_set_pts_info(st, 64, gxf->time_base.num, gxf->time_base.den);
+            avpriv_set_pts_info(st, 64, gxf->time_base.num, gxf->time_base.den);
             if (gxf_find_lines_index(st) < 0)
                 sc->lines_index = -1;
             sc->sample_size = st->codec->bit_rate;
@@ -744,6 +792,10 @@ static int gxf_write_header(AVFormatContext *s)
     if (ff_audio_interleave_init(s, GXF_samples_per_frame, (AVRational){ 1, 48000 }) < 0)
         return -1;
 
+    if (gxf->tc.str) {
+        gxf_init_timecode(s, &gxf->tc, vsc->fields);
+    }
+
     gxf_init_timecode_track(&gxf->timecode_track, vsc);
     gxf->flags |= 0x200000; // time code track is non-drop frame
 
@@ -753,13 +805,13 @@ static int gxf_write_header(AVFormatContext *s)
 
     gxf->packet_count = 3;
 
-    put_flush_packet(pb);
+    avio_flush(pb);
     return 0;
 }
 
 static int gxf_write_eos_packet(AVIOContext *pb)
 {
-    int64_t pos = url_ftell(pb);
+    int64_t pos = avio_tell(pb);
 
     gxf_write_packet_header(pb, PKT_EOS);
     return updatePacketSize(pb, pos);
@@ -775,18 +827,18 @@ static int gxf_write_trailer(AVFormatContext *s)
     ff_audio_interleave_close(s);
 
     gxf_write_eos_packet(pb);
-    end = url_ftell(pb);
+    end = avio_tell(pb);
     avio_seek(pb, 0, SEEK_SET);
     /* overwrite map, flt and umf packets with new values */
     gxf_write_map_packet(s, 1);
     gxf_write_flt_packet(s);
     gxf_write_umf_packet(s);
-    put_flush_packet(pb);
+    avio_flush(pb);
     /* update duration in all map packets */
     for (i = 1; i < gxf->map_offsets_nb; i++) {
         avio_seek(pb, gxf->map_offsets[i], SEEK_SET);
         gxf_write_map_packet(s, 1);
-        put_flush_packet(pb);
+        avio_flush(pb);
     }
 
     avio_seek(pb, end, SEEK_SET);
@@ -834,10 +886,10 @@ static int gxf_write_media_preamble(AVFormatContext *s, AVPacket *pkt, int size)
         avio_wb16(pb, size / 2);
     } else if (st->codec->codec_id == CODEC_ID_MPEG2VIDEO) {
         int frame_type = gxf_parse_mpeg_frame(sc, pkt->data, pkt->size);
-        if (frame_type == FF_I_TYPE) {
+        if (frame_type == AV_PICTURE_TYPE_I) {
             avio_w8(pb, 0x0d);
             sc->iframes++;
-        } else if (frame_type == FF_B_TYPE) {
+        } else if (frame_type == AV_PICTURE_TYPE_B) {
             avio_w8(pb, 0x0f);
             sc->bframes++;
         } else {
@@ -861,9 +913,9 @@ static int gxf_write_packet(AVFormatContext *s, AVPacket *pkt)
     GXFContext *gxf = s->priv_data;
     AVIOContext *pb = s->pb;
     AVStream *st = s->streams[pkt->stream_index];
-    int64_t pos = url_ftell(pb);
+    int64_t pos = avio_tell(pb);
     int padding = 0;
-    int packet_start_offset = url_ftell(pb) / 1024;
+    int packet_start_offset = avio_tell(pb) / 1024;
 
     gxf_write_packet_header(pb, PKT_MEDIA);
     if (st->codec->codec_id == CODEC_ID_MPEG2VIDEO && pkt->size % 4) /* MPEG-2 frames must be padded */
@@ -876,8 +928,9 @@ static int gxf_write_packet(AVFormatContext *s, AVPacket *pkt)
 
     if (st->codec->codec_type == AVMEDIA_TYPE_VIDEO) {
         if (!(gxf->flt_entries_nb % 500)) {
-            gxf->flt_entries = av_realloc(gxf->flt_entries,
-                                          (gxf->flt_entries_nb+500)*sizeof(*gxf->flt_entries));
+            gxf->flt_entries = av_realloc_f(gxf->flt_entries,
+                                            sizeof(*gxf->flt_entries),
+                                            gxf->flt_entries_nb+500);
             if (!gxf->flt_entries) {
                 av_log(s, AV_LOG_ERROR, "could not reallocate flt entries\n");
                 return -1;
@@ -895,7 +948,7 @@ static int gxf_write_packet(AVFormatContext *s, AVPacket *pkt)
         gxf->packet_count = 0;
     }
 
-    put_flush_packet(pb);
+    avio_flush(pb);
 
     return 0;
 }
@@ -927,21 +980,31 @@ static int gxf_interleave_packet(AVFormatContext *s, AVPacket *out, AVPacket *pk
     if (pkt && s->streams[pkt->stream_index]->codec->codec_type == AVMEDIA_TYPE_VIDEO)
         pkt->duration = 2; // enforce 2 fields
     return ff_audio_rechunk_interleave(s, out, pkt, flush,
-                               av_interleave_packet_per_dts, gxf_compare_field_nb);
+                               ff_interleave_packet_per_dts, gxf_compare_field_nb);
 }
 
+static const AVOption options[] = {
+    { AV_TIMECODE_OPTION(GXFContext, tc.str, AV_OPT_FLAG_ENCODING_PARAM) },
+    { NULL }
+};
+
+static const AVClass gxf_muxer_class = {
+    .class_name     = "GXF muxer",
+    .item_name      = av_default_item_name,
+    .option         = options,
+    .version        = LIBAVUTIL_VERSION_INT,
+};
+
 AVOutputFormat ff_gxf_muxer = {
-    "gxf",
-    NULL_IF_CONFIG_SMALL("GXF format"),
-    NULL,
-    "gxf",
-    sizeof(GXFContext),
-    CODEC_ID_PCM_S16LE,
-    CODEC_ID_MPEG2VIDEO,
-    gxf_write_header,
-    gxf_write_packet,
-    gxf_write_trailer,
-    0,
-    NULL,
-    gxf_interleave_packet,
+    .name              = "gxf",
+    .long_name         = NULL_IF_CONFIG_SMALL("GXF format"),
+    .extensions        = "gxf",
+    .priv_data_size    = sizeof(GXFContext),
+    .audio_codec       = CODEC_ID_PCM_S16LE,
+    .video_codec       = CODEC_ID_MPEG2VIDEO,
+    .write_header      = gxf_write_header,
+    .write_packet      = gxf_write_packet,
+    .write_trailer     = gxf_write_trailer,
+    .interleave_packet = gxf_interleave_packet,
+    .priv_class        = &gxf_muxer_class,
 };

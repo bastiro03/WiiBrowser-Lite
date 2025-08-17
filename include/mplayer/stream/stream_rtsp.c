@@ -28,15 +28,15 @@
 #include <sys/types.h>
 #include <ctype.h>
 #include "config.h"
-#ifndef GEKKO
 #if !HAVE_WINSOCK2_H
+#ifndef GEKKO
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#endif
 #else
 #include <winsock2.h>
 #include <ws2tcpip.h>
-#endif
 #endif
 #include <errno.h>
 

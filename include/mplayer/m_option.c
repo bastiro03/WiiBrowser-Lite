@@ -715,6 +715,28 @@ const m_option_type_t m_option_type_string_list = {
 
 ///////////////////  Func based options
 
+static int parse_call_func(const m_option_t* opt,const char *name, const char *param, void* dst, int src) {
+  int res = ((m_opt_func_param_t) opt->p)(opt,param);
+  if (res < 0)
+    return res;
+  return 1;
+}
+
+// special variant, will not have a history/be able to
+// be used as per-file option etc.
+const m_option_type_t m_option_type_func_param_immediate = {
+  "Func param once",
+  "",
+  0,
+  M_OPT_TYPE_INDIRECT,
+  parse_call_func,
+  NULL,
+  NULL, // Nothing to do on save
+  NULL,
+  NULL,
+  NULL
+};
+
 // A chained list to save the various calls for func_param and func_full
 typedef struct m_func_save m_func_save_t;
 struct m_func_save {
@@ -888,6 +910,8 @@ static int parse_print(const m_option_t* opt,const char *name, const char *param
 
   if(opt->priv == NULL)
     return M_OPT_EXIT;
+  if(opt->priv == PRIV_NO_EXIT)
+    return 0;
   return 1;
 }
 
@@ -1052,19 +1076,37 @@ static struct {
 } mp_imgfmt_list[] = {
   {"444p16le", IMGFMT_444P16_LE},
   {"444p16be", IMGFMT_444P16_BE},
+  {"444p10le", IMGFMT_444P10_LE},
+  {"444p10be", IMGFMT_444P10_BE},
+  {"444p9le",  IMGFMT_444P9_LE},
+  {"444p9be",  IMGFMT_444P9_BE},
   {"422p16le", IMGFMT_422P16_LE},
   {"422p16be", IMGFMT_422P16_BE},
+  {"422p10le", IMGFMT_422P10_LE},
+  {"422p10be", IMGFMT_422P10_BE},
+  {"422p9le",  IMGFMT_422P9_LE},
+  {"422p9be",  IMGFMT_422P9_BE},
   {"420p16le", IMGFMT_420P16_LE},
   {"420p16be", IMGFMT_420P16_BE},
-  {"444p16", IMGFMT_444P16},
-  {"422p16", IMGFMT_422P16},
-  {"420p16", IMGFMT_420P16},
+  {"420p10le", IMGFMT_420P10_LE},
+  {"420p10be", IMGFMT_420P10_BE},
+  {"420p9le",  IMGFMT_420P9_LE},
+  {"420p9be",  IMGFMT_420P9_BE},
+  {"444p16",   IMGFMT_444P16},
+  {"422p16",   IMGFMT_422P16},
+  {"422p10",   IMGFMT_422P10},
+  {"420p16",   IMGFMT_420P16},
+  {"420p10",   IMGFMT_420P10},
+  {"420p9",    IMGFMT_420P9},
+  {"444a", IMGFMT_444A},
+  {"422a", IMGFMT_422A},
   {"420a", IMGFMT_420A},
   {"444p", IMGFMT_444P},
   {"422p", IMGFMT_422P},
   {"411p", IMGFMT_411P},
   {"440p", IMGFMT_440P},
   {"yuy2", IMGFMT_YUY2},
+  {"yvyu", IMGFMT_YVYU},
   {"uyvy", IMGFMT_UYVY},
   {"yvu9", IMGFMT_YVU9},
   {"if09", IMGFMT_IF09},
@@ -1074,7 +1116,7 @@ static struct {
   {"clpl", IMGFMT_CLPL},
   {"hm12", IMGFMT_HM12},
   {"y800", IMGFMT_Y800},
-  {"y8", IMGFMT_Y8},
+  {"y8",   IMGFMT_Y8},
   {"nv12", IMGFMT_NV12},
   {"nv21", IMGFMT_NV21},
   {"bgr24", IMGFMT_BGR24},
@@ -1086,6 +1128,8 @@ static struct {
   {"bgr4", IMGFMT_BGR4},
   {"bg4b", IMGFMT_BG4B},
   {"bgr1", IMGFMT_BGR1},
+  {"rgb64be", IMGFMT_RGB64BE},
+  {"rgb64le", IMGFMT_RGB64LE},
   {"rgb48be", IMGFMT_RGB48BE},
   {"rgb48le", IMGFMT_RGB48LE},
   {"rgb48ne", IMGFMT_RGB48NE},
@@ -1102,6 +1146,7 @@ static struct {
   {"argb", IMGFMT_ARGB},
   {"bgra", IMGFMT_BGRA},
   {"abgr", IMGFMT_ABGR},
+  {"gbr24p", IMGFMT_GBR24P},
   {"mjpeg", IMGFMT_MJPEG},
   {"mjpg", IMGFMT_MJPEG},
   { NULL, 0 }

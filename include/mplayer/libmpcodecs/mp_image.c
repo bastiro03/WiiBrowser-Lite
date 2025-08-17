@@ -28,9 +28,9 @@
 
 #include "libmpcodecs/img_format.h"
 #include "libmpcodecs/mp_image.h"
-
 #include "libvo/fastmemcpy.h"
 #include "libavutil/mem.h"
+#include "mp_msg.h"
 
 void mp_image_alloc_planes(mp_image_t *mpi) {
   // IF09 - allocate space for 4. plane delta info - unused
@@ -95,31 +95,6 @@ void copy_mpi(mp_image_t *dmpi, mp_image_t *mpi) {
   }
 }
 
-void clear_mpi(mp_image_t *mpi) {
-  int s;
-  if(!mpi || !mpi->planes) return;
-
-  if (mpi->imgfmt == IMGFMT_IF09)
-  	s=mpi->bpp*mpi->width*(mpi->height+2)/8+mpi->chroma_width*mpi->chroma_height;
-  else
-  	s=mpi->bpp*mpi->width*(mpi->height+2)/8;
-  
-  memset(mpi->planes[0],0,s);
-
-  if(mpi->flags&MP_IMGFLAG_PLANAR){
-   if(mpi->flags&MP_IMGFLAG_SWAPPED)
-   {
-	 if(!mpi->planes[1]) return;
-     memset(mpi->planes[1],128,s-(mpi->planes[1]-mpi->planes[0]));
-   }
-   else
-   {
-	 if(!mpi->planes[2]) return;
-     memset(mpi->planes[2],128,s-(mpi->planes[2]-mpi->planes[0]));
-   }
-  }    
-}
-
 void mp_image_setfmt(mp_image_t* mpi,unsigned int out_fmt){
     mpi->flags&=~(MP_IMGFLAG_PLANAR|MP_IMGFLAG_YUV|MP_IMGFLAG_SWAPPED);
     mpi->imgfmt=out_fmt;
@@ -146,11 +121,16 @@ void mp_image_setfmt(mp_image_t* mpi,unsigned int out_fmt){
         mpi->flags|=MP_IMGFLAG_SWAPPED;
         return;
     }
-    mpi->flags|=MP_IMGFLAG_YUV;
     mpi->num_planes=3;
-    if (mp_get_chroma_shift(out_fmt, NULL, NULL)) {
+    if (out_fmt == IMGFMT_GBR24P) {
+        mpi->bpp=24;
         mpi->flags|=MP_IMGFLAG_PLANAR;
-        mpi->bpp = mp_get_chroma_shift(out_fmt, &mpi->chroma_x_shift, &mpi->chroma_y_shift);
+        return;
+    }
+    mpi->flags|=MP_IMGFLAG_YUV;
+    if (mp_get_chroma_shift(out_fmt, NULL, NULL, NULL)) {
+        mpi->flags|=MP_IMGFLAG_PLANAR;
+        mpi->bpp = mp_get_chroma_shift(out_fmt, &mpi->chroma_x_shift, &mpi->chroma_y_shift, NULL);
         mpi->chroma_width  = mpi->width  >> mpi->chroma_x_shift;
         mpi->chroma_height = mpi->height >> mpi->chroma_y_shift;
     }
@@ -161,6 +141,8 @@ void mp_image_setfmt(mp_image_t* mpi,unsigned int out_fmt){
     case IMGFMT_YV12:
         return;
     case IMGFMT_420A:
+    case IMGFMT_422A:
+    case IMGFMT_444A:
     case IMGFMT_IF09:
         mpi->num_planes=4;
     case IMGFMT_YVU9:
@@ -170,10 +152,22 @@ void mp_image_setfmt(mp_image_t* mpi,unsigned int out_fmt){
     case IMGFMT_440P:
     case IMGFMT_444P16_LE:
     case IMGFMT_444P16_BE:
+    case IMGFMT_444P10_LE:
+    case IMGFMT_444P10_BE:
+    case IMGFMT_444P9_LE:
+    case IMGFMT_444P9_BE:
     case IMGFMT_422P16_LE:
     case IMGFMT_422P16_BE:
+    case IMGFMT_422P10_LE:
+    case IMGFMT_422P10_BE:
+    case IMGFMT_422P9_LE:
+    case IMGFMT_422P9_BE:
     case IMGFMT_420P16_LE:
     case IMGFMT_420P16_BE:
+    case IMGFMT_420P10_LE:
+    case IMGFMT_420P10_BE:
+    case IMGFMT_420P9_LE:
+    case IMGFMT_420P9_BE:
         return;
     case IMGFMT_Y800:
     case IMGFMT_Y8:
@@ -184,6 +178,7 @@ void mp_image_setfmt(mp_image_t* mpi,unsigned int out_fmt){
     case IMGFMT_UYVY:
         mpi->flags|=MP_IMGFLAG_SWAPPED;
     case IMGFMT_YUY2:
+        mpi->chroma_x_shift = 1;
         mpi->bpp=16;
         mpi->num_planes=1;
         return;

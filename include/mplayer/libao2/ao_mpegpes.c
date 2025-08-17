@@ -161,6 +161,7 @@ static int preinit(const char *arg)
 		mp_msg(MSGT_VO, MSGL_ERR, "AO_MPEGPES, Unrecognized options\n");
 		return -1;
 	}
+
 #ifdef HAVE_DVB_HEAD
 	if(card==-1)
 	{
@@ -177,7 +178,7 @@ static int preinit(const char *arg)
 			}
         	}
 	}
-#endif	
+#endif
 	if((card < 1) || (card > 4))
 	{
 		mp_msg(MSGT_VO, MSGL_ERR, "DVB card number must be between 1 and 4\n");

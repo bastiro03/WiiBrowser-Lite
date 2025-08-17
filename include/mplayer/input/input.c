@@ -208,6 +208,8 @@ static const mp_cmd_t mp_cmds[] = {
   { MP_CMD_AF_CLR, "af_clr", 0, { {-1,{0}} } },
   { MP_CMD_AF_CMDLINE, "af_cmdline", 2, { {MP_CMD_ARG_STRING, {0}}, {MP_CMD_ARG_STRING, {0}}, {-1,{0}} } },
 
+  { MP_CMD_GUI, "gui", 1, { {MP_CMD_ARG_STRING, {0}}, {-1,{0}} } },
+
   { 0, NULL, 0, {} }
 };
 
@@ -268,6 +270,16 @@ static const mp_key_name_t key_names[] = {
   { MOUSE_BTN7, "MOUSE_BTN7" },
   { MOUSE_BTN8, "MOUSE_BTN8" },
   { MOUSE_BTN9, "MOUSE_BTN9" },
+  { MOUSE_BTN10, "MOUSE_BTN10" },
+  { MOUSE_BTN11, "MOUSE_BTN11" },
+  { MOUSE_BTN12, "MOUSE_BTN12" },
+  { MOUSE_BTN13, "MOUSE_BTN13" },
+  { MOUSE_BTN14, "MOUSE_BTN14" },
+  { MOUSE_BTN15, "MOUSE_BTN15" },
+  { MOUSE_BTN16, "MOUSE_BTN16" },
+  { MOUSE_BTN17, "MOUSE_BTN17" },
+  { MOUSE_BTN18, "MOUSE_BTN18" },
+  { MOUSE_BTN19, "MOUSE_BTN19" },
   { MOUSE_BTN0_DBL, "MOUSE_BTN0_DBL" },
   { MOUSE_BTN1_DBL, "MOUSE_BTN1_DBL" },
   { MOUSE_BTN2_DBL, "MOUSE_BTN2_DBL" },
@@ -278,6 +290,16 @@ static const mp_key_name_t key_names[] = {
   { MOUSE_BTN7_DBL, "MOUSE_BTN7_DBL" },
   { MOUSE_BTN8_DBL, "MOUSE_BTN8_DBL" },
   { MOUSE_BTN9_DBL, "MOUSE_BTN9_DBL" },
+  { MOUSE_BTN10_DBL, "MOUSE_BTN10_DBL" },
+  { MOUSE_BTN11_DBL, "MOUSE_BTN11_DBL" },
+  { MOUSE_BTN12_DBL, "MOUSE_BTN12_DBL" },
+  { MOUSE_BTN13_DBL, "MOUSE_BTN13_DBL" },
+  { MOUSE_BTN14_DBL, "MOUSE_BTN14_DBL" },
+  { MOUSE_BTN15_DBL, "MOUSE_BTN15_DBL" },
+  { MOUSE_BTN16_DBL, "MOUSE_BTN16_DBL" },
+  { MOUSE_BTN17_DBL, "MOUSE_BTN17_DBL" },
+  { MOUSE_BTN18_DBL, "MOUSE_BTN18_DBL" },
+  { MOUSE_BTN19_DBL, "MOUSE_BTN19_DBL" },
   { JOY_AXIS1_MINUS, "JOY_UP" },
   { JOY_AXIS1_PLUS, "JOY_DOWN" },
   { JOY_AXIS0_MINUS, "JOY_LEFT" },
@@ -356,6 +378,9 @@ static const mp_key_name_t key_names[] = {
 // The second is the command
 
 static const mp_cmd_bind_t def_cmd_binds[] = {
+
+  // Ignore modifiers by default
+  { { KEY_CTRL, 0 }, "ignore" },
 
   { {  MOUSE_BTN3, 0 }, "seek 10" },
   { {  MOUSE_BTN4, 0 }, "seek -10" },
@@ -1070,13 +1095,14 @@ mp_input_get_cmd_from_keys(int n,int* keys, int paused) {
     cmd = mp_input_find_bind_for_key(def_cmd_binds,n,keys);
 
   if(cmd == NULL) {
-    mp_msg(MSGT_INPUT,MSGL_WARN,MSGTR_NoBindFound,mp_input_get_key_name(keys[0]));
-    if(n > 1) {
-      int s;
-      for(s=1; s < n; s++)
-	mp_msg(MSGT_INPUT,MSGL_WARN,"-%s",mp_input_get_key_name(keys[s]));
+    char key_name[100];
+    int i;
+    av_strlcpy(key_name, mp_input_get_key_name(keys[0]), sizeof(key_name));
+    for (i = 1; i < n; i++) {
+      av_strlcat(key_name, "-", sizeof(key_name));
+      av_strlcat(key_name, mp_input_get_key_name(keys[i]), sizeof(key_name));
     }
-    mp_msg(MSGT_INPUT,MSGL_WARN,"                         \n");
+    mp_msg(MSGT_INPUT,MSGL_WARN,MSGTR_NoBindFound,key_name);
     return NULL;
   }
   if (strcmp(cmd, "ignore") == 0) return NULL;
@@ -1099,6 +1125,15 @@ interpret_key(int code, int paused)
 {
   unsigned int j;
   mp_cmd_t* ret;
+
+  if (code & MP_KEY_RELEASE_ALL) {
+      code &= ~MP_KEY_RELEASE_ALL;
+      memset(key_down, 0, sizeof(key_down));
+      num_key_down = 0;
+      last_key_down = 0;
+      if (!code)
+          return NULL;
+  }
 
   if(mp_input_key_cb) {
       if (code & MP_KEY_DOWN)
@@ -1239,7 +1274,8 @@ static mp_cmd_t *read_events(int time, int paused)
 			    strerror(errno));
 		FD_ZERO(&fds);
 	    }
-	}
+	} else if (time)
+	    usec_sleep(time * 1000);
     }
 #else
     if (!got_cmd && time)
@@ -1425,7 +1461,7 @@ mp_input_get_key_name(int key) {
       return key_names[i].name;
   }
 
-  if(isascii(key)) {
+  if(isprint(key)) {
     snprintf(key_str,12,"%c",(char)key);
     return key_str;
   }
@@ -1551,7 +1587,8 @@ mp_input_parse_config(char *file) {
   fd = open(file,O_RDONLY);
 
   if(fd < 0) {
-    mp_msg(MSGT_INPUT,MSGL_V,"Can't open input config file %s: %s\n",file,strerror(errno));
+    mp_msg(MSGT_INPUT, MSGL_V, "Reading optional input config file %s: %s\n",
+           file, strerror(errno));
     return 0;
   }
 
@@ -1713,6 +1750,7 @@ mp_input_get_section(void) {
 
 void
 mp_input_init(void) {
+#ifndef GEKKO
   char* file;
 
   file = config_file[0] != '/' ? get_path(config_file) : config_file;
@@ -1727,8 +1765,7 @@ mp_input_init(void) {
       free(file);
     }
     // Try global conf dir
-    file = (char*)malloc(sizeof(char)*100);
-    sprintf(file,"%s%s",MPLAYER_CONFDIR,"/input.conf");
+    file = MPLAYER_CONFDIR "/input.conf";
     if(! mp_input_parse_config(file))
       mp_msg(MSGT_INPUT,MSGL_V,"Falling back on default (hardcoded) input config\n");
   }
@@ -1798,7 +1835,7 @@ mp_input_init(void) {
     else
       mp_msg(MSGT_INPUT,MSGL_ERR,MSGTR_INPUT_INPUT_ErrCantOpenFile,in_file,strerror(errno));
   }
-
+#endif
 }
 
 void
@@ -1883,11 +1920,6 @@ mp_input_check_interrupt(int time) {
   case MP_CMD_PLAY_TREE_UP_STEP:
   case MP_CMD_PLAY_ALT_SRC_STEP:
     // The cmd will be executed when we are back in the main loop
-    return 1;
-  case MP_CMD_PAUSE:
-	  // remove the cmd from the queue
-	  cmd = mp_input_get_cmd(time,0,0);
-	  mp_cmd_free(cmd);
     return 1;
   }
   // remove the cmd from the queue

@@ -19,11 +19,14 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+#define RTSPCLIENT_SYNCHRONOUS_INTERFACE 1
+
 extern "C" {
 // on MinGW, we must include windows.h before the things it conflicts
 #ifdef __MINGW32__    // with.  they are each protected from
 #include <windows.h>  // windows.h, but not the other way around.
 #endif
+#include "mp_msg.h"
 #include "demuxer.h"
 #include "demux_rtp.h"
 #include "stheader.h"
@@ -146,7 +149,6 @@ extern "C" demuxer_t* demux_open_rtp(demuxer_t* demuxer) {
       // we were given a RTSP or SIP URL:
       char const* protocol = demuxer->stream->streaming_ctrl->url->protocol;
       char const* url = demuxer->stream->streaming_ctrl->url->url;
-      extern int verbose;
       if (strcmp(protocol, "rtsp") == 0) {
 	if (rtsp_transport_http == 1) {
 	  rtsp_transport_http = demuxer->stream->streaming_ctrl->url->port;
@@ -496,11 +498,32 @@ static demux_packet_t* getBuffer(demuxer_t* demuxer, demux_stream_t* ds,
   RTPState* rtpState = (RTPState*)(demuxer->priv);
   ReadBufferQueue* bufferQueue = NULL;
   int headersize = 0;
-  TaskToken task;
+  int waitboth = 0;
+  TaskToken task, task2;
 
   if (demuxer->stream->eof) return NULL;
 
   if (ds == demuxer->video) {
+    bufferQueue = rtpState->audioBufferQueue;
+    // HACK: for the latest versions we must also receive audio
+    // when probing for video FPS, otherwise the stream just hangs
+    // and times out
+    if (mustGetNewData &&
+        bufferQueue &&
+        bufferQueue->readSource() &&
+        !bufferQueue->nextpacket) {
+      headersize = bufferQueue->readSource()->isAMRAudioSource() ? 1 : 0;
+      demux_packet_t *dp = new_demux_packet(MAX_RTP_FRAME_SIZE);
+      bufferQueue->dp = dp;
+      bufferQueue->blockingFlag = 0;
+      bufferQueue->readSource()->getNextFrame(
+          &dp->buffer[headersize], MAX_RTP_FRAME_SIZE - headersize,
+          afterReading, bufferQueue,
+          onSourceClosure, bufferQueue);
+      task2 = bufferQueue->readSource()->envir().taskScheduler().
+        scheduleDelayedTask(10000000, onSourceClosure, bufferQueue);
+      waitboth = 1;
+    }
     bufferQueue = rtpState->videoBufferQueue;
     if (((sh_video_t*)ds->sh)->format == mmioFOURCC('H','2','6','4'))
       headersize = 3;
@@ -558,6 +581,10 @@ static demux_packet_t* getBuffer(demuxer_t* demuxer, demux_stream_t* ds,
   task = scheduler.scheduleDelayedTask(delay, onSourceClosure, bufferQueue);
   scheduler.doEventLoop(&bufferQueue->blockingFlag);
   scheduler.unscheduleDelayedTask(task);
+  if (waitboth) {
+    scheduler.doEventLoop(&rtpState->audioBufferQueue->blockingFlag);
+    scheduler.unscheduleDelayedTask(task2);
+  }
   if (demuxer->stream->eof) {
     free_demux_packet(dp);
     return NULL;

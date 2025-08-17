@@ -19,6 +19,7 @@
  */
 
 #include "libavcodec/fft.h"
+#include "libavcodec/rdft.h"
 #include "libavutil/ppc/paired.h"
 
 static void ff_rdft_calc_paired(RDFTContext *s, FFTSample *data)
@@ -31,8 +32,8 @@ static void ff_rdft_calc_paired(RDFTContext *s, FFTSample *data)
 	const FFTSample *tsin = s->tsin;
 	
 	if (!s->inverse) {
-		ff_fft_permute(&s->fft, (FFTComplex *)data);
-		ff_fft_calc(&s->fft, (FFTComplex *)data);
+		s->fft.fft_permute(&s->fft, (FFTComplex *)data);
+		s->fft.fft_calc(&s->fft, (FFTComplex *)data);
 	}
 	
 	result = psq_l(0,data,0,0);
@@ -86,8 +87,8 @@ static void ff_rdft_calc_paired(RDFTContext *s, FFTSample *data)
 		result = ps_muls0(result, k1);
 		psq_st(result,0,data,0,0);
 		
-		ff_fft_permute(&s->fft, (FFTComplex *)data);
-		ff_fft_calc(&s->fft, (FFTComplex *)data);
+		s->fft.fft_permute(&s->fft, (FFTComplex *)data);
+		s->fft.fft_calc(&s->fft, (FFTComplex *)data);
 	}
 }
 

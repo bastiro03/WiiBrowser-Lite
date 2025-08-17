@@ -61,7 +61,6 @@ static const char help_text[]=
 #define MSGTR_NoHomeDir "HOME директорията не може да бъде открита.\n"
 #define MSGTR_GetpathProblem "Проблем с функция get_path(\"config\") \n"
 #define MSGTR_CreatingCfgFile "Създава се конфигурационен файл: %s\n"
-#define MSGTR_BuiltinCodecsConf "Използва се вградения codecs.conf.\n"
 #define MSGTR_CantLoadFont "Не може да се зареди шрифт: %s\n"
 #define MSGTR_CantLoadSub "Не могат да бъдат заредени субтитри: %s\n"
 #define MSGTR_DumpSelectedStreamMissing "dump: ФАТАЛНО: Избраният поток липсва!\n"
@@ -102,8 +101,6 @@ static const char help_text[]=
 #define MSGTR_Playing "Възпроизвеждане на %s.\n"
 #define MSGTR_NoSound "Аудио: няма звук\n"
 #define MSGTR_FPSforced "Наложени са %5.3f кадъра в секунда (ftime: %5.3f).\n"
-#define MSGTR_CompiledWithRuntimeDetection "Компилиран с динамично установяване на процесора - ВНИМАНИЕ - това не е оптимално!\nЗа най-добра производителност, рекомпилирайте MPlayer с --disable-runtime-cpudetection.\n"
-#define MSGTR_CompiledWithCPUExtensions "Компилиран за x86 процесори с разширения:"
 #define MSGTR_AvailableVideoOutputDrivers "Достъпни видео драйвери:\n"
 #define MSGTR_AvailableAudioOutputDrivers "Достъпни аудио драйвери:\n"
 #define MSGTR_AvailableAudioCodecs "Достъпни аудио кодеци:\n"
@@ -111,7 +108,6 @@ static const char help_text[]=
 #define MSGTR_AvailableAudioFm "Достъпни (вградени) фамилии аудио кодеци/драйвери:\n"
 #define MSGTR_AvailableVideoFm "Достъпни (вградени) фамилии видео кодеци/драйвери:\n"
 #define MSGTR_AvailableFsType "Достъпни пълноекранни режими:\n"
-#define MSGTR_UsingRTCTiming "Използва се хардуерния RTC таймер (%ldHz).\n"
 #define MSGTR_CannotReadVideoProperties "Видео: Параметрите не могат да бъдат прочетени.\n"
 #define MSGTR_NoStreamFound "Не е открит поток.\n"
 #define MSGTR_ErrorInitializingVODevice "Грешка при отваряне/инициализиране на избраното видео устройство (-vo).\n"
@@ -143,14 +139,11 @@ static const char help_text[]=
 #define MSGTR_LoadingConfig "Зарежда се конфигурационен файл '%s'\n"
 #define MSGTR_AddedSubtitleFile "SUB: добавен е файл със субтитри (%d): %s\n"
 #define MSGTR_ErrorOpeningOutputFile "Грешка при отваряне на файла [%s] за запис!\n"
-#define MSGTR_CommandLine "Команден ред:"
 #define MSGTR_RTCDeviceNotOpenable "Грешка при отваряне на %s: %s (необходими са права за четене).\n"
 #define MSGTR_LinuxRTCInitErrorIrqpSet "Linux RTC грешка при инициализация в ioctl (rtc_irqp_set кд%lu): %s\n"
 #define MSGTR_IncreaseRTCMaxUserFreq "Добавете \"echo %lu > /proc/sys/dev/rtc/max-user-freq\" към системните стартови скриптове.\n"
 #define MSGTR_LinuxRTCInitErrorPieOn "Linux RTC init грешка в ioctl (rtc_pie_on): %s\n"
 #define MSGTR_UsingTimingType "използва се  %s таймер.\n"
-#define MSGTR_MenuInitialized "Менюто е инициализирано: %s\n"
-#define MSGTR_MenuInitFailed "Менюто не може да бъде инициализирано.\n"
 #define MSGTR_Getch2InitializedTwice "Внимание: Функцията getch2_init е извикана двукратно!\n"
 #define MSGTR_CantOpenLibmenuFilterWithThisRootMenu "Видео филтъра libmenu не може да бъде отворен без root меню %s.\n"
 #define MSGTR_AudioFilterChainPreinitError "Грешка при предварителна инициализация на аудио филтрите!\n"
@@ -213,12 +206,9 @@ static const char help_text[]=
 #define MSGTR_MP3AudioSelected "Избрано е MP3 аудио\n"
 #define MSGTR_CannotAllocateBytes "Не може да се заделят %d байта\n"
 #define MSGTR_SettingAudioDelay "АУДИО ЗАКЪСНЕНИЕТО е настроено на %5.3f\n"
-#define MSGTR_SettingAudioInputGain "Аудио усилването е нагласено на %f\n"
-#define MSGTR_LamePresetEquals "\nпрофил=%s\n\n"
 #define MSGTR_LimitingAudioPreload "Предварителното аудио зареждане е ограничено на 0.4с\n"
 #define MSGTR_IncreasingAudioDensity "Гъстотата на звука е увеличена на 4\n"
 #define MSGTR_ZeroingAudioPreloadAndMaxPtsCorrection "Налагане на нулево предварително аудио зареждане, max pts correction to 0\n"
-#define MSGTR_CBRAudioByterate "\n\nCBR аудио: %d байта/сек, %d байта за блок\n"
 #define MSGTR_LameVersion "LAME версия %s (%s)\n\n"
 #define MSGTR_InvalidBitrateForLamePreset "Грешка: Указаният битрейт е извън допустимите граници за този профил\n"\
 "\n"\
@@ -402,8 +392,6 @@ static const char help_text[]=
 #define MSGTR_CodecNeedsOutfmt "\nкодекът(%s) се нуждае от 'outfmt'!\n"
 #define MSGTR_CantAllocateComment "Не може да се задели памет за коментар. "
 #define MSGTR_GetTokenMaxNotLessThanMAX_NR_TOKEN "get_token(): max >= MAX_MR_TOKEN!"
-#define MSGTR_ReadingFile "Четене от %s: "
-#define MSGTR_CantOpenFileError "'%s': %s не може да бъде отворен\n"
 #define MSGTR_CantGetMemoryForLine "Няма достатъчно памет за 'line': %s\n"
 #define MSGTR_CantReallocCodecsp "Не може да презадели памет за '*codecsp': %s\n"
 #define MSGTR_CodecNameNotUnique "Името на кодека '%s' не е уникално."
@@ -460,7 +448,6 @@ static const char help_text[]=
 #define MSGTR_SwitchToNi "\nЗле структуриран AVI файл - превключване към -ni режим...\n"
 #define MSGTR_Detected_XXX_FileFormat "%s формат.\n"
 #define MSGTR_DetectedAudiofile "Аудио файл.\n"
-#define MSGTR_NotSystemStream "Не е MPEG System Stream... (може би Transport Stream?)\n"
 #define MSGTR_InvalidMPEGES "Невалиден MPEG-ES поток??? Свържете се с автора, може да е бъг :(\n"
 #define MSGTR_FormatNotRecognized "============ За съжаление, този формат не се разпознава/поддържа =============\n"\
                                   "=== Ако този файл е AVI, ASF или MPEG поток, моля уведомете автора! ===\n"
@@ -482,11 +469,8 @@ static const char help_text[]=
 #define MSGTR_MOVcomprhdr "MOV: Поддръжката на компресирани хедъри изисква ZLIB!\n"
 #define MSGTR_MOVvariableFourCC "MOV: ВНИМАНИЕ: Открит е променлив FOURCC код!?\n"
 #define MSGTR_MOVtooManyTrk "MOV: ВНИМАНИЕ: твърде много пътечки"
-#define MSGTR_FoundAudioStream "==> Открит е аудио поток: %d\n"
-#define MSGTR_FoundVideoStream "==> Открит е видео поток: %d\n"
 #define MSGTR_DetectedTV "Открита е телевизия! ;-)\n"
 #define MSGTR_ErrorOpeningOGGDemuxer "Не може да бъде отворен ogg разпределител.\n"
-#define MSGTR_ASFSearchingForAudioStream "ASF: Търсене на звуков поток (id:%d).\n"
 #define MSGTR_CannotOpenAudioStream "Не може да се отвори звуков поток: %s\n"
 #define MSGTR_CannotOpenSubtitlesStream "Не могат да бъдат отворени субтитри: %s\n"
 #define MSGTR_OpeningAudioDemuxerFailed "Не може да бъде отворен аудио разпределител: %s\n"
@@ -518,21 +502,15 @@ static const char help_text[]=
 
 #define MSGTR_UsingExternalPP "[PP] Използване на външен филтър за допълнителна обработка, max q = %d.\n"
 #define MSGTR_UsingCodecPP "[PP] Използване на допълнителна обработка от страна на кодека, max q = %d.\n"
-#define MSGTR_VideoAttributeNotSupportedByVO_VD "Видео атрибут '%s' не се поддържа от vo & vd.\n"
 #define MSGTR_VideoCodecFamilyNotAvailableStr "Заявената фамилия видео кодеци [%s] (vfm=%s) не е достъпна.\nРазрешете я по време на компилация.\n"
 #define MSGTR_AudioCodecFamilyNotAvailableStr "Заявената фамилия аудио кодеци [%s] (afm=%s) не е достъпна.\nРазрешете я по време на компилация.\n"
 #define MSGTR_OpeningVideoDecoder "Отваряне на видео декодер: [%s] %s\n"
 #define MSGTR_OpeningAudioDecoder "Отваряне на аудио декодер: [%s] %s\n"
-#define MSGTR_UninitVideoStr "uninit video: %s\n"
-#define MSGTR_UninitAudioStr "uninit audio: %s\n"
 #define MSGTR_VDecoderInitFailed "Инициализацията на VDecoder се провали :(\n"
 #define MSGTR_ADecoderInitFailed "Инициализацията на ADecoder се провали :(\n"
 #define MSGTR_ADecoderPreinitFailed "Предварителната инициализация на ADecoder се провали :(\n"
-#define MSGTR_AllocatingBytesForInputBuffer "dec_audio: Заделяне на %d байта за входния буфер.\n"
-#define MSGTR_AllocatingBytesForOutputBuffer "dec_audio: Заделяне на %d + %d = %d байта за изходния буфер.\n"
 
 // LIRC:
-#define MSGTR_SettingUpLIRC "Установяване на LIRC поддръжка...\n"
 #define MSGTR_LIRCopenfailed "Няма да има LIRC поддръжка.\n"
 #define MSGTR_LIRCcfgerr "Конфигурационният файл за LIRC %s не може да бъде прочетен.\n"
 
@@ -550,8 +528,6 @@ static const char help_text[]=
 
 // vd_dshow.c, vd_dmo.c
 #define MSGTR_DownloadCodecPackage "Трябва да обновите/инсталирате пакета с двоичните кодеци.\nОтидете на http://www.mplayerhq.hu/dload.html\n"
-#define MSGTR_DShowInitOK "INFO: Видеокодек Win32/DShow е инициализиран успешно.\n"
-#define MSGTR_DMOInitOK "INFO: Видеокодек Win32/DMO е инициализиран успешно.\n"
 
 // x11_common.c
 #define MSGTR_EwmhFullscreenStateFailed "\nX11: Не може да прати EWMH fullscreen Event!\n"
@@ -577,7 +553,6 @@ static const char help_text[]=
 #define MSGTR_Preferences "Предпочитания"
 #define MSGTR_AudioPreferences "Конфигуриране на аудио драйвера"
 #define MSGTR_NoMediaOpened "Няма отворени елементи."
-#define MSGTR_VCDTrack "VCD писта %d"
 #define MSGTR_NoChapter "Няма раздели"
 #define MSGTR_Chapter "Раздел %d"
 #define MSGTR_NoFileLoaded "Не е зареден файл."
@@ -597,32 +572,23 @@ static const char help_text[]=
 #define MSGTR_NEMFMR "За съжаление, няма достатъчно памет за менюто."
 #define MSGTR_IDFGCVD "За съжаление, няма съвместим с GUI видео драйвер."
 #define MSGTR_NEEDLAVC "За съжаление, не можете да възпроизвеждате различни от MPEG\nфайлове с вашето DXR3/H+ устройство без прекодиране.\nМоля разрешете lavc в полето за конфигурация на DXR3/H+ ."
-#define MSGTR_UNKNOWNWINDOWTYPE "Неизвестен тип на прозорец ..."
 
 // --- skin loader error messages
 #define MSGTR_SKIN_ERRORMESSAGE "[skin] грешка в конфигурационния файл на skin-а на ред %d: %s"
-#define MSGTR_SKIN_WARNING1 "[skin] внимание в конфигурационния файл на ред %d:\nоткрит widget (%s) без \"section\" преди това"
-#define MSGTR_SKIN_WARNING2 "[skin] внимание в конфигурациония файл на ред %d:\nоткрит widget (%s) без \"subsection\" преди това"
-#define MSGTR_SKIN_WARNING3 "[skin] внимание в конфигурационния файл на ред %d:\nтази подсекция не се поддържа от widget (%s)"
 #define MSGTR_SKIN_SkinFileNotFound "[skin] файлът ( %s ) не е намерен.\n"
 #define MSGTR_SKIN_BITMAP_16bit  "Bitmap с 16 и по-малко бита за цвят не се поддържа (%s).\n"
 #define MSGTR_SKIN_BITMAP_FileNotFound  "файлът не е намерен (%s)\n"
-#define MSGTR_SKIN_BITMAP_BMPReadError "грешка при четене на BMP (%s)\n"
-#define MSGTR_SKIN_BITMAP_TGAReadError "грешка при четене на TGA (%s)\n"
 #define MSGTR_SKIN_BITMAP_PNGReadError "грешка при четене на PNG (%s)\n"
-#define MSGTR_SKIN_BITMAP_RLENotSupported "TGA с RLE компресия не се поддържа (%s)\n"
-#define MSGTR_SKIN_BITMAP_UnknownFileType "неизвестен вид на файла (%s)\n"
 #define MSGTR_SKIN_BITMAP_ConversionError "Грешка при преобразуване от 24 към 32 бита (%s)\n"
-#define MSGTR_SKIN_BITMAP_UnknownMessage "неизвестно съобщение: %s\n"
-#define MSGTR_SKIN_FONT_NotEnoughtMemory "недостатъчно памет\n"
+#define MSGTR_SKIN_UnknownMessage "неизвестно съобщение: %s\n"
+#define MSGTR_SKIN_NotEnoughMemory "недостатъчно памет\n"
 #define MSGTR_SKIN_FONT_TooManyFontsDeclared "Декларирани са твърде много шрифтове.\n"
 #define MSGTR_SKIN_FONT_FontFileNotFound "Файлът със шрифта не е намерен.\n"
 #define MSGTR_SKIN_FONT_FontImageNotFound "Файл с изображението на шрифта не е намерен.\n"
-#define MSGTR_SKIN_FONT_NonExistentFontID "несъществуващ идентификатор на шрифт (%s)\n"
+#define MSGTR_SKIN_FONT_NonExistentFont "несъществуващ идентификатор на шрифт (%s)\n"
 #define MSGTR_SKIN_UnknownParameter "неизвестен параметър (%s)\n"
 #define MSGTR_SKIN_SKINCFG_SkinNotFound "Скинът не е намерен (%s).\n"
 #define MSGTR_SKIN_SKINCFG_SelectedSkinNotFound "Избраният скин ( %s ) не е намерен, ще се ползва 'default'...\n"
-#define MSGTR_SKIN_SKINCFG_SkinCfgReadError "Грешка в конфигурационен файл (%s)\n"
 #define MSGTR_SKIN_LABEL "Скинове:"
 
 // --- gtk menus
@@ -662,7 +628,7 @@ static const char help_text[]=
 #define MSGTR_MENU_SkinBrowser "Избор на Skin"
 // TODO: Why is this different from MSGTR_Preferences?
 #define MSGTR_MENU_Preferences "Настройки"
-#define MSGTR_MENU_Exit "Изход..."
+#define MSGTR_MENU_Exit "Изход"
 #define MSGTR_MENU_Mute "Без звук"
 #define MSGTR_MENU_Original "Без промяна"
 #define MSGTR_MENU_AspectRatio "Съотношение"
@@ -718,9 +684,6 @@ static const char help_text[]=
 #define MSGTR_PREFERENCES_HFrameDrop "Разрешаване на ИНТЕНЗИВНО прескачане на кадри (опасно)"
 #define MSGTR_PREFERENCES_Flip "Преобръщане на образа"
 #define MSGTR_PREFERENCES_Panscan "Panscan: "
-#define MSGTR_PREFERENCES_OSDTimer "Часовник и индикатори"
-#define MSGTR_PREFERENCES_OSDProgress "Само индикатори за напредване"
-#define MSGTR_PREFERENCES_OSDTimerPercentageTotalTime "Часовник, проценти и общо време"
 #define MSGTR_PREFERENCES_Subtitle "Субтитри:"
 #define MSGTR_PREFERENCES_SUB_Delay "Закъснение: "
 #define MSGTR_PREFERENCES_SUB_FPS "FPS:"
@@ -801,14 +764,8 @@ static const char help_text[]=
 #define MSGTR_MSGBOX_LABEL_Error "Грешка!"
 #define MSGTR_MSGBOX_LABEL_Warning "Внимание!"
 
-// bitmap.c
-
-#define MSGTR_NotEnoughMemoryC32To1 "[c32to1] недостатъчно памет за изображението\n"
-#define MSGTR_NotEnoughMemoryC1To32 "[c1to32] недостатъчно памет за изображението\n"
-
 // cfg.c
 
-#define MSGTR_ConfigFileReadError "[cfg] грешка при четене на конфигурационния файл ...\n"
 #define MSGTR_UnableToSaveOption "Не може да се запамети опцията '%s'.\n"
 
 // interface.c
@@ -816,7 +773,6 @@ static const char help_text[]=
 #define MSGTR_DeletingSubtitles "[GUI] Изтриване на субтитрите.\n"
 #define MSGTR_LoadingSubtitles "[GUI] Зареждане на субтитрите: %s\n"
 #define MSGTR_AddingVideoFilter "[GUI] Добавяне на видео филтър: %s\n"
-#define MSGTR_RemovingVideoFilter "[GUI] Премахване на видео филтър: %s\n"
 
 // mw.c
 
@@ -824,7 +780,6 @@ static const char help_text[]=
 
 // ws.c
 
-#define MSGTR_WS_CouldNotOpenDisplay "[ws] Не може да бъде отворен DISPLAY.\n"
 #define MSGTR_WS_RemoteDisplay "[ws] Отдалечен дисплей, изключване на  XMITSHM.\n"
 #define MSGTR_WS_NoXshm "[ws] За съжаление вашата система не поддържа разширението на X за споделена памет.\n"
 #define MSGTR_WS_NoXshape "[ws] За съжаление вашата система не поддържа разширението XShape.\n"
@@ -884,9 +839,7 @@ static const char help_text[]=
 // vo_yuv4mpeg.c
 #define MSGTR_VO_YUV4MPEG_InterlacedHeightDivisibleBy4 "Режимът interlaced изисква височината на образа да е кратна на  4."
 #define MSGTR_VO_YUV4MPEG_InterlacedLineBufAllocFail "Не може да се задели буфер за редовете за interlaced режим."
-#define MSGTR_VO_YUV4MPEG_InterlacedInputNotRGB "Входния формат не е RGB, не могат да се отделят цветовите полета!"
 #define MSGTR_VO_YUV4MPEG_WidthDivisibleBy2 "Широчината на образа трябва да е кратна на 2."
-#define MSGTR_VO_YUV4MPEG_NoMemRGBFrameBuf "Няма достатъчно памет за RGB кадров буфер."
 #define MSGTR_VO_YUV4MPEG_OutFileOpenError "Не е получена памет или файлов манипулатор за запис \"%s\"!"
 #define MSGTR_VO_YUV4MPEG_OutFileWriteError "Грешка при извеждане на изображението!"
 #define MSGTR_VO_YUV4MPEG_UnknownSubDev "Неизвестно подустройство: %s"
@@ -976,38 +929,11 @@ static const char help_text[]=
 #define MSGTR_AO_SUN_CantUseSelect "[AO SUN]\n   ***  Вашият аудио драйвер НЕ поддържа функцията select()  ***\nРекомпилирайте MPlayer с #undef HAVE_AUDIO_SELECT в config.h !\n\n"
 #define MSGTR_AO_SUN_CantReopenReset "[AO SUN]Фатална грешка:\n *** АУДИО УСТРОЙСТВОТО (%s) НЕ МОЖЕ ДА БЪДЕ ПРЕ-ОТВОРЕНО/РЕСТАРТИРАНО ***\n"
 
-// ao_alsa5.c
-#define MSGTR_AO_ALSA5_InitInfo "[AO ALSA5] alsa-init: заявен формат: %d Hz, %d канала, %s\n"
-#define MSGTR_AO_ALSA5_SoundCardNotFound "[AO ALSA5] alsa-init: не са открити звукови карти.\n"
-#define MSGTR_AO_ALSA5_InvalidFormatReq "[AO ALSA5] alsa-init: заявен е невалиден формат (%s) - отхвърлен.\n"
-#define MSGTR_AO_ALSA5_PlayBackError "[AO ALSA5] alsa-init: грешка при отваряне за възпроизвеждане: %s\n"
-#define MSGTR_AO_ALSA5_PcmInfoError "[AO ALSA5] alsa-init: pcm info грешка: %s\n"
-#define MSGTR_AO_ALSA5_SoundcardsFound "[AO ALSA5] alsa-init: %d звукови карти са открити, ползва се: %s\n"
-#define MSGTR_AO_ALSA5_PcmChanInfoError "[AO ALSA5] alsa-init: pcm channel info грешка: %s\n"
-#define MSGTR_AO_ALSA5_CantSetParms "[AO ALSA5] alsa-init: грешка при настройване на параметрите: %s\n"
-#define MSGTR_AO_ALSA5_CantSetChan "[AO ALSA5] alsa-init: грешка при настройка на канал: %s\n"
-#define MSGTR_AO_ALSA5_ChanPrepareError "[AO ALSA5] alsa-init: грешка при подготовка на канал: %s\n"
-#define MSGTR_AO_ALSA5_DrainError "[AO ALSA5] alsa-uninit: грешка при изчистване потока за възпроизвеждане: %s\n"
-#define MSGTR_AO_ALSA5_FlushError "[AO ALSA5] alsa-uninit: грешка при възстановяване на буферите за възпроизвеждане: %s\n"
-#define MSGTR_AO_ALSA5_PcmCloseError "[AO ALSA5] alsa-uninit: грешка при затваряне на pcm: %s\n"
-#define MSGTR_AO_ALSA5_ResetDrainError "[AO ALSA5] alsa-reset: грешка при изчистване на потока за възпроизвеждане: %s\n"
-#define MSGTR_AO_ALSA5_ResetFlushError "[AO ALSA5] alsa-reset: грешка при възстановяване на буферите за възпроизвеждане: %s\n"
-#define MSGTR_AO_ALSA5_ResetChanPrepareError "[AO ALSA5] alsa-reset: грешка при подготовка на канал: %s\n"
-#define MSGTR_AO_ALSA5_PauseDrainError "[AO ALSA5] alsa-pause: грешка при изчистване на потока за възпроизвеждане: %s\n"
-#define MSGTR_AO_ALSA5_PauseFlushError "[AO ALSA5] alsa-pause: грешка при възстановяване на буферите за възпроизвеждане: %s\n"
-#define MSGTR_AO_ALSA5_ResumePrepareError "[AO ALSA5] alsa-resume: грешка при подготовка на канал: %s\n"
-#define MSGTR_AO_ALSA5_Underrun "[AO ALSA5] alsa-play: претоварване на alsa, рестартиране на потока.\n"
-#define MSGTR_AO_ALSA5_PlaybackPrepareError "[AO ALSA5] alsa-play: грешка при подготовка за възпроизвеждане: %s\n"
-#define MSGTR_AO_ALSA5_WriteErrorAfterReset "[AO ALSA5] alsa-play: грешка при запис след рестартиране: %s - отказ от операцията.\n"
-#define MSGTR_AO_ALSA5_OutPutError "[AO ALSA5] alsa-play: грешка на изхода: %s\n"
-
 // ao_plugin.c
 
 #define MSGTR_AO_PLUGIN_InvalidPlugin "[AO PLUGIN] невалиден плъгин: %s\n"
 
 // ======================= AF Audio Filters ================================
-
-// libaf
 
 // af_ladspa.c
 

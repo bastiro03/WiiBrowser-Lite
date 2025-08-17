@@ -20,8 +20,6 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#define HAVE_STRUCT_SOCKADDR_STORAGE
-
 #include <stdlib.h>
 #include <string.h>
 #include <stdlib.h>
@@ -32,6 +30,7 @@
 
 #include <errno.h>
 
+#include "mp_msg.h"
 #include "network.h"
 #include "stream.h"
 #include "libmpdemux/demuxer.h"
@@ -48,7 +47,6 @@ static int rtsp_streaming_seek(int fd, off_t pos,
 static int rtsp_streaming_open (stream_t *stream, int mode, void *opts,
                                 int *file_format)
 {
-    rtsp_ctrl * ctl;
     URL_t *url;
     stream->fd = -1;
 

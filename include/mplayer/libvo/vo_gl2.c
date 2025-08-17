@@ -29,6 +29,7 @@
 #include "subopt-helper.h"
 #include "video_out.h"
 #include "video_out_internal.h"
+#include "libmpcodecs/vf.h"
 #include "sub/sub.h"
 
 #include "gl_common.h"
@@ -271,16 +272,20 @@ static int initTextures(void)
       glCreateClearTex(GL_TEXTURE_2D, gl_internal_format, gl_bitmap_format,  gl_bitmap_type, GL_LINEAR,
                        texture_width, texture_height, 0);
 
-      glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+      glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
       if (is_yuv) {
-        int xs, ys;
-        mp_get_chroma_shift(image_format, &xs, &ys);
+        int xs, ys, depth;
+        int chroma_clear_val = 128;
+        mp_get_chroma_shift(image_format, &xs, &ys, &depth);
+        chroma_clear_val >>= -depth & 7;
         mpglActiveTexture(GL_TEXTURE1);
         glCreateClearTex(GL_TEXTURE_2D, gl_internal_format, gl_bitmap_format,  gl_bitmap_type, GL_LINEAR,
-                         texture_width >> xs, texture_height >> ys, 128);
+                         texture_width >> xs, texture_height >> ys,
+                         chroma_clear_val);
         mpglActiveTexture(GL_TEXTURE2);
         glCreateClearTex(GL_TEXTURE_2D, gl_internal_format, gl_bitmap_format,  gl_bitmap_type, GL_LINEAR,
-                         texture_width >> xs, texture_height >> ys, 128);
+                         texture_width >> xs, texture_height >> ys,
+                         chroma_clear_val);
         mpglActiveTexture(GL_TEXTURE0);
       }
 
@@ -377,7 +382,7 @@ static void drawTextureDisplay (void)
   struct TexSquare *square = texgrid;
   int x, y;
 
-  glColor3f(1.0,1.0,1.0);
+  glColor4f(1.0,1.0,1.0,1.0);
 
   if (is_yuv)
     glEnableYUVConversion(GL_TEXTURE_2D, use_yuv);
@@ -418,6 +423,13 @@ static void drawTextureDisplay (void)
 
 
 static void resize(int x,int y){
+  // simple orthogonal projection for 0-1;0-1
+  static const float matrix[16] = {
+     2,  0, 0, 0,
+     0, -2, 0, 0,
+     0,  0, 0, 0,
+    -1,  1, 0, 1,
+  };
   mp_msg(MSGT_VO,MSGL_V,"[gl2] Resize: %dx%d\n",x,y);
   if(aspect_scaling()) {
     glClear(GL_COLOR_BUFFER_BIT);
@@ -438,8 +450,7 @@ static void resize(int x,int y){
   }
 
   glMatrixMode(GL_PROJECTION);
-  glLoadIdentity();
-  glOrtho (0, 1, 1, 0, -1.0, 1.0);
+  glLoadMatrixf(matrix);
 
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
@@ -559,7 +570,7 @@ static int initGl(uint32_t d_width, uint32_t d_height)
   glDisable(GL_CULL_FACE);
   glEnable (GL_TEXTURE_2D);
   if (is_yuv) {
-    int xs, ys;
+    int xs, ys, depth;
     gl_conversion_params_t params = {GL_TEXTURE_2D, use_yuv,
           {-1, -1, 0.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0},
           texture_width, texture_height, 0, 0, 0};
@@ -580,9 +591,10 @@ static int initGl(uint32_t d_width, uint32_t d_height)
         mpglBindProgram(GL_FRAGMENT_PROGRAM, fragprog);
         break;
     }
-    mp_get_chroma_shift(image_format, &xs, &ys);
+    mp_get_chroma_shift(image_format, &xs, &ys, &depth);
     params.chrom_texw = params.texw >> xs;
     params.chrom_texh = params.texh >> ys;
+    params.csp_params.input_shift = -depth & 7;
     glSetupYUVConversion(&params);
   }
 
@@ -616,7 +628,7 @@ config(uint32_t width, uint32_t height, uint32_t d_width, uint32_t d_height, uin
   image_height = height;
   image_width = width;
   image_format = format;
-  is_yuv = mp_get_chroma_shift(image_format, &xs, &ys) > 0;
+  is_yuv = mp_get_chroma_shift(image_format, &xs, &ys, NULL) > 0;
   is_yuv |= (xs << 8) | (ys << 16);
 
   int_pause = 0;
@@ -743,7 +755,7 @@ static int draw_slice(uint8_t *src[], int stride[], int w,int h,int x,int y)
   struct TexSquare *texline = &texgrid[y / texture_height * texnumx];
   int subtex_y = y % texture_width;
   int xs, ys;
-  mp_get_chroma_shift(image_format, &xs, &ys);
+  mp_get_chroma_shift(image_format, &xs, &ys, NULL);
   while (rem_h > 0) {
     int rem_w = w;
     struct TexSquare *tsq = &texline[x / texture_width];
@@ -804,7 +816,9 @@ draw_frame(uint8_t *src[])
 static int
 query_format(uint32_t format)
 {
-  if (use_yuv && mp_get_chroma_shift(format, NULL, NULL) &&
+  int depth;
+  if (use_yuv && mp_get_chroma_shift(format, NULL, NULL, &depth) &&
+      (depth == 8 || depth == 16 || glYUVLargeRange(use_yuv)) &&
       (IMGFMT_IS_YUVP16_NE(format) || !IMGFMT_IS_YUVP16(format)))
     return VFCAP_CSP_SUPPORTED | VFCAP_CSP_SUPPORTED_BY_HW | VFCAP_OSD |
            VFCAP_HWSCALE_UP | VFCAP_HWSCALE_DOWN | VFCAP_ACCEPT_STRIDE;
@@ -884,7 +898,7 @@ err_out:
     return -1;
 }
 
-static int control(uint32_t request, void *data, ...)
+static int control(uint32_t request, void *data)
 {
   switch (request) {
     case VOCTRL_PAUSE:
@@ -915,23 +929,13 @@ static int control(uint32_t request, void *data, ...)
 #ifdef CONFIG_GL_X11
     case VOCTRL_SET_EQUALIZER:
     {
-      va_list ap;
-      int value;
-
-      va_start(ap, data);
-      value = va_arg(ap, int);
-      va_end(ap);
-      return vo_x11_set_equalizer(data, value);
+      vf_equalizer_t *eq=data;
+      return vo_x11_set_equalizer(eq->item, eq->value);
     }
     case VOCTRL_GET_EQUALIZER:
     {
-      va_list ap;
-      int *value;
-
-      va_start(ap, data);
-      value = va_arg(ap, int *);
-      va_end(ap);
-      return vo_x11_get_equalizer(data, value);
+      vf_equalizer_t *eq=data;
+      return vo_x11_get_equalizer(eq->item, &eq->value);
     }
 #endif
     case VOCTRL_UPDATE_SCREENINFO:

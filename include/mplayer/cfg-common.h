@@ -32,8 +32,8 @@
 #include "libmpdemux/demux_viv.h"
 #include "libmpdemux/demuxer.h"
 #include "libmpdemux/mf.h"
-#include "libpostproc/postprocess.h"
 #include "sub/sub.h"
+#include "sub/unrar_exec.h"
 #include "osdep/priority.h"
 #include "stream/cdd.h"
 #include "stream/network.h"
@@ -49,7 +49,9 @@
 #include "m_option.h"
 #include "mp_msg.h"
 #include "mpcommon.h"
-
+#ifdef CONFIG_POSTPROC
+#include "libpostproc/postprocess.h"
+#endif
 
 
 #ifdef CONFIG_RADIO
@@ -304,7 +306,7 @@ const m_option_t common_opts[] = {
 #ifdef CONFIG_ICONV
     {"msgcharset", &mp_msg_charset, CONF_TYPE_STRING, CONF_GLOBAL, 0, 0, NULL},
 #endif
-    {"include", cfg_include, CONF_TYPE_FUNC_PARAM, CONF_NOSAVE, 0, 0, NULL},
+    {"include", cfg_include, CONF_TYPE_FUNC_PARAM_IMMEDIATE, CONF_NOSAVE, 0, 0, NULL},
 #ifdef CONFIG_PRIORITY
     {"priority", &proc_priority, CONF_TYPE_STRING, 0, 0, 0, NULL},
 #endif
@@ -314,7 +316,7 @@ const m_option_t common_opts[] = {
 // ------------------------- stream options --------------------
 
 #ifdef CONFIG_STREAM_CACHE
-    {"cache", &stream_cache_size, CONF_TYPE_INT, CONF_RANGE, 32, 1048576, NULL},
+    {"cache", &stream_cache_size, CONF_TYPE_INT, CONF_RANGE, 32, 0x7fffffff, NULL},
     {"nocache", &stream_cache_size, CONF_TYPE_FLAG, 0, 1, 0, NULL},
     {"cache-min", &stream_cache_min_percent, CONF_TYPE_FLOAT, CONF_RANGE, 0, 99, NULL},
     {"cache-seek-min", &stream_cache_seek_min_percent, CONF_TYPE_FLOAT, CONF_RANGE, 0, 99, NULL},
@@ -354,6 +356,7 @@ const m_option_t common_opts[] = {
     {"user", &network_username, CONF_TYPE_STRING, 0, 0, 0, NULL},
     {"passwd", &network_password, CONF_TYPE_STRING, 0, 0, 0, NULL},
     {"bandwidth", &network_bandwidth, CONF_TYPE_INT, CONF_MIN, 0, 0, NULL},
+    {"http-header-fields", &network_http_header_fields, CONF_TYPE_STRING_LIST, 0, 0, 0, NULL},
     {"user-agent", &network_useragent, CONF_TYPE_STRING, 0, 0, 0, NULL},
     {"referrer", &network_referrer, CONF_TYPE_STRING, 0, 0, 0, NULL},
     {"cookies", &network_cookies_enabled, CONF_TYPE_FLAG, 0, 0, 1, NULL},
@@ -525,9 +528,9 @@ const m_option_t common_opts[] = {
     {"vc", &video_codec_list, CONF_TYPE_STRING_LIST, 0, 0, 0, NULL},
 
     // postprocessing:
-#ifdef CONFIG_FFMPEG
+#ifdef CONFIG_POSTPROC
     {"pp", &divx_quality, CONF_TYPE_INT, 0, 0, 0, NULL},
-    {"pphelp", &pp_help, CONF_TYPE_PRINT_INDIRECT, CONF_NOCFG, 0, 0, NULL},
+    {"pphelp", pp_help, CONF_TYPE_PRINT, CONF_NOCFG, 0, 0, NULL},
 #endif
 
     // scaling:
@@ -535,7 +538,7 @@ const m_option_t common_opts[] = {
     {"ssf", scaler_filter_conf, CONF_TYPE_SUBCONFIG, 0, 0, 0, NULL},
     {"zoom", &softzoom, CONF_TYPE_FLAG, 0, 0, 1, NULL},
     {"nozoom", &softzoom, CONF_TYPE_FLAG, 0, 1, 0, NULL},
-    {"aspect", &movie_aspect, CONF_TYPE_FLOAT, CONF_RANGE, 0.2, 3.0, NULL},
+    {"aspect", &movie_aspect, CONF_TYPE_FLOAT, CONF_RANGE, 0.1, 10.0, NULL},
     {"noaspect", &movie_aspect, CONF_TYPE_FLAG, 0, 0, 0, NULL},
     {"xy", &screen_size_xy, CONF_TYPE_FLOAT, CONF_RANGE, 0.001, 4096, NULL},
 
@@ -590,6 +593,11 @@ const m_option_t common_opts[] = {
     {"utf8", &sub_utf8, CONF_TYPE_FLAG, 0, 0, 1, NULL},
     {"noutf8", &sub_utf8, CONF_TYPE_FLAG, 0, 1, 0, NULL},
     {"forcedsubsonly", &forced_subs_only, CONF_TYPE_FLAG, 0, 0, 1, NULL},
+    {"vobsub", &vobsub_name, CONF_TYPE_STRING, 0, 0, 0, NULL},
+    {"vobsubid", &vobsub_id, CONF_TYPE_INT, CONF_RANGE, 0, 31, NULL},
+#ifdef CONFIG_UNRAR_EXEC
+    {"unrarexec", &unrar_executable, CONF_TYPE_STRING, 0, 0, 0, NULL},
+#endif
     // specify IFO file for VOBSUB subtitle
     {"ifo", &spudec_ifo, CONF_TYPE_STRING, 0, 0, 0, NULL},
     // enable Closed Captioning display

@@ -30,7 +30,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#if !HAVE_WINSOCK2_H && !defined(GEKKO)
+#if !HAVE_WINSOCK2_H && !GEKKO
 #include <sys/socket.h>
 #endif
 
@@ -72,16 +72,21 @@ typedef struct mp_net_stream_opened_st {
 // CLOSE return nothing
 #define NET_STREAM_ERROR 129
 // Data is the error message (if any ;)
-
-#if !defined(GEKKO)
+#ifdef GEKKO
+static int net_read_st(int fd, char* buf, int len) {
+#else
 static int net_read(int fd, char* buf, int len) {
+#endif
   int r = 0;
   while(len) {
     r = recv(fd,buf,len,0);
     if(r <= 0) {
+#ifdef GEKKO      
+      if (r == -EAGAIN) continue;
+#endif
       if(errno == EINTR) continue;
       if(r < 0)
-	mp_msg(MSGT_NETST,MSGL_ERR,"Read failed: %s\n",strerror(errno));
+        mp_msg(MSGT_NETST,MSGL_ERR,"Read failed: %s\n",strerror(errno));
       return 0;
     }
     len -= r;
@@ -89,13 +94,15 @@ static int net_read(int fd, char* buf, int len) {
   }
   return 1;
 }
-#endif
 
 static mp_net_stream_packet_t* read_packet(int fd) {
   uint16_t len;
   mp_net_stream_packet_t* pack = malloc(sizeof(mp_net_stream_packet_t));
-
+#ifdef GEKKO
+  if(!net_read_st(fd,(char*)pack,sizeof(mp_net_stream_packet_t))) {
+#else
   if(!net_read(fd,(char*)pack,sizeof(mp_net_stream_packet_t))) {
+#endif
     free(pack);
     return NULL;
   }
@@ -118,14 +125,18 @@ static mp_net_stream_packet_t* read_packet(int fd) {
       mp_msg(MSGT_NETST,MSGL_ERR,"Failed to get memory for the packet (%d bytes)\n",len);
       return NULL;
     }
+#ifdef GEKKO
+    if(!net_read_st(fd,pack->data,len - sizeof(mp_net_stream_packet_t)))
+#else    
     if(!net_read(fd,pack->data,len - sizeof(mp_net_stream_packet_t)))
+#endif
+
       return NULL;
   }
   //  printf ("Read packet %d %d %d\n",fd,pack->cmd,pack->len);
   return pack;
 }
-
-#if !defined(GEKKO)
+#ifndef GEKKO
 static int net_write(int fd, char* buf, int len) {
   int w;
   while(len) {

@@ -55,7 +55,6 @@ static int a64_write_header(struct AVFormatContext *s)
         break;
     default:
         return AVERROR(EINVAL);
-        break;
     }
     avio_write(s->pb, header, 2);
     c->prev_pkt.size = 0;
@@ -149,7 +148,7 @@ static int a64_write_packet(struct AVFormatContext *s, AVPacket *pkt)
         break;
     }
 
-    put_flush_packet(s->pb);
+    avio_flush(s->pb);
     return 0;
 }
 
@@ -165,13 +164,12 @@ static int a64_write_trailer(struct AVFormatContext *s)
 }
 
 AVOutputFormat ff_a64_muxer = {
-    .name = "a64",
-    .long_name = NULL_IF_CONFIG_SMALL("a64 - video for Commodore 64"),
-    .mime_type = NULL,
-    .extensions = "a64, A64",
+    .name           = "a64",
+    .long_name      = NULL_IF_CONFIG_SMALL("a64 - video for Commodore 64"),
+    .extensions     = "a64, A64",
     .priv_data_size = sizeof (A64Context),
-    .video_codec = CODEC_ID_A64_MULTI,
-    a64_write_header,
-    a64_write_packet,
-    a64_write_trailer
+    .video_codec    = CODEC_ID_A64_MULTI,
+    .write_header   = a64_write_header,
+    .write_packet   = a64_write_packet,
+    .write_trailer  = a64_write_trailer,
 };

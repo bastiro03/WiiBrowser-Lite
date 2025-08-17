@@ -68,14 +68,28 @@ static const unsigned int outfmt_list[]={
     IMGFMT_444P,
     IMGFMT_444P16_LE,
     IMGFMT_444P16_BE,
+    IMGFMT_444P10_LE,
+    IMGFMT_444P10_BE,
+    IMGFMT_444P9_LE,
+    IMGFMT_444P9_BE,
     IMGFMT_422P,
     IMGFMT_422P16_LE,
     IMGFMT_422P16_BE,
+    IMGFMT_422P10_LE,
+    IMGFMT_422P10_BE,
+    IMGFMT_422P9_LE,
+    IMGFMT_422P9_BE,
     IMGFMT_YV12,
     IMGFMT_I420,
     IMGFMT_420P16_LE,
     IMGFMT_420P16_BE,
+    IMGFMT_420P10_LE,
+    IMGFMT_420P10_BE,
+    IMGFMT_420P9_LE,
+    IMGFMT_420P9_BE,
     IMGFMT_420A,
+    IMGFMT_422A,
+    IMGFMT_444A,
     IMGFMT_IYUV,
     IMGFMT_YVU9,
     IMGFMT_IF09,
@@ -90,6 +104,7 @@ static const unsigned int outfmt_list[]={
     IMGFMT_RGB32,
     IMGFMT_BGR24,
     IMGFMT_RGB24,
+    IMGFMT_GBR24P,
     IMGFMT_RGB48LE,
     IMGFMT_RGB48BE,
     IMGFMT_BGR16,
@@ -124,6 +139,10 @@ static int preferred_conversions[][2] = {
     {IMGFMT_UYVY, IMGFMT_422P},
     {IMGFMT_422P, IMGFMT_YUY2},
     {IMGFMT_422P, IMGFMT_UYVY},
+    {IMGFMT_GBR24P, IMGFMT_BGR24},
+    {IMGFMT_GBR24P, IMGFMT_RGB24},
+    {IMGFMT_GBR24P, IMGFMT_BGR32},
+    {IMGFMT_GBR24P, IMGFMT_RGB32},
     {0, 0}
 };
 
@@ -287,13 +306,13 @@ static int config(struct vf_instance *vf,
             sfmt,
                   vf->priv->w, vf->priv->h >> vf->priv->interlaced,
             dfmt,
-            int_sws_flags | get_sws_cpuflags(), srcFilter, dstFilter, vf->priv->param);
+            int_sws_flags, srcFilter, dstFilter, vf->priv->param);
     if(vf->priv->interlaced){
         vf->priv->ctx2=sws_getContext(width, height >> 1,
             sfmt,
                   vf->priv->w, vf->priv->h >> 1,
             dfmt,
-            int_sws_flags | get_sws_cpuflags(), srcFilter, dstFilter, vf->priv->param);
+            int_sws_flags, srcFilter, dstFilter, vf->priv->param);
     }
     if(!vf->priv->ctx){
         // error...
@@ -554,13 +573,6 @@ int sws_chr_hshift= 0;
 float sws_chr_sharpen= 0.0;
 float sws_lum_sharpen= 0.0;
 
-int get_sws_cpuflags(void){
-    return
-          (gCpuCaps.hasMMX   ? SWS_CPU_CAPS_MMX   : 0)
-        | (gCpuCaps.hasMMX2  ? SWS_CPU_CAPS_MMX2  : 0)
-        | (gCpuCaps.has3DNow ? SWS_CPU_CAPS_3DNOW : 0)
-        | (gCpuCaps.hasAltiVec ? SWS_CPU_CAPS_ALTIVEC : 0);
-}
 
 void sws_getFlagsAndFilterFromCmdLine(int *flags, SwsFilter **srcFilterParam, SwsFilter **dstFilterParam)
 {
@@ -617,7 +629,7 @@ struct SwsContext *sws_getContextFromCmdLine(int srcW, int srcH, int srcFormat, 
         if (srcFormat == IMGFMT_RGB8 || srcFormat == IMGFMT_BGR8) sfmt = PIX_FMT_PAL8;
         sws_getFlagsAndFilterFromCmdLine(&flags, &srcFilterParam, &dstFilterParam);
 
-        return sws_getContext(srcW, srcH, sfmt, dstW, dstH, dfmt, flags | get_sws_cpuflags(), srcFilterParam, dstFilterParam, NULL);
+        return sws_getContext(srcW, srcH, sfmt, dstW, dstH, dfmt, flags, srcFilterParam, dstFilterParam, NULL);
 }
 
 /// An example of presets usage

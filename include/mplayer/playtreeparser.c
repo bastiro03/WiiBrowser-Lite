@@ -44,8 +44,6 @@
 
 #define WHITES " \n\r\t"
 
-#define mp_pretty_title(s) (strrchr((s),',')==NULL?(char*)(s):(strrchr((s),',')+1))
-
 static void
 strstrip(char* str) {
   char* i;
@@ -336,8 +334,14 @@ parse_pls(play_tree_parser_t* p) {
       num = pls_read_entry(line+6,&entries,&max_entry,&v);
       if(num < 0)
 	mp_msg(MSGT_PLAYTREE,MSGL_ERR,"No value in entry %s\n",line);
-      else
-	entries[num-1].length = strdup(v);
+      else {
+        char *end;
+        long val = strtol(v, &end, 10);
+        if (*end || (val <= 0 && val != -1))
+          mp_msg(MSGT_PLAYTREE,MSGL_ERR,"Invalid length value in entry %s\n",line);
+        else if (val > 0)
+          entries[num-1].length = strdup(v);
+      }
     } else
       mp_msg(MSGT_PLAYTREE,MSGL_WARN,"Unknown entry type %s\n",line);
     line = play_tree_parser_get_line(p);
@@ -349,12 +353,14 @@ parse_pls(play_tree_parser_t* p) {
     else {
       mp_msg(MSGT_PLAYTREE,MSGL_DBG2,"Adding entry %s\n",entries[num].file);
       entry = play_tree_new();
-      play_tree_add_file(entry,entries[num].file);
-      free(entries[num].file);
 #ifdef GEKKO
 	  // Get the title of .pls entry
-	  if(entries[num].title) play_tree_set_param(entry, PLAY_TREE_PARAM_PRETTYFORMAT_TITLE, entries[num].title);
+	  if(entries[num].title != NULL && entries[num].title[0] != 0) play_tree_set_param(entry, PLAY_TREE_PARAM_PRETTYFORMAT_TITLE, entries[num].title, NULL);
 #endif
+      play_tree_add_file(entry,entries[num].file);
+      if (entries[num].length)
+        play_tree_set_param(entry, "endpos", entries[num].length, NULL);
+      free(entries[num].file);
       if(list)
 	play_tree_append_entry(last_entry,entry);
       else
@@ -424,8 +430,12 @@ parse_ref_ini(play_tree_parser_t* p) {
 
 static play_tree_t*
 parse_m3u(play_tree_parser_t* p) {
-  char *line, *title = NULL;
+  char* line;
   play_tree_t *list = NULL, *entry = NULL, *last_entry = NULL;
+#ifdef GEKKO
+  char title[256] = { 0 };
+  char logo[256] = { 0 };
+#endif
 
   mp_msg(MSGT_PLAYTREE,MSGL_V,"Trying extended m3u playlist...\n");
   if (!(line = play_tree_parser_get_line(p)))
@@ -453,39 +463,40 @@ parse_m3u(play_tree_parser_t* p) {
           strtol(line+8,&line,10), line+2);
       }
 #endif
- 	  /// start denper's changes
-	  // Get the title of .m3u entry
-      char *colon = strchr(line, ':');
-      char *comma = strchr(line, ',');
-      int linestart = line;
-
-      if(colon != NULL && comma == NULL) linestart = colon+1;
-      else if(colon != NULL && comma != NULL && (comma-colon) < 4) linestart = comma+1;
-	  title = realloc(title, strlen(mp_pretty_title(linestart))+1);
-	  strcpy(title, mp_pretty_title(linestart));
-	  /// end denper's changes
-	  
+#ifdef GEKKO
+      if(strncasecmp(line,"#EXTINF:",8) == 0) {
+        char *eq = strchr(line, '=');
+	    // Get the title of .m3u entry
+        char *comma = strchr(line, ',');
+        if(comma) snprintf(title, 256, "%s", comma+1);
+		
+        if(eq) snprintf(logo, 256, "%s", eq+2);
+		//static const u16 twobyte[1] = { 0x222C };
+		//strtok(logo, twobyte);
+		strtok(logo, "\",");
+		
+		//printf("check thumb: %s", logo);
+      }
+#endif
       continue;
     }
     entry = play_tree_new();
     play_tree_add_file(entry,line);
-	
-	/// start denper's changes
+#ifdef GEKKO
 	// Add the title parameter if it exists
-	play_tree_set_param(entry, PLAY_TREE_PARAM_PRETTYFORMAT_TITLE, title);
-	/// end denper's changes
-		
+    if(title[0])
+    {
+    	play_tree_set_param(entry, PLAY_TREE_PARAM_PRETTYFORMAT_TITLE, title, logo);
+    	title[0] = 0;
+		logo[0] = 0;
+    }
+#endif
     if(!list)
       list = entry;
     else
       play_tree_append_entry(last_entry,entry);
     last_entry = entry;
   }
-  /// start denper's changes
-  // Free the memory of title pointer
-  free(title); 
-  title = NULL;
-  /// end denper's changes
 
   if(!list) return NULL;
   entry = play_tree_new();
@@ -496,11 +507,15 @@ parse_m3u(play_tree_parser_t* p) {
 static play_tree_t*
 parse_smil(play_tree_parser_t* p) {
   int entrymode=0;
-  char* line,source[512],title[128],*pos,*pos1,*s_start,*s_end,*src_line;
+  char* line,source[512],*pos,*s_start,*s_end,*src_line;
   play_tree_t *list = NULL, *entry = NULL, *last_entry = NULL;
   int is_rmsmil = 0;
-  int exists_title = 0;
   unsigned int npkt, ttlpkt;
+#ifdef GEKKO
+  char title[128];
+  char *pos1;
+  int exists_title = 0;
+#endif
 
   mp_msg(MSGT_PLAYTREE,MSGL_V,"Trying smil playlist...\n");
 
@@ -592,8 +607,7 @@ parse_smil(play_tree_parser_t* p) {
      }
     }
     if (entrymode) { //Entry found but not yet filled
-    
-	  /// start denper's changes	  
+#ifdef GEKKO 
 	  // Get the title of .smi entry
 	  exists_title = 0;
 	  pos1 = strstr(pos,"title=");
@@ -620,8 +634,7 @@ parse_smil(play_tree_parser_t* p) {
 		}
 		
       }
-	  /// end denper's changes   
-	   
+#endif
       pos = strstr(pos,"src=");   // Is source present on this line
       if (pos != NULL) {
         entrymode=0;
@@ -643,13 +656,11 @@ parse_smil(play_tree_parser_t* p) {
         source[(s_end-s_start)]='\0'; // Null terminate
         entry = play_tree_new();
         play_tree_add_file(entry,source);
-
-		/// start denper's changes
+#ifdef GEKKO
 		// Add the title parameter if it exists
 		if(exists_title)
-			play_tree_set_param(entry, PLAY_TREE_PARAM_PRETTYFORMAT_TITLE, title);
-		/// end denper's changes
-
+			play_tree_set_param(entry, PLAY_TREE_PARAM_PRETTYFORMAT_TITLE, title, NULL);
+#endif
         if(!list)  //Insert new entry
           list = entry;
         else
@@ -700,6 +711,10 @@ parse_textplain(play_tree_parser_t* p) {
   char* line;
   char *c;
   int embedded;
+#ifdef GEKKO
+  int linenum = 0;
+  int linelen = 0;
+#endif
   play_tree_t *list = NULL, *entry = NULL, *last_entry = NULL;
 
   mp_msg(MSGT_PLAYTREE,MSGL_V,"Trying plaintext playlist...\n");
@@ -707,12 +722,29 @@ parse_textplain(play_tree_parser_t* p) {
 
   while((line = play_tree_parser_get_line(p)) != NULL) {
     strstrip(line);
+#ifdef GEKKO
+	linenum++;
+	linelen = strlen(line);
+	
+	if(linenum > 10 && !list)
+		return NULL; // abort - this might be a stream
+	
+	if(linelen > 1024 || linenum > 500)
+	{
+		if(list) play_tree_free(list, 1);
+		return NULL; // abort - this might be a stream
+	}
+#endif
     if(line[0] == '\0' || line[0] == '#' || (line[0] == '/' && line[1] == '/'))
       continue;
 
     //Special check for embedded smil or ram reference in file
     embedded = 0;
+#ifdef GEKKO
+    if (linelen > 5)
+#else
     if (strlen(line) > 5)
+#endif
       for(c = line; c[0]; c++ )
         if ( ((c[0] == '.') && //start with . and next have smil with optional ? or &
            (tolower(c[1]) == 's') && (tolower(c[2])== 'm') &&
@@ -894,7 +926,13 @@ play_tree_add_basepath(play_tree_t* pt, char* bp) {
     fl = strlen(pt->files[i]);
     // if we find a full unix path, url:// or X:\ at the beginning,
     // don't mangle it.
-    if(fl <= 0 || strstr(pt->files[i],"://") || (strstr(pt->files[i],":\\") == pt->files[i] + 1) || (pt->files[i][0] == '/') )
+    if(fl <= 0 || strstr(pt->files[i],"://") || (pt->files[i][0] == '/')
+#if HAVE_DOS_PATHS
+               || (strstr(pt->files[i],":\\") == pt->files[i] + 1)
+               // the X:/ format is allowed as well
+               || (strstr(pt->files[i],":/") == pt->files[i] + 1)
+#endif
+                                                                        )
       continue;
     // if the path begins with \ then prepend drive letter to it.
     if (pt->files[i][0] == '\\') {

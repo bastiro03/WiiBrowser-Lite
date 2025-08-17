@@ -25,6 +25,7 @@
 #include "mpbswap.h"
 
 #include "stream/stream.h"
+#include "mp_msg.h"
 #include "demuxer.h"
 #include "stheader.h"
 #include "libmpcodecs/vqf.h"
@@ -157,7 +158,7 @@ static demuxer_t* demux_open_vqf(demuxer_t* demuxer) {
         if(sid==mmioFOURCC('E','N','C','D')) demux_info_add(demuxer,"Encoder",sdata);
         else
         mp_msg(MSGT_DEMUX, MSGL_V, "Unhandled subchunk '%c%c%c%c'='%s'\n",((char *)&sid)[0],((char *)&sid)[1],((char *)&sid)[2],((char *)&sid)[3],sdata);
-        /* other stuff is unrecognized due untranslatable japan's idiomatics */
+        /* rest not recognized due to untranslatable Japanese expressions */
     }
     }
     else
@@ -229,7 +230,7 @@ const demuxer_desc_t demuxer_desc_vqf = {
   "vqf",
   "VQF",
   "Nick Kurshev",
-  "ported frm MPlayerXP",
+  "ported from MPlayerXP",
   DEMUXER_TYPE_VQF,
   1, // safe autodetect
   demux_probe_vqf,

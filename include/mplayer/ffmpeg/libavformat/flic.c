@@ -34,6 +34,7 @@
 #include "libavutil/intreadwrite.h"
 #include "libavutil/audioconvert.h"
 #include "avformat.h"
+#include "internal.h"
 
 #define FLIC_FILE_MAGIC_1 0xAF11
 #define FLIC_FILE_MAGIC_2 0xAF12
@@ -82,8 +83,7 @@ static int flic_probe(AVProbeData *p)
     return AVPROBE_SCORE_MAX;
 }
 
-static int flic_read_header(AVFormatContext *s,
-                            AVFormatParameters *ap)
+static int flic_read_header(AVFormatContext *s)
 {
     FlicDemuxContext *flic = s->priv_data;
     AVIOContext *pb = s->pb;
@@ -105,7 +105,7 @@ static int flic_read_header(AVFormatContext *s,
         speed = FLIC_DEFAULT_SPEED;
 
     /* initialize the decoder streams */
-    st = av_new_stream(s, 0);
+    st = avformat_new_stream(s, NULL);
     if (!st)
         return AVERROR(ENOMEM);
     flic->video_stream_index = st->index;
@@ -145,7 +145,7 @@ static int flic_read_header(AVFormatContext *s,
      */
     if (AV_RL16(&preamble[4]) == FLIC_TFTD_CHUNK_AUDIO) {
         /* TFTD videos have an extra 22050 Hz 8-bit mono audio stream */
-        ast = av_new_stream(s, 1);
+        ast = avformat_new_stream(s, NULL);
         if (!ast)
             return AVERROR(ENOMEM);
 
@@ -167,10 +167,10 @@ static int flic_read_header(AVFormatContext *s,
         /* Since the header information is incorrect we have to figure out the
          * framerate using block_align and the fact that the audio is 22050 Hz.
          * We usually have two cases: 2205 -> 10 fps and 1470 -> 15 fps */
-        av_set_pts_info(st, 64, ast->codec->block_align, FLIC_TFTD_SAMPLE_RATE);
-        av_set_pts_info(ast, 64, 1, FLIC_TFTD_SAMPLE_RATE);
+        avpriv_set_pts_info(st, 64, ast->codec->block_align, FLIC_TFTD_SAMPLE_RATE);
+        avpriv_set_pts_info(ast, 64, 1, FLIC_TFTD_SAMPLE_RATE);
     } else if (AV_RL16(&header[0x10]) == FLIC_CHUNK_MAGIC_1) {
-        av_set_pts_info(st, 64, FLIC_MC_SPEED, 70);
+        avpriv_set_pts_info(st, 64, FLIC_MC_SPEED, 70);
 
         /* rewind the stream since the first chunk is at offset 12 */
         avio_seek(pb, 12, SEEK_SET);
@@ -182,10 +182,10 @@ static int flic_read_header(AVFormatContext *s,
         memcpy(st->codec->extradata, header, 12);
 
     } else if (magic_number == FLIC_FILE_MAGIC_1) {
-        av_set_pts_info(st, 64, speed, 70);
+        avpriv_set_pts_info(st, 64, speed, 70);
     } else if ((magic_number == FLIC_FILE_MAGIC_2) ||
                (magic_number == FLIC_FILE_MAGIC_3)) {
-        av_set_pts_info(st, 64, speed, 1000);
+        avpriv_set_pts_info(st, 64, speed, 1000);
     } else {
         av_log(s, AV_LOG_INFO, "Invalid or unsupported magic chunk in file\n");
         return AVERROR_INVALIDDATA;
@@ -223,7 +223,7 @@ static int flic_read_packet(AVFormatContext *s,
             }
             pkt->stream_index = flic->video_stream_index;
             pkt->pts = flic->frame_number++;
-            pkt->pos = url_ftell(pb);
+            pkt->pos = avio_tell(pb);
             memcpy(pkt->data, preamble, FLIC_PREAMBLE_SIZE);
             ret = avio_read(pb, pkt->data + FLIC_PREAMBLE_SIZE,
                 size - FLIC_PREAMBLE_SIZE);
@@ -239,10 +239,10 @@ static int flic_read_packet(AVFormatContext *s,
             }
 
             /* skip useless 10B sub-header (yes, it's not accounted for in the chunk header) */
-            avio_seek(pb, 10, SEEK_CUR);
+            avio_skip(pb, 10);
 
             pkt->stream_index = flic->audio_stream_index;
-            pkt->pos = url_ftell(pb);
+            pkt->pos = avio_tell(pb);
             ret = avio_read(pb, pkt->data, size);
 
             if (ret != size) {
@@ -253,7 +253,7 @@ static int flic_read_packet(AVFormatContext *s,
             packet_read = 1;
         } else {
             /* not interested in this chunk */
-            avio_seek(pb, size - 6, SEEK_CUR);
+            avio_skip(pb, size - 6);
         }
     }
 
@@ -261,10 +261,10 @@ static int flic_read_packet(AVFormatContext *s,
 }
 
 AVInputFormat ff_flic_demuxer = {
-    "flic",
-    NULL_IF_CONFIG_SMALL("FLI/FLC/FLX animation format"),
-    sizeof(FlicDemuxContext),
-    flic_probe,
-    flic_read_header,
-    flic_read_packet,
+    .name           = "flic",
+    .long_name      = NULL_IF_CONFIG_SMALL("FLI/FLC/FLX animation format"),
+    .priv_data_size = sizeof(FlicDemuxContext),
+    .read_probe     = flic_probe,
+    .read_header    = flic_read_header,
+    .read_packet    = flic_read_packet,
 };

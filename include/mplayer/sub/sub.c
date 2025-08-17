@@ -93,8 +93,8 @@ int vo_osd_teletext_format=0;
 int vo_osd_teletext_scale=0;
 int sub_unicode=0;
 int sub_utf8=0;
-int sub_pos=98;
-int sub_width_p=98;
+int sub_pos=100;
+int sub_width_p=100;
 int sub_alignment=2; /* 0=top, 1=center, 2=bottom */
 int sub_visibility=1;
 int sub_bg_color=0; /* subtitles background color */
@@ -165,7 +165,13 @@ static void alloc_buf(mp_osd_obj_t* obj)
 }
 
 // renders the buffer
-inline static void vo_draw_text_from_buffer(mp_osd_obj_t* obj,void (*draw_alpha)(int x0,int y0, int w,int h, unsigned char* src, unsigned char *srca, int stride)){
+static inline void vo_draw_text_from_buffer(mp_osd_obj_t* obj,
+                                            void (*draw_alpha)(int x0, int y0,
+                                                               int w, int h,
+                                                               unsigned char *src,
+                                                               unsigned char *srca,
+                                                               int stride))
+{
     if (obj->allocated > 0) {
 	draw_alpha(obj->bbox.x1,obj->bbox.y1,
 		   obj->bbox.x2-obj->bbox.x1,
@@ -190,14 +196,15 @@ no_utf8:
   return c;
 }
 
-inline static void vo_update_text_osd(mp_osd_obj_t* obj,int dxs,int dys){
+static inline void vo_update_text_osd(mp_osd_obj_t *obj, int dxs, int dys)
+{
 	const char *cp=vo_osd_text;
-	int x=dxs * 0.02;
+	int x=20;
 	int h=0;
 	int font;
 
         obj->bbox.x1=obj->x=x;
-        obj->bbox.y1=obj->y=dys * 0.02;
+        obj->bbox.y1=obj->y=10;
 
         while (*cp){
           uint16_t c=utf8_get_char(&cp);
@@ -235,8 +242,11 @@ void osd_set_nav_box (uint16_t sx, uint16_t sy, uint16_t ex, uint16_t ey) {
   nav_hl.ey = ey;
 }
 
-inline static void vo_update_nav (mp_osd_obj_t *obj, int dxs, int dys, int left_border, int top_border,
-                      int right_border, int bottom_border, int orig_w, int orig_h) {
+static inline void vo_update_nav(mp_osd_obj_t *obj, int dxs, int dys,
+                                 int left_border, int top_border,
+                                 int right_border, int bottom_border,
+                                 int orig_w, int orig_h)
+{
   int len;
   int sx = nav_hl.sx, sy = nav_hl.sy;
   int ex = nav_hl.ex, ey = nav_hl.ey;
@@ -298,7 +308,7 @@ static void tt_draw_alpha_buf(mp_osd_obj_t* obj, int x0,int y0, int w,int h, uns
 	bs+= srcskip;
     }
 }
-inline static void vo_update_text_teletext(mp_osd_obj_t *obj, int dxs, int dys)
+static inline void vo_update_text_teletext(mp_osd_obj_t *obj, int dxs, int dys)
 {
     int h=0,w=0,i,j,font,flashon;
     int wm,hm;
@@ -518,6 +528,7 @@ TODO: support for separated graphics symbols (where six rectangles does not touc
 
 int vo_osd_progbar_type=-1;
 int vo_osd_progbar_value=100;   // 0..256
+int progbar_align=50;
 
 // if we have n=256 bars then OSD progbar looks like below
 //
@@ -527,7 +538,8 @@ int vo_osd_progbar_value=100;   // 0..256
 //
 //  the above schema is rescalled to n=elems bars
 
-inline static void vo_update_text_progbar(mp_osd_obj_t* obj,int dxs,int dys){
+static inline void vo_update_text_progbar(mp_osd_obj_t *obj, int dxs, int dys)
+{
 
     obj->flags|=OSDFLAG_CHANGED|OSDFLAG_VISIBLE;
 
@@ -544,7 +556,7 @@ inline static void vo_update_text_progbar(mp_osd_obj_t* obj,int dxs,int dys){
 
     // calculate bbox corners:
     {	int h=0;
-        int y=(dys-vo_font->height)/2;
+        int y=((dys-vo_font->height)*progbar_align)/100;
         int delimw=vo_font->width[OSD_PB_START]
      		  +vo_font->width[OSD_PB_END]
      		  +vo_font->charspace;
@@ -667,11 +679,11 @@ inline static void vo_update_text_progbar(mp_osd_obj_t* obj,int dxs,int dys){
 
 subtitle* vo_sub=NULL;
 
-inline static void vo_update_text_sub(mp_osd_obj_t* obj,int dxs,int dys){
+static inline void vo_update_text_sub(mp_osd_obj_t *obj, int dxs, int dys)
+{
    unsigned char *t;
    int c,i,j,l,x,y,font,prevc,counter;
    int k;
-   int lastStripPosition;
    int xsize;
    int xmin=dxs,xmax=0;
    int h,lasth;
@@ -690,7 +702,6 @@ inline static void vo_update_text_sub(mp_osd_obj_t* obj,int dxs,int dys){
       // too long lines divide into a smaller ones
       i=k=lasth=0;
       h=sub_font->height;
-      lastStripPosition=-1;
       l=vo_sub->lines;
 
     {
@@ -1039,7 +1050,7 @@ inline static void vo_update_text_sub(mp_osd_obj_t* obj,int dxs,int dys){
 
 }
 
-inline static void vo_update_spudec_sub(mp_osd_obj_t* obj, int dxs, int dys)
+static inline void vo_update_spudec_sub(mp_osd_obj_t* obj, int dxs, int dys)
 {
   unsigned int bbox[4];
   spudec_calc_bbox(vo_spudec, dxs, dys, bbox);
@@ -1050,7 +1061,12 @@ inline static void vo_update_spudec_sub(mp_osd_obj_t* obj, int dxs, int dys)
   obj->flags |= OSDFLAG_BBOX;
 }
 
-inline static void vo_draw_spudec_sub(mp_osd_obj_t* obj, void (*draw_alpha)(int x0, int y0, int w, int h, unsigned char* src, unsigned char* srca, int stride))
+static inline void vo_draw_spudec_sub(mp_osd_obj_t *obj,
+                                      void (*draw_alpha)(int x0, int y0,
+                                                         int w, int h,
+                                                         unsigned char *src,
+                                                         unsigned char *srca,
+                                                         int stride))
 {
   spudec_draw_scaled(vo_spudec, obj->dxs, obj->dys, draw_alpha);
 }
@@ -1089,7 +1105,9 @@ void free_osd_list(void){
 }
 
 #define FONT_LOAD_DEFER 6
+#ifdef GEKKO
 int prev_dxs = 0, prev_dys = 0;
+#endif
 
 static int vo_update_osd_ext(int dxs,int dys, int left_border, int top_border,
                              int right_border, int bottom_border, int orig_w,
@@ -1098,7 +1116,11 @@ static int vo_update_osd_ext(int dxs,int dys, int left_border, int top_border,
     mp_osd_obj_t* obj=vo_osd_list;
     int chg=0;
 #ifdef CONFIG_FREETYPE
-    static int defer_counter = 0;
+#ifdef GEKKO
+	static int defer_counter = 0;
+#else
+    static int defer_counter = 0, prev_dxs = 0, prev_dys = 0;
+#endif
 #endif
 
 #ifdef CONFIG_FREETYPE
@@ -1123,12 +1145,19 @@ static int vo_update_osd_ext(int dxs,int dys, int left_border, int top_border,
     if (force_load_font) {
 	force_load_font = 0;
         load_font_ft(dxs, dys, &vo_font, font_name, osd_font_scale_factor);
+#ifdef GEKKO
 	if (mpctx_get_set_of_sub_size() > 0)
 	{
 		if (sub_font_name)
 			load_font_ft(dxs, dys, &sub_font, sub_font_name, text_font_scale_factor);
 		else
-			load_font_ft(dxs, dys, &sub_font, font_name, text_font_scale_factor);
+		{		
+			if(text_font_scale_factor==osd_font_scale_factor)
+				sub_font = vo_font;
+			else
+				load_font_ft(dxs, dys, &sub_font, font_name, text_font_scale_factor);
+		}
+			
 	}
 	else
 		sub_font = vo_font;
@@ -1144,12 +1173,36 @@ static int vo_update_osd_ext(int dxs,int dys, int left_border, int top_border,
 				if (sub_font_name)
 					load_font_ft(dxs, dys, &sub_font, sub_font_name, text_font_scale_factor);
 				else
-					load_font_ft(dxs, dys, &sub_font, font_name, text_font_scale_factor);
+				{		
+					if(text_font_scale_factor==osd_font_scale_factor)
+						sub_font = vo_font;
+					else
+						load_font_ft(dxs, dys, &sub_font, font_name, text_font_scale_factor);
+				}					
 			}
 			else
 				sub_font = vo_font;
 		} 
     }
+#else
+	if (sub_font_name)
+	    load_font_ft(dxs, dys, &sub_font, sub_font_name, text_font_scale_factor);
+	else
+	    load_font_ft(dxs, dys, &sub_font, font_name, text_font_scale_factor);
+	prev_dxs = dxs;
+	prev_dys = dys;
+	defer_counter = 0;
+    } else {
+       if (!vo_font)
+           load_font_ft(dxs, dys, &vo_font, font_name, osd_font_scale_factor);
+       if (!sub_font) {
+           if (sub_font_name)
+               load_font_ft(dxs, dys, &sub_font, sub_font_name, text_font_scale_factor);
+           else
+               load_font_ft(dxs, dys, &sub_font, font_name, text_font_scale_factor);
+       }
+    }
+#endif
 #endif
 
     while(obj){
@@ -1296,7 +1349,6 @@ void vo_draw_text_ext(int dxs, int dys, int left_border, int top_border,
 }
 
 void vo_draw_text(int dxs, int dys, void (*draw_alpha)(int x0, int y0, int w,int h, unsigned char* src, unsigned char *srca, int stride)) {
-  if(!vo_osd_list)return;
   vo_draw_text_ext(dxs, dys, 0, 0, 0, 0, dxs, dys, draw_alpha);
 }
 

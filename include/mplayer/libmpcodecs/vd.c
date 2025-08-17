@@ -119,7 +119,7 @@ const vd_functions_t * const mpcodecs_vd_drivers[] = {
 #include "libvo/video_out.h"
 
 // libvo opts:
-int fullscreen = 1;
+int fullscreen = 0;
 int vidmode = 0;
 int softzoom = 0;
 int flip = -1;
@@ -128,7 +128,7 @@ int opt_screen_size_y = 0;
 float screen_size_xy = 0;
 float movie_aspect = -1.0;
 int vo_flags = 0;
-int vd_use_slices = 1;
+int vd_use_slices = -1;
 
 /** global variables for gamma, brightness, contrast, saturation and hue
     modified by mplayer.c and gui/mplayer/gtk/eq.c:
@@ -175,6 +175,8 @@ int mpcodecs_config_vo(sh_video_t *sh, int w, int h,
         // user wants postprocess but no pp filter yet:
         sh->vfilter = vf = vf_open_filter(vf, "pp", NULL);
     }
+	//char *vf_arg[] = { "fd", NULL };
+       // sh->vfilter = vf = vf_open_filter(vf, "pp", vf_arg);
     // check if libvo and codec has common outfmt (no conversion):
   csp_again:
 

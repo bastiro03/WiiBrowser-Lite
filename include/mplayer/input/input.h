@@ -162,6 +162,9 @@ typedef enum {
   MP_CMD_AF_CLR,
   MP_CMD_AF_CMDLINE,
 
+  /// GUI command
+  MP_CMD_GUI,
+
 } mp_command_type;
 
 // The arg types
@@ -191,6 +194,8 @@ typedef enum {
 #define MP_KEY_DOWN (1<<29)
 // Use this when the key shouldn't be auto-repeated (like mouse buttons)
 #define MP_NO_REPEAT_KEY (1<<28)
+// Special value to mark all keys as "up"
+#define MP_KEY_RELEASE_ALL (1<<27)
 
 #ifndef MP_MAX_KEY_DOWN
 #define MP_MAX_KEY_DOWN 32

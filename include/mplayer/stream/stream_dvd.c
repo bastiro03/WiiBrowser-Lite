@@ -26,8 +26,8 @@
 #include "config.h"
 #include "mp_msg.h"
 #include "help_mp.h"
+#include "path.h"
 
-#include <libgen.h>
 #include <errno.h>
 
 #define FIRST_AC3_AID 128
@@ -149,7 +149,7 @@ int dvd_chapter_from_cell(dvd_priv_t* dvd,int title,int cell)
   return chapter;
 }
 
-int dvd_lang_from_aid(stream_t *stream, int id) {
+static int dvd_lang_from_aid(stream_t *stream, int id) {
   dvd_priv_t *d;
   int i;
   if (!stream) return 0;
@@ -195,7 +195,7 @@ int dvd_number_of_subs(stream_t *stream) {
   return maxid + 1;
 }
 
-int dvd_lang_from_sid(stream_t *stream, int id) {
+static int dvd_lang_from_sid(stream_t *stream, int id) {
   int i;
   dvd_priv_t *d;
   if (!stream) return 0;
@@ -578,8 +578,8 @@ static double dvd_get_current_time(stream_t *stream, int cell)
     dvd_priv_t *d = stream->priv;
 
     tm=0;
-    if(!cell) cell=d->cur_cell;
-    for(i=0; i<d->cur_cell; i++) {
+    if(cell < 0) cell=d->cur_cell;
+    for(i=0; i<cell; i++) {
         if(d->cur_pgc->cell_playback[i].block_type == BLOCK_TYPE_ANGLE_BLOCK &&
            d->cur_pgc->cell_playback[i].block_mode != BLOCK_MODE_FIRST_CELL
         )
@@ -629,7 +629,7 @@ static int dvd_seek_to_time(stream_t *stream, ifo_handle_t *vts_file, double sec
       stream_skip(stream, 2048);
       t = mp_dvdtimetomsec(&d->dsi_pack.dsi_gi.c_eltm);
     } while(!t);
-    tm = dvd_get_current_time(stream, 0);
+    tm = dvd_get_current_time(stream, -1);
 
     pos = ((off_t)tmap_sector)<<11;
     stream_seek(stream, pos);
@@ -638,7 +638,7 @@ static int dvd_seek_to_time(stream_t *stream, ifo_handle_t *vts_file, double sec
     while(tm <= sec) {
         if(!stream_skip(stream, 2048))
           break;
-        tm = dvd_get_current_time(stream, 0);
+        tm = dvd_get_current_time(stream, -1);
     };
     tmap_sector = stream->pos >> 11;
 
@@ -665,6 +665,11 @@ static int control(stream_t *stream,int cmd,void* arg)
             *((double *)arg) = (double) mp_get_titleset_length(d->vts_file, d->tt_srpt, d->cur_title-1)/1000.0;
             return 1;
         }
+        case STREAM_CTRL_GET_NUM_TITLES:
+        {
+            *((unsigned int *)arg) = d->vmg_file->tt_srpt->nr_of_srpts;
+            return 1;
+        }
         case STREAM_CTRL_GET_NUM_CHAPTERS:
         {
             int r;
@@ -689,7 +694,7 @@ static int control(stream_t *stream,int cmd,void* arg)
         case STREAM_CTRL_GET_CURRENT_TIME:
         {
             double tm;
-            tm = dvd_get_current_time(stream, 0);
+            tm = dvd_get_current_time(stream, -1);
             if(tm != -1) {
               *((double *)arg) = tm;
               return 1;
@@ -725,6 +730,25 @@ static int control(stream_t *stream,int cmd,void* arg)
             dvd_angle = ang - 1;
             d->angle_seek = 1;
             return 1;
+        }
+        case STREAM_CTRL_GET_LANG:
+        {
+            struct stream_lang_req *req = arg;
+            int lang = 0;
+            switch(req->type) {
+            case stream_ctrl_audio:
+                lang = dvd_lang_from_aid(stream, req->id);
+                break;
+            case stream_ctrl_sub:
+                lang = dvd_lang_from_sid(stream, req->id);
+                break;
+            }
+            if (!lang)
+                break;
+            req->buf[0] = lang >> 8;
+            req->buf[1] = lang;
+            req->buf[2] = 0;
+            return STREAM_OK;
         }
     }
     return STREAM_UNSUPPORTED;
@@ -841,6 +865,7 @@ static int open_s(stream_t *stream,int mode, void* opts, int* file_format) {
       if (DVDUDFVolumeInfo(dvd, volid, sizeof(volid), NULL, 0) >= 0 || DVDISOVolumeInfo(dvd, volid, sizeof(volid), NULL, 0) >= 0)
         mp_msg(MSGT_IDENTIFY, MSGL_V, "ID_DVD_VOLUME_ID=%s\n", volid);
     }
+#ifdef GEKKO
 /**
  * Try to autodetect main title if title number not specified.
  */
@@ -869,7 +894,10 @@ static int open_s(stream_t *stream,int mode, void* opts, int* file_format) {
 		    
 	    }
 	    dvd_title = longest_title + 1; // remap +1 for the validation
-    }      
+    }
+    if(dvd_angle < 1)
+    	dvd_angle = 1;
+#endif
     /**
      * Make sure our title number is valid.
      */
@@ -1076,9 +1104,41 @@ fail:
   return STREAM_UNSUPPORTED;
 }
 
+#ifdef GEKKO
+static char *gekko_basename(char *name)
+{
+	if(!name)
+		return NULL;
+
+	char *base = strrchr(name, '/');
+
+	if(!base)
+		return strdup("");
+
+	base++;
+	return strdup(base);
+}
+
+static char *gekko_dirname(char *url)
+{
+	if(!url)
+		return NULL;
+
+	char res[1024];
+	strcpy(res, url);
+
+	char *end = strrchr(res, '/');
+
+	if(!end)
+		return strdup(url);
+
+	*end = 0;
+	return strdup(res);
+}
+#endif
+
 static int ifo_stream_open (stream_t *stream, int mode, void *opts, int *file_format)
 {
-#ifndef GEKKO
     char* filename;
     struct stream_priv_s *spriv;
     int len = strlen(stream->url);
@@ -1088,10 +1148,20 @@ static int ifo_stream_open (stream_t *stream, int mode, void *opts, int *file_fo
 
     mp_msg(MSGT_DVD, MSGL_INFO, ".IFO detected. Redirecting to dvd://\n");
 
-    filename = strdup(basename(stream->url));
+#ifdef GEKKO
+    filename = gekko_basename(stream->url);
+#else
+    filename = strdup(mp_basename(stream->url));
+#endif
 
     spriv=calloc(1, sizeof(struct stream_priv_s));
-    spriv->device = strdup(dirname(stream->url));
+    
+#ifdef GEKKO
+    spriv->device = gekko_dirname(stream->url);
+#else
+    spriv->device = mp_dirname(stream->url);
+#endif
+
     if(!strncasecmp(filename,"vts_",4))
     {
         if(sscanf(filename+3, "_%02d_", &spriv->title)!=1)
@@ -1104,9 +1174,6 @@ static int ifo_stream_open (stream_t *stream, int mode, void *opts, int *file_fo
     stream->url=strdup("dvd://");
 
     return open_s(stream, mode, spriv, file_format);
-#else
-    return STREAM_UNSUPPORTED;
-#endif    
 }
 
 const stream_info_t stream_info_dvd = {

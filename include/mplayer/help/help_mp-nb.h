@@ -155,7 +155,6 @@ static const char help_text[]=
 #define MSGTR_UnknownAudio "Ukjent/manglende lydformat, bruker nosound\n"
 
 // LIRC:
-#define MSGTR_SettingUpLIRC "Setter opp lirc støtte...\n"
 #define MSGTR_LIRCopenfailed "Feil under åpning av lirc!\n"
 #define MSGTR_LIRCcfgerr "Feil under lesing av lirc konfigurasjonsfil %s!\n"
 
@@ -186,21 +185,16 @@ static const char help_text[]=
 #define MSGTR_SKIN_ERRORMESSAGE "[skin] feil i skin konfigurasjonsfil linje %d: %s"
 #define MSGTR_SKIN_BITMAP_16bit  "16 bits eller minde bitmap ikke støttet (%s).\n"
 #define MSGTR_SKIN_BITMAP_FileNotFound  "finner ikke filen (%s)\n"
-#define MSGTR_SKIN_BITMAP_BMPReadError "BMP lesefeil (%s)\n"
-#define MSGTR_SKIN_BITMAP_TGAReadError "TGA lesefeil (%s)\n"
 #define MSGTR_SKIN_BITMAP_PNGReadError "PNG lesefeil (%s)\n"
-#define MSGTR_SKIN_BITMAP_RLENotSupported "RLE packed TGA ikke støttet (%s)\n"
-#define MSGTR_SKIN_BITMAP_UnknownFileType "ukjent filtype (%s)\n"
 #define MSGTR_SKIN_BITMAP_ConversionError "24 bit til 32 bit konverteringsfeil (%s)\n"
-#define MSGTR_SKIN_BITMAP_UnknownMessage "ukjent beskjed: %s\n"
-#define MSGTR_SKIN_FONT_NotEnoughtMemory "ikke nok minne\n"
+#define MSGTR_SKIN_UnknownMessage "ukjent beskjed: %s\n"
+#define MSGTR_SKIN_NotEnoughMemory "ikke nok minne\n"
 #define MSGTR_SKIN_FONT_TooManyFontsDeclared "for mange skrifttyper deklarert\n"
 #define MSGTR_SKIN_FONT_FontFileNotFound "skrifttypefil ikke funnet\n"
 #define MSGTR_SKIN_FONT_FontImageNotFound "skrifttype image fil ikke funnet\n"
-#define MSGTR_SKIN_FONT_NonExistentFontID "ikke-ekstisterende skrifttype identifikasjon (%s)\n"
+#define MSGTR_SKIN_FONT_NonExistentFont "ikke-ekstisterende skrifttype identifikasjon (%s)\n"
 #define MSGTR_SKIN_UnknownParameter "ukjent parameter (%s)\n"
 #define MSGTR_SKIN_SKINCFG_SkinNotFound "Skin ikke funnet (%s).\n"
-#define MSGTR_SKIN_SKINCFG_SkinCfgReadError "Skin konfigurasjonfil lesefeil (%s).\n"
 #define MSGTR_SKIN_LABEL "Skins:"
 
 
@@ -235,7 +229,7 @@ static const char help_text[]=
 #define MSGTR_MENU_SubtitleLanguages "Tekst språk"
 #define MSGTR_MENU_SkinBrowser "Skin velger"
 #define MSGTR_MENU_Preferences "Preferanser"
-#define MSGTR_MENU_Exit "Avslutt..."
+#define MSGTR_MENU_Exit "Avslutt"
 
 // --- messagebox
 #define MSGTR_MSGBOX_LABEL_FatalError "fatal feil..."

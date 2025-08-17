@@ -18,23 +18,21 @@
  * with MPlayer; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
-
+#ifndef GEKKO
 #include "config.h"
 
 #if !HAVE_WINSOCK2_H
 #include <errno.h>
 #include <sys/types.h>
-#include <stdlib.h>
-#include <fcntl.h>
-#include <string.h>
-#include <signal.h>
-#ifndef GEKKO
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <stdlib.h>
 #include <sys/ioctl.h>
+#include <fcntl.h>
+#include <string.h>
 #include <strings.h>
 #include <netdb.h>
-#endif
+#include <signal.h>
 #else
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -45,6 +43,7 @@
 #include "mp_msg.h"
 #include "help_mp.h"
 #include "udp_sync.h"
+#include "osdep/timer.h"
 
 
 // config options for UDP sync
@@ -55,35 +54,39 @@ const char *udp_ip = "127.0.0.1"; // where the master sends datagrams
                                   // (can be a broadcast address)
 float udp_seek_threshold = 1.0;   // how far off before we seek
 
-// remember where the master is in the file
-static float udp_master_position = -1.0;
-
 // how far off is still considered equal
 #define UDP_TIMING_TOLERANCE 0.02
+
+static void startup(void)
+{
+#if HAVE_WINSOCK2_H
+    static int wsa_started;
+    if (!wsa_started) {
+        WSADATA wd;
+        WSAStartup(0x0202, &wd);
+        wsa_started = 1;
+    }
+#endif
+}
 
 static void set_blocking(int fd, int blocking)
 {
     long sock_flags;
 #if HAVE_WINSOCK2_H
-    sock_flags = blocking;
-    ioctlsocket(fd, FIONBIO, &sock_flags);
-#else
-#if defined(GEKKO)
     sock_flags = !blocking;
-    net_ioctl(fd, FIONBIO, &sock_flags);
+    ioctlsocket(fd, FIONBIO, &sock_flags);
 #else
     sock_flags = fcntl(fd, F_GETFL, 0);
     sock_flags = blocking ? sock_flags & ~O_NONBLOCK : sock_flags | O_NONBLOCK;
     fcntl(fd, F_SETFL, sock_flags);
-#endif
 #endif /* HAVE_WINSOCK2_H */
 }
 
 // gets a datagram from the master with or without blocking.  updates
 // master_position if successful.  if the master has exited, returns 1.
-// returns -1 on error.
+// returns -1 on error or if no message received.
 // otherwise, returns 0.
-static int get_udp(int blocking, float *master_position)
+static int get_udp(int blocking, double *master_position)
 {
     char mesg[100];
 
@@ -92,9 +95,14 @@ static int get_udp(int blocking, float *master_position)
 
     static int sockfd = -1;
     if (sockfd == -1) {
+#if HAVE_WINSOCK2_H
+        DWORD tv = 30000;
+#else
         struct timeval tv = { .tv_sec = 30 };
+#endif
         struct sockaddr_in servaddr = { 0 };
 
+        startup();
         sockfd = socket(AF_INET, SOCK_DGRAM, 0);
         if (sockfd == -1)
             return -1;
@@ -112,6 +120,7 @@ static int get_udp(int blocking, float *master_position)
 
     while (-1 != (n = recvfrom(sockfd, mesg, sizeof(mesg)-1, 0,
                                NULL, NULL))) {
+        char *end;
         // flush out any further messages so we don't get behind
         if (chars_received == -1)
             set_blocking(sockfd, 0);
@@ -120,8 +129,14 @@ static int get_udp(int blocking, float *master_position)
         mesg[chars_received] = 0;
         if (strcmp(mesg, "bye") == 0)
             return 1;
-        sscanf(mesg, "%f", master_position);
+        *master_position = strtod(mesg, &end);
+        if (*end) {
+            mp_msg(MSGT_CPLAYER, MSGL_WARN, "Could not parse udp string!\n");
+            return -1;
+        }
     }
+    if (chars_received == -1)
+        return -1;
 
     return 0;
 }
@@ -135,6 +150,7 @@ void send_udp(const char *send_to_ip, int port, char *mesg)
         static const int one = 1;
         int ip_valid = 0;
 
+        startup();
         sockfd = socket(AF_INET, SOCK_DGRAM, 0);
         if (sockfd == -1)
             exit_player(EXIT_ERROR);
@@ -163,14 +179,30 @@ void send_udp(const char *send_to_ip, int port, char *mesg)
 }
 
 // this function makes sure we stay as close as possible to the master's
-// position.  returns 1 if the master tells us to exit, 0 otherwise.
+// position.  returns 1 if the master tells us to exit,
+// -1 on error and normal timing should be used again, 0 otherwise.
 int udp_slave_sync(MPContext *mpctx)
 {
-    // grab any waiting datagrams without blocking
-    int master_exited = get_udp(0, &udp_master_position);
+    // remember where the master is in the file
+    static double udp_master_position;
+    // whether we timed out before waiting for a master message
+    static int timed_out = -1;
+    // last time we received a valid master message
+    static unsigned last_success;
+    int master_exited;
 
-    while (!master_exited) {
-        float my_position = mpctx->sh_video->pts;
+    if (timed_out < 0) {
+        // initialize
+        udp_master_position = mpctx->sh_video->pts - udp_seek_threshold / 2;
+        timed_out = 0;
+        last_success = GetTimerMS();
+    }
+
+    // grab any waiting datagrams without blocking
+    master_exited = get_udp(0, &udp_master_position);
+
+    while (!master_exited || (!timed_out && master_exited < 0)) {
+        double my_position = mpctx->sh_video->pts;
 
         // if we're way off, seek to catch up
         if (FFABS(my_position - udp_master_position) > udp_seek_threshold) {
@@ -195,7 +227,18 @@ int udp_slave_sync(MPContext *mpctx)
         // arrived.  call get_udp again, but this time block until we receive
         // a datagram.
         master_exited = get_udp(1, &udp_master_position);
+        if (master_exited < 0)
+            timed_out = 1;
     }
 
-    return master_exited;
+    if (master_exited >= 0) {
+        last_success = GetTimerMS();
+        timed_out = 0;
+    } else {
+        master_exited = 0;
+        timed_out |= GetTimerMS() - last_success > 30000;
+    }
+
+    return timed_out ? -1 : master_exited;
 }
+#endif

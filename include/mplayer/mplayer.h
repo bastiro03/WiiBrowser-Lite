@@ -31,10 +31,12 @@ extern unsigned int osd_visible;
 extern int autosync;
 extern int frame_dropping;
 extern int slave_mode;
+extern int player_idle_mode;
 extern int use_menu;
 
 extern float  audio_delay;
 extern double start_pts;
+extern int progbar_align;
 
 /* for the GUI */
 extern int auto_quality;

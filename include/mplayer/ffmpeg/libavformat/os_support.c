@@ -1,5 +1,5 @@
 /*
- * Various utilities for ffmpeg system
+ * various OS-feature replacement utilities
  * Copyright (c) 2000, 2001, 2002 Fabrice Bellard
  * copyright (c) 2002 Francois Revol
  *
@@ -22,11 +22,39 @@
 
 /* needed by inet_aton() */
 #define _SVID_SOURCE
-#define _DARWIN_C_SOURCE
 
 #include "config.h"
 #include "avformat.h"
 #include "os_support.h"
+
+#if defined(_WIN32) && !defined(__MINGW32CE__)
+#include <windows.h>
+#include <share.h>
+
+#undef open
+int ff_win32_open(const char *filename_utf8, int oflag, int pmode)
+{
+    int fd;
+    int num_chars;
+    wchar_t *filename_w;
+
+    /* convert UTF-8 to wide chars */
+    num_chars = MultiByteToWideChar(CP_UTF8, 0, filename_utf8, -1, NULL, 0);
+    if (num_chars <= 0)
+        return -1;
+    filename_w = av_mallocz(sizeof(wchar_t) * num_chars);
+    MultiByteToWideChar(CP_UTF8, 0, filename_utf8, -1, filename_w, num_chars);
+
+    fd = _wsopen(filename_w, oflag, SH_DENYNO, pmode);
+    av_freep(&filename_w);
+
+    /* filename maybe be in CP_ACP */
+    if (fd == -1 && !(oflag & O_CREAT))
+        return _sopen(filename_utf8, oflag, SH_DENYNO, pmode);
+
+    return fd;
+}
+#endif
 
 #if CONFIG_NETWORK
 #include <fcntl.h>
@@ -44,7 +72,6 @@
 
 #if !HAVE_INET_ATON
 #include <stdlib.h>
-#include <strings.h>
 
 int ff_inet_aton (const char * str, struct in_addr * add)
 {
@@ -179,7 +206,7 @@ int ff_getnameinfo(const struct sockaddr *sa, int salen,
         return EAI_NONAME;
 
     if (host && hostlen > 0) {
-#if !defined(GEKKO)
+    #ifndef GEKKO
         struct hostent *ent = NULL;
         uint32_t a;
         if (!(flags & NI_NUMERICHOST))
@@ -196,17 +223,17 @@ int ff_getnameinfo(const struct sockaddr *sa, int salen,
                      ((a >> 24) & 0xff), ((a >> 16) & 0xff),
                      ((a >>  8) & 0xff), ( a        & 0xff));
         }
-#else
+    #else
         uint32_t a;
         a = ntohl(sin->sin_addr.s_addr);
         snprintf(host, hostlen, "%d.%d.%d.%d",
                  ((a >> 24) & 0xff), ((a >> 16) & 0xff),
                  ((a >>  8) & 0xff), ( a        & 0xff));
-#endif
+    #endif
     }
 
     if (serv && servlen > 0) {
-#if !defined(GEKKO)
+    #ifndef GEKKO
         struct servent *ent = NULL;
         if (!(flags & NI_NUMERICSERV))
             ent = getservbyport(sin->sin_port, flags & NI_DGRAM ? "udp" : "tcp");
@@ -214,7 +241,7 @@ int ff_getnameinfo(const struct sockaddr *sa, int salen,
         if (ent) {
             snprintf(serv, servlen, "%s", ent->s_name);
         } else
-#endif
+    #endif
             snprintf(serv, servlen, "%d", ntohs(sin->sin_port));
     }
 
@@ -238,18 +265,15 @@ int ff_socket_nonblock(int socket, int enable)
 #if HAVE_WINSOCK2_H
    return ioctlsocket(socket, FIONBIO, &enable);
 #else
-#if defined(GEKKO)
-   return net_ioctl(socket, FIONBIO, &enable);
-#else
    if (enable)
       return fcntl(socket, F_SETFL, fcntl(socket, F_GETFL) | O_NONBLOCK);
    else
       return fcntl(socket, F_SETFL, fcntl(socket, F_GETFL) & ~O_NONBLOCK);
 #endif
-#endif
 }
 
-#if !HAVE_POLL_H && !defined(GEKKO)
+#ifndef GEKKO
+#if !HAVE_POLL_H
 int poll(struct pollfd *fds, nfds_t numfds, int timeout)
 {
     fd_set read_set;
@@ -317,4 +341,5 @@ int poll(struct pollfd *fds, nfds_t numfds, int timeout)
     return rc;
 }
 #endif /* HAVE_POLL_H */
+#endif /* GEKKO */
 #endif /* CONFIG_NETWORK */

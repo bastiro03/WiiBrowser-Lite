@@ -25,15 +25,25 @@
 #include <string.h>
 #include <inttypes.h>
 
-#include "libmpcodecs/vd_ffmpeg.h"
 #include "config.h"
 #include "af.h"
 #include "help_mp.h"
+#include "mp_msg.h"
 #include "reorder_ch.h"
+#include "av_helpers.h"
 
 #include "libavcodec/avcodec.h"
-#include "libavcodec/ac3.h"
 #include "libavutil/intreadwrite.h"
+
+#define AC3_MAX_CHANNELS            6
+#define AC3_FRAME_SIZE           1536
+#define AC3_MAX_CODED_FRAME_SIZE 3840
+//#define AC3_BIT_RATES_COUNT        19
+
+static const int ac3_bit_rates[] = {
+    32000, 40000, 48000, 56000, 64000, 80000, 96000, 112000, 128000, 160000,
+    192000, 224000, 256000, 320000, 384000, 448000, 512000, 576000, 640000
+};
 
 // Data for specific instances of this filter
 typedef struct af_ac3enc_s {
@@ -50,8 +60,8 @@ typedef struct af_ac3enc_s {
 // Initialization and runtime control
 static int control(struct af_instance_s *af, int cmd, void *arg)
 {
-    af_ac3enc_t *s  = (af_ac3enc_t *)af->setup;
-    af_data_t *data = (af_data_t *)arg;
+    af_ac3enc_t *s  = af->setup;
+    af_data_t *data = arg;
     int i, bit_rate, test_output_res;
     static const int default_bit_rate[AC3_MAX_CHANNELS+1] = \
         {0, 96000, 192000, 256000, 384000, 448000, 448000};
@@ -95,10 +105,11 @@ static int control(struct af_instance_s *af, int cmd, void *arg)
             // Put sample parameters
             s->lavc_actx->channels = af->data->nch;
             s->lavc_actx->sample_rate = af->data->rate;
+            s->lavc_actx->sample_fmt  = AV_SAMPLE_FMT_S16;
             s->lavc_actx->bit_rate = bit_rate;
 
-            if(avcodec_open(s->lavc_actx, s->lavc_acodec) < 0) {
-                mp_msg(MSGT_AFILTER, MSGL_ERR, MSGTR_CouldntOpenCodec, "ac3_fixed", bit_rate);
+            if(avcodec_open2(s->lavc_actx, s->lavc_acodec, NULL) < 0) {
+                mp_msg(MSGT_AFILTER, MSGL_ERR, MSGTR_CouldntOpenCodec, "ac3", bit_rate);
                 return AF_ERROR;
             }
         }
@@ -110,15 +121,15 @@ static int control(struct af_instance_s *af, int cmd, void *arg)
         s->bit_rate = 0;
         s->min_channel_num = 0;
         s->add_iec61937_header = 0;
-        sscanf((char*)arg,"%d:%d:%d", &s->add_iec61937_header, &s->bit_rate,
+        sscanf(arg,"%d:%d:%d", &s->add_iec61937_header, &s->bit_rate,
                &s->min_channel_num);
         if (s->bit_rate < 1000)
             s->bit_rate *= 1000;
         if (s->bit_rate) {
-            for (i = 0; i < 19; ++i)
-                if (ff_ac3_bitrate_tab[i] * 1000 == s->bit_rate)
+            for (i = 0; i < FF_ARRAY_ELEMS(ac3_bit_rates); ++i)
+                if (ac3_bit_rates[i] == s->bit_rate)
                     break;
-            if (i >= 19) {
+            if (i >= FF_ARRAY_ELEMS(ac3_bit_rates)) {
                 mp_msg(MSGT_AFILTER, MSGL_WARN, "af_lavcac3enc unable set unsupported "
                        "bitrate %d, use default bitrate (check manpage to see "
                        "supported bitrates).\n", s->bit_rate);
@@ -184,8 +195,8 @@ static af_data_t* play(struct af_instance_s* af, af_data_t* data)
     }
 
     l = af->data;           // Local data
-    buf = (char *)l->audio;
-    src = (char *)c->audio;
+    buf = l->audio;
+    src = c->audio;
     left = c->len;
 
 
@@ -280,7 +291,7 @@ static int af_open(af_instance_t* af){
         return AF_ERROR;
     }
 
-    s->lavc_actx = avcodec_alloc_context();
+    s->lavc_actx = avcodec_alloc_context3(NULL);
     if (!s->lavc_actx) {
         mp_msg(MSGT_AFILTER, MSGL_ERR, MSGTR_CouldntAllocateLavcContext);
         return AF_ERROR;

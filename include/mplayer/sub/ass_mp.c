@@ -54,6 +54,50 @@ char* ass_border_color = NULL;
 char* ass_styles_file = NULL;
 int ass_hinting = ASS_HINTING_NATIVE + 4; // native hinting for unscaled osd
 
+extern int monospaced;
+
+static void init_style(ASS_Style *style, const char *name, double playres)
+{
+	double fs;
+	uint32_t c1, c2;
+	style->Name = strdup(name);
+	style->FontName = (font_fontconfig >= 0 && sub_font_name) ? strdup(sub_font_name) : (font_fontconfig >= 0 && font_name) ? strdup(font_name) : strdup("Sans");
+	style->treat_fontname_as_pattern = 1;
+
+	fs = playres * text_font_scale_factor / 100.;
+	// approximate autoscale coefficients
+	if (subtitle_autoscale == 2)
+		fs *= 1.3;
+	else if (subtitle_autoscale == 3)
+		fs *= 1.4;
+	else
+		fs = 24;
+	style->FontSize = fs;
+
+	if (ass_color) c1 = strtoll(ass_color, NULL, 16);
+	else c1 = 0xFFFF0000;
+	if (ass_border_color) c2 = strtoll(ass_border_color, NULL, 16);
+	else c2 = 0x00000000;
+
+	style->PrimaryColour = c1;
+	style->SecondaryColour = c1;
+	style->OutlineColour = c2;
+	style->BackColour = 0x00000000;
+	style->BorderStyle = 1;
+	style->Alignment = 2;
+#ifdef GEKKO
+	style->Outline = 1.7f;
+	style->Shadow = 0;
+#else
+	style->Outline = 2;
+#endif
+	style->MarginL = 10;
+	style->MarginR = 10;
+	style->MarginV = 30;
+	style->ScaleX = 1.;
+	style->ScaleY = 1.;
+}
+
 ASS_Track* ass_default_track(ASS_Library* library) {
 	ASS_Track* track = ass_new_track(library);
 
@@ -62,46 +106,21 @@ ASS_Track* ass_default_track(ASS_Library* library) {
 	track->PlayResY = 288;
 	track->WrapStyle = 0;
 
+	if (track->n_styles == 0) {
+		// stupid hack to stop libass to add a default track
+		// in front in ass_read_styles - this makes it impossible
+		// to completely override the "Default" track.
+		int sid = ass_alloc_style(track);
+		init_style(track->styles + sid, "MPlayerDummy", track->PlayResY);
+	}
+
 	if (ass_styles_file)
 		ass_read_styles(track, ass_styles_file, sub_cp);
 
-	if (track->n_styles == 0) {
-		ASS_Style* style;
-		int sid;
-		double fs;
-		uint32_t c1, c2;
-
-		sid = ass_alloc_style(track);
-		style = track->styles + sid;
-		style->Name = strdup("Default");
-		style->FontName = (font_fontconfig >= 0 && sub_font_name) ? strdup(sub_font_name) : (font_fontconfig >= 0 && font_name) ? strdup(font_name) : strdup("Sans");
-		style->treat_fontname_as_pattern = 1;
-
-		fs = track->PlayResY * text_font_scale_factor / 100.;
-		// approximate autoscale coefficients
-		if (subtitle_autoscale == 2)
-			fs *= 1.3;
-		else if (subtitle_autoscale == 3)
-			fs *= 1.4;
-		style->FontSize = fs;
-
-		if (ass_color) c1 = strtoll(ass_color, NULL, 16);
-		else c1 = 0xFFFF0000;
-		if (ass_border_color) c2 = strtoll(ass_border_color, NULL, 16);
-		else c2 = 0x00000000;
-
-		style->PrimaryColour = c1;
-		style->SecondaryColour = c1;
-		style->OutlineColour = c2;
-		style->BackColour = 0x00000000;
-		style->BorderStyle = 1;
-		style->Alignment = 2;
-		style->Outline = 2;
-		style->MarginL = 10;
-		style->MarginR = 10;
-		style->MarginV = 5;
-		style->ScaleX = 1.;
-		style->ScaleY = 1.;
+	if (track->default_style <= 0) {
+		int sid = ass_alloc_style(track);
+		init_style(track->styles + sid, "Default", track->PlayResY);
+		track->default_style = sid;
 	}
 
 	ass_process_force_style(track);
@@ -142,7 +161,7 @@ int ass_process_subtitle(ASS_Track* track, subtitle* sub)
 
 	event->Start = sub->start * 10;
 	event->Duration = (sub->end - sub->start) * 10;
-	event->Style = 0;
+	event->Style = track->default_style;
 
 	for (j = 0; j < sub->lines; ++j)
 		len += sub->text[j] ? strlen(sub->text[j]) : 0;
@@ -219,7 +238,7 @@ ASS_Track* ass_read_stream(ASS_Library* library, const char *fname, char *charse
 		buf_alloc = fd->end_pos;
 	for (;;) {
 		int i;
-		if (buf_alloc >= 100*1024*1024) {
+		if (buf_alloc >= 8*1024*1024) {
 			mp_msg(MSGT_ASS, MSGL_INFO, MSGTR_LIBASS_RefusingToLoadSubtitlesLargerThan100M, fname);
 			sz = 0;
 			break;
@@ -247,11 +266,32 @@ ASS_Track* ass_read_stream(ASS_Library* library, const char *fname, char *charse
 	return track;
 }
 
+#ifdef GEKKO
+static void adjust_font_scale(ASS_Track* track)
+{
+	extern uint32_t gx_height;
+	extern int mplayerheight;
+	extern float mplayer_ass_font_scale;
+
+	//The case that I've commented out handles the font size of non-ass subs
+	//to fix this, just rely on setting init_styles FontSize to a hard default.
+	
+	//This messes EIA-608 FFmpeg converted ASS files that use those playres values.
+	//if(track && track->PlayResY == 288	&& (!track->PlayResX || track->PlayResX==384)) // embedded font not detected
+		//ass_font_scale = ((double)mplayerheight / (double)gx_height * mplayer_ass_font_scale * 2.0f)+3.0f;
+	//else
+		ass_font_scale = (double)mplayerheight / (double)gx_height * mplayer_ass_font_scale / 1.8f;
+}
+#endif
+
 void ass_configure(ASS_Renderer* priv, int w, int h, int unscaled) {
 	int hinting;
 	ass_set_frame_size(priv, w, h);
 	ass_set_margins(priv, ass_top_margin, ass_bottom_margin, 0, 0);
 	ass_set_use_margins(priv, ass_use_margins);
+#ifdef GEKKO
+	adjust_font_scale(ass_track);
+#endif	
 	ass_set_font_scale(priv, ass_font_scale);
 	if (!unscaled && (ass_hinting & 4))
 		hinting = 0;
@@ -264,9 +304,11 @@ void ass_configure(ASS_Renderer* priv, int w, int h, int unscaled) {
 void ass_configure_fonts(ASS_Renderer* priv) {
 	char *dir, *path, *family;
 	dir = get_path("fonts");
-	if (font_fontconfig < 0 && sub_font_name) path = strdup(sub_font_name);
-	else if (font_fontconfig < 0 && font_name) path = strdup(font_name);
-	else path = get_path("subfont.ttf");
+	//if (font_fontconfig < 0 && sub_font_name) path = strdup(sub_font_name);
+	//else if (font_fontconfig < 0 && font_name) path = strdup(font_name);
+	//else if (font_fontconfig < 0 && !monospaced) path = get_path("subfont.ttf");
+	if (font_fontconfig < 0 && !monospaced) path = get_path("subfont.ttf");
+	else path = get_path("monospace.ttf");
 	if (font_fontconfig >= 0 && sub_font_name) family = strdup(sub_font_name);
 	else if (font_fontconfig >= 0 && font_name) family = strdup(font_name);
 	else family = 0;
@@ -293,22 +335,36 @@ static void message_callback(int level, const char *format, va_list va, void *ct
 	}
 }
 
+/**
+ * Reset all per-file settings for next file.
+ */
+void ass_mp_reset_config(ASS_Library *l) {
+	ass_set_extract_fonts(l, extract_embedded_fonts);
+	ass_set_style_overrides(l, ass_force_style_list);
+	ass_force_reload = 1;
+}
+
 ASS_Library* ass_init(void) {
 	ASS_Library* priv;
 	char* path = get_path("fonts");
 	priv = ass_library_init();
 	ass_set_message_cb(priv, message_callback, NULL);
 	ass_set_fonts_dir(priv, path);
-	ass_set_extract_fonts(priv, extract_embedded_fonts);
-	ass_set_style_overrides(priv, ass_force_style_list);
+	ass_mp_reset_config(priv);
 	free(path);
 	return priv;
 }
 
 int ass_force_reload = 0; // flag set if global ass-related settings were changed
+//extern int use_nocorrect;
 
 ASS_Image* ass_mp_render_frame(ASS_Renderer *priv, ASS_Track* track, long long now, int* detect_change) {
 	if (ass_force_reload) {
+#ifdef GEKKO
+		adjust_font_scale(track);
+		// test correct_pts
+		//++use_nocorrect;
+#endif
 		ass_set_margins(priv, ass_top_margin, ass_bottom_margin, 0, 0);
 		ass_set_use_margins(priv, ass_use_margins);
 		ass_set_font_scale(priv, ass_font_scale);

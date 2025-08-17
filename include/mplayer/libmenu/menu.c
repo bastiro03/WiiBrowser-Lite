@@ -374,7 +374,7 @@ int menu_read_key(menu_t* menu,int cmd) {
 
 typedef void (*draw_alpha_f)(int w,int h, unsigned char* src, unsigned char *srca, int srcstride, unsigned char* dstbase,int dststride);
 
-inline static draw_alpha_f get_draw_alpha(uint32_t fmt) {
+static inline draw_alpha_f get_draw_alpha(uint32_t fmt) {
   switch(fmt) {
   case IMGFMT_BGR12:
   case IMGFMT_RGB12:
@@ -438,8 +438,6 @@ static char *menu_fribidi(char *txt)
   static size_t buffer_size = 1024;
   static char *outputstr;
 
-  FriBidiCharType base;
-  fribidi_boolean log2vis;
   size_t len;
 
   if (menu_flip_hebrew) {
@@ -458,11 +456,8 @@ static char *menu_fribidi(char *txt)
       visual = realloc(visual, buffer_size);
       outputstr = realloc(outputstr, buffer_size);
     }
-    len = fribidi_charset_to_unicode (char_set_num, txt, len, logical);
-    base = menu_fribidi_flip_commas?FRIBIDI_TYPE_ON:FRIBIDI_TYPE_L;
-    log2vis = fribidi_log2vis (logical, len, &base, visual, NULL, NULL, NULL);
-    if (log2vis) {
-      len = fribidi_remove_bidi_marks (visual, len, NULL, NULL, NULL);
+    len = do_fribid_log2vis(char_set_num, txt, logical, visual, menu_fribidi_flip_commas);
+    if (len > 0) {
       fribidi_unicode_to_charset (char_set_num, visual, len, outputstr);
       return outputstr;
     }
@@ -601,26 +596,12 @@ void menu_draw_text_full(mp_image_t* mpi,char* txt,
     }
 
     // Get the length and end of this line
-    char* txt1=txt;
-    char* last;
-    for(n = 0, ll = 0 ;   ; n++) {
-      int c=utf8_get_char((const char**)&txt1);
-      if(c == '\0' || c == '\n') break;
-      last=txt1;
-      if(warp && ll + vo_font->width[c]  > w)  break;
-      ll += vo_font->width[c]+vo_font->charspace;
-    }
-    line_end = last;
-
-/*
-    // Get the length and end of this line
     for(n = 0, ll = 0 ; txt[n] != '\0' && txt[n] != '\n'  ; n++) {
       unsigned char c = txt[n];
       if(warp && ll + vo_font->width[c]  > w)  break;
       ll += vo_font->width[c]+vo_font->charspace;
     }
     line_end = &txt[n];
-*/
     ll -= vo_font->charspace;
 
 

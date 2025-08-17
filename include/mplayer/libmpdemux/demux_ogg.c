@@ -41,29 +41,34 @@
 #define FOURCC_THEORA mmioFOURCC('t', 'h', 'e', 'o')
 
 #ifdef CONFIG_TREMOR
+#ifdef GEKKO
+#include "../tremor/ogg.h"
+#include "../tremor/ivorbiscodec.h"
+#else
 #include <tremor/ogg.h>
 #include <tremor/ivorbiscodec.h>
+#endif
 #else
 #include <ogg/ogg.h>
 #include <vorbis/codec.h>
 #endif
 
 #ifdef CONFIG_OGGTHEORA
-#include <theora/theora.h>
-int _ilog (unsigned int); /* defined in many places in theora/lib/ */
+#include <theora/theoradec.h>
 #endif
 
 #define BLOCK_SIZE 4096
 
 /* Theora decoder context : we won't be able to interpret granule positions
- * without using theora_granule_time with the theora_state of the stream.
+ * without using th_granule_time with the th_dec_ctx of the stream.
  * This is duplicated in `vd_theora.c'; put this in a common header?
  */
 #ifdef CONFIG_OGGTHEORA
 typedef struct theora_struct_st {
-    theora_state   st;
-    theora_comment cc;
-    theora_info    inf;
+    th_setup_info *tsi;
+    th_dec_ctx    *tctx;
+    th_comment     tc;
+    th_info        ti;
 } theora_struct_t;
 #endif
 
@@ -116,7 +121,7 @@ typedef struct ogg_stream {
     float   samplerate; /// granulpos 2 time
     int64_t lastpos;
     int32_t lastsize;
-    int     keyframe_frequency_force;
+    int     keyframe_granule_shift;
 
     // Logical stream state
     ogg_stream_state stream;
@@ -202,12 +207,12 @@ static void demux_ogg_add_sub(ogg_stream_t *os, ogg_packet *pack)
             duration  |= (unsigned char)packet[i];
         }
         if (hdrlen > 0 && duration > 0) {
-            float pts;
+            double pts;
 
             if (pack->granulepos == -1)
                 pack->granulepos = os->lastpos + os->lastsize;
-            pts    = (float)pack->granulepos / (float)os->samplerate;
-            endpts = 1.0 + pts + (float)duration / 1000.0;
+            pts    = (double)pack->granulepos / (double)os->samplerate;
+            endpts = 1.0 + pts + (double)duration / 1000.0;
         }
         sub_clear_text(&ogg_sub, MP_NOPTS_VALUE);
         sub_add_text(&ogg_sub, &packet[lcv], pack->bytes - lcv, endpts, 1);
@@ -257,7 +262,7 @@ static int demux_ogg_get_page_stream(ogg_demuxer_t *ogg_d,
 }
 
 static unsigned char *demux_ogg_read_packet(ogg_stream_t *os, ogg_packet *pack,
-                                            float *pts, int *flags,
+                                            double *pts, int *flags,
                                             int samplesize)
 {
     unsigned char *data = pack->packet;
@@ -284,7 +289,7 @@ static unsigned char *demux_ogg_read_packet(ogg_stream_t *os, ogg_packet *pack,
             } else
                 *flags = 1;
             if (vi)
-                *pts = pack->granulepos / (float)vi->rate;
+                *pts = pack->granulepos / (double)vi->rate;
             os->lastsize = blocksize;
             os->lastpos  = pack->granulepos;
         }
@@ -299,11 +304,10 @@ static unsigned char *demux_ogg_read_packet(ogg_stream_t *os, ogg_packet *pack,
            have theora_state st, until all header packets were passed to the
            decoder. */
         if (!pack->bytes || !(*data&0x80)) {
-            int keyframe_granule_shift = _ilog(os->keyframe_frequency_force - 1);
-            int64_t iframemask = (1 << keyframe_granule_shift) - 1;
+            int64_t iframemask = (1 << os->keyframe_granule_shift) - 1;
 
             if (pack->granulepos >= 0) {
-                os->lastpos  = pack->granulepos >> keyframe_granule_shift;
+                os->lastpos  = pack->granulepos >> os->keyframe_granule_shift;
                 os->lastpos += pack->granulepos & iframemask;
                 *flags = (pack->granulepos & iframemask) == 0;
             } else {
@@ -480,7 +484,7 @@ static int demux_ogg_add_packet(demux_stream_t *ds, ogg_stream_t *os,
     demuxer_t *d = ds->demuxer;
     demux_packet_t *dp;
     unsigned char *data;
-    float pts = 0;
+    double pts = 0;
     int flags = 0;
     int samplesize = 1;
 
@@ -514,6 +518,7 @@ static int demux_ogg_add_packet(demux_stream_t *ds, ogg_stream_t *os,
         // We jump nothing for FLAC. Ain't this great? Packet contents have to be
         // handled differently for each and every stream type. The joy! The joy!
         if (!os->flac && (*pack->packet & PACKET_TYPE_HEADER) &&
+                ds->sh &&
                 (ds != d->audio || ((sh_audio_t*)ds->sh)->format != FOURCC_VORBIS || os->hdr_packets >= NUM_VORBIS_HDR_PACKETS ) &&
                 (ds != d->video || (((sh_video_t*)ds->sh)->format != FOURCC_THEORA)))
             return 0;
@@ -609,7 +614,7 @@ static void demux_ogg_scan_stream(demuxer_t *demuxer)
         }
         p = 0;
         while (ogg_stream_packetout(oss, &op) == 1) {
-            float pts;
+            double pts;
             int flags;
 
             demux_ogg_read_packet(os, &op, &pts, &flags, samplesize);
@@ -781,7 +786,6 @@ int demux_ogg_open(demuxer_t *demuxer)
     stream_t *s;
     char *buf;
     int np, s_no, n_audio = 0, n_video = 0;
-    int audio_id = -1, video_id = -1, text_id = -1;
     ogg_sync_state *sync;
     ogg_page *page;
     ogg_packet pack;
@@ -892,14 +896,15 @@ int demux_ogg_open(demuxer_t *demuxer)
 #ifdef CONFIG_OGGTHEORA
         } else if (pack.bytes >= 7 && !strncmp (&pack.packet[1], "theora", 6)) {
             int errorCode = 0;
-            theora_info inf;
-            theora_comment cc;
+            th_info ti;
+            th_comment tc;
+            th_setup_info *tsi = NULL;
 
-            theora_info_init (&inf);
-            theora_comment_init (&cc);
+            th_info_init (&ti);
+            th_comment_init (&tc);
 
-            errorCode = theora_decode_header (&inf, &cc, &pack);
-            if (errorCode) {
+            errorCode = th_decode_headerin(&ti, &tc, &tsi, &pack);
+            if (errorCode < 0) {
                 mp_msg(MSGT_DEMUX, MSGL_ERR,
                        "Theora header parsing failed: %i \n", errorCode);
             } else {
@@ -908,30 +913,32 @@ int demux_ogg_open(demuxer_t *demuxer)
                 sh_v->bih = calloc(1, sizeof(*sh_v->bih));
                 sh_v->bih->biSize        = sizeof(*sh_v->bih);
                 sh_v->bih->biCompression = sh_v->format = FOURCC_THEORA;
-                sh_v->fps = ((double)inf.fps_numerator) / (double)inf.fps_denominator;
-                sh_v->frametime = ((double)inf.fps_denominator) / (double)inf.fps_numerator;
-                sh_v->disp_w = sh_v->bih->biWidth  = inf.frame_width;
-                sh_v->disp_h = sh_v->bih->biHeight = inf.frame_height;
+                sh_v->fps = ((double)ti.fps_numerator) / (double)ti.fps_denominator;
+                sh_v->frametime = ((double)ti.fps_denominator) / (double)ti.fps_numerator;
+                sh_v->i_bps  = ti.target_bitrate / 8;
+                sh_v->disp_w = sh_v->bih->biWidth  = ti.frame_width;
+                sh_v->disp_h = sh_v->bih->biHeight = ti.frame_height;
                 sh_v->bih->biBitCount  = 24;
                 sh_v->bih->biPlanes    = 3;
                 sh_v->bih->biSizeImage = ((sh_v->bih->biBitCount / 8) * sh_v->bih->biWidth * sh_v->bih->biHeight);
                 ogg_d->subs[ogg_d->num_sub].samplerate               = sh_v->fps;
                 ogg_d->subs[ogg_d->num_sub].theora                   = 1;
-                ogg_d->subs[ogg_d->num_sub].keyframe_frequency_force = inf.keyframe_frequency_force;
+                ogg_d->subs[ogg_d->num_sub].keyframe_granule_shift   = ti.keyframe_granule_shift;
                 ogg_d->subs[ogg_d->num_sub].id                       = n_video;
                 n_video++;
                 mp_msg(MSGT_DEMUX, MSGL_INFO,
                        "[Ogg] stream %d: video (Theora v%d.%d.%d), -vid %d\n",
                        ogg_d->num_sub,
-                       (int)inf.version_major,
-                       (int)inf.version_minor,
-                       (int)inf.version_subminor,
+                       (int)ti.version_major,
+                       (int)ti.version_minor,
+                       (int)ti.version_subminor,
                        n_video - 1);
                 if (mp_msg_test(MSGT_HEADER, MSGL_V))
                     print_video_header(sh_v->bih, MSGL_V);
             }
-            theora_comment_clear(&cc);
-            theora_info_clear(&inf);
+            th_comment_clear(&tc);
+            th_info_clear(&ti);
+            th_setup_free(tsi);
 #endif /* CONFIG_OGGTHEORA */
         } else if (pack.bytes >= 4 && !strncmp (&pack.packet[0], "fLaC", 4)) {
             sh_a = new_sh_audio_aid(demuxer, ogg_d->num_sub, n_audio, NULL);
@@ -1099,8 +1106,6 @@ int demux_ogg_open(demuxer_t *demuxer)
                 ogg_d->subs[ogg_d->num_sub].samplerate = AV_RL64(&st->time_unit) / 10;
                 ogg_d->subs[ogg_d->num_sub].text       = 1;
                 ogg_d->subs[ogg_d->num_sub].id         = ogg_d->n_text;
-                if (demuxer->sub->id == ogg_d->n_text)
-                    text_id = ogg_d->num_sub;
                 new_sh_sub(demuxer, ogg_d->n_text, NULL);
                 ogg_d->n_text++;
                 ogg_d->text_ids = realloc_struct(ogg_d->text_ids, ogg_d->n_text, sizeof(*ogg_d->text_ids));
@@ -1123,28 +1128,24 @@ int demux_ogg_open(demuxer_t *demuxer)
             if (sh_a) {
                 // If the audio stream is not defined we took the first one
                 if (demuxer->audio->id == -1) {
-                    demuxer->audio->id = n_audio - 1;
+                    demuxer->audio->id = ogg_d->num_sub;
+                    demuxer->audio->sh = sh_a;
                     //if (sh_a->wf) print_wave_header(sh_a->wf, MSGL_INFO);
                 }
                 /// Is it the stream we want
-                if (demuxer->audio->id == n_audio - 1) {
-                    demuxer->audio->sh = sh_a;
-                    sh_a->ds = demuxer->audio;
+                if (demuxer->audio->sh == sh_a) {
                     ds = demuxer->audio;
-                    audio_id = ogg_d->num_sub;
                 }
             }
             if (sh_v) {
                 /// Also for video
                 if (demuxer->video->id == -1) {
-                    demuxer->video->id = n_video - 1;
+                    demuxer->video->id = ogg_d->num_sub;
+                    demuxer->video->sh = sh_v;
                     //if (sh_v->bih) print_video_header(sh_v->bih, MSGL_INFO);
                 }
-                if (demuxer->video->id == n_video - 1) {
-                    demuxer->video->sh = sh_v;
-                    sh_v->ds = demuxer->video;
+                if (demuxer->video->sh == sh_v) {
                     ds = demuxer->video;
-                    video_id = ogg_d->num_sub;
                 }
             }
             /// Add the header packets if the stream isn't seekable
@@ -1163,24 +1164,12 @@ int demux_ogg_open(demuxer_t *demuxer)
         goto err_out;
     }
 
-    if (!n_video || video_id < 0)
+    if (!demuxer->video->sh)
         demuxer->video->id = -2;
-    else
-        demuxer->video->id = video_id;
-    if (!n_audio || audio_id < 0)
+    if (!demuxer->audio->sh)
         demuxer->audio->id = -2;
-    else
-        demuxer->audio->id = audio_id;
-    /* Disable the subs only if there are no text streams at all.
-       Otherwise the stream to display might be chosen later when the comment
-       packet is encountered and the user used -slang instead of -sid. */
-    if (!ogg_d->n_text)
+    if (!demuxer->sub->sh)
         demuxer->sub->id = -2;
-    else if (text_id >= 0) {
-        demuxer->sub->id = text_id;
-        mp_msg(MSGT_DEMUX, MSGL_V,
-               "Ogg demuxer: Displaying subtitle stream id %d\n", text_id);
-    }
 
     ogg_d->final_granulepos   = 0;
     ogg_d->initial_granulepos = MP_NOPTS_VALUE;
@@ -1410,14 +1399,14 @@ static void demux_ogg_seek(demuxer_t *demuxer, float rel_seek_secs,
     ogg_stream_t *os;
     demux_stream_t *ds;
     ogg_packet op;
-    float rate;
+    double rate;
     int i, sp, first, precision = 1, do_seek = 1;
     vorbis_info *vi = NULL;
     int64_t gp = 0, old_gp;
     off_t pos, old_pos;
     int np;
     int is_gp_valid;
-    float pts;
+    double pts;
     int is_keyframe;
     int samplesize = 1;
     ogg_int64_t granulepos_orig;
@@ -1429,7 +1418,7 @@ static void demux_ogg_seek(demuxer_t *demuxer, float rel_seek_secs,
         ds         = demuxer->audio;
         os         = &ogg_d->subs[ds->id];
         vi         = &(os->vi);
-        rate       = (float)vi->rate;
+        rate       = vi->rate;
         samplesize = ((sh_audio_t*)ds->sh)->samplesize;
     }
 
@@ -1618,7 +1607,7 @@ static int demux_ogg_control(demuxer_t *demuxer, int cmd, void *arg)
 {
     ogg_demuxer_t *ogg_d = demuxer->priv;
     ogg_stream_t *os;
-    float rate;
+    double rate;
 
     if (demuxer->video->id >= 0) {
         os = &ogg_d->subs[demuxer->video->id];

@@ -16,13 +16,28 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+/**
+ * @file
+ * @brief GUI application helpers
+ */
+
 #include "app.h"
+#include "skin/font.h"
 
-#include "gui/skin/font.h"
-#include "interface.h"
+#include "libavutil/common.h"
 
-listItems appMPlayer;
+/**
+ * @brief Initialize item counters.
+ */
+guiItems guiApp = {
+    .IndexOfMainItems    = -1,
+    .IndexOfPlaybarItems = -1,
+    .IndexOfMenuItems    = -1
+};
 
+/**
+ * @brief Event messages belonging to event names.
+ */
 static const evName evNames[] = {
     { evNone,              "evNone"              },
     { evPlay,              "evPlay"              },
@@ -31,189 +46,202 @@ static const evName evNames[] = {
     { evPrev,              "evPrev"              },
     { evNext,              "evNext"              },
     { evLoad,              "evLoad"              },
-    { evEqualizer,         "evEqualizer"         },
-    { evEqualizer,         "evEqualeaser"        }, // NOTE TO MYSELF: any skin using this?
-    { evPlayList,          "evPlaylist"          },
-    { evExit,              "evExit"              },
-    { evIconify,           "evIconify"           },
-    { evIncBalance,        "evIncBalance"        }, // NOTE TO MYSELF: not all of these events
-    { evDecBalance,        "evDecBalance"        }, // are actually implemented, and update doc
-    { evFullScreen,        "evFullScreen"        },
-    { evFName,             "evFName"             },
-    { evMovieTime,         "evMovieTime"         },
-    { evAbout,             "evAbout"             },
     { evLoadPlay,          "evLoadPlay"          },
-    { evPreferences,       "evPreferences"       },
-    { evSkinBrowser,       "evSkinBrowser"       },
+    { evLoadAudioFile,     "evLoadAudioFile"     },
+    { evLoadSubtitle,      "evLoadSubtitle"      },
+    { evDropSubtitle,      "evDropSubtitle"      },
+    { evPlaylist,          "evPlaylist"          },
+    { evPlayCD,            "evPlayCD"            },
+    { evPlayVCD,           "evPlayVCD"           },
+    { evPlayDVD,           "evPlayDVD"           },
+    { evLoadURL,           "evSetURL"            }, // legacy
+    { evLoadURL,           "evLoadURL"           },
+    { evPlaySwitchToPause, "evPlaySwitchToPause" },
+    { evPauseSwitchToPlay, "evPauseSwitchToPlay" },
     { evBackward10sec,     "evBackward10sec"     },
     { evForward10sec,      "evForward10sec"      },
     { evBackward1min,      "evBackward1min"      },
     { evForward1min,       "evForward1min"       },
     { evBackward10min,     "evBackward10min"     },
     { evForward10min,      "evForward10min"      },
+    { evSetMoviePosition,  "evSetMoviePosition"  },
+    { evHalfSize,          "evHalfSize"          },
+    { evDoubleSize,        "evDoubleSize"        },
+    { evFullScreen,        "evFullScreen"        },
+    { evNormalSize,        "evNormalSize"        },
+    { evSetAspect,         "evSetAspect"         },
     { evIncVolume,         "evIncVolume"         },
     { evDecVolume,         "evDecVolume"         },
-    { evMute,              "evMute"              },
-    { evIncAudioBufDelay,  "evIncAudioBufDelay"  },
-    { evDecAudioBufDelay,  "evDecAudioBufDelay"  },
-    { evPlaySwitchToPause, "evPlaySwitchToPause" },
-    { evPauseSwitchToPlay, "evPauseSwitchToPlay" },
-    { evNormalSize,        "evHalfSize"          },
-    { evNormalSize,        "evNormalSize"        },
-    { evDoubleSize,        "evDoubleSize"        },
-    { evSetMoviePosition,  "evSetMoviePosition"  },
     { evSetVolume,         "evSetVolume"         },
+    { evMute,              "evMute"              },
     { evSetBalance,        "evSetBalance"        },
-    { evHelp,              "evHelp"              },
-    { evLoadSubtitle,      "evLoadSubtitle"      },
-    { evPlayDVD,           "evPlayDVD"           },
-    { evPlayVCD,           "evPlayVCD"           },
-    { evSetURL,            "evSetURL"            },
-    { evLoadAudioFile,     "evLoadAudioFile"     },
-    { evDropSubtitle,      "evDropSubtitle"      },
-    { evSetAspect,         "evSetAspect"         }
+    { evEqualizer,         "evEqualizer"         },
+    { evAbout,             "evAbout"             },
+    { evPreferences,       "evPreferences"       },
+    { evSkinBrowser,       "evSkinBrowser"       },
+    { evMenu,              "evMenu"              },
+    { evIconify,           "evIconify"           },
+    { evExit,              "evExit"              }
 };
 
-static const int EVENTS = sizeof(evNames) / sizeof(evName);
-
+/**
+ * @brief Free all memory allocated to an item and set all its pointers to NULL.
+ *
+ * @param item item to be freed
+ */
 static void appClearItem(wItem *item)
 {
-    item->type   = itNone;
-    item->x      = 0;
-    item->y      = 0;
-    item->width  = 0;
-    item->height = 0;
     bpFree(&item->Bitmap);
     bpFree(&item->Mask);
-    item->fontid = 0;
-    item->align  = fntAlignLeft;
-    gfree((void **)&item->label);
-    item->pwidth    = 0;
-    item->pheight   = 0;
-    item->numphases = 0;
-    item->value     = 0;
-    item->message   = evNone;
-    item->R = 0;
-    item->G = 0;
-    item->B = 0;
-    gfree((void **)&item->text);
-    item->textwidth = 0;
-    item->starttime = 0;
-    item->last_x    = 0;
-    item->pressed   = btnDisabled;
-    item->tmp       = 0;
+    free(item->label);
+    free(item->text);
+    memset(item, 0, sizeof(*item));
 }
 
-void appResetStruct(void)
-{
-    appMPlayer.IndexOfMainItems = -1;
-    appMPlayer.IndexOfBarItems  = -1;
-    appMPlayer.IndexOfMenuItems = -1;
-
-    appMPlayer.sub.x = -1;   // NOTE TO MYSELF: is this really necessary?
-    appMPlayer.sub.y = -1;   // NOTE TO MYSELF: is this really necessary?
-}
-
+/**
+ * @brief Free all memory allocated to all GUI items and reset all item counters.
+ */
 void appFreeStruct(void)
 {
     int i;
 
-    appClearItem(&appMPlayer.main);
-    appMPlayer.mainDecoration = 0;
+    appClearItem(&guiApp.main);
+    guiApp.mainDecoration = 0;
 
-    appClearItem(&appMPlayer.sub);
+    appClearItem(&guiApp.video);
 
-    appClearItem(&appMPlayer.bar);
-    appMPlayer.barIsPresent = 0;
+    appClearItem(&guiApp.playbar);
+    guiApp.playbarIsPresent = 0;
 
-    appClearItem(&appMPlayer.menuBase);
-    appClearItem(&appMPlayer.menuSelected);
-    appMPlayer.menuIsPresent = 0;
+    appClearItem(&guiApp.menu);
+    appClearItem(&guiApp.menuSelected);
+    guiApp.menuIsPresent = 0;
 
-    for (i = 0; i <= appMPlayer.IndexOfMainItems; i++)
-        appClearItem(&appMPlayer.mainItems[i]);
-    for (i = 0; i <= appMPlayer.IndexOfBarItems; i++)
-        appClearItem(&appMPlayer.barItems[i]);
-    for (i = 0; i <= appMPlayer.IndexOfMenuItems; i++)
-        appClearItem(&appMPlayer.menuItems[i]);
+    for (i = 0; i <= guiApp.IndexOfMainItems; i++)
+        appClearItem(&guiApp.mainItems[i]);
+    for (i = 0; i <= guiApp.IndexOfPlaybarItems; i++)
+        appClearItem(&guiApp.playbarItems[i]);
+    for (i = 0; i <= guiApp.IndexOfMenuItems; i++)
+        appClearItem(&guiApp.menuItems[i]);
 
-    appResetStruct();
+    guiApp.IndexOfMainItems    = -1;
+    guiApp.IndexOfPlaybarItems = -1;
+    guiApp.IndexOfMenuItems    = -1;
+
     fntFreeFont();
 }
 
-int appFindMessage(unsigned char *str)
+/**
+ * @brief Find the event belonging to an event name.
+ *
+ * @param name event name
+ *
+ * @return event >= 0 (ok) or -1 (not found)
+ */
+int appFindMessage(const char *name)
 {
-    int i;
+    unsigned int i;
 
-    for (i = 0; i < EVENTS; i++)
-        if (!strcmp(evNames[i].name, str))
+    for (i = 0; i < FF_ARRAY_ELEMS(evNames); i++)
+        if (!strcmp(evNames[i].name, name))
             return evNames[i].message;
 
     return -1;
 }
 
+/**
+ * @brief Find the item belonging to an event.
+ *
+ * @param event event
+ *
+ * @return pointer to the item (ok) or NULL (not found)
+ */
+wItem *appFindItem(int event)
+{
+    wItem *item;
+    int i, n;
+
+    if (guiApp.videoWindow.isFullScreen && guiApp.playbarIsPresent) {
+        item = guiApp.playbarItems;
+        n    = guiApp.IndexOfPlaybarItems;
+    } else {
+        item = guiApp.mainItems;
+        n    = guiApp.IndexOfMainItems;
+    }
+
+    for (i = 0; i <= n; i++)
+        if (item[i].message == event)
+            return &item[i];
+
+    return NULL;
+}
+
+/**
+ * @brief Modify the state (i.e. set a new value) to the item belonging to an event.
+ *
+ * @param event event
+ * @param state new value
+ */
 void btnModify(int event, float state)
 {
     int i;
 
-    for (i = 0; i <= appMPlayer.IndexOfMainItems; i++) {
-        if (appMPlayer.mainItems[i].message == event) {
-            switch (appMPlayer.mainItems[i].type) {
+    for (i = 0; i <= guiApp.IndexOfMainItems; i++) {
+        if (guiApp.mainItems[i].message == event) {
+            switch (guiApp.mainItems[i].type) {
             case itButton:
-                appMPlayer.mainItems[i].pressed = (int)state;
-                appMPlayer.mainItems[i].tmp     = (int)state;
+                guiApp.mainItems[i].pressed = (int)state;
                 break;
 
             case itPotmeter:
             case itVPotmeter:
             case itHPotmeter:
-                if (state < 0.0)
-                    state = 0.0;
-                if (state > 100.0)
-                    state = 100.0;
-                appMPlayer.mainItems[i].value = state;
+                if (state < 0.0f)
+                    state = 0.0f;
+                if (state > 100.0f)
+                    state = 100.0f;
+                guiApp.mainItems[i].value = state;
                 break;
             }
         }
     }
 
-    for (i = 0; i <= appMPlayer.IndexOfBarItems; i++) {
-        if (appMPlayer.barItems[i].message == event) {
-            switch (appMPlayer.barItems[i].type) {
+    for (i = 0; i <= guiApp.IndexOfPlaybarItems; i++) {
+        if (guiApp.playbarItems[i].message == event) {
+            switch (guiApp.playbarItems[i].type) {
             case itButton:
-                appMPlayer.barItems[i].pressed = (int)state;
-                appMPlayer.barItems[i].tmp     = (int)state;
+                guiApp.playbarItems[i].pressed = (int)state;
                 break;
 
             case itPotmeter:
             case itVPotmeter:
             case itHPotmeter:
-                if (state < 0.0)
-                    state = 0.0;
-                if (state > 100.0)
-                    state = 100.0;
-                appMPlayer.barItems[i].value = state;
+                if (state < 0.0f)
+                    state = 0.0f;
+                if (state > 100.0f)
+                    state = 100.0f;
+                guiApp.playbarItems[i].value = state;
                 break;
             }
         }
     }
 }
 
+/**
+ * @brief Set the @a pressed state (i.e. a new value) to the item belonging to an event.
+ *
+ * @param event event
+ * @param set new value
+ */
 void btnSet(int event, int set)
 {
     int i;
 
-    for (i = 0; i <= appMPlayer.IndexOfMainItems; i++) {
-        if (appMPlayer.mainItems[i].message == event) {
-            appMPlayer.mainItems[i].pressed = set;
-            appMPlayer.barItems[i].tmp      = 0;
-        }
-    }
+    for (i = 0; i <= guiApp.IndexOfMainItems; i++)
+        if (guiApp.mainItems[i].message == event)
+            guiApp.mainItems[i].pressed = set;
 
-    for (i = 0; i <= appMPlayer.IndexOfBarItems; i++) {
-        if (appMPlayer.barItems[i].message == event) {
-            appMPlayer.barItems[i].pressed = set;
-            appMPlayer.barItems[i].tmp     = 0;
-        }
-    }
+    for (i = 0; i <= guiApp.IndexOfPlaybarItems; i++)
+        if (guiApp.playbarItems[i].message == event)
+            guiApp.playbarItems[i].pressed = set;
 }

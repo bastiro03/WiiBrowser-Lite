@@ -40,6 +40,7 @@
 #include "help_mp.h"
 #include "video_out.h"
 #include "video_out_internal.h"
+#include "libmpcodecs/vf.h"
 #include "aspect.h"
 
 #include "fastmemcpy.h"
@@ -55,7 +56,7 @@
 #include "libmpcodecs/vf_scale.h"
 
 static const vo_info_t info = {
-    "SNAP/WarpOverlay!/DIVE video output",
+    "SNAP/WarpOverlay!/VMAN/DIVE video output",
     "kva",
     "KO Myung-Hun <komh@chollian.net>",
     ""
@@ -181,6 +182,13 @@ static int query_format_info(int format, PBOOL pfHWAccel, PFOURCC pfcc,
         fcc             = FOURCC_YVU9;
         bpp             = 1;
         nChromaShift    = 2;
+        break;
+
+    case IMGFMT_BGR32:
+        fHWAccel        = m_int.kvac.ulInputFormatFlags & KVAF_BGR32;
+        fcc             = FOURCC_BGR4;
+        bpp             = 4;
+        nChromaShift    = 0;
         break;
 
     case IMGFMT_BGR24:
@@ -544,18 +552,20 @@ static int preinit(const char *arg)
 
     int     fUseSnap = 0;
     int     fUseWO   = 0;
+    int     fUseVman = 0;
     int     fUseDive = 0;
     int     fFixT23  = 0;
 
     const opt_t subopts[] = {
         {"snap", OPT_ARG_BOOL, &fUseSnap, NULL},
         {"wo",   OPT_ARG_BOOL, &fUseWO,   NULL},
+        {"vman", OPT_ARG_BOOL, &fUseVman, NULL},
         {"dive", OPT_ARG_BOOL, &fUseDive, NULL},
         {"t23",  OPT_ARG_BOOL, &fFixT23,  NULL},
         {NULL,              0, NULL,      NULL}
     };
 
-    PCSZ pcszVideoModeStr[3] = {"DIVE", "WarpOverlay!", "SNAP"};
+    PCSZ pcszVideoModeStr[3] = {"DIVE", "WarpOverlay!", "SNAP", "VMAN"};
 
     if (subopt_parse(arg, subopts) != 0)
         return -1;
@@ -612,13 +622,15 @@ static int preinit(const char *arg)
         m_int.pfnwpOldFrame = WinSubclassWindow(m_int.hwndFrame,
                                                 NewFrameWndProc);
 
-    if (!!fUseSnap + !!fUseWO + !!fUseDive > 1)
+    if (!!fUseSnap + !!fUseWO + !!fUseVman + !!fUseDive > 1)
         mp_msg(MSGT_VO, MSGL_WARN,"KVA: Multiple mode specified!!!\n");
 
     if (fUseSnap)
         kvaMode = KVAM_SNAP;
     else if (fUseWO)
         kvaMode = KVAM_WO;
+    else if (fUseVman)
+        kvaMode = KVAM_VMAN;
     else if (fUseDive)
         kvaMode = KVAM_DIVE;
     else
@@ -672,6 +684,9 @@ static int config(uint32_t width, uint32_t height,
 {
     RECTL   rcl;
 
+    if (vo_wintitle)
+        title = vo_wintitle;
+
     mp_msg(MSGT_VO, MSGL_V,
            "KVA: Using 0x%X (%s) image format, vo_config_count = %d\n",
            format, vo_format_name(format), vo_config_count);
@@ -697,6 +712,8 @@ static int config(uint32_t width, uint32_t height,
             dstFormat = IMGFMT_YUY2;
         else if (m_int.kvac.ulInputFormatFlags & KVAF_YVU9)
             dstFormat = IMGFMT_YVU9;
+        else if (m_int.kvac.ulInputFormatFlags & KVAF_BGR32)
+            dstFormat = IMGFMT_BGR32;
         else if (m_int.kvac.ulInputFormatFlags & KVAF_BGR24)
             dstFormat = IMGFMT_BGR24;
         else if (m_int.kvac.ulInputFormatFlags & KVAF_BGR16)
@@ -948,7 +965,7 @@ static int color_ctrl_get(char *what, int *value)
     return VO_TRUE;
 }
 
-static int control(uint32_t request, void *data, ...)
+static int control(uint32_t request, void *data)
 {
     switch (request) {
     case VOCTRL_GET_IMAGE:
@@ -965,26 +982,14 @@ static int control(uint32_t request, void *data, ...)
 
     case VOCTRL_SET_EQUALIZER:
         {
-        va_list ap;
-        int     value;
-
-        va_start(ap, data);
-        value = va_arg(ap, int);
-        va_end(ap);
-
-        return color_ctrl_set(data, value);
+        vf_equalizer_t *eq=data;
+        return color_ctrl_set(eq->item, eq->value);
         }
 
     case VOCTRL_GET_EQUALIZER:
         {
-        va_list ap;
-        int     *value;
-
-        va_start(ap, data);
-        value = va_arg(ap, int *);
-        va_end(ap);
-
-        return color_ctrl_get(data, value);
+        vf_equalizer_t *eq=data;
+        return color_ctrl_get(eq->item, &eq->value);
         }
 
     case VOCTRL_UPDATE_SCREENINFO:

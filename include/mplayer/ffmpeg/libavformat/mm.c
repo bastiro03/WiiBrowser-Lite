@@ -33,6 +33,7 @@
 
 #include "libavutil/intreadwrite.h"
 #include "avformat.h"
+#include "internal.h"
 
 #define MM_PREAMBLE_SIZE    6
 
@@ -80,8 +81,7 @@ static int probe(AVProbeData *p)
     return AVPROBE_SCORE_MAX / 2;
 }
 
-static int read_header(AVFormatContext *s,
-                           AVFormatParameters *ap)
+static int read_header(AVFormatContext *s)
 {
     MmDemuxContext *mm = s->priv_data;
     AVIOContext *pb = s->pb;
@@ -102,10 +102,10 @@ static int read_header(AVFormatContext *s,
     avio_rl16(pb);   /* ibm-pc video bios mode */
     width = avio_rl16(pb);
     height = avio_rl16(pb);
-    avio_seek(pb, length - 10, SEEK_CUR);  /* unknown data */
+    avio_skip(pb, length - 10);  /* unknown data */
 
     /* video stream */
-    st = av_new_stream(s, 0);
+    st = avformat_new_stream(s, NULL);
     if (!st)
         return AVERROR(ENOMEM);
     st->codec->codec_type = AVMEDIA_TYPE_VIDEO;
@@ -113,11 +113,11 @@ static int read_header(AVFormatContext *s,
     st->codec->codec_tag = 0;  /* no fourcc */
     st->codec->width = width;
     st->codec->height = height;
-    av_set_pts_info(st, 64, 1, frame_rate);
+    avpriv_set_pts_info(st, 64, 1, frame_rate);
 
     /* audio stream */
     if (length == MM_HEADER_LEN_AV) {
-        st = av_new_stream(s, 0);
+        st = avformat_new_stream(s, NULL);
         if (!st)
             return AVERROR(ENOMEM);
         st->codec->codec_type = AVMEDIA_TYPE_AUDIO;
@@ -125,7 +125,7 @@ static int read_header(AVFormatContext *s,
         st->codec->codec_id = CODEC_ID_PCM_U8;
         st->codec->channels = 1;
         st->codec->sample_rate = 8000;
-        av_set_pts_info(st, 64, 1, 8000); /* 8000 hz */
+        avpriv_set_pts_info(st, 64, 1, 8000); /* 8000 hz */
     }
 
     mm->audio_pts = 0;
@@ -174,25 +174,22 @@ static int read_packet(AVFormatContext *s,
         case MM_TYPE_AUDIO :
             if (av_get_packet(s->pb, pkt, length)<0)
                 return AVERROR(ENOMEM);
-            pkt->size = length;
             pkt->stream_index = 1;
             pkt->pts = mm->audio_pts++;
             return 0;
 
         default :
             av_log(s, AV_LOG_INFO, "unknown chunk type 0x%x\n", type);
-            avio_seek(pb, length, SEEK_CUR);
+            avio_skip(pb, length);
         }
     }
-
-    return 0;
 }
 
 AVInputFormat ff_mm_demuxer = {
-    "mm",
-    NULL_IF_CONFIG_SMALL("American Laser Games MM format"),
-    sizeof(MmDemuxContext),
-    probe,
-    read_header,
-    read_packet,
+    .name           = "mm",
+    .long_name      = NULL_IF_CONFIG_SMALL("American Laser Games MM format"),
+    .priv_data_size = sizeof(MmDemuxContext),
+    .read_probe     = probe,
+    .read_header    = read_header,
+    .read_packet    = read_packet,
 };

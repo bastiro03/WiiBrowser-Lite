@@ -27,7 +27,7 @@
 #include <inttypes.h>
 
 #include "config.h"
-#if !defined(GEKKO)
+
 #if !HAVE_WINSOCK2_H
 #include <netdb.h>
 #include <netinet/in.h>
@@ -36,7 +36,6 @@
 #else
 #include <winsock2.h>
 #include <ws2tcpip.h>
-#endif
 #endif
 
 #include "mp_msg.h"
@@ -265,11 +264,7 @@ rtcp_connect (int client_port, int server_port, const char* server_hostname)
   }
 
   sin.sin_family = AF_INET;
-#if defined(GEKKO)
-  memcpy (&(sin.sin_addr.s_addr), hp->h_addr_list[0], sizeof (hp->h_addr_list[0]));
-#else
   memcpy (&(sin.sin_addr.s_addr), hp->h_addr, sizeof (hp->h_addr));
-#endif
   sin.sin_port = htons (server_port);
 
   /* datagram socket */

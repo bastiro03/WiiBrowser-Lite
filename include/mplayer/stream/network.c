@@ -57,6 +57,7 @@ int   network_bandwidth=0;
 int   network_cookies_enabled = 0;
 char *network_useragent=NULL;
 char *network_referrer=NULL;
+char **network_http_header_fields=NULL;
 
 /* IPv6 options */
 int   network_ipv4_only_proxy = 0;
@@ -101,6 +102,7 @@ const mime_struct_t mime_type_table[] = {
 	// Real Media
 //	{ "audio/x-pn-realaudio", DEMUXER_TYPE_REAL },
 	// OGG Streaming
+	{ "application/ogg", DEMUXER_TYPE_OGG },
 	{ "application/x-ogg", DEMUXER_TYPE_OGG },
 	// NullSoft Streaming Video
 	{ "video/nsv", DEMUXER_TYPE_NSV},
@@ -243,8 +245,14 @@ http_send_request( URL_t *url, off_t pos ) {
 	    snprintf(str, sizeof(str), "Range: bytes=%"PRId64"-", (int64_t)pos);
 	    http_set_field(http_hdr, str);
 	}
-
+#ifndef GEKKO
 	if (network_cookies_enabled) cookies_set( http_hdr, server_url->hostname, server_url->url );
+#endif
+	if (network_http_header_fields) {
+		int i=0;
+		while (network_http_header_fields[i])
+			http_set_field(http_hdr, network_http_header_fields[i++]);
+	}
 
 	http_set_field( http_hdr, "Connection: close");
 	if (proxy)
@@ -450,7 +458,9 @@ nop_streaming_read( int fd, char *buffer, int size, streaming_ctrl_t *stream_ctr
 		ret = recv( fd, buffer+len, size-len, 0 );
 		if( ret<0 ) {
 			mp_msg(MSGT_NETWORK,MSGL_ERR,"nop_streaming_read error : %s\n",strerror(errno));
-		}
+			ret = 0;
+		} else if (ret == 0)
+			stream_ctrl->status = streaming_stopped_e;
 		len += ret;
 //printf("read %d bytes from network\n", len );
 	}

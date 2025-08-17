@@ -4,7 +4,7 @@
  * to compile test application:
  *  cc -I. -DTESTING -o codec-cfg-test codec-cfg.c mp_msg.o osdep/getch2.o -ltermcap
  * to compile CODECS2HTML:
- *   gcc -DCODECS2HTML -o codecs2html codec-cfg.c mp_msg.o
+ *   gcc -DCODECS2HTML -o codecs2html codec-cfg.c
  *
  * TODO: implement informat in CODECS2HTML too
  *
@@ -53,9 +53,7 @@
 
 #include "help_mp.h"
 
-// for mmioFOURCC:
-#include "libmpdemux/aviheader.h"
-
+#include "libavutil/avutil.h"
 #include "libmpcodecs/img_format.h"
 #include "codec-cfg.h"
 
@@ -94,12 +92,12 @@ static int add_to_fourcc(char *s, char *alias, unsigned int *fourcc,
         goto err_out_too_many;
 
     do {
-        tmp = mmioFOURCC(s[0], s[1], s[2], s[3]);
+        tmp = MKTAG(s[0], s[1], s[2], s[3]);
         for (j = 0; j < i; j++)
             if (tmp == fourcc[j])
                 goto err_out_duplicated;
         fourcc[i] = tmp;
-        map[i] = alias ? mmioFOURCC(alias[0], alias[1], alias[2], alias[3]) : tmp;
+        map[i] = alias ? MKTAG(alias[0], alias[1], alias[2], alias[3]) : tmp;
         s += 4;
         i++;
     } while ((*(s++) == ',') && --freeslots);
@@ -164,65 +162,81 @@ static const struct {
     // note: due to parser deficiencies/simplicity, if one format
     // name matches the beginning of another, the longer one _must_
     // come first in this list.
-    {"YV12",  IMGFMT_YV12},
-    {"I420",  IMGFMT_I420},
-    {"IYUV",  IMGFMT_IYUV},
-    {"NV12",  IMGFMT_NV12},
-    {"NV21",  IMGFMT_NV21},
-    {"YVU9",  IMGFMT_YVU9},
-    {"IF09",  IMGFMT_IF09},
-    {"444P16LE", IMGFMT_444P16_LE},
-    {"444P16BE", IMGFMT_444P16_BE},
-    {"422P16LE", IMGFMT_422P16_LE},
-    {"422P16BE", IMGFMT_422P16_BE},
-    {"420P16LE", IMGFMT_420P16_LE},
-    {"420P16BE", IMGFMT_420P16_BE},
-    {"444P16", IMGFMT_444P16},
-    {"422P16", IMGFMT_422P16},
-    {"420P16", IMGFMT_420P16},
-    {"420A",  IMGFMT_420A},
-    {"444P",  IMGFMT_444P},
-    {"422P",  IMGFMT_422P},
-    {"411P",  IMGFMT_411P},
-    {"440P",  IMGFMT_440P},
-    {"Y800",  IMGFMT_Y800},
-    {"Y8",    IMGFMT_Y8},
+    {"YV12",        IMGFMT_YV12},
+    {"I420",        IMGFMT_I420},
+    {"IYUV",        IMGFMT_IYUV},
+    {"NV12",        IMGFMT_NV12},
+    {"NV21",        IMGFMT_NV21},
+    {"YVU9",        IMGFMT_YVU9},
+    {"IF09",        IMGFMT_IF09},
+    {"444P16LE",    IMGFMT_444P16_LE},
+    {"444P16BE",    IMGFMT_444P16_BE},
+    {"444P10LE",    IMGFMT_444P10_LE},
+    {"444P10BE",    IMGFMT_444P10_BE},
+    {"422P16LE",    IMGFMT_422P16_LE},
+    {"422P16BE",    IMGFMT_422P16_BE},
+    {"420P16LE",    IMGFMT_420P16_LE},
+    {"420P16BE",    IMGFMT_420P16_BE},
+    {"444P16",      IMGFMT_444P16},
+    {"444P10",      IMGFMT_444P10},
+    {"444P9",       IMGFMT_444P9},
+    {"422P16",      IMGFMT_422P16},
+    {"422P10",      IMGFMT_422P10},
+    {"422P9",       IMGFMT_422P9},
+    {"420P16",      IMGFMT_420P16},
+    {"420P10",      IMGFMT_420P10},
+    {"420P9",       IMGFMT_420P9},
+    {"420A",        IMGFMT_420A},
+    {"444P",        IMGFMT_444P},
+    {"444A",        IMGFMT_444A},
+    {"422P",        IMGFMT_422P},
+    {"422A",        IMGFMT_422A},
+    {"411P",        IMGFMT_411P},
+    {"440P",        IMGFMT_440P},
+    {"Y800",        IMGFMT_Y800},
+    {"Y8",          IMGFMT_Y8},
 
-    {"YUY2",  IMGFMT_YUY2},
-    {"UYVY",  IMGFMT_UYVY},
-    {"YVYU",  IMGFMT_YVYU},
+    {"YUY2",        IMGFMT_YUY2},
+    {"UYVY",        IMGFMT_UYVY},
+    {"YVYU",        IMGFMT_YVYU},
 
-    {"RGB48LE",  IMGFMT_RGB48LE},
-    {"RGB48BE",  IMGFMT_RGB48BE},
-    {"RGB4",  IMGFMT_RGB4},
-    {"RGB8",  IMGFMT_RGB8},
-    {"RGB15", IMGFMT_RGB15},
-    {"RGB16", IMGFMT_RGB16},
-    {"RGB24", IMGFMT_RGB24},
-    {"RGB32", IMGFMT_RGB32},
-    {"BGR4",  IMGFMT_BGR4},
-    {"BGR8",  IMGFMT_BGR8},
-    {"BGR15", IMGFMT_BGR15},
-    {"BGR16", IMGFMT_BGR16},
-    {"BGR24", IMGFMT_BGR24},
-    {"BGR32", IMGFMT_BGR32},
-    {"RGB1",  IMGFMT_RGB1},
-    {"BGR1",  IMGFMT_BGR1},
+    {"RGB64LE",     IMGFMT_RGB64LE},
+    {"RGB64BE",     IMGFMT_RGB64BE},
+    {"RGB48LE",     IMGFMT_RGB48LE},
+    {"RGB48BE",     IMGFMT_RGB48BE},
+    {"RGB4",        IMGFMT_RGB4},
+    {"RGB8",        IMGFMT_RGB8},
+    {"RGB15",       IMGFMT_RGB15},
+    {"RGB16",       IMGFMT_RGB16},
+    {"RGB24",       IMGFMT_RGB24},
+    {"RGB32",       IMGFMT_RGB32},
+    {"RGBA",        IMGFMT_RGBA},
+    {"BGR4",        IMGFMT_BGR4},
+    {"BGR8",        IMGFMT_BGR8},
+    {"BGR15LE",     IMGFMT_BGR15LE},
+    {"BGR15",       IMGFMT_BGR15},
+    {"BGR16",       IMGFMT_BGR16},
+    {"BGR24",       IMGFMT_BGR24},
+    {"BGR32",       IMGFMT_BGR32},
+    {"BGRA",        IMGFMT_BGRA},
+    {"RGB1",        IMGFMT_RGB1},
+    {"BGR1",        IMGFMT_BGR1},
+    {"GBR24P",      IMGFMT_GBR24P},
 
-    {"MPES",  IMGFMT_MPEGPES},
-    {"ZRMJPEGNI", IMGFMT_ZRMJPEGNI},
-    {"ZRMJPEGIT", IMGFMT_ZRMJPEGIT},
-    {"ZRMJPEGIB", IMGFMT_ZRMJPEGIB},
+    {"MPES",        IMGFMT_MPEGPES},
+    {"ZRMJPEGNI",   IMGFMT_ZRMJPEGNI},
+    {"ZRMJPEGIT",   IMGFMT_ZRMJPEGIT},
+    {"ZRMJPEGIB",   IMGFMT_ZRMJPEGIB},
 
-    {"IDCT_MPEG2",IMGFMT_XVMC_IDCT_MPEG2},
-    {"MOCO_MPEG2",IMGFMT_XVMC_MOCO_MPEG2},
+    {"IDCT_MPEG2",  IMGFMT_XVMC_IDCT_MPEG2},
+    {"MOCO_MPEG2",  IMGFMT_XVMC_MOCO_MPEG2},
 
-    {"VDPAU_MPEG1",IMGFMT_VDPAU_MPEG1},
-    {"VDPAU_MPEG2",IMGFMT_VDPAU_MPEG2},
-    {"VDPAU_H264",IMGFMT_VDPAU_H264},
-    {"VDPAU_WMV3",IMGFMT_VDPAU_WMV3},
-    {"VDPAU_VC1",IMGFMT_VDPAU_VC1},
-    {"VDPAU_MPEG4",IMGFMT_VDPAU_MPEG4},
+    {"VDPAU_MPEG1", IMGFMT_VDPAU_MPEG1},
+    {"VDPAU_MPEG2", IMGFMT_VDPAU_MPEG2},
+    {"VDPAU_H264",  IMGFMT_VDPAU_H264},
+    {"VDPAU_WMV3",  IMGFMT_VDPAU_WMV3},
+    {"VDPAU_VC1",   IMGFMT_VDPAU_VC1},
+    {"VDPAU_MPEG4", IMGFMT_VDPAU_MPEG4},
 
     {NULL,    0}
 };
@@ -554,10 +568,10 @@ int parse_codec_cfg(const char *cfgfile)
 #endif
     }
 
-    mp_msg(MSGT_CODECCFG,MSGL_V,MSGTR_ReadingFile, cfgfile);
+    mp_msg(MSGT_CODECCFG, MSGL_V, "Reading optional codecs config file %s: ", cfgfile);
 
     if ((fp = fopen(cfgfile, "r")) == NULL) {
-        mp_msg(MSGT_CODECCFG,MSGL_V,MSGTR_CantOpenFileError, cfgfile, strerror(errno));
+        mp_msg(MSGT_CODECCFG, MSGL_V, "%s\n", strerror(errno));
         return 0;
     }
 
@@ -799,12 +813,14 @@ void codecs_uninit_free(void) {
     audio_codecs=NULL;
 }
 
+#ifdef GEKKO
 void load_builtin_codecs() {
-    video_codecs = builtin_video_codecs;
-    audio_codecs = builtin_audio_codecs;
-    nr_vcodecs = sizeof(builtin_video_codecs)/sizeof(codecs_t);
-    nr_acodecs = sizeof(builtin_audio_codecs)/sizeof(codecs_t);
+	video_codecs = builtin_video_codecs;
+	audio_codecs = builtin_audio_codecs;
+	nr_vcodecs = sizeof(builtin_video_codecs)/sizeof(codecs_t);
+	nr_acodecs = sizeof(builtin_audio_codecs)/sizeof(codecs_t);
 }
+#endif
 
 codecs_t *find_audio_codec(unsigned int fourcc, unsigned int *fourccmap,
                            codecs_t *start, int force)

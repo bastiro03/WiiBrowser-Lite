@@ -33,18 +33,15 @@ extern "C" {
 
 extern GXRModeObj *vmode;
 
-void mpviSetup(int video_mode, bool overscan);
-void mpviClear();
-
-void mpgxInit(bool vf);
-void mpgxSetupYUVp(int colorspace, bool levelconv);
-void mpgxSetSquare(f32 haspect, f32 vaspect);
-void mpgxConfigYUVp(u32 luma_width, u32 luma_height, u32 chroma_width, u32 chroma_height);
-void mpgxCopyYUVp(u8 *buffer[3], int stride[3]);
-void mpgxBlitOSD(int x0, int y0, int w, int h, unsigned char *src, unsigned char *srca, int stride);
-void mpgxWaitDrawDone();
-void mpgxPushFrame();
-
+void GX_InitVideo();
+void GX_SetScreenPos(int xshift, int yshift, float xzoom, float yzoom);
+void DrawMPlayer();
+void GX_StartYUV(u16 width, u16 height, u16 haspect, u16 vaspect);
+void GX_RenderTexture();
+void GX_AllocTextureMemory();
+void GX_FillTextureYUV(u8 *buffer[3], int stride[3]);
+void GX_ConfigTextureYUV(u16 width, u16 height, u16 chroma_width, u16 chroma_height);
+void vo_draw_alpha_gekko(int x0, int y0, int w, int h, unsigned char *src, unsigned char *srca, int stride);
 
 #ifdef __cplusplus
 }

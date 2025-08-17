@@ -48,7 +48,7 @@ double mf_fps = 25.0;
 char * mf_type = NULL; //"jpg";
 
 mf_t* open_mf(char * filename){
-#if defined(HAVE_GLOB) || defined(__MINGW32__) || defined(GEKKO)
+#if defined(HAVE_GLOB) || defined(__MINGW32__)
  glob_t        gg;
  struct stat   fs;
  int           i;
@@ -127,7 +127,7 @@ mf_t* open_mf(char * filename){
    mf->nr_of_files=gg.gl_pathc;
    mf->names=calloc( gg.gl_pathc, sizeof( char* ) );
 
-   mp_msg( MSGT_STREAM,MSGL_INFO,"[mf] number of files: %d (%d)\n",mf->nr_of_files, gg.gl_pathc * sizeof( char* ) );
+   mp_msg( MSGT_STREAM, MSGL_INFO, "[mf] number of files: %d (%zu)\n", mf->nr_of_files, gg.gl_pathc * sizeof( char* ) );
 
    for( i=0;i < gg.gl_pathc;i++ )
     {

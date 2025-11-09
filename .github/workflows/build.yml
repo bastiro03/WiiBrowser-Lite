@@ -1,0 +1,58 @@
+name: Build WiiBrowser-Lite
+
+on:
+  push:
+    branches: [ main, claude/** ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: devkitpro/devkitppc:latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Verify devkitPPC environment
+      run: |
+        echo "DEVKITPRO=$DEVKITPRO"
+        echo "DEVKITPPC=$DEVKITPPC"
+        powerpc-eabi-gcc --version
+        ls -la $DEVKITPRO
+
+    - name: Clean build directory
+      run: make clean || true
+
+    - name: Build WiiBrowser-Lite
+      run: |
+        make -j$(nproc)
+
+    - name: Verify build artifacts
+      run: |
+        ls -lh wiibrowserlite.dol wiibrowserlite.elf
+        file wiibrowserlite.dol wiibrowserlite.elf
+        echo "Binary size:"
+        du -h wiibrowserlite.dol
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: wiibrowser-lite-build
+        path: |
+          wiibrowserlite.dol
+          wiibrowserlite.elf
+          wiibrowserlite.map
+        retention-days: 30
+
+    - name: Upload .dol for release
+      uses: actions/upload-artifact@v4
+      with:
+        name: wiibrowserlite.dol
+        path: wiibrowserlite.dol
+        retention-days: 90

@@ -2,7 +2,23 @@
 
 This document describes how to build WiiBrowser-Lite with the latest devkitPPC toolchain, including Link Time Optimization (LTO) and modern HTTPS support.
 
-## Requirements
+## Quick Start (Docker - Recommended)
+
+The easiest way to build WiiBrowser-Lite is using the official devkitPPC Docker container:
+
+```bash
+# One-line build
+./docker-build.sh
+```
+
+That's it! The script will:
+- Pull the latest devkitPPC Docker image
+- Build the project with all optimizations
+- Generate `wiibrowserlite.dol` ready for your Wii
+
+**Requirements**: Docker installed and running ([Get Docker](https://docs.docker.com/get-docker/))
+
+## Requirements (Manual Build)
 
 ### DevkitPro Toolchain
 
@@ -78,14 +94,31 @@ at runtime to the SD card for use by libcurl.
 
 ## Building
 
-1. Clone the repository:
+### Option 1: Docker Build (Recommended)
+
+This is the easiest and most reliable method:
+
 ```bash
+# Clone the repository
 git clone https://github.com/matthargett/WiiBrowser-Lite.git
 cd WiiBrowser-Lite
+
+# Build using Docker
+./docker-build.sh
 ```
 
-2. Build the project:
+The script handles everything automatically and produces `wiibrowserlite.dol`.
+
+### Option 2: Manual Build
+
+If you have devkitPPC installed locally:
+
 ```bash
+# Clone the repository
+git clone https://github.com/matthargett/WiiBrowser-Lite.git
+cd WiiBrowser-Lite
+
+# Build the project
 make clean
 make -j$(nproc)
 ```
@@ -95,10 +128,22 @@ This will produce:
 - `wiibrowserlite.dol` - Wii executable in DOL format
 - `wiibrowserlite.map` - Linker map file
 
-3. The `.dol` file can be run on:
-   - Real Wii hardware (via Homebrew Channel)
-   - Dolphin emulator
-   - Other Wii homebrew loaders
+### Running the Build
+
+The `.dol` file can be run on:
+- Real Wii hardware (via Homebrew Channel)
+- Dolphin emulator
+- Other Wii homebrew loaders
+
+## Continuous Integration
+
+This project uses GitHub Actions to automatically build and test every commit. The CI pipeline:
+- Uses the official `devkitpro/devkitppc` Docker container
+- Builds on every push and pull request
+- Uploads build artifacts for download
+- Verifies the build completes successfully
+
+You can download pre-built binaries from the [Actions tab](https://github.com/matthargett/WiiBrowser-Lite/actions) on GitHub.
 
 ## Dependencies
 
@@ -116,14 +161,30 @@ but the existing pre-compiled versions will work.
 
 ## Troubleshooting
 
-### Build Errors
+### Docker Build Issues
+
+**Error: `docker: command not found`**
+- Install Docker from https://docs.docker.com/get-docker/
+- Ensure Docker daemon is running: `docker info`
+
+**Error: `Cannot connect to Docker daemon`**
+- Start Docker Desktop (Windows/Mac)
+- Or start Docker service: `sudo systemctl start docker` (Linux)
+
+**Build fails in Docker**
+- Ensure you have enough disk space (~2GB for container)
+- Try cleaning: `make clean` then run `./docker-build.sh` again
+
+### Manual Build Errors
 
 **Error: `powerpc-eabi-gcc: command not found`**
-- Ensure devkitPPC is installed and environment variables are set correctly
+- Use the Docker build method (recommended)
+- Or ensure devkitPPC is installed and environment variables are set correctly
 - Verify with: `echo $DEVKITPPC`
 
 **Error: Cannot find `-logc` or other libraries**
-- Install the full `wii-dev` package: `sudo dkp-pacman -S wii-dev`
+- Use the Docker build method (all libraries included)
+- Or install the full `wii-dev` package: `sudo dkp-pacman -S wii-dev`
 - Verify installation: `ls $DEVKITPRO/libogc`
 
 **LTO warnings during linking**

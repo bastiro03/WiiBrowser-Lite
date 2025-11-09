@@ -15,6 +15,10 @@
 extern const u8 font_ttf[];
 extern const u32 font_ttf_size;
 
+// CA Certificates
+extern const u8 cacert_pem[];
+extern const u32 cacert_pem_size;
+
 // Languages
 extern const u8 en_lang[];
 extern const u32 en_lang_size;

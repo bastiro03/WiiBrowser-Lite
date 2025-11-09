@@ -5,6 +5,7 @@
 
 #include "transfer.h"
 #include "networkop.h"
+#include "filelist.h"
 
 using namespace std;
 extern GuiToolbar *App;
@@ -16,6 +17,42 @@ GuiDownloadManager *manager = nullptr;
 
 static int downloadThreadHalt = 0;
 static list<Private *> queue;
+static char dl_cacert_path[256] = {0};
+
+// -----------------------------------------------------------
+// SSL CERTIFICATE SETUP
+// -----------------------------------------------------------
+
+static void setup_dl_cacert()
+{
+	if (dl_cacert_path[0] != 0)
+		return; // Already initialized
+
+	// Write the embedded CA certificate bundle to SD card
+	snprintf(dl_cacert_path, sizeof(dl_cacert_path), "%s/cacert.pem", Settings.AppPath);
+
+	FILE *f = fopen(dl_cacert_path, "wb");
+	if (f)
+	{
+		fwrite(cacert_pem, 1, cacert_pem_size, f);
+		fclose(f);
+	}
+	else
+	{
+		// Fallback: try writing to /tmp
+		snprintf(dl_cacert_path, sizeof(dl_cacert_path), "/tmp/cacert.pem");
+		f = fopen(dl_cacert_path, "wb");
+		if (f)
+		{
+			fwrite(cacert_pem, 1, cacert_pem_size, f);
+			fclose(f);
+		}
+		else
+		{
+			dl_cacert_path[0] = 0; // Failed to write cert
+		}
+	}
+}
 
 bool AddHandle(Private *data);
 void PopQueue();
@@ -266,7 +303,20 @@ bool AddHandle(Private *data)
 	/* some servers don't like requests that are made without a user-agent
 	field, so we provide one */
 	curl_easy_setopt(eh, CURLOPT_USERAGENT, "libcurl-agent/1.0");
-	curl_easy_setopt(eh, CURLOPT_SSL_VERIFYPEER, 0L);
+
+	/* Enable SSL certificate verification for HTTPS security */
+	setup_dl_cacert();
+	if (dl_cacert_path[0] != 0)
+	{
+		curl_easy_setopt(eh, CURLOPT_SSL_VERIFYPEER, 1L);
+		curl_easy_setopt(eh, CURLOPT_SSL_VERIFYHOST, 2L);
+		curl_easy_setopt(eh, CURLOPT_CAINFO, dl_cacert_path);
+	}
+	else
+	{
+		/* Fallback: disable verification if cert bundle couldn't be written */
+		curl_easy_setopt(eh, CURLOPT_SSL_VERIFYPEER, 0L);
+	}
 
 	/* proper function to close sockets */
 	curl_easy_setopt(eh, CURLOPT_CLOSESOCKETFUNCTION, netclose_callback);

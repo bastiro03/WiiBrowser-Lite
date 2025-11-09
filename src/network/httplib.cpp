@@ -30,12 +30,14 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "config.h"
 #include "httplib.h"
 
 #include "main.h"
 #include "menu.h"
+#include "filelist.h"
 
 extern "C"
 {
@@ -73,6 +75,42 @@ const char Agents[MAXAGENTS][256] =
 
 const struct block emptyblock = {nullptr, 0};
 static int firstRun = true;
+static char cacert_path[256] = {0};
+
+// -----------------------------------------------------------
+// SSL CERTIFICATE SETUP
+// -----------------------------------------------------------
+
+static void setup_cacert()
+{
+	if (cacert_path[0] != 0)
+		return; // Already initialized
+
+	// Write the embedded CA certificate bundle to SD card
+	snprintf(cacert_path, sizeof(cacert_path), "%s/cacert.pem", Settings.AppPath);
+
+	FILE *f = fopen(cacert_path, "wb");
+	if (f)
+	{
+		fwrite(cacert_pem, 1, cacert_pem_size, f);
+		fclose(f);
+	}
+	else
+	{
+		// Fallback: try writing to /tmp
+		snprintf(cacert_path, sizeof(cacert_path), "/tmp/cacert.pem");
+		f = fopen(cacert_path, "wb");
+		if (f)
+		{
+			fwrite(cacert_pem, 1, cacert_pem_size, f);
+			fclose(f);
+		}
+		else
+		{
+			cacert_path[0] = 0; // Failed to write cert
+		}
+	}
+}
 
 // -----------------------------------------------------------
 // DATA HANDLING
@@ -191,7 +229,20 @@ void setmainheaders(CURL *curl_handle, const char *url)
 	/* some servers don't like requests that are made without a user-agent
 	field, so we provide one */
 	curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, Agents[Settings.UserAgent]);
-	curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0L);
+
+	/* Enable SSL certificate verification for HTTPS security */
+	setup_cacert();
+	if (cacert_path[0] != 0)
+	{
+		curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 1L);
+		curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 2L);
+		curl_easy_setopt(curl_handle, CURLOPT_CAINFO, cacert_path);
+	}
+	else
+	{
+		/* Fallback: disable verification if cert bundle couldn't be written */
+		curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0L);
+	}
 
 	/* proper function to close sockets */
 	curl_easy_setopt(curl_handle, CURLOPT_CLOSESOCKETFUNCTION, close_callback);

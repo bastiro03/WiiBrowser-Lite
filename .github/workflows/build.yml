@@ -31,7 +31,7 @@ jobs:
 
     - name: Build WiiBrowser-Lite
       run: |
-        make -j$(nproc)
+        make -j4
 
     - name: Verify build artifacts
       run: |

@@ -1,5 +1,6 @@
 #include "menu.h"
 #include "handle.h"
+#include "gui_longtext.h"
 
 GuiToolbar *Toolbar = nullptr;
 
@@ -65,7 +66,7 @@ int HandleForm(GuiWindow *parentWindow, GuiWindow *mainWindow, ListaDiBottoni bt
 			button = InsButton(button, BUTTON);
 			GuiImage *ButtonImg = new GuiImage(&Button);
 			button->btn = new GuiButton(ButtonImg->GetWidth(), ButtonImg->GetHeight());
-			button->label = new GuiText((char *)lista->value.c_str(), 20, (GXColor){0, 0, 255, 255})
+			button->label = new GuiText(lista->value.c_str(), 20, (GXColor){0, 0, 255, 255});
 								button->label->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
 			button->label->SetMaxWidth(ButtonImg->GetWidth() - 5);
 			button->label->SetScroll(SCROLL_HORIZONTAL);
@@ -93,12 +94,12 @@ int HandleForm(GuiWindow *parentWindow, GuiWindow *mainWindow, ListaDiBottoni bt
 			button = InsButton(button, UPLOAD);
 			GuiImage *TextboxImg = new GuiImage(&Textbox);
 			button->btn = new GuiButton(TextboxImg->GetWidth(), TextboxImg->GetHeight());
-			button->label = new GuiText("", 20, (GXColor){0, 0, 0, 255})
+			button->label = new GuiText("", 20, (GXColor){0, 0, 0, 255});
 								button->label->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
 			button->label->SetMaxWidth(TextboxImg->GetWidth() - 45);
 			button->label->SetScroll(SCROLL_HORIZONTAL);
 
-			label = new GuiText("Upload", 20, (GXColor){0, 0, 255, 255})
+			label = new GuiText("Upload", 20, (GXColor){0, 0, 255, 255});
 						label->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 			label->SetPosition(0, -25);
 			label->SetMaxWidth(TextboxImg->GetWidth() - 5);
@@ -124,14 +125,14 @@ int HandleForm(GuiWindow *parentWindow, GuiWindow *mainWindow, ListaDiBottoni bt
 			button = InsButton(button, TEXT);
 			GuiImage *TextboxImg = new GuiImage(&Textbox);
 			button->btn = new GuiButton(TextboxImg->GetWidth(), TextboxImg->GetHeight());
-			button->label = new GuiText("", 20, (GXColor){0, 0, 0, 255})
+			button->label = new GuiText("", 20, (GXColor){0, 0, 0, 255});
 								button->label->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
 			button->label->SetMaxWidth(TextboxImg->GetWidth() - 45);
 			button->label->SetScroll(SCROLL_HORIZONTAL);
 
 			if (lista->label != "noLabel")
 			{
-				label = new GuiText((char *)lista->label.c_str(), 20, (GXColor){0, 0, 255, 255})
+				label = new GuiText(lista->label.c_str(), 20, (GXColor){0, 0, 255, 255});
 							label->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 				label->SetPosition(0, -25);
 				label->SetMaxWidth(TextboxImg->GetWidth() - 5);
@@ -169,14 +170,15 @@ int HandleForm(GuiWindow *parentWindow, GuiWindow *mainWindow, ListaDiBottoni bt
 			GuiImage *TextboxImg = new GuiImage(&TextboxImgData);
 			TextboxImg->SetScale(0.86);
 			button->btn = new GuiButton(TextboxImg->GetRealWidth(), TextboxImg->GetRealHeight());
-			button->label = new GuiLongText("", 20, (GXColor){0, 0, 0, 255})
-								button->label->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-			button->label->SetLinesToDraw(TextboxImg->GetRealHeight() / 25);
+			GuiLongText *longText = new GuiLongText("", 20, (GXColor){0, 0, 0, 255});
+			button->label = longText;
+			button->label->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+			longText->SetLinesToDraw(TextboxImg->GetRealHeight() / 25);
 			button->label->SetMaxWidth(TextboxImg->GetRealWidth() - 45);
 			button->label->SetPosition(20, 25);
 			if (lista->label != "noLabel")
 			{
-				label = new GuiText((char *)lista->label.c_str(), 20, (GXColor){0, 0, 255, 255})
+				label = new GuiText(lista->label.c_str(), 20, (GXColor){0, 0, 255, 255});
 							label->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 				label->SetPosition(0, -25);
 				label->SetMaxWidth(TextboxImg->GetRealWidth() - 5);

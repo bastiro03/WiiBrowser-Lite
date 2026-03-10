@@ -35,10 +35,11 @@ extern BROWSERINFO browser;
 extern BROWSERENTRY *browserList;
 extern char rootdir[10];
 
-int UpdateDirName(int method);
+int UpdateDirName();
 int FileSortCallback(const void *f1, const void *f2);
 void ResetBrowser();
 int BrowserChangeFolder();
-int BrowseDevice();
+int BrowseDevice(int dev = 0);
+int OpenDefaultFolder();
 
 #endif

@@ -3,12 +3,13 @@
 
 #include "fileop.h"
 #include "filebrowser.h"
-#include "archiveoperations/archive.h"
+#include "archiveoperations/Archive.h"
 
 bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, const char *label)
 {
 	char temp[256];
 	char title[100];
+	char fullpath[MAXPATHLEN];
 	int i;
 
 	ShutoffRumble();
@@ -52,10 +53,10 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, cons
 	GuiImage DeviceImg(&Device);
 	GuiButton InsertDEV(DeviceImg.GetWidth(), DeviceImg.GetHeight());
 
-	GuiText URL(strchr(temp, '/'), 20, (GXColor){0, 0, 0, 255})
-		GuiText DEV("SD", 20, (GXColor){0, 0, 0, 255})
+	GuiText URL(strchr(temp, '/'), 20, (GXColor){0, 0, 0, 255});
+	GuiText DEV("SD", 20, (GXColor){0, 0, 0, 255});
 
-			URL.SetMaxWidth(TextboxImg.GetWidth() - 20);
+	URL.SetMaxWidth(TextboxImg.GetWidth() - 20);
 	URL.SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
 	URL.SetPosition(5, 0);
 	URL.SetScroll(SCROLL_HORIZONTAL);
@@ -75,8 +76,8 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, cons
 	InsertDEV.SetTrigger(&trigA);
 	InsertDEV.SetEffectGrow();
 
-	GuiText titleTxt(title, 28, (GXColor){0, 0, 0, 255})
-		titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+	GuiText titleTxt(title, 28, (GXColor){0, 0, 0, 255});
+	titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	titleTxt.SetPosition(50, 50);
 
 	GuiFileBrowser fileBrowser(552, 248);
@@ -87,8 +88,8 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, cons
 	GuiImageData btnOutline(button_png);
 	GuiImageData btnOutlineOver(button_over_png);
 
-	GuiText okBtnTxt(label, 24, (GXColor){0, 0, 0, 255})
-		GuiImage okBtnImg(&btnOutline);
+	GuiText okBtnTxt(label, 24, (GXColor){0, 0, 0, 255});
+	GuiImage okBtnImg(&btnOutline);
 	GuiImage okBtnImgOver(&btnOutlineOver);
 	GuiButton okBtn(btnOutline.GetWidth(), btnOutline.GetHeight());
 	okBtn.SetAlignment(ALIGN_LEFT, ALIGN_BOTTOM);
@@ -99,8 +100,8 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, cons
 	okBtn.SetTrigger(&trigA);
 	okBtn.SetEffectGrow();
 
-	GuiText cancelBtnTxt("Cancel", 24, (GXColor){0, 0, 0, 255})
-		GuiImage cancelBtnImg(&btnOutline);
+	GuiText cancelBtnTxt("Cancel", 24, (GXColor){0, 0, 0, 255});
+	GuiImage cancelBtnImg(&btnOutline);
 	GuiImage cancelBtnImgOver(&btnOutlineOver);
 	GuiButton cancelBtn(btnOutline.GetWidth(), btnOutline.GetHeight());
 	cancelBtn.SetAlignment(ALIGN_RIGHT, ALIGN_BOTTOM);

@@ -1,7 +1,8 @@
 #ifndef _RAR_TYPES_
 #define _RAR_TYPES_
 
-typedef unsigned char    byte;   // unsigned 8 bits
+// Avoid conflict with std::byte in C++17/GCC 15
+#define byte unsigned char
 typedef unsigned short   ushort; // preferably 16 bits, but can be more
 typedef unsigned int     uint;   // 32 bits or more
 

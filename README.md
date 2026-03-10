@@ -1,5 +1,18 @@
 # WiiBrowser Lite
+
+[![Build Status](https://github.com/matthargett/WiiBrowser-Lite/actions/workflows/build.yml/badge.svg)](https://github.com/matthargett/WiiBrowser-Lite/actions/workflows/build.yml)
+
 Wiibrowser-lite is an alternative to the Wii Internet Channel. It is also a new version of Wiibrowser by [gave92](https://github.com/gave92). I want to provide a more modern base that makes things easier for other developers. Contributions through pull requests and similar methods are welcome, even though I am myself no longer actively working on this project.
+
+## Quick Start
+
+Build the latest version with one command:
+
+```bash
+./docker-build.sh
+```
+
+Or download pre-built binaries from the [releases page](https://github.com/matthargett/WiiBrowser-Lite/releases) or [GitHub Actions](https://github.com/matthargett/WiiBrowser-Lite/actions).
 ## Screenshots
 <p><img src="screenshots\advanced.png" width="100"> <img src="screenshots\bookmarks.png" width="100"> <img src="screenshots\download.png" width="100"> <img src="screenshots\file_browser.png" width="100"> <img src="screenshots\gmail.png" width="100"> <img src="screenshots\google.png" width="100"> <img src="screenshots\homescreen.png" width="100"> <img src="screenshots\settings.png" width="100"></p>
 
@@ -7,7 +20,8 @@ Wiibrowser-lite is an alternative to the Wii Internet Channel. It is also a new 
 
 ### Currently implemented
 * View your own web pages
-* Basic HTTP and HTTPS connection support
+* **Modern HTTPS with certificate verification** (Wikipedia, GitHub, etc.)
+* **Link Time Optimization (LTO)** for smaller, faster binaries
 * Links and web form support
 * Bookmarks
 * Import/Export of bookmarks
@@ -27,6 +41,19 @@ Wiibrowser-lite is an alternative to the Wii Internet Channel. It is also a new 
 * JavaScript support
 * Full video support
 * Multiple tabs
+
+## Building
+
+See [BUILD.md](BUILD.md) for detailed build instructions.
+
+**Quick build with Docker:**
+```bash
+./docker-build.sh
+```
+
+**Requirements:**
+- Docker (recommended) - [Get Docker](https://docs.docker.com/get-docker/)
+- Or devkitPPC r47+ with GCC 15.1.0
 
 ## Credits
 - [Dimok](https://github.com/dimok789): developed [WiiXplorer](https://sourceforge.net/projects/wiixplorer/), which WiiBrowser was both inspired by and stole code snippets from for its file management backend

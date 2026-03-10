@@ -111,7 +111,7 @@ bool CheckConnection()
 	sa.sin_family = AF_INET;
 	sa.sin_len = sizeof(struct sockaddr_in);
 	sa.sin_port = htons(80);
-	inet_aton("216.127.94.127", &sa.sin_addr); // store IP in sa
+	inet_pton(AF_INET, "216.127.94.127", &sa.sin_addr); // store IP in sa
 
 	int res = net_connect(s, (struct sockaddr *)&sa, sizeof(struct sockaddr_in));
 	net_close(s);

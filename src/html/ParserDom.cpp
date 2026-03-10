@@ -12,7 +12,6 @@
 using namespace std;
 using namespace htmlcxx;
 using namespace HTML;
-using namespace kp;
 
 const tree<Node> &ParserDom::parseTree(const std::string &html)
 {

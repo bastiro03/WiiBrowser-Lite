@@ -27,31 +27,31 @@ GuiFrameImage::GuiFrameImage(int w, int h)
 	UpperQuadUpper = (GXColor)
 	{
 		0xFC, 0xFD, 0xFE, 0xFF
-	}
+	};;
 	MainQuadUpper = (GXColor)
 	{
 		0xE5, 0xE9, 0xEF, 0xFF
-	}
+	};;
 	MainQuadLower = (GXColor)
 	{
 		0xC3, 0xC8, 0xD0, 0xFF
-	}
+	};
 	SideQuadUpper = (GXColor)
 	{
 		0xC6, 0xC9, 0xCF, 0xFF
-	}
+	};
 	SideQuadLower = (GXColor)
 	{
 		0xAC, 0xB0, 0xB6, 0xFF
-	}
+	};
 	ShadowUpper = (GXColor)
 	{
 		0x7B, 0x7B, 0x7B, 0xFF
-	}
+	};
 	ShadowLower = (GXColor)
 	{
 		0x30, 0x30, 0x30, 0xFF
-	}
+	};
 
 	DrawListSize = 1152;
 	DrawList = static_cast<u8*>(memalign(32, DrawListSize + 64));

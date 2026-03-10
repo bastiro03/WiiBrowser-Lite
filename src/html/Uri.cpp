@@ -255,7 +255,7 @@ void Uri::init(const string &uri_str)
 			}
 			/* Invalid characters after ':' found */
 			DEBUGP("Throwing invalid url exception\n");
-			throw Exception("Invalid character after ':'");
+			abort();
 		}
 		this->mPort = port_of_Scheme(mScheme.c_str());
 		goto deal_with_path;

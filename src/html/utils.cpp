@@ -528,16 +528,11 @@ namespace htmlcxx
 			}
 
 			Uri uri;
-			try
-			{
-				Uri rel(url);
-				uri = rel.absolute(root);
-				uri.path(normalize_slashs(uri.path()));
-			}
-			catch (Uri::Exception)
-			{
-				return string();
-			}
+		{
+		Uri rel(url);
+		uri = rel.absolute(root);
+		uri.path(normalize_slashs(uri.path()));
+		}
 
 			return uri.unparse(Uri::REMOVE_FRAGMENT);
 		}

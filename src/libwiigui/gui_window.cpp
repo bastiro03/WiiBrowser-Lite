@@ -101,8 +101,7 @@ void GuiWindow::Draw()
 	u32 elemSize = _elements.size();
 	for (u32 i = 0; i < elemSize; ++i)
 	{
-		try	{ _elements.at(i)->Draw(); }
-		catch (const std::exception& e) { }
+		_elements.at(i)->Draw();
 	}
 
 	this->UpdateEffects();
@@ -119,8 +118,7 @@ void GuiWindow::DrawTooltip()
 	u32 elemSize = _elements.size();
 	for (u32 i = 0; i < elemSize; i++)
 	{
-		try	{ _elements.at(i)->DrawTooltip(); }
-		catch (const std::exception& e) { }
+		 _elements.at(i)->DrawTooltip();
 	}
 }
 
@@ -132,8 +130,7 @@ void GuiWindow::ResetState()
 	u32 elemSize = _elements.size();
 	for (u32 i = 0; i < elemSize; ++i)
 	{
-		try { _elements.at(i)->ResetState(); }
-		catch (const std::exception& e) { }
+		 _elements.at(i)->ResetState();
 	}
 }
 
@@ -144,8 +141,7 @@ void GuiWindow::SetState(int s)
 	u32 elemSize = _elements.size();
 	for (u32 i = 0; i < elemSize; ++i)
 	{
-		try { _elements.at(i)->SetState(s); }
-		catch (const std::exception& e) { }
+		 _elements.at(i)->SetState(s);
 	}
 }
 
@@ -156,8 +152,7 @@ void GuiWindow::SetVisible(bool v)
 	u32 elemSize = _elements.size();
 	for (u32 i = 0; i < elemSize; ++i)
 	{
-		try { _elements.at(i)->SetVisible(v); }
-		catch (const std::exception& e) { }
+		 _elements.at(i)->SetVisible(v);
 	}
 }
 
@@ -200,7 +195,6 @@ void GuiWindow::ToggleFocus(GuiTrigger * t)
 	// look for currently in focus element
 	for (i = 0; i < elemSize; ++i)
 	{
-		try
 		{
 			if(_elements.at(i)->IsFocused() == 1)
 			{
@@ -208,7 +202,6 @@ void GuiWindow::ToggleFocus(GuiTrigger * t)
 				break;
 			}
 		}
-		catch (const std::exception& e) { }
 	}
 
 	// element with focus not found, try to give focus
@@ -216,7 +209,6 @@ void GuiWindow::ToggleFocus(GuiTrigger * t)
 	{
 		for (i = 0; i < elemSize; ++i)
 		{
-			try
 			{
 				if(_elements.at(i)->IsFocused() == 0 && _elements.at(i)->GetState() != STATE_DISABLED) // focus is possible (but not set)
 				{
@@ -224,7 +216,6 @@ void GuiWindow::ToggleFocus(GuiTrigger * t)
 					break;
 				}
 			}
-			catch (const std::exception& e) { }
 		}
 	}
 	// change focus
@@ -233,7 +224,6 @@ void GuiWindow::ToggleFocus(GuiTrigger * t)
 	{
 		for (i = found; i < elemSize; ++i)
 		{
-			try
 			{
 				if(_elements.at(i)->IsFocused() == 0 && _elements.at(i)->GetState() != STATE_DISABLED) // focus is possible (but not set)
 				{
@@ -243,14 +233,12 @@ void GuiWindow::ToggleFocus(GuiTrigger * t)
 					break;
 				}
 			}
-			catch (const std::exception& e) { }
 		}
 
 		if(newfocus == -1)
 		{
 			for (i = 0; i < found; ++i)
 			{
-				try
 				{
 					if(_elements.at(i)->IsFocused() == 0 && _elements.at(i)->GetState() != STATE_DISABLED) // focus is possible (but not set)
 					{
@@ -259,7 +247,6 @@ void GuiWindow::ToggleFocus(GuiTrigger * t)
 						break;
 					}
 				}
-				catch (const std::exception& e) { }
 			}
 		}
 	}
@@ -272,7 +259,6 @@ int GuiWindow::GetSelected()
 	u32 elemSize = _elements.size();
 	for (u32 i = 0; i < elemSize; ++i)
 	{
-		try
 		{
 			if(_elements.at(i)->GetState() == STATE_SELECTED)
 			{
@@ -280,7 +266,6 @@ int GuiWindow::GetSelected()
 				break;
 			}
 		}
-		catch (const std::exception& e) { }
 	}
 	return found;
 }
@@ -307,7 +292,6 @@ void GuiWindow::MoveSelectionHor(int dir)
 	// look for a button on the same row, to the left/right
 	for (i = 0; i < elemSize; ++i)
 	{
-		try
 		{
 			if(_elements.at(i)->IsSelectable())
 			{
@@ -320,7 +304,6 @@ void GuiWindow::MoveSelectionHor(int dir)
 				}
 			}
 		}
-		catch (const std::exception& e) { }
 	}
 	if(found >= 0)
 		goto matchfound;
@@ -328,7 +311,6 @@ void GuiWindow::MoveSelectionHor(int dir)
 	// match still not found, let's try the first button in the next row
 	for (i = 0; i < elemSize; ++i)
 	{
-		try
 		{
 			if(_elements.at(i)->IsSelectable())
 			{
@@ -345,7 +327,6 @@ void GuiWindow::MoveSelectionHor(int dir)
 				}
 			}
 		}
-		catch (const std::exception& e) { }
 	}
 
 	// match found
@@ -376,7 +357,6 @@ void GuiWindow::MoveSelectionVert(int dir)
 	u32 elemSize = _elements.size();
 	for (u32 i = 0; i < elemSize; ++i)
 	{
-		try
 		{
 			if(_elements.at(i)->IsSelectable())
 			{
@@ -394,7 +374,6 @@ void GuiWindow::MoveSelectionVert(int dir)
 				}
 			}
 		}
-		catch (const std::exception& e) { }
 	}
 	if(found >= 0)
 		goto matchfound;
@@ -414,8 +393,7 @@ void GuiWindow::ResetText()
 	u32 elemSize = _elements.size();
 	for (u32 i = 0; i < elemSize; i++)
 	{
-		try { _elements.at(i)->ResetText(); }
-		catch (const std::exception& e) { }
+		_elements.at(i)->ResetText();
 	}
 }
 
@@ -427,8 +405,7 @@ void GuiWindow::Update(GuiTrigger * t)
 	u32 elemSize = _elements.size();
 	for (u32 i = 0; i < elemSize; ++i)
 	{
-		try	{ _elements.at(i)->Update(t); }
-		catch (const std::exception& e) { }
+		_elements.at(i)->Update(t);
 	}
 
 	this->ToggleFocus(t);

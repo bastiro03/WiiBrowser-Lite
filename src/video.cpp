@@ -26,6 +26,7 @@ static Mtx GXmodelView2D;
 int screenheight;
 int screenwidth;
 u32 FrameTimer = 0;
+u8 *videoScreenshot = NULL;
 
 /****************************************************************************
  * ResetVideo_Menu
@@ -296,61 +297,20 @@ u8 *TakeScreenshot(bool global)
 
 void SaveScreenshot(char *path)
 {
-	IMGCTX pngContext;
-
-	if ((pngContext = PNGU_SelectImageFromDevice(path)))
-	{
-		int ret = PNGU_EncodeFromEFB(pngContext,
-									 vmode->fbWidth, vmode->efbHeight,
-									 0);
-		PNGU_ReleaseImageContext(pngContext);
-	}
-}
-
-void ResetVideo_Menu()
-{
-	Mtx44 p;
-
-	GX_SetNumChans(1);
-	GX_SetNumTevStages(1);
-	GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD0, GX_TEXMAP0, GX_COLOR0A0);
-	GX_SetTevOp(GX_TEVSTAGE0, GX_PASSCLR);
-
-	GX_SetNumTexGens(1);
-	GX_SetTexCoordGen(GX_TEXCOORD0, GX_TG_MTX2x4, GX_TG_TEX0, GX_IDENTITY);
-
-	// setup the vertex descriptor
-	// tells the flipper to expect direct data
-	GX_ClearVtxDesc();
-	GX_InvVtxCache();
-	GX_InvalidateTexAll();
-
-	GX_SetVtxDesc(GX_VA_TEX0, GX_NONE);
-	GX_SetVtxDesc(GX_VA_POS, GX_DIRECT);
-	GX_SetVtxDesc(GX_VA_CLR0, GX_DIRECT);
-
-	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_POS, GX_POS_XYZ, GX_F32, 0);
-	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_CLR0, GX_CLR_RGBA, GX_RGBA8, 0);
-	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_TEX0, GX_TEX_ST, GX_F32, 0);
-	GX_SetZMode(GX_FALSE, GX_LEQUAL, GX_TRUE);
-
-	guMtxIdentity(GXmodelView2D);
-	guMtxTransApply(GXmodelView2D, GXmodelView2D, 0.0F, 0.0F, -50.0F);
-	GX_LoadPosMtxImm(GXmodelView2D, GX_PNMTX0);
-
-	guOrtho(p, 0, screenheight - 1, 0, screenwidth - 1, 0, 300);
-	GX_LoadProjectionMtx(p, GX_ORTHOGRAPHIC);
+	// TODO: Implement screenshot saving using libpng
+	// PNGU library is not available in current devkitPPC
+	(void)path;
 }
 
 int DrawMPlayerGui()
 {
 	UpdatePads();
-	MPlayerInput();
+	// MPlayerInput(); // TODO: implement MPlayer input handling
 
 	if (0 /* !drawGui */)
 		return 0; // always draw GUI
 
 	ResetVideo_Menu();	// reconfigure GX for GUI
-	DoMPlayerGuiDraw(); // draw GUI
+	// DoMPlayerGuiDraw(); // TODO: implement MPlayer GUI drawing
 	return 1;
 }

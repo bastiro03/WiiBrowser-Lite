@@ -1,12 +1,14 @@
 /* 7zBuf.h -- Byte Buffer
-2023-03-04 : Igor Pavlov : Public domain */
+2008-11-23 : Igor Pavlov : Public domain */
 
-#ifndef ZIP7_INC_7Z_BUF_H
-#define ZIP7_INC_7Z_BUF_H
+#ifndef __7Z_BUF_H
+#define __7Z_BUF_H
 
 #include "7zTypes.h"
 
-EXTERN_C_BEGIN
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef struct
 {
@@ -15,8 +17,8 @@ typedef struct
 } CBuf;
 
 void Buf_Init(CBuf *p);
-int Buf_Create(CBuf *p, size_t size, ISzAllocPtr alloc);
-void Buf_Free(CBuf *p, ISzAllocPtr alloc);
+int Buf_Create(CBuf *p, size_t size, ISzAlloc *alloc);
+void Buf_Free(CBuf *p, ISzAlloc *alloc);
 
 typedef struct
 {
@@ -27,9 +29,11 @@ typedef struct
 
 void DynBuf_Construct(CDynBuf *p);
 void DynBuf_SeekToBeg(CDynBuf *p);
-int DynBuf_Write(CDynBuf *p, const Byte *buf, size_t size, ISzAllocPtr alloc);
-void DynBuf_Free(CDynBuf *p, ISzAllocPtr alloc);
+int DynBuf_Write(CDynBuf *p, const Byte *buf, size_t size, ISzAlloc *alloc);
+void DynBuf_Free(CDynBuf *p, ISzAlloc *alloc);
 
-EXTERN_C_END
+#ifdef __cplusplus
+}
+#endif
 
 #endif

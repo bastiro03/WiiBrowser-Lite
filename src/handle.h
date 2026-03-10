@@ -1,3 +1,6 @@
+#ifndef _HANDLE_H_
+#define _HANDLE_H_
+
 #include <unistd.h>
 #include "video.h"
 #include "fileop.h"
@@ -18,11 +21,13 @@ void HandleHtmlPad(int *offset, GuiButton *btnup, GuiButton *btndown, Indice ext
 void HandleMenuBar(string *link, char *url, char *orig, char *title, int *choice, int img, GuiWindow *mainWindow,
                    GuiWindow *parentWindow);
 
-void showBar(GuiWindow *mainWindow, GuiWindow *parentWindow, char *url);
+void showBar(GuiWindow *mainWindow, GuiWindow *parentWindow, char *url, char *orig);
 void hideBar(GuiWindow *mainWindow, GuiWindow *parentWindow);
 
-extern GuiWindow *statusBar;
+extern GuiToolbar *Toolbar;
 extern bool hidden;
 
 int getTime(string);
 string getUrl(int *, string);
+
+#endif

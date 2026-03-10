@@ -94,7 +94,7 @@ void GuiLongText::SetTextPos(int pos)
 
 	for (u32 i = 0; i < TextLines.size(); i++)
 	{
-		int curDiff = abs(TextLines[i] - pos);
+		int curDiff = abs(static_cast<int>(TextLines[i]) - pos);
 		if (curDiff < diff)
 		{
 			diff = curDiff;
@@ -200,10 +200,12 @@ void GuiLongText::CheckMaxLineWidth(int iPos)
 
 	int ch = iPos;
 	int lineWidth = 0;
+	wchar_t tmp[2] = {0, 0};
 
 	while (text[ch] && text[ch] != '\n')
 	{
-		lineWidth += fontSystem[currentSize]->getCharWidth(text[ch]);
+		tmp[0] = text[ch];
+		lineWidth += fontSystem[currentSize]->getWidth(tmp);
 		ch++;
 	}
 
@@ -259,10 +261,12 @@ void GuiLongText::CalcLineOffsets()
 	int ch = 0;
 	int lineWidth = 0;
 	maxLineWidth = 0;
+	wchar_t tmp[2] = {0, 0};
 
 	while (text[ch])
 	{
-		lineWidth += fontSystem[currentSize]->getCharWidth(text[ch]);
+		tmp[0] = text[ch];
+		lineWidth += fontSystem[currentSize]->getWidth(tmp);
 
 		if (text[ch] == '\n')
 		{
@@ -298,8 +302,13 @@ void GuiLongText::Draw()
 
 	currentSize = size * GetScale();
 
-	(font ? font : fontSystem[currentSize])->drawLongText(this->GetLeft(), this->GetTop(),
-	                                                      &text[TextLines[curLineStart]], c,
-	                                                      alignmentHor | alignmentVert, currentSize + 5,
-	                                                      linestodraw, startWidth, maxWidth);
+	// Draw lines of text
+	FreeTypeGX *ftgx = (font ? font : fontSystem[currentSize]);
+	int ypos = this->GetTop();
+	for (int i = 0; i < linestodraw && (curLineStart + i) < static_cast<int>(TextLines.size()); i++)
+	{
+		wchar_t *line = &text[TextLines[curLineStart + i]];
+		ftgx->drawText(this->GetLeft() + startWidth, ypos, line, c, alignmentHor | alignmentVert);
+		ypos += currentSize + 5;
+	}
 }

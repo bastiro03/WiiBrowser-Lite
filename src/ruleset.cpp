@@ -42,7 +42,7 @@ bool executeLua(string *html, char *url)
 	 * All Lua contexts are held in this structure. We work with it almost
 	 * all the time.
 	 */
-	lua_State *L = lua_open();
+	lua_State *L = luaL_newstate();
 
 	/* Load Lua libraries */
 	luaL_openlibs(L);

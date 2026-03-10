@@ -195,8 +195,9 @@ void ExitApp()
 
 u8 HWButton;
 
-void WiiResetPressed()
+void WiiResetPressed(u32 irq, void *ctx)
 {
+	(void)irq; (void)ctx;
 	HWButton = SYS_RETURNTOMENU;
 }
 
@@ -235,8 +236,7 @@ int main(int argc, char *argv[])
 			   (32 * 1024);																				   // padding
 #endif
 
-	InitVideo2();
-	InitFreeType(); // Initialize font system
+	InitFreeType((uint8_t *)font_ttf, font_ttf_size); // Initialize font system
 
 #ifdef MPLAYER
 	// mplayer cache thread

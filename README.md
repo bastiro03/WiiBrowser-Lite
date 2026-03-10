@@ -1,5 +1,6 @@
 # WiiBrowser Lite
-Wiibrowser-lite is an alternative to the Wii Internet Channel. It is also a new version of Wiibrowser by [gave92](https://github.com/gave92). I want to provide a more modern base that makes things easier for other developers. Contributions through pull requests and similar methods are welcome, even though I am myself no longer actively working on this project.
+This project is being led by the community to bring back WiiBrowser, a homebrew version of the Wii's Internet Channel that was created by [gave92](https://github.com/gave92). Currently, the primary goal is to create a more modern foundation that will make things easier for other developers. I'm no longer able to actively work on it myself, but I'm open to accepting requests to contribute to the project.
+
 ## Screenshots
 <p><img src="screenshots\advanced.png" width="100"> <img src="screenshots\bookmarks.png" width="100"> <img src="screenshots\download.png" width="100"> <img src="screenshots\file_browser.png" width="100"> <img src="screenshots\gmail.png" width="100"> <img src="screenshots\google.png" width="100"> <img src="screenshots\homescreen.png" width="100"> <img src="screenshots\settings.png" width="100"></p>
 
@@ -29,10 +30,10 @@ Wiibrowser-lite is an alternative to the Wii Internet Channel. It is also a new 
 * Multiple tabs
 
 ## Credits
-- [Dimok](https://github.com/dimok789): developed [WiiXplorer](https://sourceforge.net/projects/wiixplorer/), which WiiBrowser was both inspired by and stole code snippets from for its file management backend
-- [dborth](https://github.com/dborth): developed [libwiigui](https://github.com/dborth/libwiigui), the graphics backend used by WiiBrowser, and the original [WiiMC](https://github.com/dborth/wiimc) which WiiBrowser stole code snippets from for its media support
-- [SuperrSonic](https://github.com/SuperrSonic): develops [WiiMC-SSLC](https://github.com/SuperrSonic/WiiMC-SSLC), parts of which WiiBrowser Lite uses for its media backend
-- [The LiteHTML contributors](https://github.com/litehtml): develop the lightweight rendering engine that WiiBrowser uses
+- [Dimok](https://github.com/dimok789) for [WiiXplorer](https://sourceforge.net/projects/wiixplorer/) which WiiBrowser was both inspired by and took code from for file management
+- [dborth](https://github.com/dborth) for the graphics library [libwiigui](https://github.com/dborth/libwiigui) and the original [WiiMC](https://github.com/dborth/wiimc), which WiiBrowser took code from for media support
+- [SuperrSonic](https://github.com/SuperrSonic) for [WiiMC-SSLC](https://github.com/SuperrSonic/WiiMC-SSLC), parts of which WBL uses for media support
+- [The LiteHTML contributors](https://github.com/litehtml) for the lightweight HTML renderer used by WBL
 
 ## Links
 - GBATemp thread: https://gbatemp.net/threads/wii-browser.342634/

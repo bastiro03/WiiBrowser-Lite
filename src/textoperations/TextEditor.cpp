@@ -26,7 +26,7 @@
  ***************************************************************************/
 
 #include <unistd.h>
-#include "TextOperations/TextEditor.h"
+#include "TextEditor.h"
 #include "common.h"
 
 #define FONTSIZE 18

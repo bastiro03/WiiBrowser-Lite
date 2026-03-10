@@ -17,14 +17,20 @@ TARGET := wiibrowserlite
 # Directories
 BUILD := build
 SOURCES := $(shell find src -type d)
-DATA := images fonts sounds certs
+DATA := images images/appbar fonts sounds certs
 INCLUDES := include
+
+# libogc paths (set by wii_rules but made explicit here)
+LIBOGC_INC ?= $(DEVKITPRO)/libogc/include
+LIBOGC_LIB ?= $(DEVKITPRO)/libogc/lib/wii
+PORTLIBS_INC ?= $(DEVKITPRO)/portlibs/ppc/include
+PORTLIBS_LIB ?= $(DEVKITPRO)/portlibs/ppc/lib
+
 VPATH := $(SOURCES) $(DATA)
 
 #---------------------------------------------------------------------------------
 # devkitPPC toolchain setup
 #---------------------------------------------------------------------------------
-DEVKITPPC ?= $(DEVKITPRO)/devkitPPC
 PREFIX := $(DEVKITPPC)/bin/powerpc-eabi-
 CC := $(PREFIX)gcc
 CXX := $(PREFIX)g++
@@ -38,20 +44,28 @@ OBJCOPY := $(PREFIX)objcopy
 #---------------------------------------------------------------------------------
 # Optimization flags: -Os for size, -flto for link-time optimization
 # Function/data sections for dead code elimination
-CFLAGS := -Os -Wall -mrvl -mcpu=750 -meabi -mhard-float -flto \
+CFLAGS := -DGEKKO -DLUA_32BITS -Os -Wall -mrvl -mcpu=750 -meabi -mhard-float -flto \
                 -ffunction-sections -fdata-sections \
-                $(foreach dir,$(INCLUDES),-I$(dir))
+                -Wno-implicit-function-declaration \
+                -Wno-incompatible-pointer-types \
+                -Wno-int-conversion \
+                -Wno-builtin-declaration-mismatch \
+                $(foreach dir,$(INCLUDES),-I$(dir)) \
+                -I$(LIBOGC_INC) \
+                -I$(PORTLIBS_INC) \
+                $(foreach dir,$(SOURCES),-I$(dir))
 
 CXXFLAGS := $(CFLAGS) -fno-exceptions -fno-rtti
-LDFLAGS := -flto -Wl,-Map,$(TARGET).map -Wl,--gc-sections
+LDFLAGS := -DGEKKO -mrvl -mcpu=750 -meabi -mhard-float -flto \
+                -Wl,-Map,$(TARGET).map -Wl,--gc-sections
 
 LIBS := -lmplayerwii -lavformat -lavcodec -lswscale -lavutil \
 				-lfribidi -ljpeg -liconv -ldi -lpng -lunrar -lzip -lsevenzip -lz \
 				-lcurl -lcyassl -lnetport -lasnd -lvorbisidec \
-				-lmxml -llua -lm -lfat -lwiiuse -lwiikeyboard -lbte -logc -lfreetype
+				-lmxml -llua -lm -lfat -lwiiuse -lwiikeyboard -lbte -logc -lfreetype -lexif
 
-# Add library search path for local libs
-LDFLAGS += -L$(CURDIR)/libs/wii
+# Library search paths
+LDFLAGS += -L$(CURDIR)/libs/wii -L$(LIBOGC_LIB) -L$(PORTLIBS_LIB)
 
 #---------------------------------------------------------------------------------
 # Source Files
@@ -97,35 +111,35 @@ $(BUILD)/%.o: %.cpp | $(BUILD)
 # Binary data conversion
 $(BUILD)/%.ttf.o: %.ttf | $(BUILD)
 	@echo $(notdir $<)
-	$(bin2o) $< $@
+	$(bin2o)
 
 $(BUILD)/%.lang.o: %.lang | $(BUILD)
 	@echo $(notdir $<)
-	$(bin2o) $< $@
+	$(bin2o)
 
 $(BUILD)/%.png.o: %.png | $(BUILD)
 	@echo $(notdir $<)
-	$(bin2o) $< $@
+	$(bin2o)
 
 $(BUILD)/%.jpg.o: %.jpg | $(BUILD)
 	@echo $(notdir $<)
-	$(bin2o) $< $@
+	$(bin2o)
 
 $(BUILD)/%.gif.o: %.gif | $(BUILD)
 	@echo $(notdir $<)
-	$(bin2o) $< $@
+	$(bin2o)
 
 $(BUILD)/%.ogg.o: %.ogg | $(BUILD)
 	@echo $(notdir $<)
-	$(bin2o) $< $@
+	$(bin2o)
 
 $(BUILD)/%.pcm.o: %.pcm | $(BUILD)
 	@echo $(notdir $<)
-	$(bin2o) $< $@
+	$(bin2o)
 
 $(BUILD)/%.pem.o: %.pem | $(BUILD)
 	@echo $(notdir $<)
-	$(bin2o) $< $@
+	$(bin2o)
 
 # Link ELF
 $(TARGET).elf: $(OFILES)
@@ -133,7 +147,7 @@ $(TARGET).elf: $(OFILES)
 
 # Convert ELF to DOL
 $(TARGET).dol: $(TARGET).elf
-	$(OBJCOPY) -O binary $< $@
+	elf2dol $< $@
 
 # Clean
 clean:

@@ -23,6 +23,7 @@ jobs:
       run: |
         echo "DEVKITPRO=$DEVKITPRO"
         echo "DEVKITPPC=$DEVKITPPC"
+        export PATH=$DEVKITPPC/bin:$DEVKITPRO/tools/bin:$PATH
         powerpc-eabi-gcc --version
         ls -la $DEVKITPRO
 
@@ -30,6 +31,8 @@ jobs:
       run: make clean || true
 
     - name: Build WiiBrowser-Lite
+      env:
+        PATH: /opt/devkitpro/devkitPPC/bin:/opt/devkitpro/tools/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
       run: |
         make -j4
 

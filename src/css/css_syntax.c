@@ -40,6 +40,9 @@
 #include "css_lex.h"
 #include "parser.h"
 
+/* Suppress implicit function declaration errors for bison-generated code */
+#pragma GCC diagnostic ignored "-Wimplicit-function-declaration"
+
 #define YYPARSE_PARAM yyparam
 #define YYERROR_VERBOSE 1
 //#define YYDEBUG 1

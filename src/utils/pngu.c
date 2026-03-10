@@ -9,10 +9,19 @@
 
 #include <stdio.h>
 #include <malloc.h>
+#include <string.h>
 #include <png.h>
 
 #include "pngu.h"
 #include "video.h"
+
+// Wii GX hardware texture size limits
+#ifndef MAX_TEX_WIDTH
+#define MAX_TEX_WIDTH 1024
+#endif
+#ifndef MAX_TEX_HEIGHT
+#define MAX_TEX_HEIGHT 1024
+#endif
 
 //only texture in mem2, internal memory managed by gcc
 #define png_malloc(x) malloc(x)
@@ -708,6 +717,7 @@ int PNGU_EncodeFromGXTexture(IMGCTX ctx, u32 width, u32 height, void* buffer, u3
 	int res;
 	u32 x, y, tmpy1, tmpy2, tmpyWid, tmpxy;
 
+	png_uint_32 offset;
 	unsigned char* ptr = buffer;
 	unsigned char* tmpbuffer = png_malloc(width * height * 3);
 
@@ -715,7 +725,6 @@ int PNGU_EncodeFromGXTexture(IMGCTX ctx, u32 width, u32 height, void* buffer, u3
 		return PNGU_LIB_ERROR;
 
 	memset(tmpbuffer, 0, width * height * 3);
-	png_uint_32 offset;
 
 	for (y = 0; y < height; y++)
 	{

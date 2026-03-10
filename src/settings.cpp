@@ -38,7 +38,7 @@
 #include <sys/stat.h>
 #include <dirent.h>
 
-#include "Settings.h"
+#include "settings.h"
 #include "menu.h"
 #include "config.h"
 
@@ -625,7 +625,7 @@ bool SSettings::LoadFavorites()
 		 node = mxmlFindElement(node, xml, "a", "href", NULL, MXML_DESCEND))
 	{
 		const char *tmp = mxmlElementGetAttr(node, "href");
-		const char *name = node->child->value.opaque;
+		const char *name = mxmlGetOpaque(mxmlGetFirstChild(node));
 
 		if (tmp)
 		{

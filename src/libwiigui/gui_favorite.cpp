@@ -58,11 +58,12 @@ GuiFavorite::GuiFavorite(int outl)
 	Block->SetTrigger(trigA);
 	Block->SetEffectGrow();
 
-	Label = new GuiText("", 20, (GXColor)
-	{
-		0, 0, 0, 255
-	}
-	)
+	Label = new GuiText("", 20, (GXColor){0, 0, 0, 255});
+
+
+
+
+
 	Label->SetMaxWidth(GetDataWidth() - 25);
 
 	Thumb = new GuiImage;
@@ -137,7 +138,7 @@ GuiFavorite::GuiFavorite(const GuiFavorite& ref)
 	{
 		0, 0, 0, 255
 	}
-	)
+	);
 	Label->SetMaxWidth(GetDataWidth() - 25);
 
 	Thumb = new GuiImage;
@@ -194,7 +195,7 @@ void GuiFavorite::SetEditing(bool e)
 
 	if (editing)
 	{
-		this->Block->SetTrigger(trigH, 0);
+		this->Block->SetTrigger(0, trigH);
 		this->Remove->SetEffect(EFFECT_FADE, 30);
 		this->Remove->SetState(STATE_DEFAULT);
 		this->BlockImg->SetEffect(EFFECT_RUMBLE, 2, 5);
@@ -205,7 +206,7 @@ void GuiFavorite::SetEditing(bool e)
 
 	else
 	{
-		this->Block->SetTrigger(trigA, 0);
+		this->Block->SetTrigger(0, trigA);
 		this->Remove->SetEffect(EFFECT_FADE, -30);
 		this->Remove->SetState(STATE_DISABLED);
 		this->BlockImg->StopEffect(EFFECT_RUMBLE);
@@ -242,10 +243,7 @@ void GuiFavorite::Update(GuiTrigger* t)
 
 	for (u8 i = 0; i < _elements.size(); i++)
 	{
-		try { _elements.at(i)->Update(t); }
-		catch (const std::exception& e)
-		{
-		}
+		if (i < _elements.size()) _elements.at(i)->Update(t);
 	}
 
 	this->ToggleFocus(t);

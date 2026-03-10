@@ -26,12 +26,14 @@
 #include "fileop.h"
 #include "filelist.h"
 
-#include "textoperations/texteditor.h"
+#include "textoperations/TextEditor.h"
+#include "gui_longtext.h"
 #include "config.h"
 
 extern "C"
 {
 #include "mplayer/stream/url.h"
+#include "mplayer/osdep/gx_supp.h"
 #include "urlcode.h"
 }
 
@@ -255,7 +257,7 @@ void UpdatePointer()
 {
 	if (userInput[0].wpad->ir.valid)
 		Menu_DrawImg(userInput[0].wpad->ir.x - 48, userInput[0].wpad->ir.y - 48,
-					 96, 96, pointer[0]->GetImage(), userInput[0].wpad->ir.angle, 1, 1, 255, GX_TF_RGBA8);
+					 96, 96, pointer[0]->GetImage(), userInput[0].wpad->ir.angle, 1, 1, 255);
 }
 
 /****************************************************************************
@@ -398,7 +400,7 @@ ProgressWindow(char *msg)
 	throbberImg.SetPosition(0, 40);
 	throbberImg.SetScale(0.60);
 
-	msgTxt = new GuiText(msg, 20, (GXColor){0, 0, 0, 255})
+	msgTxt = new GuiText(msg, 20, (GXColor){0, 0, 0, 255});
 				 msgTxt->SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	msgTxt->SetPosition(0, 73);
 
@@ -511,21 +513,21 @@ int WindowPrompt(const char *title, const char *msg, const char *btn1Label, cons
 	GuiImageData dialogBox(dialogue_box_png);
 	GuiImage dialogBoxImg(&dialogBox);
 
-	GuiText titleTxt(title, 26, (GXColor){0, 0, 0, 255})
+	GuiText titleTxt(title, 26, (GXColor){0, 0, 0, 255});
 		titleTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	titleTxt.SetPosition(0, 40);
 
-	GuiText msgTxt(msg, 22, (GXColor){0, 0, 0, 255})
+	GuiText msgTxt(msg, 22, (GXColor){0, 0, 0, 255});
 		msgTxt.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
 	msgTxt.SetPosition(0, -20);
 	msgTxt.SetWrap(true, 400);
 
-	GuiLongText msgLongTxt(longText, 22, (GXColor){0, 0, 0, 255})
+	GuiLongText msgLongTxt(longText, 22, (GXColor){0, 0, 0, 255});
 		msgLongTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	msgLongTxt.SetLinesToDraw(8);
 	msgLongTxt.SetMaxWidth(400);
 
-	GuiText btn1Txt(btn1Label, 22, (GXColor){0, 0, 0, 255})
+	GuiText btn1Txt(btn1Label, 22, (GXColor){0, 0, 0, 255});
 		GuiImage btn1Img(&btnOutline);
 	GuiImage btn1ImgOver(&btnOutlineOver);
 	GuiButton btn1(btnOutline.GetWidth(), btnOutline.GetHeight());
@@ -554,7 +556,7 @@ int WindowPrompt(const char *title, const char *msg, const char *btn1Label, cons
 	btn1.SetState(STATE_SELECTED);
 	btn1.SetEffectGrow();
 
-	GuiText btn2Txt(btn2Label, 22, (GXColor){0, 0, 0, 255})
+	GuiText btn2Txt(btn2Label, 22, (GXColor){0, 0, 0, 255});
 		GuiImage btn2Img(&btnOutline);
 	GuiImage btn2ImgOver(&btnOutlineOver);
 	GuiButton btn2(btnOutline.GetWidth(), btnOutline.GetHeight());
@@ -707,7 +709,7 @@ static void *UpdateGUI(void *arg)
 			{
 				if (userInput[i].wpad->ir.valid)
 					Menu_DrawImg(userInput[i].wpad->ir.x - 48, userInput[i].wpad->ir.y - 48,
-								 96, 96, pointer[i]->GetImage(), userInput[i].wpad->ir.angle, 1, 1, 255, GX_TF_RGBA8);
+								 96, 96, pointer[i]->GetImage(), userInput[i].wpad->ir.angle, 1, 1, 255);
 				DoRumble(i);
 			}
 #endif
@@ -731,9 +733,8 @@ static void *UpdateGUI(void *arg)
 				for (i = guiRun = 0; i <= 255; i += 15)
 				{
 					mainWindow->Draw();
-					Menu_DrawRectangle(0, 0, screenwidth, screenheight, (GXColor){0, 0, 0, static_cast<u8>(i)},
-									   1)
-						Menu_Render();
+					Menu_DrawRectangle(0, 0, screenwidth, screenheight, (GXColor){0, 0, 0, static_cast<u8>(i)}, 1);
+					Menu_Render();
 				}
 			}
 
@@ -835,7 +836,7 @@ int OnScreenKeyboard(GuiWindow *keyboardWindow, char *var, u16 maxlen)
 	GuiImageData btnOutline(button_png);
 	GuiImageData btnOutlineOver(button_over_png);
 
-	GuiText okBtnTxt("OK", 22, (GXColor){0, 0, 0, 255})
+	GuiText okBtnTxt("OK", 22, (GXColor){0, 0, 0, 255});
 		GuiImage okBtnImg(&btnOutline);
 	GuiImage okBtnImgOver(&btnOutlineOver);
 	GuiButton okBtn(btnOutline.GetWidth(), btnOutline.GetHeight());
@@ -850,7 +851,7 @@ int OnScreenKeyboard(GuiWindow *keyboardWindow, char *var, u16 maxlen)
 	okBtn.SetTrigger(trigA);
 	okBtn.SetEffectGrow();
 
-	GuiText cancelBtnTxt("Cancel", 22, (GXColor){0, 0, 0, 255})
+	GuiText cancelBtnTxt("Cancel", 22, (GXColor){0, 0, 0, 255});
 		GuiImage cancelBtnImg(&btnOutline);
 	GuiImage cancelBtnImgOver(&btnOutlineOver);
 	GuiButton cancelBtn(btnOutline.GetWidth(), btnOutline.GetHeight());
@@ -936,7 +937,7 @@ void SetPointer(bool drag, int chan)
 
 void SetupGui()
 {
-	bgImg = new GuiImage(screenwidth, screenheight, (GXColor){225, 225, 225, 255})
+	bgImg = new GuiImage(screenwidth, screenheight, (GXColor){225, 225, 225, 255});
 				bgImg->SetEffect(EFFECT_FADE, 50);
 	trigA = new GuiTrigger();
 	trigA->SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
@@ -1005,6 +1006,7 @@ static int MenuBrowseDevice()
 {
 	char title[100];
 	char path[256];
+	char fullpath[MAXPATHLEN];
 	int i;
 
 	ShutoffRumble();
@@ -1034,7 +1036,7 @@ static int MenuBrowseDevice()
 	GuiImage TextboxImg(&Textbox);
 	GuiButton InsertURL(TextboxImg.GetWidth(), TextboxImg.GetHeight());
 
-	GuiText URL("", 20, (GXColor){0, 0, 0, 255})
+	GuiText URL("", 20, (GXColor){0, 0, 0, 255});
 		URL.SetMaxWidth(TextboxImg.GetWidth() - 20);
 	URL.SetScroll(SCROLL_HORIZONTAL);
 
@@ -1046,7 +1048,7 @@ static int MenuBrowseDevice()
 	InsertURL.SetTrigger(trigA);
 	InsertURL.SetEffectGrow();
 
-	GuiText titleTxt(title, 28, (GXColor){0, 0, 0, 255})
+	GuiText titleTxt(title, 28, (GXColor){0, 0, 0, 255});
 		titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	titleTxt.SetPosition(50, 50);
 
@@ -1056,7 +1058,7 @@ static int MenuBrowseDevice()
 
 	GuiImageData btnOutline(button_png);
 	GuiImageData btnOutlineOver(button_over_png);
-	GuiText backBtnTxt("Go Back", 24, (GXColor){0, 0, 0, 255})
+	GuiText backBtnTxt("Go Back", 24, (GXColor){0, 0, 0, 255});
 		GuiImage backBtnImg(&btnOutline);
 	GuiImage backBtnImgOver(&btnOutlineOver);
 	GuiButton backBtn(btnOutline.GetWidth(), btnOutline.GetHeight());
@@ -1161,7 +1163,7 @@ static int MenuAdvanced()
 	options.length = i;
 
 	sprintf(version, "WiiBrowser %s", Settings.Revision);
-	GuiText titleTxt(version, 28, (GXColor){0, 0, 0, 255})
+	GuiText titleTxt(version, 28, (GXColor){0, 0, 0, 255});
 		titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	titleTxt.SetPosition(50, 45);
 
@@ -1169,7 +1171,7 @@ static int MenuAdvanced()
 	GuiImageData btnOutline(button_png);
 	GuiImageData btnOutlineOver(button_over_png);
 
-	GuiText backBtnTxt("Go Back", 22, (GXColor){0, 0, 0, 255})
+	GuiText backBtnTxt("Go Back", 22, (GXColor){0, 0, 0, 255});
 		GuiImage backBtnImg(&btnOutline);
 	GuiImage backBtnImgOver(&btnOutlineOver);
 	GuiButton backBtn(btnOutline.GetWidth(), btnOutline.GetHeight());
@@ -1182,7 +1184,7 @@ static int MenuAdvanced()
 	backBtn.SetTrigger(trigA);
 	backBtn.SetEffectGrow();
 
-	GuiText sendBtnTxt("Send report", 22, (GXColor){0, 0, 0, 255})
+	GuiText sendBtnTxt("Send report", 22, (GXColor){0, 0, 0, 255});
 		GuiImage sendBtnImg(&btnOutline);
 	GuiImage sendBtnImgOver(&btnOutlineOver);
 	GuiButton sendBtn(btnOutline.GetWidth(), btnOutline.GetHeight());
@@ -1201,12 +1203,12 @@ static int MenuAdvanced()
 	TextboxImg.SetScaleY(static_cast<float>(120) / TextboxImg.GetHeight());
 	GuiButton postComment(TextboxImg.GetRealWidth(), TextboxImg.GetRealHeight());
 
-	GuiText Post("Report bug", 20, (GXColor){0, 0, 0, 255})
+	GuiText Post("Report bug", 20, (GXColor){0, 0, 0, 255});
 		Post.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	Post.SetPosition(0, -25);
 	postComment.SetLabel(&Post);
 
-	GuiLongText Content("", 20, (GXColor){0, 0, 0, 255})
+	GuiLongText Content("", 20, (GXColor){0, 0, 0, 255});
 		Content.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	Content.SetLinesToDraw(TextboxImg.GetRealHeight() / 25);
 	Content.SetMaxWidth(TextboxImg.GetRealWidth() - 45);
@@ -1344,7 +1346,7 @@ static int MenuSettings()
 	sprintf(options.name[i++], "User Agent");
 	options.length = i;
 
-	GuiText titleTxt("Settings", 28, (GXColor){0, 0, 0, 255})
+	GuiText titleTxt("Settings", 28, (GXColor){0, 0, 0, 255});
 		titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	titleTxt.SetPosition(50, 45);
 
@@ -1352,7 +1354,7 @@ static int MenuSettings()
 	GuiImageData btnOutline(button_png);
 	GuiImageData btnOutlineOver(button_over_png);
 
-	GuiText backBtnTxt("Go Back", 22, (GXColor){0, 0, 0, 255})
+	GuiText backBtnTxt("Go Back", 22, (GXColor){0, 0, 0, 255});
 		GuiImage backBtnImg(&btnOutline);
 	GuiImage backBtnImgOver(&btnOutlineOver);
 	GuiButton backBtn(btnOutline.GetWidth(), btnOutline.GetHeight());
@@ -1365,7 +1367,7 @@ static int MenuSettings()
 	backBtn.SetTrigger(trigA);
 	backBtn.SetEffectGrow();
 
-	GuiText devBtnTxt("Advanced", 22, (GXColor){0, 0, 0, 255})
+	GuiText devBtnTxt("Advanced", 22, (GXColor){0, 0, 0, 255});
 		GuiImage devBtnImg(&btnOutline);
 	GuiImage devBtnImgOver(&btnOutlineOver);
 	GuiButton devBtn(btnOutline.GetWidth(), btnOutline.GetHeight());
@@ -1569,7 +1571,7 @@ static int MenuSplash()
 		menu = MENU_EXIT;
 		conn = NET_ERR;
 	}
-	if (if_config(myIP, NULL, NULL, true) < 0)
+	if (if_config(myIP, NULL, NULL, true, 3) < 0)
 	{
 		menu = MENU_EXIT;
 		conn = IP_ERR;
@@ -1656,7 +1658,7 @@ static int MenuHome()
 	GuiImage TextboxImg(&Textbox);
 	GuiButton InsertURL(TextboxImg.GetWidth(), TextboxImg.GetHeight());
 
-	GuiText URL(new_page, 20, (GXColor){0, 0, 0, 255})
+	GuiText URL(new_page, 20, (GXColor){0, 0, 0, 255});
 		URL.SetMaxWidth(TextboxImg.GetWidth() - 20);
 	URL.SetScroll(SCROLL_HORIZONTAL);
 
@@ -1888,11 +1890,11 @@ static int MenuBrowse()
 	GuiImage dialogBoxImg(&dialogBox);
 	prevMenu = MENU_BROWSE;
 
-	GuiText title("WiiBrowser", 26, (GXColor){0, 0, 0, 255})
+	GuiText title("WiiBrowser", 26, (GXColor){0, 0, 0, 255});
 		title.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	title.SetPosition(0, 40);
 
-	GuiText staticTxt("", 20, (GXColor){0, 0, 0, 255})
+	GuiText staticTxt("", 20, (GXColor){0, 0, 0, 255});
 		staticTxt.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
 	staticTxt.SetPosition(0, -20);
 	staticTxt.SetWrap(true, 400);
@@ -1903,7 +1905,7 @@ static int MenuBrowse()
 	GuiImage btnImg(&btnOutline);
 	GuiImage btnImgOver(&btnOutlineOver);
 
-	GuiText btnTxt("Cancel", 22, (GXColor){0, 0, 0, 255})
+	GuiText btnTxt("Cancel", 22, (GXColor){0, 0, 0, 255});
 
 		actionButton = new GuiButton(btnOutline.GetWidth(), btnOutline.GetHeight());
 	actionButton->SetAlignment(ALIGN_CENTRE, ALIGN_BOTTOM);
@@ -2433,7 +2435,7 @@ static int MenuFavorites()
 		mainWindow->Append(&Recent[i]);
 	ResumeGui();
 
-	GuiText bookTxt("", 28, (GXColor){0, 0, 0, 255})
+	GuiText bookTxt("", 28, (GXColor){0, 0, 0, 255});
 		bookTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	bookTxt.SetPosition(40, 40);
 	bookTxt.SetEffect(EFFECT_FADE, 30);
@@ -2443,7 +2445,7 @@ static int MenuFavorites()
 	else
 		bookTxt.SetText("Bookmarks");
 
-	GuiText histTxt("Recent History", 28, (GXColor){0, 0, 0, 255})
+	GuiText histTxt("Recent History", 28, (GXColor){0, 0, 0, 255});
 		histTxt.SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
 	histTxt.SetPosition(-40, 40);
 	histTxt.SetEffect(EFFECT_FADE, 30);

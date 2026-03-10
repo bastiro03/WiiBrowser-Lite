@@ -53,6 +53,8 @@ public:
 	void SetTextLine(int line);
 	//!Set to the char pos in text
 	void SetTextPos(int pos);
+	//!Set the number of lines to draw
+	void SetLinesToDraw(int n) { linestodraw = n; }
 	//!Refresh the rows to draw
 	int GetCurrPos() { return curLineStart; };
 	//!Get  the count of loaded lines
@@ -78,6 +80,7 @@ public:
 
 protected:
 	std::vector<u32> TextLines;
+	int linestodraw;
 	int curLineStart;
 	int FirstLineOffset;
 	int startWidth;

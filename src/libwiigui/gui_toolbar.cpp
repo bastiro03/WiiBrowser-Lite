@@ -315,10 +315,7 @@ void GuiToolbar::Update(GuiTrigger* t)
 
 	for (u8 i = 0; i < _elements.size(); i++)
 	{
-		try { _elements.at(i)->Update(t); }
-		catch (const std::exception& e)
-		{
-		}
+		if (i < _elements.size()) _elements.at(i)->Update(t);
 	}
 
 	this->ToggleFocus(t);

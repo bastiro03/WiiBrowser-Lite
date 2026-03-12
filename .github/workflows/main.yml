@@ -13,17 +13,13 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
 
-      - name: Install devkitPro / devkitPPC
+      - name: Install devkitPro toolchain
         run: |
-          sudo dpkg --add-architecture i386
-          sudo apt-get update
-          sudo apt-get install -y wget ca-certificates gnupg
-          echo "deb https://apt.devkitpro.org stable main" | sudo tee /etc/apt/sources.list.d/devkitpro.list
-          wget https://apt.devkitpro.org/devkitpro-keyring.gpg -O - | sudo apt-key add -
-          sudo apt-get update
-          sudo apt-get install -y devkitpro-pacman
+          wget https://apt.devkitpro.org/install-devkitpro-pacman
+          chmod +x install-devkitpro-pacman
+          sudo ./install-devkitpro-pacman
           sudo dkp-pacman -S --noconfirm devkitPPC libogc
-
+          
       - name: Build Wii Homebrew
         run: |
           export DEVKITPRO=/opt/devkitpro
@@ -33,8 +29,8 @@ jobs:
       - name: Package Homebrew App Structure
         run: |
           mkdir -p dist/apps/WiiBrowserLite
-          cp /meta.xml dist/apps/WiiBrowserLite/meta.xml
-          cp /icon.png dist/apps/WiiBrowserLite/icon.png
+          cp meta.xml dist/apps/WiiBrowserLite/meta.xml
+          cp icon.png dist/apps/WiiBrowserLite/icon.png
           cp *.dol dist/apps/WiiBrowserLite/boot.dol
           cd dist && zip -r WiiBrowserLite.zip apps
 
@@ -43,9 +39,3 @@ jobs:
         with:
           name: Wii-Homebrew-Build
           path: dist/WiiBrowserLite.zip
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.ref_name }}
-          files: dist/WiiBrowserLite.zip

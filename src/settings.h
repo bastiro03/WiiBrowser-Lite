@@ -159,7 +159,6 @@ public:
 
 	bool DocWrite;
 	bool IFrame;
-	bool ExecLua;
 	bool CleanExit;
 
 	char *TopSites[N];

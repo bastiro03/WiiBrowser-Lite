@@ -44,7 +44,7 @@ OBJCOPY := $(PREFIX)objcopy
 #---------------------------------------------------------------------------------
 # Optimization flags: -Os for size, -flto for link-time optimization
 # Function/data sections for dead code elimination
-CFLAGS := -DGEKKO -DLUA_32BITS -Os -Wall -mrvl -mcpu=750 -meabi -mhard-float -flto \
+CFLAGS := -DGEKKO -Os -Wall -mrvl -mcpu=750 -meabi -mhard-float -flto \
                 -ffunction-sections -fdata-sections \
                 -Wno-implicit-function-declaration \
                 -Wno-incompatible-pointer-types \
@@ -62,7 +62,7 @@ LDFLAGS := -DGEKKO -mrvl -mcpu=750 -meabi -mhard-float -flto \
 LIBS := -lmplayerwii -lavformat -lavcodec -lswscale -lavutil \
 				-lfribidi -ljpeg -liconv -ldi -lpng -lunrar -lzip -lsevenzip -lz \
 				-lcurl -lcyassl -lnetport -lasnd -lvorbisidec \
-				-lmxml -llua -lm -lfat -lwiiuse -lwiikeyboard -lbte -logc -lfreetype -lexif
+				-lmxml -lm -lfat -lwiiuse -lwiikeyboard -lbte -logc -lfreetype -lexif
 
 # Library search paths
 LDFLAGS += -L$(CURDIR)/libs/wii -L$(LIBOGC_LIB) -L$(PORTLIBS_LIB)

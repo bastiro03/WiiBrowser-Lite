@@ -1157,7 +1157,6 @@ static int MenuAdvanced()
 
 	OptionList options;
 	sprintf(options.name[i++], "Render IFrames");
-	sprintf(options.name[i++], "Execute Lua scripts");
 	sprintf(options.name[i++], "Document.write");
 	sprintf(options.name[i++], "Proxy (url:port)");
 	options.length = i;
@@ -1254,12 +1253,9 @@ static int MenuAdvanced()
 			Settings.IFrame = !Settings.IFrame;
 			break;
 		case 1:
-			Settings.ExecLua = !Settings.ExecLua;
-			break;
-		case 2:
 			Settings.DocWrite = !Settings.DocWrite;
 			break;
-		case 3:
+		case 2:
 			OnScreenKeyboard(mainWindow, Settings.Proxy, 256);
 			break;
 		}
@@ -1273,14 +1269,10 @@ static int MenuAdvanced()
 				sprintf(options.value[0], "Off");
 			else if (Settings.IFrame == 1)
 				sprintf(options.value[0], "On");
-			if (Settings.ExecLua == 0)
-				sprintf(options.value[1], "Off");
-			else if (Settings.ExecLua == 1)
-				sprintf(options.value[1], "On");
 			if (Settings.DocWrite == 0)
-				sprintf(options.value[2], "Disabled");
+				sprintf(options.value[1], "Disabled");
 			else if (Settings.DocWrite == 1)
-				sprintf(options.value[2], "Enabled");
+				sprintf(options.value[1], "Enabled");
 
 			optionBrowser.TriggerUpdate();
 		}

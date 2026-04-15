@@ -80,7 +80,6 @@ void SSettings::SetDefault()
 
 	MuteSound = false;
 	IFrame = false;
-	ExecLua = false;
 
 	sprintf(Homepage, DEFAULT_HOMEPAGE);
 	sprintf(DefaultFolder, DEFAULT_APP_PATH);
@@ -148,7 +147,6 @@ bool SSettings::Save(bool clean)
 	fprintf(file, "UserAgent = %d\r\n", UserAgent);
 	fprintf(file, "IFrame = %d\r\n", IFrame);
 	fprintf(file, "DocWrite = %d\r\n", DocWrite);
-	fprintf(file, "ExecLua = %d\r\n", ExecLua);
 	fprintf(file, "CleanExit = %d\r\n", clean);
 	fprintf(file, "Proxy = %s\r\n", Proxy);
 	fclose(file);
@@ -375,14 +373,6 @@ bool SSettings::SetSetting(char *name, char *value)
 		if (sscanf(value, "%d", &i) == 1)
 		{
 			DocWrite = i;
-		}
-		return true;
-	}
-	if (strcmp(name, "ExecLua") == 0)
-	{
-		if (sscanf(value, "%d", &i) == 1)
-		{
-			ExecLua = i;
 		}
 		return true;
 	}

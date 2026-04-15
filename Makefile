@@ -8,11 +8,15 @@
 
 WBL_PLATFORM ?= wii
 
+# Project Name MUST be set before we include the platform-specific
+# build.mk, because the platform file uses $(TARGET) to build
+# target-output names like $(TARGET).dol. If TARGET were set after,
+# $(TARGET_OUT) would expand to just ".dol" and `make all` would
+# silently succeed without building anything.
+TARGET ?= wiibrowserlite
+
 # Include platform-specific build config
 include platform/$(WBL_PLATFORM)/build.mk
-
-# Project Name (per-platform binary name)
-TARGET ?= wiibrowserlite
 
 # Directories
 BUILD := build/$(WBL_PLATFORM)

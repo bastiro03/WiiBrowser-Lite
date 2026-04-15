@@ -106,10 +106,16 @@ jobs:
         # numfmt is in coreutils; no separate package
 
     - name: Report toolchain
+      continue-on-error: true
+      env:
+        PATH: /opt/devkitpro/devkitPPC/bin:/opt/devkitpro/tools/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
       run: |
         set -x
         powerpc-eabi-gcc --version | head -1
-        which powerpc-eabi-gcc-ar powerpc-eabi-gcc-ranlib
+        # gcc-ar/gcc-ranlib needed for LTO across static archives
+        which powerpc-eabi-gcc-ar powerpc-eabi-gcc-ranlib || \
+            echo "WARNING: powerpc-eabi-gcc-ar/ranlib missing; LTO cross-archive may degrade"
+        ls -la $DEVKITPPC/bin/ | head -30
         ls -la third_party/
         git submodule status
 

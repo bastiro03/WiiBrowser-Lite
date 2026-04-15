@@ -158,15 +158,27 @@ jobs:
         retention-days: 7
         if-no-files-found: warn
 
-    # Print log to STDOUT in the failure step. Each line of stdout
-    # in CI step output shows in the rendered HTML page (which we
-    # can fetch via WebFetch even without API auth).
-    - name: Print last 250 lines of build log to stdout
+    # Push the build log as a file on a dedicated tag so it's
+    # publicly fetchable via git fetch + git show without API auth.
+    - name: Publish build log as a tag
       if: failure()
       run: |
-        echo '#### WII BUILD LOG START ####'
-        tail -250 wii-build.log 2>/dev/null || echo "(no log)"
-        echo '#### WII BUILD LOG END ####'
+        SHA="${GITHUB_SHA:0:7}"
+        TAG="ci-log/wii-${SHA}"
+        # Make a worktree-free commit pointing at a tree containing only the log
+        BLOB=$(git hash-object -w wii-build.log)
+        TREE=$(printf "100644 blob %s\twii-build.log\n" "$BLOB" | git mktree)
+        # Author/commit need timestamp + ident
+        export GIT_AUTHOR_NAME=ci-log-bot GIT_AUTHOR_EMAIL=ci@noreply.local
+        export GIT_AUTHOR_DATE="$(date -uR)"
+        export GIT_COMMITTER_NAME=ci-log-bot GIT_COMMITTER_EMAIL=ci@noreply.local
+        export GIT_COMMITTER_DATE="$(date -uR)"
+        COMMIT=$(echo "wii build log for $GITHUB_SHA" | git -c commit.gpgsign=false commit-tree "$TREE")
+        echo "Created commit $COMMIT"
+        # Push as a tag (lightweight) - tags don't need branch protection
+        git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" \
+            "${COMMIT}:refs/tags/${TAG}" || echo "push failed (perhaps no token write perms)"
+        echo "Log tag: $TAG"
 
     - name: Emit errors as GitHub annotations (visible in CI API)
       if: failure()

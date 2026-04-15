@@ -29,8 +29,17 @@ WBL_CFLAGS := \
     -DWBL_PLATFORM_$(shell echo $(WBL_PLATFORM) | tr a-z A-Z) \
     -Iinclude
 
-CFLAGS  += $(WBL_CFLAGS)
-CXXFLAGS += $(WBL_CFLAGS)
+# Headers for our third-party deps must come BEFORE portlib headers on the
+# search path so we pick up our pinned/patched versions rather than the
+# devkitpro portlibs copies of mbedtls/curl/etc.
+WBL_THIRD_PARTY_INC := \
+    -Ithird_party/curl/include \
+    -Ithird_party/mbedtls/include \
+    -Ithird_party/mbedtls-wbl-config \
+    -Ithird_party/quickjs
+
+CFLAGS   := $(WBL_THIRD_PARTY_INC) $(WBL_CFLAGS) $(CFLAGS)
+CXXFLAGS := $(WBL_THIRD_PARTY_INC) $(WBL_CFLAGS) $(CXXFLAGS)
 
 #---------------------------------------------------------------------------------
 # Source Files

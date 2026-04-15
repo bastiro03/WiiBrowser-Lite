@@ -222,6 +222,7 @@ enum
 	MOZILLA,
 	IEXPLORER,
 	ANDROID,
+	IPHONE_SAFARI_IOS6,   /* default: triggers mobile layout on most sites */
 	MAXAGENTS
 };
 
@@ -233,6 +234,7 @@ const char AgentName[MAXAGENTS][11] =
 		"Firefox",
 		"IExplorer",
 		"Android",
+		"iPhone-3G",
 };
 
 int CheckFolder(const char *folder);

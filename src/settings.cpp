@@ -68,7 +68,10 @@ SSettings::~SSettings()
 void SSettings::SetDefault()
 {
 	Language = LANG_ENGLISH;
-	UserAgent = LIBCURL;
+	/* Default UA is iPhone 3G Safari (iOS 6.1.6). Modern sites serve
+	 * a leaner mobile layout for this which our LiteHTML renderer
+	 * handles comfortably on console hardware. */
+	UserAgent = IPHONE_SAFARI_IOS6;
 	Autoupdate = STABLE;
 	ZipFile = ASK;
 

@@ -39,6 +39,11 @@
 #include "menu.h"
 #include "filelist.h"
 
+#include "wbl/platform.h"
+#if WBL_HAS_HTTPS
+#include "psa/crypto.h"   /* psa_crypto_init for TLS 1.3 */
+#endif
+
 extern "C"
 {
 #include "urlcode.h"
@@ -71,6 +76,10 @@ const char Agents[MAXAGENTS][256] =
 		"Mozilla/5.0 (Windows NT 6.2; WOW64; rv:16.0.1) Gecko/20121011 Firefox/16.0.1",
 		"Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; Trident/6.0)",
 		"Mozilla/5.0 (Linux; U; Android 1.1; en-gb; dream) AppleWebKit/525.10+ (KHTML, like Gecko) Version/3.0.4 Mobile Safari/523.12.2",
+		/* iOS 6.1.6 was the final iPhone 3G release. Wikipedia/Reddit/etc
+		 * serve us their simpler mobile layout for this UA, which our
+		 * LiteHTML renderer can handle on Wii/DS. */
+		"Mozilla/5.0 (iPhone; CPU iPhone OS 6_1_6 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Mobile/10B500",
 };
 
 const struct block emptyblock = {nullptr, 0};
@@ -81,8 +90,30 @@ static char cacert_path[256] = {0};
 // SSL CERTIFICATE SETUP
 // -----------------------------------------------------------
 
+#if WBL_HAS_HTTPS
+/* One-time PSA crypto init. mbedTLS 3.6 routes TLS 1.3 signature and
+ * key-derivation operations through PSA. Calling psa_crypto_init()
+ * before the first mbedtls_ssl_handshake() is mandatory - without it
+ * our ClientHello gets past the wire but the server rejects us at
+ * CertificateVerify (unsupported signature scheme) or the local
+ * signature computation fails with NOT_SUPPORTED. */
+static void psa_init_once(void)
+{
+	static bool done = false;
+	if (done) return;
+	psa_status_t s = psa_crypto_init();
+	if (s != PSA_SUCCESS) {
+		printf("psa_crypto_init failed: %d\n", (int)s);
+	}
+	done = true;
+}
+#endif
+
 static void setup_cacert()
 {
+#if WBL_HAS_HTTPS
+	psa_init_once();
+#endif
 	if (cacert_path[0] != 0)
 		return; // Already initialized
 

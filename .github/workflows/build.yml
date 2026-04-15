@@ -164,11 +164,20 @@ jobs:
           find third_party -name '*.a' 2>&1 | head -10
         } >> wii-build.log 2>&1
 
-        # Post log to termbin ALWAYS (not just on failure) so we can
-        # inspect build state even when CI step exits 0 silently.
+        # Emit each log line as its own ::error:: annotation so we
+        # can read it back through the check-runs/annotations API
+        # (which gives us ~50 annotations per step).
         if [ -s wii-build.log ]; then
-          URL=$(cat wii-build.log | timeout 20 nc termbin.com 9999 2>&1 | tr -d '\0\r\n' | head -c 200 || echo "nc-failed")
-          echo "::error::WII_BUILD_LOG_URL=${URL}"
+          nl=0
+          while IFS= read -r line; do
+            nl=$((nl + 1))
+            # Truncate long lines; escape control chars for the
+            # Actions workflow command parser.
+            safe=$(echo "$line" | head -c 400 | sed 's/%/%25/g; s/\r/%0D/g')
+            echo "::error::L${nl}: ${safe}"
+            # Cap emission to 40 lines per step
+            [ $nl -ge 40 ] && break
+          done < wii-build.log
         fi
         exit $rc
 

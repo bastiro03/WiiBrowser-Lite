@@ -171,28 +171,17 @@ jobs:
         retention-days: 7
         if-no-files-found: warn
 
-    # Use gh CLI (preinstalled + auto-authenticated) to upload the log
-    # as a release asset attached to a 'ci-logs' release. The asset is
-    # publicly downloadable without auth, and no special branch
-    # permissions are needed.
-    - name: Upload wii-build.log to ci-logs release
+    # Print log to GITHUB_STEP_SUMMARY in chunks - this gets stored
+    # in the run summary and is fetchable via the run-summary endpoint.
+    - name: Write log to job summary
       if: failure()
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        SHA="${GITHUB_SHA:0:7}"
-        TAG="ci-logs"
-        ASSET="wii-build-${SHA}.log"
-        cp wii-build.log "$ASSET" 2>/dev/null || echo "(no log file)" > "$ASSET"
-        # Ensure the rolling 'ci-logs' release exists
-        gh release view "$TAG" >/dev/null 2>&1 || \
-            gh release create "$TAG" \
-                --title "CI debug logs (rolling)" \
-                --notes "Auto-uploaded build logs for failed CI runs" \
-                --prerelease
-        # Upload asset (clobber any same-named one)
-        gh release upload "$TAG" "$ASSET" --clobber
-        echo "Log: https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/${ASSET}"
+        {
+          echo '## Wii build log (last 250 lines)'
+          echo '```'
+          tail -250 wii-build.log 2>/dev/null || echo "(no log)"
+          echo '```'
+        } >> "$GITHUB_STEP_SUMMARY"
 
     - name: Emit errors as GitHub annotations (visible in CI API)
       if: failure()

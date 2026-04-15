@@ -43,7 +43,6 @@ CURL_CONFIGURE_FLAGS := \
     --disable-libcurl-option \
     --disable-sspi \
     --disable-ntlm \
-    --disable-ntlm-wb \
     --disable-tls-srp \
     --disable-unix-sockets \
     --disable-cookies \

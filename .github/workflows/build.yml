@@ -158,6 +158,37 @@ jobs:
         retention-days: 7
         if-no-files-found: warn
 
+    - name: Push build log to failure-logs branch (so Claude Code can read it)
+      if: failure()
+      env:
+        TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        # When the build fails, push wii-build.log to a branch named
+        # ci-log/<short-sha> so it's visible via git (bypasses auth).
+        SHA="${GITHUB_SHA:0:7}"
+        LOGBR="ci-log/wii-${SHA}"
+        git config user.name  "ci-log-bot"
+        git config user.email "ci-log@noreply.local"
+        mkdir -p .ci-log
+        cp wii-build.log .ci-log/ 2>/dev/null || echo "(no log)" > .ci-log/wii-build.log
+        {
+          echo "# Wii build failure log"
+          echo "- SHA: $GITHUB_SHA"
+          echo "- Run URL: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          echo ""
+          echo '## errors grep'
+          echo '```'
+          grep -E 'error:|undefined reference|fatal error|No such file|Error [0-9]|make.*Error|cannot find|not found' wii-build.log | head -60
+          echo '```'
+        } > .ci-log/SUMMARY.md
+        git checkout --orphan "$LOGBR"
+        git rm -rf --cached . || true
+        git clean -fdx -e .ci-log || true
+        git add .ci-log/
+        git commit -m "CI log for ${SHA}" || true
+        git push -f "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+            HEAD:refs/heads/"$LOGBR" || true
+
     - name: Dump build log on failure (so error shows in CI output)
       if: failure()
       run: |

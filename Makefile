@@ -1,71 +1,36 @@
 #---------------------------------------------------------------------------------
-# Clear the implicit built in rules
+# WiiBrowser-Lite cross-platform build
+#
+# Default platform: WII
+# Override with: make WBL_PLATFORM=nds | dsi | macplus
 #---------------------------------------------------------------------------------
 .SUFFIXES:
-#---------------------------------------------------------------------------------
-DEVKITPPC ?= $(DEVKITPRO)/devkitPPC
 
-ifeq ($(strip $(DEVKITPPC)),)
-$(error "Please set DEVKITPPC in your environment. export DEVKITPPC=<path to>devkitPPC")
-endif
+WBL_PLATFORM ?= wii
 
-include $(DEVKITPPC)/wii_rules
+# Include platform-specific build config
+include platform/$(WBL_PLATFORM)/build.mk
 
-# Project Name
-TARGET := wiibrowserlite
+# Project Name (per-platform binary name)
+TARGET ?= wiibrowserlite
 
 # Directories
-BUILD := build
+BUILD := build/$(WBL_PLATFORM)
 SOURCES := $(shell find src -type d)
 DATA := images images/appbar fonts sounds certs
 INCLUDES := include
 
-# libogc paths (set by wii_rules but made explicit here)
-LIBOGC_INC ?= $(DEVKITPRO)/libogc/include
-LIBOGC_LIB ?= $(DEVKITPRO)/libogc/lib/wii
-PORTLIBS_INC ?= $(DEVKITPRO)/portlibs/ppc/include
-PORTLIBS_LIB ?= $(DEVKITPRO)/portlibs/ppc/lib
-
 VPATH := $(SOURCES) $(DATA)
 
 #---------------------------------------------------------------------------------
-# devkitPPC toolchain setup
+# Common cross-platform feature flags
 #---------------------------------------------------------------------------------
-PREFIX := $(DEVKITPPC)/bin/powerpc-eabi-
-CC := $(PREFIX)gcc
-CXX := $(PREFIX)g++
-AS := $(PREFIX)as
-AR := $(PREFIX)ar
-LD := $(PREFIX)ld
-OBJCOPY := $(PREFIX)objcopy
+WBL_CFLAGS := \
+    -DWBL_PLATFORM_$(shell echo $(WBL_PLATFORM) | tr a-z A-Z) \
+    -Iinclude
 
-#---------------------------------------------------------------------------------
-# Flags
-#---------------------------------------------------------------------------------
-# Optimization flags: -Os for size, -flto for link-time optimization
-# Function/data sections for dead code elimination
-CFLAGS := -DGEKKO -Os -Wall -mrvl -mcpu=750 -meabi -mhard-float -flto \
-                -ffunction-sections -fdata-sections \
-                -Wno-implicit-function-declaration \
-                -Wno-incompatible-pointer-types \
-                -Wno-int-conversion \
-                -Wno-builtin-declaration-mismatch \
-                $(foreach dir,$(INCLUDES),-I$(dir)) \
-                -I$(LIBOGC_INC) \
-                -I$(PORTLIBS_INC) \
-                $(foreach dir,$(SOURCES),-I$(dir))
-
-CXXFLAGS := $(CFLAGS) -fno-exceptions -fno-rtti
-LDFLAGS := -DGEKKO -mrvl -mcpu=750 -meabi -mhard-float -flto \
-                -Wl,-Map,$(TARGET).map -Wl,--gc-sections
-
-LIBS := -lmplayerwii -lavformat -lavcodec -lswscale -lavutil \
-				-lfribidi -ljpeg -liconv -ldi -lpng -lunrar -lzip -lsevenzip -lz \
-				-lcurl -lcyassl -lnetport -lasnd -lvorbisidec \
-				-lmxml -lm -lfat -lwiiuse -lwiikeyboard -lbte -logc -lfreetype -lexif
-
-# Library search paths
-LDFLAGS += -L$(CURDIR)/libs/wii -L$(LIBOGC_LIB) -L$(PORTLIBS_LIB)
+CFLAGS  += $(WBL_CFLAGS)
+CXXFLAGS += $(WBL_CFLAGS)
 
 #---------------------------------------------------------------------------------
 # Source Files
@@ -83,19 +48,35 @@ OGGFILES := $(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.ogg)))
 PCMFILES := $(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.pcm)))
 PEMFILES := $(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.pem)))
 OFILES       := $(CFILES:.c=.o) $(CPPFILES:.cpp=.o) \
-				$(sFILES:.s=.o) $(SFILES:.S=.o) \
-				$(TTFFILES:.ttf=.ttf.o) $(LANGFILES:.lang=.lang.o) \
-				$(PNGFILES:.png=.png.o) \
-				$(OGGFILES:.ogg=.ogg.o) $(PCMFILES:.pcm=.pcm.o) \
-				$(JPGFILES:.jpg=.jpg.o) \
-				$(GIFFILES:.gif=.gif.o) \
-				$(PEMFILES:.pem=.pem.o)
+                $(sFILES:.s=.o) $(SFILES:.S=.o) \
+                $(TTFFILES:.ttf=.ttf.o) $(LANGFILES:.lang=.lang.o) \
+                $(PNGFILES:.png=.png.o) \
+                $(OGGFILES:.ogg=.ogg.o) $(PCMFILES:.pcm=.pcm.o) \
+                $(JPGFILES:.jpg=.jpg.o) \
+                $(GIFFILES:.gif=.gif.o) \
+                $(PEMFILES:.pem=.pem.o)
 OFILES := $(addprefix $(BUILD)/,$(OFILES))
+
+#---------------------------------------------------------------------------------
+# Third-party libraries (all built statically, conditionally per platform)
+#---------------------------------------------------------------------------------
+include third_party/mbedtls.mk
+include third_party/curl.mk
+ifeq ($(WBL_HAS_JAVASCRIPT),1)
+include third_party/quickjs.mk
+WBL_THIRD_PARTY_LIBS += build/libquickjs.a
+WBL_THIRD_PARTY_DEPS += build/libquickjs.a
+endif
+
+ifeq ($(WBL_HAS_HTTPS),1)
+WBL_THIRD_PARTY_LIBS += $(CURL_LIB) $(MBEDTLS_LIB) $(MBEDX509_LIB) $(MBEDCRYPTO_LIB)
+WBL_THIRD_PARTY_DEPS += $(CURL_LIB) $(MBEDTLS_LIB)
+endif
 
 #---------------------------------------------------------------------------------
 # Rules
 #---------------------------------------------------------------------------------
-all: $(TARGET).dol
+all: $(TARGET_OUT)
 
 $(BUILD):
 	@mkdir -p $(BUILD)
@@ -108,7 +89,7 @@ $(BUILD)/%.o: %.c | $(BUILD)
 $(BUILD)/%.o: %.cpp | $(BUILD)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-# Binary data conversion
+# Binary data conversion (Wii uses bin2o macro from wii_rules)
 $(BUILD)/%.ttf.o: %.ttf | $(BUILD)
 	@echo $(notdir $<)
 	$(bin2o)
@@ -142,10 +123,10 @@ $(BUILD)/%.pem.o: %.pem | $(BUILD)
 	$(bin2o)
 
 # Link ELF
-$(TARGET).elf: $(OFILES)
-	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
+$(TARGET).elf: $(OFILES) $(WBL_THIRD_PARTY_DEPS)
+	$(CC) $(LDFLAGS) -o $@ $(OFILES) $(WBL_THIRD_PARTY_LIBS) $(LIBS)
 
-# Convert ELF to DOL
+# Convert ELF to DOL (Wii-specific; other platforms override TARGET_OUT rule)
 $(TARGET).dol: $(TARGET).elf
 	elf2dol $< $@
 
@@ -154,4 +135,7 @@ clean:
 	@echo "Cleaning..."
 	@rm -rf $(BUILD) $(TARGET).elf $(TARGET).dol $(TARGET).map
 
-.PHONY: all clean
+# Deep clean - also wipes third-party builds
+distclean: clean quickjs-clean mbedtls-clean curl-clean
+
+.PHONY: all clean distclean

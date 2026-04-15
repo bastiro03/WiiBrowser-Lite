@@ -84,7 +84,10 @@ endif
 
 ifeq ($(WBL_HAS_HTTPS),1)
 WBL_THIRD_PARTY_LIBS += $(CURL_LIB) $(MBEDTLS_LIB) $(MBEDX509_LIB) $(MBEDCRYPTO_LIB)
-WBL_THIRD_PARTY_DEPS += $(CURL_LIB) $(MBEDTLS_LIB)
+# MBEDTLS_PATCH_STAMP makes our app's compilation depend on submodule
+# patches having been applied, so app source files see the patched
+# mbedtls headers (e.g. our __has_include override in mbedtls_config.h).
+WBL_THIRD_PARTY_DEPS += $(CURL_LIB) $(MBEDTLS_LIB) $(MBEDTLS_PATCH_STAMP)
 endif
 
 #---------------------------------------------------------------------------------
@@ -95,12 +98,15 @@ all: $(TARGET_OUT)
 $(BUILD):
 	@mkdir -p $(BUILD)
 
-# Compile C source
-$(BUILD)/%.o: %.c | $(BUILD)
+# Compile C source. Order-only-deps on $(WBL_THIRD_PARTY_DEPS) ensure
+# submodule patches (e.g. our mbedtls config-override patch) are
+# applied before any of our app code that #includes the patched
+# headers gets compiled.
+$(BUILD)/%.o: %.c | $(BUILD) $(WBL_THIRD_PARTY_DEPS)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Compile C++ source
-$(BUILD)/%.o: %.cpp | $(BUILD)
+# Compile C++ source (same rationale as above)
+$(BUILD)/%.o: %.cpp | $(BUILD) $(WBL_THIRD_PARTY_DEPS)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 # Binary data conversion (Wii uses bin2o macro from wii_rules)

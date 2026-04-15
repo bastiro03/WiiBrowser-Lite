@@ -33,14 +33,29 @@ AR_LTO     := $(AR)
 RANLIB_LTO := $(RANLIB)
 endif
 
-# Apply any discrete upstream-submittable patches from
-# third_party/mbedtls-patches/ before compiling.
-$(MBEDTLS_LIB) $(MBEDX509_LIB) $(MBEDCRYPTO_LIB):
+# Patches from third_party/mbedtls-patches/ must be applied to the
+# submodule SOURCE TREE before any compile, because some patches affect
+# headers that downstream consumers (curl, our app) #include directly.
+# This must happen even when CI cache restored the .a files: the
+# headers from the un-patched submodule would still be wrong.
+#
+# Use a stamp file (.wbl-patches-applied) to make application
+# idempotent. Stamp is invalidated when any patch file changes.
+MBEDTLS_PATCH_STAMP := $(MBEDTLS_DIR)/.wbl-patches-applied
+
+$(MBEDTLS_PATCH_STAMP): $(MBEDTLS_PATCHES)
+	@cd $(MBEDTLS_DIR) && git checkout -- include/ library/ 2>/dev/null || true
 	@for p in $(abspath $(MBEDTLS_PATCHES)); do \
 	    (cd $(MBEDTLS_DIR) && git apply --check "$$p" 2>/dev/null) \
 	        && (cd $(MBEDTLS_DIR) && git apply "$$p" && echo "applied $$(basename $$p)") \
 	        || true; \
 	done
+	@touch $@
+
+# Make the lib targets depend on the patch stamp so patches apply
+# before compilation. The stamp is also a public dep so other rules
+# (e.g. curl.mk) can depend on it.
+$(MBEDTLS_LIB) $(MBEDX509_LIB) $(MBEDCRYPTO_LIB): $(MBEDTLS_PATCH_STAMP)
 	$(MAKE) -C $(MBEDTLS_DIR)/library \
 	    CC="$(CC)" AR="$(AR_LTO)" RANLIB="$(RANLIB_LTO)" \
 	    CFLAGS="$(CFLAGS) $(MBEDTLS_CFLAGS)" \

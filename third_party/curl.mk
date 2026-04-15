@@ -63,13 +63,11 @@ CURL_LIB := $(CURL_DIR)/lib/.libs/libcurl.a
 # re-running the build does not fail on already-patched files.
 CURL_PATCHES := $(sort $(wildcard third_party/curl-patches/*.patch))
 
-# Same LTO archiver as mbedtls.mk uses.
-AR_LTO     := $(shell $(CC) -print-prog-name=gcc-ar 2>/dev/null)
-RANLIB_LTO := $(shell $(CC) -print-prog-name=gcc-ranlib 2>/dev/null)
-ifeq ($(AR_LTO),)
-AR_LTO     := $(AR)
-RANLIB_LTO := $(RANLIB)
-endif
+# Same LTO archiver as mbedtls.mk uses (see comment there).
+AR_LTO_PROBE     := $(shell $(CC) -print-prog-name=gcc-ar 2>/dev/null)
+RANLIB_LTO_PROBE := $(shell $(CC) -print-prog-name=gcc-ranlib 2>/dev/null)
+AR_LTO     := $(if $(wildcard $(AR_LTO_PROBE)),$(AR_LTO_PROBE),$(AR))
+RANLIB_LTO := $(if $(wildcard $(RANLIB_LTO_PROBE)),$(RANLIB_LTO_PROBE),$(RANLIB))
 
 # Cross-compile autoconf cache variables. When building for PPC/ARM,
 # curl's configure script wants to run test programs on the target to

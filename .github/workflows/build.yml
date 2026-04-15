@@ -137,12 +137,17 @@ jobs:
       env:
         PATH: /opt/devkitpro/devkitPPC/bin:/opt/devkitpro/tools/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
       run: |
-        # Don't trip on git's "dubious ownership" which can occur when
-        # the runner UID doesn't match the checkout's owner UID.
         git config --global --add safe.directory '*'
-        # Run with --debug=v so make prints rule resolution decisions.
-        make WBL_PLATFORM=wii --debug=v 2>&1 | tee wii-build.log
-        exit ${PIPESTATUS[0]}
+        # Stage 1: run print-relevant-vars to verify make can parse files
+        echo '=== make print-vars ===' | tee wii-build.log
+        make -p WBL_PLATFORM=wii 2>&1 | grep -E '^(MBEDTLS_LIB|CURL_LIB|MBEDTLS_PATCH_STAMP|AR|AR_LTO|CC|RANLIB|PORTLIBS|LIBOGC|MBEDTLS_DIR|MBEDTLS_CFLAGS) ?' | head -30 >> wii-build.log
+        echo '' >> wii-build.log
+        echo '=== Build mbedtls only ===' >> wii-build.log
+        make -d WBL_PLATFORM=wii third_party/mbedtls/library/libmbedtls.a 2>&1 | tee -a wii-build.log
+        rc=${PIPESTATUS[0]}
+        echo "" >> wii-build.log
+        echo "=== mbedtls build exit code: $rc ===" >> wii-build.log
+        exit $rc
 
     - name: Upload Wii build log (for debugging failures)
       if: always()

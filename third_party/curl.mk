@@ -58,10 +58,11 @@ CURL_CONFIGURE_FLAGS := \
 
 CURL_LIB := $(CURL_DIR)/lib/.libs/libcurl.a
 
-# Apply our curl source patch (gate tls13 session-tickets on TLS 1.3).
-# Idempotent: if already applied, `git apply` reports "patch does not
-# apply" which we ignore - the patch is in a known state.
-CURL_PATCHES := $(wildcard third_party/curl-patches/*.patch)
+# Apply discrete upstream-submittable patches from third_party/curl-patches/.
+# Order is determined by filename (0001-, 0002-, ...).
+# Application is idempotent: `git apply --check` gates application so
+# re-running the build does not fail on already-patched files.
+CURL_PATCHES := $(sort $(wildcard third_party/curl-patches/*.patch))
 
 # Same LTO archiver as mbedtls.mk uses.
 AR_LTO     := $(shell $(CC) -print-prog-name=gcc-ar 2>/dev/null)
@@ -72,10 +73,11 @@ RANLIB_LTO := $(RANLIB)
 endif
 
 $(CURL_LIB): | $(MBEDTLS_LIB)
-	cd $(CURL_DIR) && \
-	    for p in $(abspath $(CURL_PATCHES)); do \
-	        git apply --check "$$p" 2>/dev/null && git apply "$$p"; \
-	    done; true
+	@for p in $(abspath $(CURL_PATCHES)); do \
+	    (cd $(CURL_DIR) && git apply --check "$$p" 2>/dev/null) \
+	        && (cd $(CURL_DIR) && git apply "$$p" && echo "applied $$(basename $$p)") \
+	        || true; \
+	done
 	cd $(CURL_DIR) && [ -x ./configure ] || autoreconf -fi
 	cd $(CURL_DIR) && \
 	    CC="$(CC)" AR="$(AR_LTO)" RANLIB="$(RANLIB_LTO)" \

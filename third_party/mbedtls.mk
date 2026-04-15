@@ -15,6 +15,8 @@ MBEDTLS_LIB    := $(MBEDTLS_DIR)/library/libmbedtls.a
 MBEDX509_LIB   := $(MBEDTLS_DIR)/library/libmbedx509.a
 MBEDCRYPTO_LIB := $(MBEDTLS_DIR)/library/libmbedcrypto.a
 
+MBEDTLS_PATCHES := $(sort $(wildcard third_party/mbedtls-patches/*.patch))
+
 # Use gcc-ar/gcc-ranlib so LTO bitcode in each .o ends up properly
 # indexed in the archive symbol table. Plain 'ar' drops the LTO
 # symbol index and the final link silently falls back to non-LTO
@@ -26,8 +28,14 @@ AR_LTO     := $(AR)
 RANLIB_LTO := $(RANLIB)
 endif
 
-# Invoke upstream mbedTLS library Makefile with our toolchain + config.
+# Apply any discrete upstream-submittable patches from
+# third_party/mbedtls-patches/ before compiling.
 $(MBEDTLS_LIB) $(MBEDX509_LIB) $(MBEDCRYPTO_LIB):
+	@for p in $(abspath $(MBEDTLS_PATCHES)); do \
+	    (cd $(MBEDTLS_DIR) && git apply --check "$$p" 2>/dev/null) \
+	        && (cd $(MBEDTLS_DIR) && git apply "$$p" && echo "applied $$(basename $$p)") \
+	        || true; \
+	done
 	$(MAKE) -C $(MBEDTLS_DIR)/library \
 	    CC="$(CC)" AR="$(AR_LTO)" RANLIB="$(RANLIB_LTO)" \
 	    CFLAGS="$(CFLAGS) $(MBEDTLS_CFLAGS)" \

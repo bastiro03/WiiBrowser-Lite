@@ -77,8 +77,17 @@ curl_smoke: curl_smoke.c $(CURL_LIB) $(MBEDTLS_LIBS)
 	$(CC) $(LTO_CFLAGS) $(LTO_LDFLAGS) -I$(CURL_DIR)/include -Wall \
 	    $< $(CURL_LIB) $(MBEDTLS_LIBS) -lz -o $@
 
+MBEDTLS_PATCHES := $(sort $(wildcard ../third_party/mbedtls-patches/*.patch))
+CURL_PATCHES    := $(sort $(wildcard ../third_party/curl-patches/*.patch))
+QUICKJS_PATCHES := $(sort $(wildcard ../third_party/quickjs-patches/*.patch))
+
 # --- Build mbedTLS with LTO bitcode in the archive ---
 $(MBEDTLS_LIBS):
+	@for p in $$(realpath $(MBEDTLS_PATCHES) 2>/dev/null); do \
+	    (cd $(MBEDTLS_DIR) && git apply --check "$$p" 2>/dev/null) \
+	        && (cd $(MBEDTLS_DIR) && git apply "$$p" && echo "applied $$(basename $$p)") \
+	        || true; \
+	done
 	$(MAKE) -C $(MBEDTLS_DIR)/library \
 	    CC="$(CC)" AR="$(AR)" RANLIB="$(RANLIB)" \
 	    CFLAGS="$(LTO_CFLAGS) -I$$(pwd)/$(MBEDTLS_DIR)/include -I$$(pwd)/$(MBEDTLS_CFG) -DMBEDTLS_CONFIG_FILE='\"wbl/mbedtls_config.h\"' -DWBL_PLATFORM_HOST=1 -Wno-unused-function" \
@@ -87,7 +96,15 @@ $(MBEDTLS_LIBS):
 # --- Build QuickJS with LTO bitcode ---
 QJS_OBJS := $(addprefix $(QUICKJS_DIR)/,quickjs.o libregexp.o libunicode.o dtoa.o)
 
-$(QUICKJS_DIR)/%.o: $(QUICKJS_DIR)/%.c
+$(QUICKJS_DIR)/.wbl-patches-applied: $(QUICKJS_PATCHES)
+	@for p in $$(realpath $(QUICKJS_PATCHES) 2>/dev/null); do \
+	    (cd $(QUICKJS_DIR) && git apply --check "$$p" 2>/dev/null) \
+	        && (cd $(QUICKJS_DIR) && git apply "$$p" && echo "applied $$(basename $$p)") \
+	        || true; \
+	done
+	@touch $@
+
+$(QUICKJS_DIR)/%.o: $(QUICKJS_DIR)/%.c $(QUICKJS_DIR)/.wbl-patches-applied
 	$(CC) $(LTO_CFLAGS) -D_GNU_SOURCE -DCONFIG_VERSION=\"0.14.0-micro\" \
 	    -Wno-array-bounds -Wno-format-truncation -Wno-unused-but-set-variable \
 	    -fwrapv -funsigned-char -c $< -o $@
@@ -97,10 +114,11 @@ $(QUICKJS_LIBS): $(QJS_OBJS)
 
 # --- Build curl with LTO bitcode (delegates to upstream configure+make) ---
 $(CURL_LIB): $(MBEDTLS_LIBS)
-	cd $(CURL_DIR) && \
-	    for p in $$(pwd)/../curl-patches/*.patch; do \
-	        git apply --check "$$p" 2>/dev/null && git apply "$$p"; \
-	    done; true
+	@for p in $$(realpath $(CURL_PATCHES) 2>/dev/null); do \
+	    (cd $(CURL_DIR) && git apply --check "$$p" 2>/dev/null) \
+	        && (cd $(CURL_DIR) && git apply "$$p" && echo "applied $$(basename $$p)") \
+	        || true; \
+	done
 	cd $(CURL_DIR) && [ -x ./configure ] || autoreconf -fi
 	cd $(CURL_DIR) && \
 	    CC="$(CC)" AR="$(AR)" RANLIB="$(RANLIB)" \

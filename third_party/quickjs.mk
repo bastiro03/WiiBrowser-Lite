@@ -45,6 +45,20 @@ build/quickjs/%.o: $(QUICKJS_DIR)/%.c | build/quickjs
 build/quickjs:
 	mkdir -p $@
 
+# Apply discrete upstream-submittable patches from
+# third_party/quickjs-patches/ before any compile.
+QUICKJS_PATCHES := $(sort $(wildcard third_party/quickjs-patches/*.patch))
+
+$(QUICKJS_DIR)/.wbl-patches-applied: $(QUICKJS_PATCHES)
+	@for p in $(abspath $(QUICKJS_PATCHES)); do \
+	    (cd $(QUICKJS_DIR) && git apply --check "$$p" 2>/dev/null) \
+	        && (cd $(QUICKJS_DIR) && git apply "$$p" && echo "applied $$(basename $$p)") \
+	        || true; \
+	done
+	@touch $@
+
+$(QUICKJS_OBJS): $(QUICKJS_DIR)/.wbl-patches-applied
+
 # Static archive - use gcc-ar (via -print-prog-name) so LTO bitcode
 # indexing works. Plain 'ar' drops the symbol table for IR symbols.
 build/libquickjs.a: $(QUICKJS_OBJS)

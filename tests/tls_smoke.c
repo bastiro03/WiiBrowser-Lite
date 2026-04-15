@@ -18,8 +18,18 @@
 #include "mbedtls/hmac_drbg.h"
 #include "mbedtls/x509_crt.h"
 #include "mbedtls/error.h"
+#include "mbedtls/debug.h"
+#include "psa/crypto.h"
 
-#define HOST "en.wikipedia.org"
+static void debug_cb(void *ctx, int level, const char *file, int line, const char *msg) {
+    (void)ctx; (void)level;
+    fprintf(stderr, "mbedtls %s:%d: %s", file, line, msg);
+}
+
+/* Target: api.github.com hits TLS 1.3 by default. Our sandbox IP is
+ * blocked at wikipedia.org's edge (hostname_blocked) so we verify the
+ * TLS/crypto stack against GitHub instead - same handshake requirements. */
+#define HOST "api.github.com"
 #define PORT "443"
 
 int main(void) {
@@ -38,6 +48,14 @@ int main(void) {
     mbedtls_x509_crt_init(&cacert);
     mbedtls_entropy_init(&entropy);
     mbedtls_hmac_drbg_init(&drbg);
+
+    /* 0. PSA init - TLS 1.3 routes signature ops through PSA */
+    psa_status_t ps = psa_crypto_init();
+    if (ps != PSA_SUCCESS) {
+        printf("psa_crypto_init failed: %d\n", (int)ps);
+        return 1;
+    }
+    printf("[OK] PSA crypto initialized\n");
 
     /* 1. Seed DRBG from system entropy */
     const char *seed = "wbl-tls-test";
@@ -80,6 +98,11 @@ int main(void) {
     mbedtls_ssl_conf_authmode(&cfg, MBEDTLS_SSL_VERIFY_REQUIRED);
     mbedtls_ssl_conf_ca_chain(&cfg, &cacert, NULL);
     mbedtls_ssl_conf_rng(&cfg, mbedtls_hmac_drbg_random, &drbg);
+    /* Debug off by default - flip both to enable:
+     *   mbedtls_ssl_conf_dbg(&cfg, debug_cb, NULL);
+     *   mbedtls_debug_set_threshold(3);  // 1=errors 2=more 3=lots 4=all
+     */
+    (void)debug_cb;
 
     ret = mbedtls_ssl_setup(&ssl, &cfg);
     if (ret) { printf("setup failed: -0x%04x\n", (unsigned)-ret); return 1; }
@@ -112,7 +135,7 @@ int main(void) {
     printf("[OK] Certificate verified\n");
 
     /* 7. Send GET */
-    const char *req = "GET /wiki/Nintendo_DS HTTP/1.1\r\n"
+    const char *req = "GET /zen HTTP/1.1\r\n"
                       "Host: " HOST "\r\n"
                       "User-Agent: Mozilla/5.0 (iPhone; CPU iPhone OS 6_1_6 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Mobile/10B500\r\n"
                       "Connection: close\r\n\r\n";
@@ -121,7 +144,7 @@ int main(void) {
             printf("write failed\n"); return 1;
         }
     }
-    printf("[OK] Sent GET /wiki/Nintendo_DS\n");
+    printf("[OK] Sent GET /zen\n");
 
     /* 8. Read response (enough to see HTTP headers + start of body) */
     unsigned char buf[8192];

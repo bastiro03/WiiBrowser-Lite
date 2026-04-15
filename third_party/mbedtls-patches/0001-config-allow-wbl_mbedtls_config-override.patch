@@ -1,0 +1,46 @@
+From 8424009b2235784dda593c82d143d04d0b76f6e1 Mon Sep 17 00:00:00 2001
+From: WiiBrowser-Lite <noreply@matthargett.github.io>
+Date: Wed, 15 Apr 2026 09:14:32 +0000
+Subject: [PATCH] config: allow #include "wbl_mbedtls_config.h" override
+
+When mbedTLS is embedded into a project with an opinionated build
+system that passes an alternative config via the preprocessor, the
+common recipe is -DMBEDTLS_CONFIG_FILE='"..."'. That works for
+simple build systems but is fragile when nested: make-to-make or
+make-to-autoconf invocations strip one level of shell quoting per
+layer, so the macro value loses its surrounding double-quotes and
+the resulting #include directive is invalid.
+
+Add a first-line __has_include check: if the project's include path
+contains wbl_mbedtls_config.h, use that as the full config. No
+preprocessor macro value juggling needed. Backwards compatible:
+projects without the file continue using the default config.
+
+Signed-off-by: WiiBrowser-Lite <noreply@matthargett.github.io>
+---
+ include/mbedtls/mbedtls_config.h | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/include/mbedtls/mbedtls_config.h b/include/mbedtls/mbedtls_config.h
+index 8fa445a132..d7c2521b7e 100644
+--- a/include/mbedtls/mbedtls_config.h
++++ b/include/mbedtls/mbedtls_config.h
+@@ -1,3 +1,10 @@
++/* [WiiBrowser-Lite] If a wbl-config file exists on the include path,
++ * use it instead of the default mbedTLS config. This is more robust
++ * than -DMBEDTLS_CONFIG_FILE='"..."' which is fragile under nested
++ * make + shell invocations (quotes get eaten). */
++#if __has_include("wbl_mbedtls_config.h")
++#include "wbl_mbedtls_config.h"
++#else
+ /**
+  * \file mbedtls_config.h
+  *
+@@ -4435,3 +4442,4 @@
+ //#define MBEDTLS_X509_MAX_FILE_PATH_LEN     512 /**< Maximum length of a path/filename string in bytes including the null terminator character ('\0'). */
+ 
+ /** \} name SECTION: Module configuration options */
++#endif /* __has_include("wbl_mbedtls_config.h") */
+-- 
+2.43.0
+

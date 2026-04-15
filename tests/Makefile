@@ -34,10 +34,14 @@ LTO_CFLAGS := -Os -flto -ffunction-sections -fdata-sections
 LTO_LDFLAGS := -flto -fuse-linker-plugin -flto-partition=one \
                -Wl,--gc-sections
 
+# MBEDTLS_CFG is on the include path BEFORE mbedtls's own include/ so our
+# override of <mbedtls/mbedtls_config.h> wins. See
+# third_party/mbedtls-wbl-config/mbedtls/mbedtls_config.h - a symlink to
+# our minimal config. This avoids -DMBEDTLS_CONFIG_FILE='"..."' whose
+# nested quotes get mangled by autoconf/nested-make layers.
 CFLAGS := $(LTO_CFLAGS) -I../include \
-          -I$(MBEDTLS_DIR)/include -I$(MBEDTLS_CFG) \
+          -I$(MBEDTLS_CFG) -I$(MBEDTLS_DIR)/include \
           -I$(QUICKJS_DIR) \
-          -DMBEDTLS_CONFIG_FILE='"wbl/mbedtls_config.h"' \
           -DWBL_PLATFORM_HOST=1 \
           -Wall -Wno-unused-function
 
@@ -90,7 +94,7 @@ $(MBEDTLS_LIBS):
 	done
 	$(MAKE) -C $(MBEDTLS_DIR)/library \
 	    CC="$(CC)" AR="$(AR)" RANLIB="$(RANLIB)" \
-	    CFLAGS="$(LTO_CFLAGS) -I$$(pwd)/$(MBEDTLS_DIR)/include -I$$(pwd)/$(MBEDTLS_CFG) -DMBEDTLS_CONFIG_FILE='\"wbl/mbedtls_config.h\"' -DWBL_PLATFORM_HOST=1 -Wno-unused-function" \
+	    CFLAGS="$(LTO_CFLAGS) -I$$(pwd)/$(MBEDTLS_CFG) -I$$(pwd)/$(MBEDTLS_DIR)/include -DWBL_PLATFORM_HOST=1 -Wno-unused-function" \
 	    static
 
 # --- Build QuickJS with LTO bitcode ---
@@ -122,7 +126,7 @@ $(CURL_LIB): $(MBEDTLS_LIBS)
 	cd $(CURL_DIR) && [ -x ./configure ] || autoreconf -fi
 	cd $(CURL_DIR) && \
 	    CC="$(CC)" AR="$(AR)" RANLIB="$(RANLIB)" \
-	    CFLAGS="$(LTO_CFLAGS) -I$$(pwd)/../mbedtls/include -I$$(pwd)/../mbedtls-wbl-config -DMBEDTLS_CONFIG_FILE='\"wbl/mbedtls_config.h\"' -DWBL_PLATFORM_HOST=1" \
+	    CFLAGS="$(LTO_CFLAGS) -I$$(pwd)/../mbedtls-wbl-config -I$$(pwd)/../mbedtls/include -DWBL_PLATFORM_HOST=1" \
 	    LDFLAGS="$(LTO_LDFLAGS) -L$$(pwd)/../mbedtls/library" \
 	    ./configure --disable-shared --enable-static \
 	                --without-libpsl --without-libidn2 --without-librtmp \

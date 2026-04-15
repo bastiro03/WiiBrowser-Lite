@@ -94,9 +94,11 @@ $(CURL_LIB): | $(MBEDTLS_LIB)
 	        || true; \
 	done
 	cd $(CURL_DIR) && [ -x ./configure ] || autoreconf -fi
+	# Use include-path override for mbedTLS config rather than
+	# -DMBEDTLS_CONFIG_FILE='"..."' (nested quotes get eaten by autoconf).
 	cd $(CURL_DIR) && env $(CURL_CROSS_CACHE) \
 	    CC="$(CC)" AR="$(AR_LTO)" RANLIB="$(RANLIB_LTO)" \
-	    CFLAGS="$(CFLAGS) -I$(CURDIR)/$(MBEDTLS_DIR)/include -I$(CURDIR)/third_party/mbedtls-wbl-config -DMBEDTLS_CONFIG_FILE='\"wbl/mbedtls_config.h\"'" \
+	    CFLAGS="$(CFLAGS) -I$(CURDIR)/third_party/mbedtls-wbl-config -I$(CURDIR)/$(MBEDTLS_DIR)/include" \
 	    LDFLAGS="$(LDFLAGS) -L$(CURDIR)/$(MBEDTLS_DIR)/library" \
 	    ./configure $(CURL_CONFIGURE_FLAGS)
 	$(MAKE) -C $(CURL_DIR) \

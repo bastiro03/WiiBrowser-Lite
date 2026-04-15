@@ -32,10 +32,15 @@ WBL_CFLAGS := \
 # Headers for our third-party deps must come BEFORE portlib headers on the
 # search path so we pick up our pinned/patched versions rather than the
 # devkitpro portlibs copies of mbedtls/curl/etc.
+#
+# Note ordering for mbedTLS: -Ithird_party/mbedtls-wbl-config BEFORE
+# -Ithird_party/mbedtls/include. Our wbl-config dir contains an override
+# for <mbedtls/mbedtls_config.h> (symlinked to our minimal config) so
+# #include <mbedtls/mbedtls_config.h> picks up our file first.
 WBL_THIRD_PARTY_INC := \
     -Ithird_party/curl/include \
-    -Ithird_party/mbedtls/include \
     -Ithird_party/mbedtls-wbl-config \
+    -Ithird_party/mbedtls/include \
     -Ithird_party/quickjs
 
 CFLAGS   := $(WBL_THIRD_PARTY_INC) $(WBL_CFLAGS) $(CFLAGS)

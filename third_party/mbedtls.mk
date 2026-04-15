@@ -6,10 +6,15 @@
 
 MBEDTLS_DIR := third_party/mbedtls
 
+# We override mbedTLS's default include <mbedtls/mbedtls_config.h>
+# with our own file at third_party/mbedtls-wbl-config/mbedtls/mbedtls_config.h,
+# picked up by putting our include path AHEAD of mbedtls's own include/.
+# This avoids the -DMBEDTLS_CONFIG_FILE='"..."' approach which gets its
+# quotes mangled by successive Make/shell invocations when nested build
+# systems pass CFLAGS through.
 MBEDTLS_CFLAGS := \
-    -DMBEDTLS_CONFIG_FILE='"wbl/mbedtls_config.h"' \
-    -I$(MBEDTLS_DIR)/include \
-    -I$(CURDIR)/third_party/mbedtls-wbl-config
+    -I$(CURDIR)/third_party/mbedtls-wbl-config \
+    -I$(MBEDTLS_DIR)/include
 
 MBEDTLS_LIB    := $(MBEDTLS_DIR)/library/libmbedtls.a
 MBEDX509_LIB   := $(MBEDTLS_DIR)/library/libmbedx509.a

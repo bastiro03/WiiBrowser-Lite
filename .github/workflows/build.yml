@@ -164,20 +164,13 @@ jobs:
           find third_party -name '*.a' 2>&1 | head -10
         } >> wii-build.log 2>&1
 
-        # Emit each log line as its own ::error:: annotation so we
-        # can read it back through the check-runs/annotations API
-        # (which gives us ~50 annotations per step).
+        # Emit the LAST 10 lines of the log as annotations (GitHub
+        # caps at ~10 errors/step visible via the API).
         if [ -s wii-build.log ]; then
-          nl=0
-          while IFS= read -r line; do
-            nl=$((nl + 1))
-            # Truncate long lines; escape control chars for the
-            # Actions workflow command parser.
+          tail -10 wii-build.log | while IFS= read -r line; do
             safe=$(echo "$line" | head -c 400 | sed 's/%/%25/g; s/\r/%0D/g')
-            echo "::error::L${nl}: ${safe}"
-            # Cap emission to 40 lines per step
-            [ $nl -ge 40 ] && break
-          done < wii-build.log
+            echo "::error::${safe}"
+          done
         fi
         exit $rc
 

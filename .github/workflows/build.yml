@@ -146,7 +146,13 @@ jobs:
         PATH: /opt/devkitpro/devkitPPC/bin:/opt/devkitpro/tools/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
       run: |
         set -x
-        make WBL_PLATFORM=wii -j$(nproc) 2>&1 | tee wii-build.log
+        # Step 1: dry-run to check Makefile parses cleanly
+        echo '=== make -n (dry run) ==='
+        make WBL_PLATFORM=wii -n 2>&1 | head -40 || true
+        echo '=== real build ==='
+        # Use -j1 first to ensure deterministic output ordering for diagnosis;
+        # we can re-enable parallelism once CI is stable.
+        make WBL_PLATFORM=wii 2>&1 | tee wii-build.log
         exit ${PIPESTATUS[0]}
 
     - name: Upload Wii build log (for debugging failures)
@@ -179,8 +185,8 @@ jobs:
         grep -E 'make.*Error |make.*\*\*\* |Error [0-9]+|recipe for target' wii-build.log 2>/dev/null | head -3 | while IFS= read -r line; do
           emit "make: $line"
         done
-        # 3. Last 2 non-empty stderr lines as a last resort
-        tail -20 wii-build.log 2>/dev/null | grep -v '^$' | tail -2 | while IFS= read -r line; do
+        # 3. Last several non-empty stderr lines as a last resort
+        tail -50 wii-build.log 2>/dev/null | grep -v '^$' | tail -8 | while IFS= read -r line; do
           emit "tail: $line"
         done
         true

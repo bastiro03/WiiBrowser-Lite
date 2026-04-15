@@ -44,11 +44,14 @@ endif
 MBEDTLS_PATCH_STAMP := $(MBEDTLS_DIR)/.wbl-patches-applied
 
 $(MBEDTLS_PATCH_STAMP): $(MBEDTLS_PATCHES)
-	@cd $(MBEDTLS_DIR) && git checkout -- include/ library/ 2>/dev/null || true
+	@echo "Applying mbedtls patches to $(MBEDTLS_DIR):"
+	@cd $(MBEDTLS_DIR) && git checkout -- . 2>/dev/null || true
 	@for p in $(abspath $(MBEDTLS_PATCHES)); do \
-	    (cd $(MBEDTLS_DIR) && git apply --check "$$p" 2>/dev/null) \
-	        && (cd $(MBEDTLS_DIR) && git apply "$$p" && echo "applied $$(basename $$p)") \
-	        || true; \
+	    if (cd $(MBEDTLS_DIR) && git apply --check "$$p" 2>/dev/null); then \
+	        cd $(MBEDTLS_DIR) && git apply "$$p" && echo "  applied: $$(basename $$p)"; \
+	    else \
+	        echo "  SKIP (does not apply or already applied): $$(basename $$p)"; \
+	    fi; \
 	done
 	@touch $@
 

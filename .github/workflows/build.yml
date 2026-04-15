@@ -27,14 +27,20 @@ jobs:
         powerpc-eabi-gcc --version
         ls -la $DEVKITPRO
 
+    - name: Install build dependencies for third_party
+      run: |
+        # Needed by curl autoreconf and mbedTLS make
+        apt-get update -qq && apt-get install -y --no-install-recommends \
+          autoconf automake libtool pkg-config python3 perl
+
     - name: Clean build directory
-      run: make clean || true
+      run: make distclean WBL_PLATFORM=wii || make clean WBL_PLATFORM=wii || true
 
     - name: Build WiiBrowser-Lite
       env:
         PATH: /opt/devkitpro/devkitPPC/bin:/opt/devkitpro/tools/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
       run: |
-        make -j4
+        make WBL_PLATFORM=wii -j4
 
     - name: Verify build artifacts
       run: |

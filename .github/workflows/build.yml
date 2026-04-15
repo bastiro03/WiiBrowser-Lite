@@ -158,27 +158,27 @@ jobs:
         retention-days: 7
         if-no-files-found: warn
 
-    # Push the build log as a file on a dedicated tag so it's
-    # publicly fetchable via git fetch + git show without API auth.
-    - name: Publish build log as a tag
+    # Write the full build log into GITHUB_STEP_SUMMARY so it shows up
+    # on the run summary page (no auth required to view from the
+    # rendered HTML; can also be fetched via raw HTML view).
+    - name: Write build log to job summary
       if: failure()
       run: |
-        SHA="${GITHUB_SHA:0:7}"
-        TAG="ci-log/wii-${SHA}"
-        # Make a worktree-free commit pointing at a tree containing only the log
-        BLOB=$(git hash-object -w wii-build.log)
-        TREE=$(printf "100644 blob %s\twii-build.log\n" "$BLOB" | git mktree)
-        # Author/commit need timestamp + ident
-        export GIT_AUTHOR_NAME=ci-log-bot GIT_AUTHOR_EMAIL=ci@noreply.local
-        export GIT_AUTHOR_DATE="$(date -uR)"
-        export GIT_COMMITTER_NAME=ci-log-bot GIT_COMMITTER_EMAIL=ci@noreply.local
-        export GIT_COMMITTER_DATE="$(date -uR)"
-        COMMIT=$(echo "wii build log for $GITHUB_SHA" | git -c commit.gpgsign=false commit-tree "$TREE")
-        echo "Created commit $COMMIT"
-        # Push as a tag (lightweight) - tags don't need branch protection
-        git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" \
-            "${COMMIT}:refs/tags/${TAG}" || echo "push failed (perhaps no token write perms)"
-        echo "Log tag: $TAG"
+        if [ -s wii-build.log ]; then
+          {
+            echo '## wii-build.log'
+            echo ''
+            echo '<details><summary>Click to expand build output</summary>'
+            echo ''
+            echo '```'
+            cat wii-build.log
+            echo '```'
+            echo ''
+            echo '</details>'
+          } >> "$GITHUB_STEP_SUMMARY"
+        else
+          echo 'no wii-build.log produced' >> "$GITHUB_STEP_SUMMARY"
+        fi
 
     - name: Emit errors as GitHub annotations (visible in CI API)
       if: failure()

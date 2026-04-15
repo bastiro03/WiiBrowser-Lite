@@ -158,6 +158,23 @@ jobs:
         retention-days: 7
         if-no-files-found: warn
 
+    - name: Dump build log on failure (so error shows in CI output)
+      if: failure()
+      run: |
+        echo "=== wii-build.log (last 200 lines) ==="
+        tail -200 wii-build.log || true
+        echo ""
+        echo "=== ls -la ==="
+        ls -la
+        echo ""
+        echo "=== ls -la build/wii ==="
+        ls -la build/wii 2>&1 | head -30 || true
+        echo ""
+        echo "=== third_party status ==="
+        ls -la third_party/curl/lib/.libs/*.a 2>&1 || true
+        ls -la third_party/mbedtls/library/*.a 2>&1 || true
+        ls -la build/libquickjs.a 2>&1 || true
+
     - name: Verify build artifacts exist
       run: |
         ls -lh wiibrowserlite.dol wiibrowserlite.elf

@@ -81,6 +81,17 @@
 #  endif
 #endif
 
+/* MPlayer/FFmpeg video playback - disabled by default on all platforms.
+ * The legacy MPlayer-wii + FFmpeg stack that WiiBrowser used to link
+ * against (libmplayerwii.a, libavformat.a, libavcodec.a, libswscale.a,
+ * libavutil.a) is no longer in devkitPro portlibs and was previously
+ * shipped as pre-built .a files in libs/wii/. Re-enabling requires
+ * reviving those as git submodules of upstream FFmpeg + MPlayer-wii.
+ * For Wikipedia browsing this is completely unnecessary. */
+#ifndef WBL_HAS_MPLAYER
+#  define WBL_HAS_MPLAYER 0
+#endif
+
 /* Image format support */
 #ifndef WBL_HAS_PNG
 #  define WBL_HAS_PNG 1

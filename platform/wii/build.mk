@@ -64,11 +64,27 @@ CXXFLAGS := $(CFLAGS) -fno-exceptions -fno-rtti
 LDFLAGS := -DGEKKO -mrvl -mcpu=750 -meabi -mhard-float \
                 -flto -fuse-linker-plugin -flto-partition=one \
                 -Wl,-Map,$(TARGET).map -Wl,--gc-sections \
-                -L$(CURDIR)/libs/wii -L$(LIBOGC_LIB) -L$(PORTLIBS_LIB)
+                -L$(LIBOGC_LIB) -L$(PORTLIBS_LIB) -L$(CURDIR)/libs/wii
 
-# Wii-specific libraries (libcurl/cyassl removed - now built from third_party)
-LIBS := -lmplayerwii -lavformat -lavcodec -lswscale -lavutil \
-        -lfribidi -ljpeg -liconv -ldi -lpng -lunrar -lzip -lsevenzip -lz \
+# Wii-specific libraries.
+#
+# Removed (upstream pre-built .a files being migrated to git submodules):
+#   -lcurl -lcyassl  -> now built from third_party/curl + third_party/mbedtls
+#   -llua            -> Lua scripting removed entirely
+#
+# Disabled feature libs (source is #ifdef'd via wbl/platform.h WBL_HAS_MPLAYER=0):
+#   -lmplayerwii -lavformat -lavcodec -lswscale -lavutil
+#   The legacy FFmpeg/MPlayer-wii stack shipped as pre-built .a files is
+#   no longer present. Video playback is not needed for Wikipedia
+#   browsing; re-enabling requires the above libs as git submodules of
+#   upstream FFmpeg.
+#
+# TODO(tech-debt): the remaining libs/wii/*.a files should also be
+# rebuilt from source as git submodules so the tree remains buildable
+# on new toolchains:
+#   libfribidi libiconv libpng libjpeg libunrar libzip libsevenzip
+#   libz libnetport libvorbisidec libmxml libfreetype libexif
+LIBS := -lfribidi -ljpeg -liconv -ldi -lpng -lunrar -lzip -lsevenzip -lz \
         -lnetport -lasnd -lvorbisidec \
         -lmxml -lm -lfat -lwiiuse -lwiikeyboard -lbte -logc -lfreetype -lexif
 

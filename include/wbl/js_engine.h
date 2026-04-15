@@ -10,6 +10,7 @@
 #ifndef WBL_JS_ENGINE_H
 #define WBL_JS_ENGINE_H
 
+#include <stddef.h>  /* size_t */
 #include "wbl/platform.h"
 
 #ifdef __cplusplus

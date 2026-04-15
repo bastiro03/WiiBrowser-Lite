@@ -47,15 +47,21 @@
 #elif defined(WBL_PLATFORM_MACPLUS)
 #  define WBL_PLATFORM_NAME "Apple Mac Plus"
 #  define WBL_PLATFORM_RAM_MB 4
+#elif defined(WBL_PLATFORM_HOST) || (!defined(GEKKO) && !defined(__MC68000__))
+   /* Host development build - for running unit tests and CI smoke tests.
+    * Uses system resources freely; not a shipped target. */
+#  define WBL_PLATFORM_HOST 1
+#  define WBL_PLATFORM_NAME "Host (dev only)"
+#  define WBL_PLATFORM_RAM_MB 1024
 #else
-#  error "Unknown platform - define one of WBL_PLATFORM_{WII,NDS,DSI,MACPLUS}"
+#  error "Unknown platform - define one of WBL_PLATFORM_{WII,NDS,DSI,MACPLUS,HOST}"
 #endif
 
 /* ---- Feature capability flags ------------------------------------------ */
 
 /* JavaScript engine (QuickJS) - needs ~1MB RAM minimum */
 #ifndef WBL_HAS_JAVASCRIPT
-#  if defined(WBL_PLATFORM_WII) || defined(WBL_PLATFORM_DSI)
+#  if defined(WBL_PLATFORM_WII) || defined(WBL_PLATFORM_DSI) || defined(WBL_PLATFORM_HOST)
 #    define WBL_HAS_JAVASCRIPT 1
 #  else
 #    define WBL_HAS_JAVASCRIPT 0
@@ -64,8 +70,8 @@
 
 /* HTTPS/TLS via mbedTLS - needs ~200KB RAM */
 #ifndef WBL_HAS_HTTPS
-#  if defined(WBL_PLATFORM_MACPLUS)
-#    define WBL_HAS_HTTPS 0  /* Mac Plus too constrained for TLS */
+#  if defined(WBL_PLATFORM_MACPLUS) || defined(WBL_PLATFORM_NDS)
+#    define WBL_HAS_HTTPS 0  /* Mac Plus & DS too constrained for TLS */
 #  else
 #    define WBL_HAS_HTTPS 1
 #  endif
@@ -131,6 +137,10 @@
 #  define WBL_MEM_BUDGET_DOM_KB       256
 #  define WBL_MEM_BUDGET_NETBUF_KB     16
 #  define WBL_MEM_BUDGET_JS_HEAP_KB     0
+#elif defined(WBL_PLATFORM_HOST)
+#  define WBL_MEM_BUDGET_DOM_KB    262144
+#  define WBL_MEM_BUDGET_NETBUF_KB  8192
+#  define WBL_MEM_BUDGET_JS_HEAP_KB 65536
 #endif
 
 /* ---- Endianness (used by mbedTLS, libcurl, etc.) ---------------------- */

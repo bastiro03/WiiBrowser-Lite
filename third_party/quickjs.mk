@@ -9,9 +9,7 @@ QUICKJS_SRCS := \
     $(QUICKJS_DIR)/quickjs.c \
     $(QUICKJS_DIR)/libregexp.c \
     $(QUICKJS_DIR)/libunicode.c \
-    $(QUICKJS_DIR)/cutils.c \
-    $(QUICKJS_DIR)/dtoa.c \
-    $(QUICKJS_DIR)/xsum.c
+    $(QUICKJS_DIR)/dtoa.c
 
 QUICKJS_OBJS := $(patsubst $(QUICKJS_DIR)/%.c,build/quickjs/%.o,$(QUICKJS_SRCS))
 

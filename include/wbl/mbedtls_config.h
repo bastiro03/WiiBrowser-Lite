@@ -4,19 +4,21 @@
  * Targets HTTPS browsing of Wikipedia, GitHub, and other modern sites
  * with the smallest possible code/RAM footprint.
  *
+ * Strategy: TLS 1.2 only. TLS 1.3 in mbedTLS 3.6 requires PSA crypto
+ * which adds ~40KB; Wikipedia still supports TLS 1.2 so we skip 1.3.
+ *
  * Saves ~150KB of code vs default mbedtls_config.h by removing:
+ *   - TLS 1.3, PSA crypto
  *   - DTLS, DHE, PSK, SRTP, CCM cipher modes
- *   - Old hashes (MD5, SHA-1 for non-cert use, RIPEMD160)
+ *   - Old hashes (RIPEMD160)
  *   - Unused curves (Brainpool, secp521, etc.)
- *   - PSA crypto API
  *   - Self-tests, certificate writing, debug
  *
- * Keeps what wikipedia.org / github.com actually negotiate in 2026:
- *   TLS 1.3 (preferred) and TLS 1.2 (fallback)
+ * Keeps what wikipedia.org / github.com negotiate over TLS 1.2 in 2026:
  *   ECDHE-ECDSA-AES128-GCM-SHA256
  *   ECDHE-RSA-AES128-GCM-SHA256
- *   TLS_AES_128_GCM_SHA256 (TLS 1.3)
- *   TLS_CHACHA20_POLY1305_SHA256 (TLS 1.3, no AES-NI on PowerPC)
+ *   ECDHE-ECDSA-CHACHA20-POLY1305-SHA256
+ *   ECDHE-RSA-CHACHA20-POLY1305-SHA256
  ***************************************************************************/
 
 #ifndef WBL_MBEDTLS_CONFIG_H
@@ -26,22 +28,21 @@
 
 /* ---- Platform/system defines ------------------------------------------ */
 
-#if defined(WBL_BIG_ENDIAN)
-#  define MBEDTLS_HAVE_INT32
-#endif
-
-/* No mlock/madvise on game consoles - skip platform memcheck */
+#define MBEDTLS_HAVE_ASM
 #define MBEDTLS_PLATFORM_C
 #define MBEDTLS_PLATFORM_MEMORY
-#define MBEDTLS_PLATFORM_NO_STD_FUNCTIONS
-#define MBEDTLS_PLATFORM_PRINTF_ALT
-#define MBEDTLS_PLATFORM_FPRINTF_ALT
-#define MBEDTLS_PLATFORM_EXIT_ALT
-#define MBEDTLS_PLATFORM_TIME_ALT
+/* Use libc snprintf/printf/fprintf/exit/time - libogc provides these on
+ * Wii, stdlib on DSi. Saves us from wiring ALT callbacks for no reason. */
+
+#define MBEDTLS_HAVE_TIME
+#define MBEDTLS_HAVE_TIME_DATE
 
 /* ---- Crypto primitives ------------------------------------------------ */
 
-/* Symmetric: AES-GCM and ChaCha20-Poly1305 are all wikipedia.org needs */
+/* Cipher abstraction layer (required by GCM, TLS, etc.) */
+#define MBEDTLS_CIPHER_C
+
+/* Symmetric: AES-GCM and ChaCha20-Poly1305 */
 #define MBEDTLS_AES_C
 #define MBEDTLS_AES_FEWER_TABLES         /* save ~6KB at small perf cost */
 #define MBEDTLS_GCM_C
@@ -54,7 +55,7 @@
 #define MBEDTLS_SHA256_C
 #define MBEDTLS_SHA384_C
 #define MBEDTLS_SHA512_C
-#define MBEDTLS_MD_C                     /* still needed for HKDF */
+#define MBEDTLS_MD_C                     /* needed for HKDF / HMAC */
 
 /* Asymmetric: ECDH/ECDSA + RSA for cert verify */
 #define MBEDTLS_ECP_C
@@ -68,7 +69,6 @@
 #define MBEDTLS_ECP_DP_SECP256R1_ENABLED
 #define MBEDTLS_ECP_DP_SECP384R1_ENABLED
 #define MBEDTLS_ECP_DP_CURVE25519_ENABLED
-/* NOTE: omitting secp521, brainpool, secp192/224 - saves ~30KB */
 
 /* PK abstraction */
 #define MBEDTLS_PK_C
@@ -78,29 +78,39 @@
 #define MBEDTLS_ASN1_WRITE_C
 #define MBEDTLS_BIGNUM_C
 
-/* Key derivation */
-#define MBEDTLS_HKDF_C
-#define MBEDTLS_MD5_C                    /* legacy cert support */
-#define MBEDTLS_SHA1_C                   /* legacy cert support */
+/* Legacy hashes for old certs still on the web */
+#define MBEDTLS_MD5_C
+#define MBEDTLS_SHA1_C
 
-/* Random source - HMAC_DRBG smaller than CTR_DRBG */
+/* Random source - on hosted builds use system entropy; on embedded
+ * targets we supply mbedtls_hardware_poll() ourselves (see
+ * src/wbl/mbedtls_hooks.c). */
 #define MBEDTLS_HMAC_DRBG_C
 #define MBEDTLS_ENTROPY_C
-#define MBEDTLS_NO_PLATFORM_ENTROPY      /* we provide our own seed */
-#define MBEDTLS_ENTROPY_HARDWARE_ALT
+#if defined(WBL_PLATFORM_WII) || defined(WBL_PLATFORM_DSI) || defined(WBL_PLATFORM_NDS)
+#  define MBEDTLS_NO_PLATFORM_ENTROPY
+#  define MBEDTLS_ENTROPY_HARDWARE_ALT
+#endif
+
+/* Error strings (small enough; huge debugging improvement) */
+#define MBEDTLS_ERROR_C
+
+/* Network I/O helpers (BSD socket wrappers) */
+#define MBEDTLS_NET_C
+
+/* Filesystem I/O - only for host testing. On console we parse certs
+ * from a baked-in PEM buffer (see certs/). */
+#if !defined(WBL_PLATFORM_WII) && !defined(WBL_PLATFORM_DSI) && \
+    !defined(WBL_PLATFORM_NDS) && !defined(WBL_PLATFORM_MACPLUS)
+#  define MBEDTLS_FS_IO
+#endif
 
 /* ---- TLS protocol ----------------------------------------------------- */
 
 #define MBEDTLS_SSL_TLS_C
-#define MBEDTLS_SSL_CLI_C                /* client only - no server */
+#define MBEDTLS_SSL_CLI_C                /* client only */
 #define MBEDTLS_SSL_PROTO_TLS1_2
-#define MBEDTLS_SSL_PROTO_TLS1_3
-#define MBEDTLS_SSL_TLS1_3_COMPATIBILITY_MODE
-
-/* TLS 1.3 features */
-#define MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_PSK_ENABLED
-#define MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_EPHEMERAL_ENABLED
-#define MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_PSK_EPHEMERAL_ENABLED
+/* TLS 1.3 NOT enabled - requires PSA crypto (~40KB extra) */
 
 /* TLS extensions */
 #define MBEDTLS_SSL_SERVER_NAME_INDICATION
@@ -109,11 +119,11 @@
 #define MBEDTLS_SSL_KEEP_PEER_CERTIFICATE
 #define MBEDTLS_SSL_SESSION_TICKETS
 
-/* Tighten record size to reduce RAM (16K -> 4K). Wiki articles fit. */
+/* Tighten record size to reduce RAM (16K -> 4K). Wiki pages fit. */
 #define MBEDTLS_SSL_IN_CONTENT_LEN  4096
 #define MBEDTLS_SSL_OUT_CONTENT_LEN 4096
 
-/* Cipher modes - GCM only, no CBC/CCM */
+/* Cipher modes - GCM only */
 #define MBEDTLS_SSL_HAVE_AES
 #define MBEDTLS_SSL_HAVE_CHACHAPOLY
 #define MBEDTLS_SSL_HAVE_GCM
@@ -130,14 +140,10 @@
 #define MBEDTLS_BASE64_C
 
 /* ---- Disabled (saves space) ------------------------------------------- */
-/*  No DTLS, no PSK, no DHE, no static-RSA-key-exchange,
+/*  No TLS 1.3, no DTLS, no PSK, no DHE, no static-RSA-key-exchange,
  *  no CCM/CBC suites, no truncated HMAC, no SRTP,
  *  no PSA crypto, no self-tests, no debug helpers,
- *  no CRL parsing, no cert writing.
+ *  no CRL parsing, no cert writing, no RIPEMD160.
  */
-
-/* ---- Finalize --------------------------------------------------------- */
-
-#include "mbedtls/check_config.h"
 
 #endif /* WBL_MBEDTLS_CONFIG_H */

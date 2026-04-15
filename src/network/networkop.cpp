@@ -111,11 +111,9 @@ bool CheckConnection()
 	sa.sin_family = AF_INET;
 	sa.sin_len = sizeof(struct sockaddr_in);
 	sa.sin_port = htons(80);
-<<<<<<< HEAD
-	inet_aton("8.8.8.8", &sa.sin_addr); // store IP in sa
-=======
-	inet_pton(AF_INET, "216.127.94.127", &sa.sin_addr); // store IP in sa
->>>>>>> 34c534d (Fix compilation errors for GCC 15.2.0 with -flto)
+	/* 8.8.8.8 = Google DNS anycast, always reachable on any global route.
+	 * Using inet_pton() because GCC 15 libc doesn't ship inet_aton by default. */
+	inet_pton(AF_INET, "8.8.8.8", &sa.sin_addr);
 
 	int res = net_connect(s, (struct sockaddr *)&sa, sizeof(struct sockaddr_in));
 	net_close(s);

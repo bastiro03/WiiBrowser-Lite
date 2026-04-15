@@ -137,14 +137,11 @@ jobs:
       env:
         PATH: /opt/devkitpro/devkitPPC/bin:/opt/devkitpro/tools/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
       run: |
-        set -x
         # Don't trip on git's "dubious ownership" which can occur when
         # the runner UID doesn't match the checkout's owner UID.
         git config --global --add safe.directory '*'
-        # Run serially first; can re-enable -j once CI is stable.
-        # Print every command (verbose make) so we can diagnose what
-        # step actually fails when the build aborts.
-        make WBL_PLATFORM=wii V=1 SHELL='/bin/bash -x' 2>&1 | tee wii-build.log
+        # Run with --debug=v so make prints rule resolution decisions.
+        make WBL_PLATFORM=wii --debug=v 2>&1 | tee wii-build.log
         exit ${PIPESTATUS[0]}
 
     - name: Upload Wii build log (for debugging failures)

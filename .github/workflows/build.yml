@@ -134,36 +134,24 @@ jobs:
     #   ...
 
     - name: Build WiiBrowser-Lite (Wii, PowerPC, -flto)
-      shell: bash {0}     # disable default -eo pipefail so probe failures are non-fatal
+      shell: bash {0}    # no -eo pipefail
       env:
         PATH: /opt/devkitpro/devkitPPC/bin:/opt/devkitpro/tools/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
       run: |
         git config --global --add safe.directory '*'
-        # toolchain probe (errors here are diagnostic, not fatal)
+        # Stage 1: probe (don't fail on probe issues)
         {
           echo '=== Toolchain probe ==='
-          echo "powerpc-eabi-gcc:    $(command -v powerpc-eabi-gcc || echo MISSING)"
-          echo "powerpc-eabi-gcc-ar: $(command -v powerpc-eabi-gcc-ar || echo MISSING)"
-          echo "powerpc-eabi-ar:     $(command -v powerpc-eabi-ar || echo MISSING)"
-          echo "-print-prog-name gcc-ar: $(powerpc-eabi-gcc -print-prog-name=gcc-ar 2>&1)"
-          echo "-print-prog-name gcc-ranlib: $(powerpc-eabi-gcc -print-prog-name=gcc-ranlib 2>&1)"
+          ls $DEVKITPRO/devkitPPC/bin/ | grep -E '^powerpc-eabi-(gcc|ar|ranlib)' | head -10
           echo ''
-          echo '=== bin/ contents ==='
-          ls $DEVKITPRO/devkitPPC/bin/powerpc-eabi-gcc-ar 2>&1
-          echo ''
-          echo '=== make var dump ==='
-          make WBL_PLATFORM=wii -np 2>/dev/null | \
-              grep -E '^(MBEDTLS_LIB|CURL_LIB|MBEDTLS_PATCH_STAMP|AR_LTO|RANLIB_LTO|CC|AR|RANLIB|MBEDTLS_DIR|MBEDTLS_CFLAGS|WBL_THIRD_PARTY_DEPS|LDFLAGS) = ' | head -25
-          echo ''
-          echo '=== Build target: MBEDTLS_PATCH_STAMP ==='
-        } | tee wii-build.log
-        make WBL_PLATFORM=wii third_party/mbedtls/.wbl-patches-applied 2>&1 | tee -a wii-build.log
-        echo "  patch stamp build exit=$?" | tee -a wii-build.log
-        echo '' >> wii-build.log
-        echo '=== Build target: libmbedtls.a ===' | tee -a wii-build.log
-        make WBL_PLATFORM=wii third_party/mbedtls/library/libmbedtls.a 2>&1 | tee -a wii-build.log
-        rc=${PIPESTATUS[0]}
-        echo "  mbedtls lib build exit=$rc" | tee -a wii-build.log
+        } > wii-build.log 2>&1
+        # Stage 2: actual build, capturing all output
+        make WBL_PLATFORM=wii </dev/null >> wii-build.log 2>&1
+        rc=$?
+        echo "" >> wii-build.log
+        echo "=== make exit code: $rc ===" >> wii-build.log
+        # Show log to stdout so it appears in step output
+        cat wii-build.log
         exit $rc
 
     - name: Upload Wii build log (for debugging failures)

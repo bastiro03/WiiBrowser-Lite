@@ -8,7 +8,35 @@ on:
   workflow_dispatch:
 
 jobs:
+  # Host smoke tests run first - they catch TLS/JS/curl integration bugs
+  # in seconds without the cost of a Wii cross-build.
+  host-smoke:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Install host build deps
+      run: |
+        sudo apt-get update -qq
+        sudo apt-get install -y --no-install-recommends \
+            build-essential autoconf automake libtool pkg-config \
+            perl python3 zlib1g-dev
+
+    - name: Build + run host smoke tests
+      run: |
+        cd tests
+        make -j$(nproc)
+
+    - name: Verify LTO bitcode in all third-party archives
+      run: tests/lto_check.sh
+
+  # Wii build runs in the devkitPPC container. Only runs if host-smoke
+  # passes - no point paying for a cross-compile if the config has bugs.
   build:
+    needs: host-smoke
     runs-on: ubuntu-latest
     container:
       image: devkitpro/devkitppc:latest
@@ -36,11 +64,11 @@ jobs:
     - name: Clean build directory
       run: make distclean WBL_PLATFORM=wii || make clean WBL_PLATFORM=wii || true
 
-    - name: Build WiiBrowser-Lite
+    - name: Build WiiBrowser-Lite (Wii, PowerPC, -flto)
       env:
         PATH: /opt/devkitpro/devkitPPC/bin:/opt/devkitpro/tools/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
       run: |
-        make WBL_PLATFORM=wii -j4
+        make WBL_PLATFORM=wii -j$(nproc)
 
     - name: Verify build artifacts
       run: |

@@ -28,19 +28,27 @@ QUICKJS_CFLAGS := \
     -Wno-format-truncation \
     -Wno-unused-but-set-variable
 
-# Apply size optimization aggressively to QuickJS
-QUICKJS_CFLAGS += -Os -ffunction-sections -fdata-sections
+# CFLAGS from top-level Makefile already carries -flto -Os -ffunction-sections.
+# We inherit it and add only QuickJS-specific flags. Object files will
+# contain LTO bitcode so the final link can inline across QuickJS -> app.
 
-# Compile rule
+# Compile rule - use the compiler's ar wrapper so the linker plugin
+# knows how to look up LTO symbols in the archive.
+AR_LTO := $(shell $(CC) -print-prog-name=ar 2>/dev/null)
+ifeq ($(AR_LTO),)
+AR_LTO := $(AR)
+endif
+
 build/quickjs/%.o: $(QUICKJS_DIR)/%.c | build/quickjs
 	$(CC) $(CFLAGS) $(QUICKJS_CFLAGS) -I$(QUICKJS_DIR) -c $< -o $@
 
 build/quickjs:
 	mkdir -p $@
 
-# Static archive
+# Static archive - use gcc-ar (via -print-prog-name) so LTO bitcode
+# indexing works. Plain 'ar' drops the symbol table for IR symbols.
 build/libquickjs.a: $(QUICKJS_OBJS)
-	$(AR) rcs $@ $^
+	$(AR_LTO) rcs $@ $^
 
 .PHONY: quickjs-clean
 quickjs-clean:

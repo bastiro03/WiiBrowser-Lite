@@ -68,10 +68,14 @@
 #  endif
 #endif
 
-/* HTTPS/TLS via mbedTLS - needs ~200KB RAM */
+/* HTTPS/TLS via mbedTLS.
+ *
+ * All platforms except Mac Plus. Precedent: Bunjalloo (open-source NDS
+ * browser) already ships mbedTLS on vanilla NDS (4MB RAM), so we follow
+ * their footprint discipline - tight cipher set + 4KB record buffers. */
 #ifndef WBL_HAS_HTTPS
-#  if defined(WBL_PLATFORM_MACPLUS) || defined(WBL_PLATFORM_NDS)
-#    define WBL_HAS_HTTPS 0  /* Mac Plus & DS too constrained for TLS */
+#  if defined(WBL_PLATFORM_MACPLUS)
+#    define WBL_HAS_HTTPS 0  /* 1MB + 8MHz 68000 cannot carry TLS state */
 #  else
 #    define WBL_HAS_HTTPS 1
 #  endif
@@ -130,9 +134,17 @@
 #  define WBL_MEM_BUDGET_NETBUF_KB    128
 #  define WBL_MEM_BUDGET_JS_HEAP_KB  1024
 #elif defined(WBL_PLATFORM_NDS)
-#  define WBL_MEM_BUDGET_DOM_KB      1024
-#  define WBL_MEM_BUDGET_NETBUF_KB     32
-#  define WBL_MEM_BUDGET_JS_HEAP_KB     0
+   /* 4 MB total. Reserve:
+    *   ~400 KB for libnds/ARM9 runtime + screen buffers
+    *   ~300 KB for TLS state (mbedTLS context + cert chain + record buf)
+    *   ~800 KB for DOM + layout
+    *   ~64 KB  for network buffers (post-TLS decrypt)
+    *   rest    for image decode + UI chrome
+    * Matches Bunjalloo's working budget at the cost of not loading
+    * mega-heavy pages - mobile Wikipedia articles fit easily. */
+#  define WBL_MEM_BUDGET_DOM_KB       768
+#  define WBL_MEM_BUDGET_NETBUF_KB     64
+#  define WBL_MEM_BUDGET_JS_HEAP_KB     0   /* no JS on DS */
 #elif defined(WBL_PLATFORM_MACPLUS)
 #  define WBL_MEM_BUDGET_DOM_KB       256
 #  define WBL_MEM_BUDGET_NETBUF_KB     16

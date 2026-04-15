@@ -1,21 +1,40 @@
-# Host-platform smoke tests
+# Host-platform smoke tests, compiled with LTO so we exercise the
+# same cross-TU optimization pipeline as a real Wii/DS build.
 #
-# These build with the host toolchain (gcc/clang) using WBL_PLATFORM_HOST.
-# They're meant to catch bugs in our cross-platform wrappers and config
-# before we pay the cost of a full Wii CI build.
+# The point: prove that bitcode survives in libmbedtls.a / libcurl.a /
+# libquickjs.a and that the final link can inline across them.
 #
 # Usage:
-#   cd tests
-#   make                 # builds and runs all smoke tests
-#   make tls_smoke       # just the TLS test
-#   make js_smoke        # just the QuickJS test
+#   make                 # build + run all smoke tests
+#   make tls_smoke       # just raw mbedTLS handshake test
+#   make curl_smoke      # libcurl + mbedTLS HTTPS GET
+#   make js_smoke        # QuickJS wrapper
+#   make lto_check       # symbol/bitcode verification
 
-CC ?= gcc
+CC      ?= gcc
+AR      ?= gcc-ar
+RANLIB  ?= gcc-ranlib
+
 MBEDTLS_DIR := ../third_party/mbedtls
 MBEDTLS_CFG := ../third_party/mbedtls-wbl-config
 QUICKJS_DIR := ../third_party/quickjs
+CURL_DIR    := ../third_party/curl
 
-CFLAGS := -Os -I../include \
+# LTO flags applied to every TU:
+#   -flto                object files get bitcode
+#   -ffunction-sections  dead-strip granularity
+#   -fdata-sections
+# These match what the Wii/DS builds use.
+LTO_CFLAGS := -Os -flto -ffunction-sections -fdata-sections
+
+# Final-link LTO flags:
+#   -flto                  rerun optimizer across all bitcode inputs
+#   -fuse-linker-plugin    linker plugin reads LTO IR from .a files
+#   -flto-partition=one    whole-program (single partition) for max inlining
+LTO_LDFLAGS := -flto -fuse-linker-plugin -flto-partition=one \
+               -Wl,--gc-sections
+
+CFLAGS := $(LTO_CFLAGS) -I../include \
           -I$(MBEDTLS_DIR)/include -I$(MBEDTLS_CFG) \
           -I$(QUICKJS_DIR) \
           -DMBEDTLS_CONFIG_FILE='"wbl/mbedtls_config.h"' \
@@ -28,50 +47,102 @@ MBEDTLS_LIBS := $(MBEDTLS_DIR)/library/libmbedtls.a \
 
 QUICKJS_LIBS := $(QUICKJS_DIR)/libquickjs.a
 
-CURL_DIR := ../third_party/curl
 CURL_LIB := $(CURL_DIR)/lib/.libs/libcurl.a
 
 all: tls_smoke js_smoke curl_smoke
+	@echo ""
 	@echo "=== tls_smoke (raw mbedTLS handshake) ==="
 	./tls_smoke
 	@echo ""
-	@echo "=== curl_smoke (full libcurl + mbedTLS HTTPS GET) ==="
+	@echo "=== curl_smoke (libcurl + mbedTLS HTTPS GET) ==="
 	./curl_smoke
 	@echo ""
 	@echo "=== js_smoke (QuickJS wrapper) ==="
 	./js_smoke
 
-# --- TLS: actually connect to a real HTTPS server and fetch /zen ---
+# Build each test binary with LTO_LDFLAGS so the linker plugin
+# runs over all of our static archives.
+
 tls_smoke: tls_smoke.c $(MBEDTLS_LIBS)
-	$(CC) $(CFLAGS) $< $(MBEDTLS_LIBS) -o $@
+	$(CC) $(CFLAGS) $(LTO_LDFLAGS) $< $(MBEDTLS_LIBS) -o $@
 
-# --- QuickJS: create context, eval simple expression, check error path ---
 js_smoke: js_smoke.c ../src/wbl/js_engine.c $(QUICKJS_LIBS)
-	$(CC) $(CFLAGS) $< ../src/wbl/js_engine.c $(QUICKJS_LIBS) -o $@ -lm -lpthread -ldl
+	$(CC) $(CFLAGS) $(LTO_LDFLAGS) $< ../src/wbl/js_engine.c $(QUICKJS_LIBS) \
+	    -o $@ -lm -lpthread -ldl
 
-# --- libcurl+mbedTLS: full HTTPS GET ---
-# Note: no -I../include here because our Wii sys/socket.h would
-# clash with host libcurl's needs.
+# curl_smoke intentionally does NOT include ../include on the search
+# path because our Wii-specific sys/socket.h would collide with
+# libcurl's portability header expectations.
 curl_smoke: curl_smoke.c $(CURL_LIB) $(MBEDTLS_LIBS)
-	$(CC) -Os -I$(CURL_DIR)/include -Wall $< $(CURL_LIB) $(MBEDTLS_LIBS) -lz -o $@
+	$(CC) $(LTO_CFLAGS) $(LTO_LDFLAGS) -I$(CURL_DIR)/include -Wall \
+	    $< $(CURL_LIB) $(MBEDTLS_LIBS) -lz -o $@
 
-# --- Build mbedTLS library for host ---
+# --- Build mbedTLS with LTO bitcode in the archive ---
 $(MBEDTLS_LIBS):
-	cd $(MBEDTLS_DIR)/library && \
-	  $(MAKE) CFLAGS="-Os -I$$(pwd)/../include -I$$(pwd)/../../../third_party/mbedtls-wbl-config -DMBEDTLS_CONFIG_FILE='\"wbl/mbedtls_config.h\"' -DWBL_PLATFORM_HOST=1 -Wno-unused-function" static
+	$(MAKE) -C $(MBEDTLS_DIR)/library \
+	    CC="$(CC)" AR="$(AR)" RANLIB="$(RANLIB)" \
+	    CFLAGS="$(LTO_CFLAGS) -I$$(pwd)/$(MBEDTLS_DIR)/include -I$$(pwd)/$(MBEDTLS_CFG) -DMBEDTLS_CONFIG_FILE='\"wbl/mbedtls_config.h\"' -DWBL_PLATFORM_HOST=1 -Wno-unused-function" \
+	    static
 
-# --- Build QuickJS library for host ---
-$(QUICKJS_LIBS):
-	cd $(QUICKJS_DIR) && \
-	  $(CC) -Os -c -D_GNU_SOURCE -DCONFIG_VERSION=\"0.14.0-micro\" \
+# --- Build QuickJS with LTO bitcode ---
+QJS_OBJS := $(addprefix $(QUICKJS_DIR)/,quickjs.o libregexp.o libunicode.o dtoa.o)
+
+$(QUICKJS_DIR)/%.o: $(QUICKJS_DIR)/%.c
+	$(CC) $(LTO_CFLAGS) -D_GNU_SOURCE -DCONFIG_VERSION=\"0.14.0-micro\" \
 	    -Wno-array-bounds -Wno-format-truncation -Wno-unused-but-set-variable \
-	    -fwrapv -funsigned-char \
-	    quickjs.c libregexp.c libunicode.c dtoa.c && \
-	  ar rcs libquickjs.a quickjs.o libregexp.o libunicode.o dtoa.o
+	    -fwrapv -funsigned-char -c $< -o $@
+
+$(QUICKJS_LIBS): $(QJS_OBJS)
+	$(AR) rcs $@ $^
+
+# --- Build curl with LTO bitcode (delegates to upstream configure+make) ---
+$(CURL_LIB): $(MBEDTLS_LIBS)
+	cd $(CURL_DIR) && \
+	    for p in $$(pwd)/../curl-patches/*.patch; do \
+	        git apply --check "$$p" 2>/dev/null && git apply "$$p"; \
+	    done; true
+	cd $(CURL_DIR) && [ -x ./configure ] || autoreconf -fi
+	cd $(CURL_DIR) && \
+	    CC="$(CC)" AR="$(AR)" RANLIB="$(RANLIB)" \
+	    CFLAGS="$(LTO_CFLAGS) -I$$(pwd)/../mbedtls/include -I$$(pwd)/../mbedtls-wbl-config -DMBEDTLS_CONFIG_FILE='\"wbl/mbedtls_config.h\"' -DWBL_PLATFORM_HOST=1" \
+	    LDFLAGS="$(LTO_LDFLAGS) -L$$(pwd)/../mbedtls/library" \
+	    ./configure --disable-shared --enable-static \
+	                --without-libpsl --without-libidn2 --without-librtmp \
+	                --without-zstd --without-brotli --without-libssh2 \
+	                --without-nghttp2 --without-ngtcp2 \
+	                --with-mbedtls=$$(pwd)/../mbedtls \
+	                --disable-ftp --disable-file --disable-ldap --disable-ldaps \
+	                --disable-rtsp --disable-dict --disable-telnet --disable-tftp \
+	                --disable-pop3 --disable-imap --disable-smb --disable-smtp \
+	                --disable-gopher --disable-mqtt --disable-manual \
+	                --disable-libcurl-option --disable-sspi --disable-ntlm \
+	                --disable-tls-srp --disable-unix-sockets \
+	                --disable-dnsshuffle --disable-doh --disable-mime \
+	                --disable-bindlocal --disable-form-api --disable-headers-api \
+	                --disable-hsts --disable-alt-svc
+	$(MAKE) -C $(CURL_DIR) AR="$(AR)" RANLIB="$(RANLIB)"
+
+# --- LTO verification: grep for GCC LTO bitcode marker in archives ---
+.PHONY: lto_check
+lto_check: $(MBEDTLS_LIBS) $(QUICKJS_LIBS) $(CURL_LIB)
+	@echo "=== Verifying LTO bitcode present in static archives ==="
+	@for lib in $(MBEDTLS_LIBS) $(QUICKJS_LIBS) $(CURL_LIB); do \
+	    echo "--- $$lib ---"; \
+	    $(AR) t $$lib | head -3; \
+	    # A GCC LTO section is called .gnu.lto_<funcname>. \
+	    # If we see it, the object has bitcode. \
+	    $(CC) -c -x none $$lib -o /dev/null 2>&1 | head -2 || true; \
+	    count=$$($(AR) t $$lib | head -10 | while read obj; do \
+	        $(AR) p $$lib $$obj 2>/dev/null | readelf -S - 2>/dev/null | grep -c gnu.lto; \
+	    done | awk '{s+=$$1} END {print s}'); \
+	    echo "  LTO sections in first 10 objects: $$count"; \
+	done
 
 clean:
 	rm -f tls_smoke js_smoke curl_smoke *.o
 	cd $(MBEDTLS_DIR)/library && $(MAKE) clean
 	cd $(QUICKJS_DIR) && rm -f *.o libquickjs.a
+	-cd $(CURL_DIR) && $(MAKE) distclean 2>/dev/null || true
+	-cd $(CURL_DIR) && git clean -fdx 2>/dev/null || true
 
-.PHONY: all clean
+.PHONY: all clean lto_check

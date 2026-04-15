@@ -46,10 +46,30 @@ jobs:
             build-essential autoconf automake libtool pkg-config \
             perl python3 zlib1g-dev
 
+    - name: Report toolchain
+      run: |
+        set -x
+        gcc --version | head -1
+        which gcc-ar gcc-ranlib
+        ls -la third_party/ tests/
+        ls -la third_party/mbedtls-wbl-config/wbl/ || true
+        git submodule status
+
     - name: Build + run host smoke tests
       run: |
+        set -x
         cd tests
-        make -j$(nproc)
+        make -j$(nproc) 2>&1 | tee ../host-smoke.log
+        echo "smoke tests pass: $?"
+
+    - name: Upload host smoke test log (for debugging failures)
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: host-smoke-log
+        path: host-smoke.log
+        retention-days: 7
+        if-no-files-found: warn
 
     - name: Verify LTO bitcode in all third-party archives
       run: tests/lto_check.sh
@@ -82,7 +102,16 @@ jobs:
         # Needed by curl autoreconf and mbedTLS make
         apt-get update -qq && apt-get install -y --no-install-recommends \
           autoconf automake libtool pkg-config python3 perl xxd \
-          numfmt coreutils
+          coreutils
+        # numfmt is in coreutils; no separate package
+
+    - name: Report toolchain
+      run: |
+        set -x
+        powerpc-eabi-gcc --version | head -1
+        which powerpc-eabi-gcc-ar powerpc-eabi-gcc-ranlib
+        ls -la third_party/
+        git submodule status
 
     # Cache the Wii cross-built third_party libraries. Key includes both
     # the submodule pinned hash AND the patch stack + config so any change
@@ -110,7 +139,18 @@ jobs:
       env:
         PATH: /opt/devkitpro/devkitPPC/bin:/opt/devkitpro/tools/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
       run: |
-        make WBL_PLATFORM=wii -j$(nproc)
+        set -x
+        make WBL_PLATFORM=wii -j$(nproc) 2>&1 | tee wii-build.log
+        exit ${PIPESTATUS[0]}
+
+    - name: Upload Wii build log (for debugging failures)
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: wii-build-log
+        path: wii-build.log
+        retention-days: 7
+        if-no-files-found: warn
 
     - name: Verify build artifacts exist
       run: |

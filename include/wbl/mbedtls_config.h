@@ -73,6 +73,7 @@
 /* PK abstraction */
 #define MBEDTLS_PK_C
 #define MBEDTLS_PK_PARSE_C
+#define MBEDTLS_PK_WRITE_C       /* needed by curl pubkey pinning code */
 #define MBEDTLS_OID_C
 #define MBEDTLS_ASN1_PARSE_C
 #define MBEDTLS_ASN1_WRITE_C
@@ -84,7 +85,9 @@
 
 /* Random source - on hosted builds use system entropy; on embedded
  * targets we supply mbedtls_hardware_poll() ourselves (see
- * src/wbl/mbedtls_hooks.c). */
+ * src/wbl/mbedtls_hooks.c). CTR_DRBG is required by curl's mbedtls
+ * backend; we also keep HMAC_DRBG as our preferred generator. */
+#define MBEDTLS_CTR_DRBG_C
 #define MBEDTLS_HMAC_DRBG_C
 #define MBEDTLS_ENTROPY_C
 #if defined(WBL_PLATFORM_WII) || defined(WBL_PLATFORM_DSI) || defined(WBL_PLATFORM_NDS)
@@ -118,6 +121,10 @@
 #define MBEDTLS_SSL_RENEGOTIATION
 #define MBEDTLS_SSL_KEEP_PEER_CERTIFICATE
 #define MBEDTLS_SSL_SESSION_TICKETS
+/* NOTE: we also patch curl's vtls/mbedtls.c (see third_party/curl-patches/)
+ * so that session tickets work in a TLS-1.2-only build - upstream curl
+ * 8.16 unconditionally calls a TLS 1.3 API inside the session-tickets
+ * block. */
 
 /* Tighten record size to reduce RAM (16K -> 4K). Wiki pages fit. */
 #define MBEDTLS_SSL_IN_CONTENT_LEN  4096

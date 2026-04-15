@@ -19,7 +19,7 @@
 #include "mbedtls/x509_crt.h"
 #include "mbedtls/error.h"
 
-#define HOST "api.github.com"
+#define HOST "en.wikipedia.org"
 #define PORT "443"
 
 int main(void) {
@@ -112,32 +112,44 @@ int main(void) {
     printf("[OK] Certificate verified\n");
 
     /* 7. Send GET */
-    const char *req = "GET /zen HTTP/1.1\r\n"
+    const char *req = "GET /wiki/Nintendo_DS HTTP/1.1\r\n"
                       "Host: " HOST "\r\n"
-                      "User-Agent: WiiBrowser-Lite/2.0 (Nintendo Wii; https://github.com/matthargett/WiiBrowser-Lite)\r\n"
+                      "User-Agent: Mozilla/5.0 (iPhone; CPU iPhone OS 6_1_6 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Mobile/10B500\r\n"
                       "Connection: close\r\n\r\n";
     while ((ret = mbedtls_ssl_write(&ssl, (const unsigned char *)req, strlen(req))) <= 0) {
         if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
             printf("write failed\n"); return 1;
         }
     }
-    printf("[OK] Sent GET /zen\n");
+    printf("[OK] Sent GET /wiki/Nintendo_DS\n");
 
-    /* 8. Read response (first few KB) */
-    unsigned char buf[4096];
+    /* 8. Read response (enough to see HTTP headers + start of body) */
+    unsigned char buf[8192];
     int total = 0;
-    while (total < 4096) {
-        ret = mbedtls_ssl_read(&ssl, buf, sizeof(buf) - 1);
+    while (total < (int)(sizeof(buf) - 1)) {
+        ret = mbedtls_ssl_read(&ssl, buf + total, sizeof(buf) - 1 - total);
         if (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE) continue;
         if (ret == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY) break;
         if (ret <= 0) break;
-        buf[ret] = 0;
         total += ret;
     }
-    printf("[OK] Received %d bytes. First line: ", total);
-    /* Print the HTTP status line */
-    char *nl = strchr((char *)buf, '\n');
-    if (nl) { *nl = 0; printf("%s\n", buf); }
+    buf[total] = 0;
+    printf("[OK] Received %d bytes\n", total);
+
+    /* Print HTTP status and headers */
+    char *line = (char *)buf;
+    int hdr = 0;
+    while (line && *line && hdr < 16) {
+        char *nl = strchr(line, '\n');
+        if (!nl) break;
+        *nl = 0;
+        size_t L = strlen(line);
+        if (L > 0 && line[L-1] == '\r') line[L-1] = 0;
+        if (*line == 0) { printf("--- body starts ---\n"); break; }
+        printf("  %s\n", line);
+        line = nl + 1;
+        hdr++;
+    }
 
     mbedtls_ssl_close_notify(&ssl);
     mbedtls_net_free(&server);

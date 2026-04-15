@@ -28,11 +28,17 @@ MBEDTLS_LIBS := $(MBEDTLS_DIR)/library/libmbedtls.a \
 
 QUICKJS_LIBS := $(QUICKJS_DIR)/libquickjs.a
 
-all: tls_smoke js_smoke
-	@echo "=== tls_smoke ==="
+CURL_DIR := ../third_party/curl
+CURL_LIB := $(CURL_DIR)/lib/.libs/libcurl.a
+
+all: tls_smoke js_smoke curl_smoke
+	@echo "=== tls_smoke (raw mbedTLS handshake) ==="
 	./tls_smoke
 	@echo ""
-	@echo "=== js_smoke ==="
+	@echo "=== curl_smoke (full libcurl + mbedTLS HTTPS GET) ==="
+	./curl_smoke
+	@echo ""
+	@echo "=== js_smoke (QuickJS wrapper) ==="
 	./js_smoke
 
 # --- TLS: actually connect to a real HTTPS server and fetch /zen ---
@@ -42,6 +48,12 @@ tls_smoke: tls_smoke.c $(MBEDTLS_LIBS)
 # --- QuickJS: create context, eval simple expression, check error path ---
 js_smoke: js_smoke.c ../src/wbl/js_engine.c $(QUICKJS_LIBS)
 	$(CC) $(CFLAGS) $< ../src/wbl/js_engine.c $(QUICKJS_LIBS) -o $@ -lm -lpthread -ldl
+
+# --- libcurl+mbedTLS: full HTTPS GET ---
+# Note: no -I../include here because our Wii sys/socket.h would
+# clash with host libcurl's needs.
+curl_smoke: curl_smoke.c $(CURL_LIB) $(MBEDTLS_LIBS)
+	$(CC) -Os -I$(CURL_DIR)/include -Wall $< $(CURL_LIB) $(MBEDTLS_LIBS) -lz -o $@
 
 # --- Build mbedTLS library for host ---
 $(MBEDTLS_LIBS):
@@ -58,7 +70,7 @@ $(QUICKJS_LIBS):
 	  ar rcs libquickjs.a quickjs.o libregexp.o libunicode.o dtoa.o
 
 clean:
-	rm -f tls_smoke js_smoke *.o
+	rm -f tls_smoke js_smoke curl_smoke *.o
 	cd $(MBEDTLS_DIR)/library && $(MAKE) clean
 	cd $(QUICKJS_DIR) && rm -f *.o libquickjs.a
 

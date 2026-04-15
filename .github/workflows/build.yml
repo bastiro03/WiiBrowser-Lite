@@ -106,10 +106,11 @@ jobs:
 
     - name: Install build dependencies for third_party
       run: |
-        # Needed by curl autoreconf and mbedTLS make
+        # Needed by curl autoreconf and mbedTLS make;
+        # netcat (ncat) is for the log-paste step on failure
         apt-get update -qq && apt-get install -y --no-install-recommends \
           autoconf automake libtool pkg-config python3 perl xxd \
-          coreutils
+          coreutils netcat-openbsd
         # numfmt is in coreutils; no separate package
 
     - name: Report toolchain
@@ -166,23 +167,13 @@ jobs:
     # Write the full build log into GITHUB_STEP_SUMMARY so it shows up
     # on the run summary page (no auth required to view from the
     # rendered HTML; can also be fetched via raw HTML view).
-    - name: Write build log to job summary
+    - name: Upload log to termbin (public, no auth)
       if: failure()
       run: |
         if [ -s wii-build.log ]; then
-          {
-            echo '## wii-build.log'
-            echo ''
-            echo '<details><summary>Click to expand build output</summary>'
-            echo ''
-            echo '```'
-            cat wii-build.log
-            echo '```'
-            echo ''
-            echo '</details>'
-          } >> "$GITHUB_STEP_SUMMARY"
-        else
-          echo 'no wii-build.log produced' >> "$GITHUB_STEP_SUMMARY"
+          URL=$(cat wii-build.log | nc termbin.com 9999 2>&1 | tr -d '\0' || echo "(termbin failed)")
+          echo "::notice::BUILD LOG URL: $URL"
+          echo "### Build log: $URL" >> "$GITHUB_STEP_SUMMARY"
         fi
 
     - name: Emit errors as GitHub annotations (visible in CI API)

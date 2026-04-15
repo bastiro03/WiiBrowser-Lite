@@ -126,40 +126,25 @@ jobs:
         ls -la third_party/
         git submodule status
 
-    # Cache the Wii cross-built third_party libraries. Key includes both
-    # the submodule pinned hash AND the patch stack + config so any change
-    # to our patches, mbedtls config, or third_party build scripts
-    # invalidates the cache automatically.
-    - name: Cache third_party Wii builds
-      uses: actions/cache@v4
-      with:
-        key: wii-thirdparty-${{ hashFiles('.gitmodules', 'third_party/*-patches/*.patch', 'include/wbl/mbedtls_config.h', 'third_party/*.mk', 'platform/wii/build.mk') }}-${{ hashFiles('.git/modules/third_party/**/HEAD') }}
-        restore-keys: |
-          wii-thirdparty-
-        path: |
-          third_party/mbedtls/library/*.a
-          third_party/mbedtls/library/*.o
-          third_party/curl/lib/.libs/*.a
-          third_party/curl/lib/*.lo
-          third_party/curl/config.status
-          third_party/curl/config.log
-          third_party/curl/Makefile
-          third_party/quickjs/.wbl-patches-applied
-          build/libquickjs.a
-          build/quickjs/*.o
+    # Cache disabled until CI is green - force fresh builds so we
+    # know the build chain works from scratch.
+    # Re-enable once we have a known-good baseline.
+    # - name: Cache third_party Wii builds
+    #   uses: actions/cache@v4
+    #   ...
 
     - name: Build WiiBrowser-Lite (Wii, PowerPC, -flto)
       env:
         PATH: /opt/devkitpro/devkitPPC/bin:/opt/devkitpro/tools/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
       run: |
         set -x
-        # Step 1: dry-run to check Makefile parses cleanly
-        echo '=== make -n (dry run) ==='
-        make WBL_PLATFORM=wii -n 2>&1 | head -40 || true
-        echo '=== real build ==='
-        # Use -j1 first to ensure deterministic output ordering for diagnosis;
-        # we can re-enable parallelism once CI is stable.
-        make WBL_PLATFORM=wii 2>&1 | tee wii-build.log
+        # Don't trip on git's "dubious ownership" which can occur when
+        # the runner UID doesn't match the checkout's owner UID.
+        git config --global --add safe.directory '*'
+        # Run serially first; can re-enable -j once CI is stable.
+        # Print every command (verbose make) so we can diagnose what
+        # step actually fails when the build aborts.
+        make WBL_PLATFORM=wii V=1 SHELL='/bin/bash -x' 2>&1 | tee wii-build.log
         exit ${PIPESTATUS[0]}
 
     - name: Upload Wii build log (for debugging failures)

@@ -169,11 +169,16 @@ jobs:
     # rendered HTML; can also be fetched via raw HTML view).
     - name: Upload log to termbin (public, no auth)
       if: failure()
+      shell: bash {0}
       run: |
         if [ -s wii-build.log ]; then
-          URL=$(cat wii-build.log | nc termbin.com 9999 2>&1 | tr -d '\0' || echo "(termbin failed)")
-          echo "::notice::BUILD LOG URL: $URL"
-          echo "### Build log: $URL" >> "$GITHUB_STEP_SUMMARY"
+          URL=$(cat wii-build.log | timeout 30 nc termbin.com 9999 2>&1 | tr -d '\0\r\n' | tr -c '[:print:]' '?' || echo "TERMBIN-FAILED")
+          # Use ::error:: so it's captured via check-runs/annotations endpoint
+          echo "::error::WII_BUILD_LOG_URL=${URL}"
+          echo "### Build log URL: $URL" >> "$GITHUB_STEP_SUMMARY"
+          echo "BUILD LOG URL: $URL"
+        else
+          echo "::error::wii-build.log is empty"
         fi
 
     - name: Emit errors as GitHub annotations (visible in CI API)

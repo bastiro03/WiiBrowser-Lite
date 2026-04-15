@@ -161,19 +161,33 @@ jobs:
     - name: Dump build log on failure (so error shows in CI output)
       if: failure()
       run: |
-        echo "=== wii-build.log (last 200 lines) ==="
-        tail -200 wii-build.log || true
-        echo ""
-        echo "=== ls -la ==="
-        ls -la
-        echo ""
-        echo "=== ls -la build/wii ==="
-        ls -la build/wii 2>&1 | head -30 || true
-        echo ""
-        echo "=== third_party status ==="
-        ls -la third_party/curl/lib/.libs/*.a 2>&1 || true
-        ls -la third_party/mbedtls/library/*.a 2>&1 || true
-        ls -la build/libquickjs.a 2>&1 || true
+        {
+          echo '## Wii build failure'
+          echo ''
+          echo '### errors grep'
+          echo '```'
+          grep -E 'error:|undefined reference|fatal error|No such file|Error [0-9]|make.*Error' wii-build.log | head -50 || echo "(nothing matched)"
+          echo '```'
+          echo ''
+          echo '### wii-build.log (last 150 lines)'
+          echo '```'
+          tail -150 wii-build.log || true
+          echo '```'
+          echo ''
+          echo '### artifact presence'
+          echo '```'
+          echo "third_party/curl:"
+          ls -la third_party/curl/lib/.libs/*.a 2>&1 || echo "  (none)"
+          echo "third_party/mbedtls:"
+          ls -la third_party/mbedtls/library/*.a 2>&1 || echo "  (none)"
+          echo "build/libquickjs.a:"
+          ls -la build/libquickjs.a 2>&1 || echo "  (none)"
+          echo "build/wii:"
+          ls -la build/wii 2>&1 | head -20 || echo "  (none)"
+          echo '```'
+        } | tee -a "$GITHUB_STEP_SUMMARY"
+        # Also echo to stdout for webhook consumers
+        cat "$GITHUB_STEP_SUMMARY"
 
     - name: Verify build artifacts exist
       run: |

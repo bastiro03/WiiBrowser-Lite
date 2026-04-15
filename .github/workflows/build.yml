@@ -164,13 +164,21 @@ jobs:
           find third_party -name '*.a' 2>&1 | head -10
         } >> wii-build.log 2>&1
 
-        # Show the make run section specifically (between
-        # '=== make run ===' and '=== make exit code' markers).
+        # Emit key lines: any "Error", "error", "undefined ref",
+        # plus the start of the make run plus the last 5 lines.
         if [ -s wii-build.log ]; then
-          awk '/=== make run ===/,/=== make exit code/' wii-build.log | \
-              head -10 | while IFS= read -r line; do
-            safe=$(echo "$line" | head -c 400 | sed 's/%/%25/g; s/\r/%0D/g')
-            echo "::error::${safe}"
+          (
+              echo '-- starts at --'
+              grep -n . wii-build.log | head -8
+              echo '-- errors --'
+              grep -inE 'error[:0-9 ]|undefined reference|stop\.|make:|not found|fatal|cannot find' wii-build.log | head -8
+              echo '-- exit marker --'
+              grep -n 'make exit code' wii-build.log
+              echo '-- last 5 --'
+              tail -5 wii-build.log
+          ) | while IFS= read -r line; do
+              safe=$(echo "$line" | head -c 400 | sed 's/%/%25/g; s/\r/%0D/g')
+              echo "::error::${safe}"
           done
         fi
         exit $rc

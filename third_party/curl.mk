@@ -72,6 +72,22 @@ AR_LTO     := $(AR)
 RANLIB_LTO := $(RANLIB)
 endif
 
+# Cross-compile autoconf cache variables. When building for PPC/ARM,
+# curl's configure script wants to run test programs on the target to
+# feature-detect (malloc(0), recv/send signatures, etc.). Cross builds
+# can't execute target code, so we pre-answer the tests with values
+# that match modern embedded environments.
+CURL_CROSS_CACHE := \
+    ac_cv_func_malloc_0_nonnull=yes \
+    ac_cv_func_realloc_0_nonnull=yes \
+    ac_cv_func_memcmp_working=yes \
+    curl_cv_func_recv=yes \
+    curl_cv_func_recv_args="int,void*,size_t,int,int" \
+    curl_cv_func_send=yes \
+    curl_cv_func_send_args="int,const void*,size_t,int,int" \
+    curl_cv_recv=yes \
+    curl_cv_send=yes
+
 $(CURL_LIB): | $(MBEDTLS_LIB)
 	@for p in $(abspath $(CURL_PATCHES)); do \
 	    (cd $(CURL_DIR) && git apply --check "$$p" 2>/dev/null) \
@@ -79,7 +95,7 @@ $(CURL_LIB): | $(MBEDTLS_LIB)
 	        || true; \
 	done
 	cd $(CURL_DIR) && [ -x ./configure ] || autoreconf -fi
-	cd $(CURL_DIR) && \
+	cd $(CURL_DIR) && env $(CURL_CROSS_CACHE) \
 	    CC="$(CC)" AR="$(AR_LTO)" RANLIB="$(RANLIB_LTO)" \
 	    CFLAGS="$(CFLAGS) -I$(CURDIR)/$(MBEDTLS_DIR)/include -I$(CURDIR)/third_party/mbedtls-wbl-config -DMBEDTLS_CONFIG_FILE='\"wbl/mbedtls_config.h\"'" \
 	    LDFLAGS="$(LDFLAGS) -L$(CURDIR)/$(MBEDTLS_DIR)/library" \

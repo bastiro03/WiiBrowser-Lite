@@ -140,19 +140,36 @@ jobs:
         PATH: /opt/devkitpro/devkitPPC/bin:/opt/devkitpro/tools/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
       run: |
         git config --global --add safe.directory '*'
-        # Stage 1: probe (don't fail on probe issues)
         {
-          echo '=== Toolchain probe ==='
-          ls $DEVKITPRO/devkitPPC/bin/ | grep -E '^powerpc-eabi-(gcc|ar|ranlib)' | head -10
-          echo ''
+          echo '=== pwd ==='
+          pwd
+          echo '=== ls -la (pre-build) ==='
+          ls -la
+          echo '=== make -p output for all target ==='
+          make WBL_PLATFORM=wii -pn 2>&1 | grep -A3 -E '^all:|^\$\(TARGET\).elf|^\$\(TARGET\).dol|^wiibrowserlite' | head -20
+          echo '=== make run ==='
         } > wii-build.log 2>&1
-        # Stage 2: actual build, capturing all output
+
         make WBL_PLATFORM=wii </dev/null >> wii-build.log 2>&1
         rc=$?
-        echo "" >> wii-build.log
-        echo "=== make exit code: $rc ===" >> wii-build.log
-        # Show log to stdout so it appears in step output
-        cat wii-build.log
+
+        {
+          echo ''
+          echo "=== make exit code: $rc ==="
+          echo '=== ls -la (post-build) ==='
+          ls -la
+          echo '=== find . -name *.dol -o -name *.elf ==='
+          find . -maxdepth 3 \( -name '*.dol' -o -name '*.elf' \) 2>&1 | head -10
+          echo '=== third_party .a files ==='
+          find third_party -name '*.a' 2>&1 | head -10
+        } >> wii-build.log 2>&1
+
+        # Post log to termbin ALWAYS (not just on failure) so we can
+        # inspect build state even when CI step exits 0 silently.
+        if [ -s wii-build.log ]; then
+          URL=$(cat wii-build.log | timeout 20 nc termbin.com 9999 2>&1 | tr -d '\0\r\n' | head -c 200 || echo "nc-failed")
+          echo "::error::WII_BUILD_LOG_URL=${URL}"
+        fi
         exit $rc
 
     - name: Upload Wii build log (for debugging failures)

@@ -138,15 +138,27 @@ jobs:
         PATH: /opt/devkitpro/devkitPPC/bin:/opt/devkitpro/tools/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
       run: |
         git config --global --add safe.directory '*'
-        # Stage 1: run print-relevant-vars to verify make can parse files
-        echo '=== make print-vars ===' | tee wii-build.log
-        make -p WBL_PLATFORM=wii 2>&1 | grep -E '^(MBEDTLS_LIB|CURL_LIB|MBEDTLS_PATCH_STAMP|AR|AR_LTO|CC|RANLIB|PORTLIBS|LIBOGC|MBEDTLS_DIR|MBEDTLS_CFLAGS) ?' | head -30 >> wii-build.log
+        echo '=== Toolchain probe ===' | tee wii-build.log
+        which powerpc-eabi-gcc 2>&1 | tee -a wii-build.log
+        which powerpc-eabi-gcc-ar 2>&1 | tee -a wii-build.log
+        powerpc-eabi-gcc -print-prog-name=gcc-ar 2>&1 | tee -a wii-build.log
+        ls -la $DEVKITPRO/devkitPPC/bin/powerpc-eabi-gcc-ar 2>&1 | tee -a wii-build.log
         echo '' >> wii-build.log
-        echo '=== Build mbedtls only ===' >> wii-build.log
-        make -d WBL_PLATFORM=wii third_party/mbedtls/library/libmbedtls.a 2>&1 | tee -a wii-build.log
+        echo '=== Make variable values ===' | tee -a wii-build.log
+        make -f - WBL_PLATFORM=wii 'print-%' <<'EOF' 2>&1 | tee -a wii-build.log
+        include Makefile
+        print-%: ; @echo $* = "$($*)"
+        EOF
+        echo '' >> wii-build.log
+        echo '=== Building MBEDTLS_PATCH_STAMP target (trivial) ===' | tee -a wii-build.log
+        make WBL_PLATFORM=wii third_party/mbedtls/.wbl-patches-applied 2>&1 | tee -a wii-build.log
         rc=${PIPESTATUS[0]}
-        echo "" >> wii-build.log
-        echo "=== mbedtls build exit code: $rc ===" >> wii-build.log
+        echo "stamp build exit=$rc" >> wii-build.log
+        echo '' >> wii-build.log
+        echo '=== Building MBEDTLS_LIB target ===' | tee -a wii-build.log
+        make WBL_PLATFORM=wii third_party/mbedtls/library/libmbedtls.a 2>&1 | tee -a wii-build.log
+        rc=${PIPESTATUS[0]}
+        echo "mbedtls build exit=$rc" >> wii-build.log
         exit $rc
 
     - name: Upload Wii build log (for debugging failures)

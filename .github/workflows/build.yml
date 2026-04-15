@@ -171,17 +171,15 @@ jobs:
         retention-days: 7
         if-no-files-found: warn
 
-    # Print log to GITHUB_STEP_SUMMARY in chunks - this gets stored
-    # in the run summary and is fetchable via the run-summary endpoint.
-    - name: Write log to job summary
+    # Print log to STDOUT in the failure step. Each line of stdout
+    # in CI step output shows in the rendered HTML page (which we
+    # can fetch via WebFetch even without API auth).
+    - name: Print last 250 lines of build log to stdout
       if: failure()
       run: |
-        {
-          echo '## Wii build log (last 250 lines)'
-          echo '```'
-          tail -250 wii-build.log 2>/dev/null || echo "(no log)"
-          echo '```'
-        } >> "$GITHUB_STEP_SUMMARY"
+        echo '#### WII BUILD LOG START ####'
+        tail -250 wii-build.log 2>/dev/null || echo "(no log)"
+        echo '#### WII BUILD LOG END ####'
 
     - name: Emit errors as GitHub annotations (visible in CI API)
       if: failure()

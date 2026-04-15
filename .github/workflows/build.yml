@@ -169,27 +169,19 @@ jobs:
     - name: Emit errors as GitHub annotations (visible in CI API)
       if: failure()
       run: |
-        # Each ::error:: line becomes an annotation visible via
-        # /repos/{owner}/{repo}/check-runs/{id}/annotations API.
-        # GitHub limits to 10 annotations per step, so we pick the
-        # most diagnostic lines from the build output.
         emit() {
-          # Escape % for Actions workflow commands.
           local line="$1"
           local safe=$(echo "$line" | sed 's/%/%25/g; s/\r/%0D/g; s/\n/%0A/g')
-          echo "::error::wii-build: ${safe}"
+          # Truncate to fit within annotation limits
+          echo "::error::${safe:0:480}"
         }
-        # 1. Compiler/linker errors first
-        grep -E 'error:|undefined reference|fatal error|No such file|cannot find' wii-build.log 2>/dev/null | head -5 | while IFS= read -r line; do
-          emit "$line"
-        done
-        # 2. Make's own error lines (rule failures, target errors)
-        grep -E 'make.*Error |make.*\*\*\* |Error [0-9]+|recipe for target' wii-build.log 2>/dev/null | head -3 | while IFS= read -r line; do
-          emit "make: $line"
-        done
-        # 3. Last several non-empty stderr lines as a last resort
-        tail -50 wii-build.log 2>/dev/null | grep -v '^$' | tail -8 | while IFS= read -r line; do
-          emit "tail: $line"
+        # First show what fraction of the log we have
+        LINES=$(wc -l <wii-build.log 2>/dev/null || echo 0)
+        emit "wii-build.log has $LINES lines total"
+
+        # Grep for errors (any case)
+        grep -inE 'error|undefined reference|fatal|No such file|cannot find|stop\.|aborted|killed|recipe for target' wii-build.log 2>/dev/null | head -7 | while IFS= read -r line; do
+          emit "match: $line"
         done
         true
 

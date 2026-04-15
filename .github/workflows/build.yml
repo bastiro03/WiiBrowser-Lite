@@ -171,27 +171,28 @@ jobs:
         retention-days: 7
         if-no-files-found: warn
 
-    # Push the full build log to a branch in the repo so it can be
-    # inspected via `git fetch`. Bypasses the artifact-download
-    # auth requirement and the 10-annotation/step limit.
-    - name: Push wii-build.log to ci-log/wii-{sha} branch
+    # Use gh CLI (preinstalled + auto-authenticated) to upload the log
+    # as a release asset attached to a 'ci-logs' release. The asset is
+    # publicly downloadable without auth, and no special branch
+    # permissions are needed.
+    - name: Upload wii-build.log to ci-logs release
       if: failure()
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         SHA="${GITHUB_SHA:0:7}"
-        BRANCH="ci-log/wii-${SHA}"
-        git config user.name  "ci-log-bot"
-        git config user.email "ci-log@noreply.local"
-        # Make a single-file orphan branch
-        TMPDIR=$(mktemp -d)
-        cp wii-build.log "$TMPDIR/wii-build.log" 2>/dev/null || echo "(no log file)" > "$TMPDIR/wii-build.log"
-        cd "$TMPDIR"
-        git init -q
-        git checkout -qb "$BRANCH"
-        git add wii-build.log
-        git -c commit.gpgsign=false commit -qm "wii build log for $GITHUB_SHA"
-        git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" \
-            HEAD:refs/heads/"$BRANCH" || echo "push failed"
-        echo "Log pushed to branch: $BRANCH"
+        TAG="ci-logs"
+        ASSET="wii-build-${SHA}.log"
+        cp wii-build.log "$ASSET" 2>/dev/null || echo "(no log file)" > "$ASSET"
+        # Ensure the rolling 'ci-logs' release exists
+        gh release view "$TAG" >/dev/null 2>&1 || \
+            gh release create "$TAG" \
+                --title "CI debug logs (rolling)" \
+                --notes "Auto-uploaded build logs for failed CI runs" \
+                --prerelease
+        # Upload asset (clobber any same-named one)
+        gh release upload "$TAG" "$ASSET" --clobber
+        echo "Log: https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/${ASSET}"
 
     - name: Emit errors as GitHub annotations (visible in CI API)
       if: failure()

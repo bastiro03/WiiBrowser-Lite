@@ -399,7 +399,7 @@ struct block postrequest(CURL *curl_handle, const char *url, curl_httppost *data
 	return b;
 }
 
-bool postcomment(CURL *curl_handle, char *name, char *content)
+bool postcomment(CURL *curl_handle, const char *name, const char *content)
 {
 	char request[512];
 	char *r = request;

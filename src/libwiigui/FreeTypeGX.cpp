@@ -306,9 +306,12 @@ void FreeTypeGX::loadGlyphData(FT_Bitmap *bmp, ftgxCharData *charData)
 	uint8_t *src = (uint8_t *)bmp->buffer;
 	uint32_t offset;
 
-	for (int imagePosY = 0; imagePosY < bmp->rows; ++imagePosY)
+	// Use unsigned loop counters to match bmp->rows / bmp->width (both
+	// unsigned int in FreeType); avoids -Wsign-compare warnings and
+	// implicit int→unsigned conversion at the bounds check.
+	for (unsigned int imagePosY = 0; imagePosY < bmp->rows; ++imagePosY)
 	{
-		for (int imagePosX = 0; imagePosX < bmp->width; ++imagePosX)
+		for (unsigned int imagePosX = 0; imagePosX < bmp->width; ++imagePosX)
 		{
 		    offset = ((((imagePosY >> 2) * (charData->textureWidth >> 2) + (imagePosX >> 2)) << 5) + ((imagePosY & 3) << 2) + (imagePosX & 3)) << 1;
 			glyphData[offset] = *src;
@@ -584,12 +587,18 @@ void FreeTypeGX::getOffset(wchar_t *text, ftgxDataOffset* offset)
 }
 
 /**
+ * const-correct overload that delegates to the non-const getOffset.
  *
- * \overload
+ * The prior implementation (`this->getOffset(text, offset)`) selected
+ * THIS same overload via overload resolution and recursed infinitely —
+ * GCC catches it with -Winfinite-recursion. Stack overflow on first
+ * call. We const_cast away constness because the non-const overload
+ * only traverses `text` for width/height measurement and does not
+ * mutate it.
  */
 void FreeTypeGX::getOffset(wchar_t const *text, ftgxDataOffset* offset)
 {
-	this->getOffset(text, offset);
+	this->getOffset(const_cast<wchar_t *>(text), offset);
 }
 
 /**

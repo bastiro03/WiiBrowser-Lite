@@ -155,11 +155,16 @@ GuiDownloadManager::~GuiDownloadManager()
 
 	for (int i = 0; i < MAX_DOWNLOADS; i++)
 	{
-		delete(progressEmptyImg);
-		delete(progressLeftImg);
-		delete(progressMidImg);
-		delete(progressLineImg);
-		delete(progressRightImg);
+		// progress*Img are DECLARED as GuiImage*[MAX_DOWNLOADS] in gui.h,
+		// so we must index into them. The prior `delete(progressEmptyImg)`
+		// tried to delete the whole array as if it were a single pointer,
+		// which is undefined behavior (UBSAN/ASAN would flag it) and also
+		// leaked every element. We now delete the element for this iteration.
+		delete progressEmptyImg[i];
+		delete progressLeftImg[i];
+		delete progressMidImg[i];
+		delete progressLineImg[i];
+		delete progressRightImg[i];
 
 		delete(downloads[i]);
 		delete(progress[i]);

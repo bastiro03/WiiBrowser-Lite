@@ -134,14 +134,15 @@ void GuiWindow::ResetState()
 	}
 }
 
-void GuiWindow::SetState(int s)
+void GuiWindow::SetState(int s, int c)
 {
 	state = s;
+	stateChan = c;
 
 	u32 elemSize = _elements.size();
 	for (u32 i = 0; i < elemSize; ++i)
 	{
-		 _elements.at(i)->SetState(s);
+		 _elements.at(i)->SetState(s, c);
 	}
 }
 

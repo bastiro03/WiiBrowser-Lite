@@ -241,8 +241,13 @@ class GuiElement
 	public:
 		//!Constructor
 		GuiElement();
-		//!Destructor
-		~GuiElement();
+		//!Destructor.
+		//!Must be virtual because GuiElement has virtual methods and
+		//!we delete derived objects (GuiText/Button/Image/Window/...)
+		//!via GuiElement* pointers. Without `virtual`, only the base
+		//!destructor runs, leaking the derived object's members and
+		//!tripping UBSAN's vptr check at runtime.
+		virtual ~GuiElement();
 		//!Set the element's parent
 		//!\param e Pointer to parent element
 		void SetParent(GuiElement * e);
@@ -513,9 +518,13 @@ class GuiWindow : public GuiElement
 		void SetVisible(bool v);
 		//!Resets the window's state to STATE_DEFAULT
 		void ResetState();
-		//!Sets the window's state
-		//!\param s State
-		void SetState(int s);
+		//!Sets the window's state (and propagates to child elements).
+		//!Matches the base class signature (int s, int c = -1) so it
+		//!OVERRIDES rather than hides. The previous 1-arg signature
+		//!triggered -Woverloaded-virtual and caused subtle wrong-
+		//!dispatch bugs where base::SetState(s, chan) would be picked
+		//!when callers meant to hit the window-level override.
+		void SetState(int s, int c = -1) override;
 		//!Gets the index of the GuiElement inside the window that is currently selected
 		//!\return index of selected GuiElement
 		int GetSelected();

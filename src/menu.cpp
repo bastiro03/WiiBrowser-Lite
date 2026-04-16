@@ -77,7 +77,6 @@ static GuiButton *actionButton = nullptr;
 
 static GuiImageData *SplashImage = nullptr;
 static GuiImage *Splash = nullptr;
-static GuiImage *videoImg = nullptr;
 
 static GuiWindow *guiWindow = nullptr;
 static GuiWindow *videoWindow = nullptr;

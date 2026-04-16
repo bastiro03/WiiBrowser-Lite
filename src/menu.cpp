@@ -1951,9 +1951,47 @@ jump:
 
 	if (!networkinit)
 	{
-		// Network init timed out after 5 seconds. Show error and bail.
-		staticTxt.SetText("Network connection failed.\nCheck emulator network settings.");
-		usleep(2000000);  // Show error for 2 seconds
+		// Network init timed out after 5 seconds. Build a detailed error
+		// string so the user can tell whether this is a DHCP problem,
+		// a firewall/NAT problem (EHOSTUNREACH/ENETUNREACH), or an
+		// emulator network-stack config issue.
+		struct NetDiag nd;
+		GetNetDiag(&nd);
+
+		const char *stage_name;
+		switch (nd.stage) {
+			case NET_STAGE_INIT_ASYNC: stage_name = "net_init_async"; break;
+			case NET_STAGE_GET_STATUS: stage_name = "net_get_status"; break;
+			case NET_STAGE_CONNECT:    stage_name = "net_connect";    break;
+			case NET_STAGE_SOCKET:     stage_name = "net_socket";     break;
+			case NET_STAGE_NONE:       stage_name = "(no failure recorded - init hung?)"; break;
+			default:                   stage_name = "unknown";        break;
+		}
+
+		char errbuf[512];
+		snprintf(errbuf, sizeof(errbuf),
+		    "Network connection failed.\n"
+		    "\n"
+		    "Stage:    %s\n"
+		    "Result:   %d  %s\n"
+		    "Retries:  %d/5\n"
+		    "Target:   %s:%u\n"
+		    "Status poll: %u ms (timeout 10000)\n"
+		    "Connect:     %u ms\n"
+		    "\n"
+		    "Total wait: 5000 ms (UI timeout)\n"
+		    "\n"
+		    "Check emulator network settings (SP1 / BBA)\n"
+		    "or real hardware Wi-Fi / LAN connection.",
+		    stage_name,
+		    nd.last_res, NetErrStr(nd.last_res),
+		    nd.retries_used,
+		    nd.target_ip, nd.target_port,
+		    nd.status_wait_ms,
+		    nd.connect_elapsed_ms);
+
+		staticTxt.SetText(errbuf);
+		usleep(8000000);  // Show detailed error for 8 seconds (user needs time to read)
 		HaltGui();
 		mainWindow->Remove(&promptWindow);
 		mainWindow->SetState(STATE_DEFAULT);

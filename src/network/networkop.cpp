@@ -1,4 +1,7 @@
 #include "networkop.h"
+#include <string.h>
+#include <stdio.h>
+#include <ogc/lwp_watchdog.h>  // gettime() / ticks_to_millisecs()
 #define host "www.google.com"
 
 u8 networkstack[GUITH_STACK] ATTRIBUTE_ALIGN(32);
@@ -6,6 +9,60 @@ lwp_t networkthread = LWP_THREAD_NULL;
 
 int networkThreadHalt = 0;
 bool networkinit = true;
+
+// Last-failure snapshot. Written from NetworkThread (and CheckConnection
+// when called from the main thread). Read from the UI when we need to
+// tell the user why the connect test failed.
+static struct NetDiag g_netdiag = {
+	/* stage */              NET_STAGE_NONE,
+	/* last_res */           0,
+	/* retries_used */       0,
+	/* status_wait_ms */     0,
+	/* connect_elapsed_ms */ 0,
+	/* target_ip */          "8.8.8.8",
+	/* target_port */        80,
+};
+
+void GetNetDiag(struct NetDiag *out)
+{
+	if (out)
+		*out = g_netdiag;
+}
+
+// Many libogc/IOS network errors arrive as negated POSIX errno. TCP
+// connect() in particular maps ICMP responses onto errno:
+//   ECONNREFUSED  = peer replied with RST (host up, port closed)
+//   EHOSTUNREACH  = ICMP Dest Unreachable (host code)
+//   ENETUNREACH   = ICMP Dest Unreachable (net code)
+//   ETIMEDOUT     = no reply, ARP/TCP SYN retry exhausted
+//   EACCES        = ICMP admin prohibited / firewalled
+const char *NetErrStr(int neg_errno)
+{
+	int e = (neg_errno < 0) ? -neg_errno : neg_errno;
+	switch (e) {
+		case 0:              return "OK";
+		case EBUSY:          return "EBUSY (init still in progress)";
+		case ETIMEDOUT:      return "ETIMEDOUT (no reply - ARP/SYN retries exhausted)";
+		case ECONNREFUSED:   return "ECONNREFUSED (TCP RST - host reachable, port closed)";
+		case EHOSTUNREACH:   return "EHOSTUNREACH (ICMP Dest Unreachable - host code 1)";
+		case ENETUNREACH:    return "ENETUNREACH (ICMP Dest Unreachable - net code 0)";
+		case EACCES:         return "EACCES (ICMP admin prohibited / firewall)";
+		case ENETDOWN:       return "ENETDOWN (network interface down)";
+		case ENOTCONN:       return "ENOTCONN (socket not connected)";
+		case EADDRNOTAVAIL:  return "EADDRNOTAVAIL (no local IP - DHCP failed?)";
+		case EINVAL:         return "EINVAL (bad argument - init race?)";
+		case EIO:            return "EIO (IOS network I/O error)";
+		case EAGAIN:         return "EAGAIN (would block)";
+		default:             return "unknown (see errno on host)";
+	}
+}
+
+// Helper: ticks delta -> ms. libogc's gettime() returns 40.5MHz ticks
+// on the Wii so this is the portable way.
+static unsigned ticks_delta_ms(u64 start, u64 end)
+{
+	return static_cast<unsigned>(ticks_to_millisecs(end - start));
+}
 
 /****************************************************************************
  * NetworkThread
@@ -38,11 +95,15 @@ void *NetworkThread(void *arg)
 
 			if (res != 0)
 			{
+				g_netdiag.stage        = NET_STAGE_INIT_ASYNC;
+				g_netdiag.last_res     = res;
+				g_netdiag.retries_used = 5 - retry;
 				sleep(1);
 				retry--;
 				continue;
 			}
 
+			u64 status_start = gettime();
 			res = net_get_status();
 			wait = 500; // only wait 10 sec
 
@@ -53,17 +114,26 @@ void *NetworkThread(void *arg)
 				wait--;
 			}
 
+			g_netdiag.status_wait_ms = ticks_delta_ms(status_start, gettime());
+
 			if (res == 0)
 			{
-				// struct in_addr hostip;
-				// hostip.s_addr = net_gethostip();
-
 				if (CheckConnection())
 				{
+					g_netdiag.stage    = NET_STAGE_NONE;
+					g_netdiag.last_res = 0;
 					networkinit = true;
 					prevInit = true;
 					break;
 				}
+				// CheckConnection() populates its own diag stage on failure
+			}
+			else
+			{
+				// get_status failed or timed out
+				g_netdiag.stage        = NET_STAGE_GET_STATUS;
+				g_netdiag.last_res     = res;
+				g_netdiag.retries_used = 5 - retry;
 			}
 
 			retry--;
@@ -105,7 +175,11 @@ bool CheckConnection()
 	struct sockaddr_in sa;
 
 	if (s < 0)
+	{
+		g_netdiag.stage    = NET_STAGE_SOCKET;
+		g_netdiag.last_res = s;
 		return false;
+	}
 
 	memset(&sa, 0, sizeof(struct sockaddr_in));
 	sa.sin_family = AF_INET;
@@ -115,8 +189,22 @@ bool CheckConnection()
 	 * Using inet_pton() because GCC 15 libc doesn't ship inet_aton by default. */
 	inet_pton(AF_INET, "8.8.8.8", &sa.sin_addr);
 
+	g_netdiag.target_port = 80;
+	strncpy(g_netdiag.target_ip, "8.8.8.8", sizeof(g_netdiag.target_ip) - 1);
+	g_netdiag.target_ip[sizeof(g_netdiag.target_ip) - 1] = '\0';
+
+	u64 connect_start = gettime();
 	int res = net_connect(s, (struct sockaddr *)&sa, sizeof(struct sockaddr_in));
+	g_netdiag.connect_elapsed_ms = ticks_delta_ms(connect_start, gettime());
+
 	net_close(s);
 
-	return (res >= 0);
+	if (res < 0)
+	{
+		g_netdiag.stage    = NET_STAGE_CONNECT;
+		g_netdiag.last_res = res;
+		return false;
+	}
+
+	return true;
 }

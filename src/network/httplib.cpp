@@ -257,6 +257,15 @@ void setmainheaders(CURL *curl_handle, const char *url)
 	curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
 	curl_easy_setopt(curl_handle, CURLOPT_NOPROGRESS, 1);
 
+	/* Bounded time limits: without these, a stuck IOS socket (e.g.
+	 * Dolphin's async-connect path returning EALREADY, or real
+	 * hardware with a flaky Wi-Fi AP) would block curl_easy_perform()
+	 * in the UI thread indefinitely. 15s connect + 60s overall are
+	 * reasonable for page fetches; downloads get a longer timeout
+	 * set separately in transfer.cpp. */
+	curl_easy_setopt(curl_handle, CURLOPT_CONNECTTIMEOUT, 15L);
+	curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, 60L);
+
 	/* some servers don't like requests that are made without a user-agent
 	field, so we provide one */
 	curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, Agents[Settings.UserAgent]);

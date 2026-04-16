@@ -37,8 +37,24 @@ void ResumeThread(lwp_t thread)
 void HaltThread(lwp_t thread)
 {
 	threadState = THREAD_SUSPEND;
-	while (!LWP_ThreadIsSuspended(thread)) // wait for thread to finish
+	// Wait for the image-download thread to honor the suspend flag.
+	// Capped at ~2 seconds (20000 x 100us) so a thread stuck inside a
+	// blocking curl call (e.g. during a page-navigation mid-image)
+	// can't freeze the entire UI. Per curl's CURLOPT_TIMEOUT we set
+	// elsewhere, any stuck transfer will itself abort within 60s, so
+	// the worst case is we proceed before the thread has fully
+	// unwound — the thread checks threadState on its next iteration.
+	int waits = 20000;
+	while (!LWP_ThreadIsSuspended(thread) && waits > 0)
+	{
 		usleep(100);
+		waits--;
+	}
+	if (waits == 0)
+	{
+		fprintf(stderr, "HaltThread: image thread did not suspend within 2s; "
+		                "proceeding (check for stuck curl transfer)\n");
+	}
 }
 
 static void *DownloadImage(void *arg)

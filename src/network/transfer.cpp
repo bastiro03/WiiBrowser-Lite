@@ -287,6 +287,13 @@ bool AddHandle(Private *data)
 	curl_easy_setopt(eh, CURLOPT_LOW_SPEED_LIMIT, 10); // bytes/sec
 	curl_easy_setopt(eh, CURLOPT_LOW_SPEED_TIME, 10);  // seconds while below low speed limit before aborting
 
+	/* Hard bounds on connect and overall transfer time so a stuck IOS
+	 * socket (e.g. Dolphin's async-connect path returning EALREADY) can
+	 * never hang the download thread forever. These are belt-and-braces
+	 * on top of LOW_SPEED_TIME above. */
+	curl_easy_setopt(eh, CURLOPT_CONNECTTIMEOUT, 15L); // seconds for TCP + TLS handshake
+	curl_easy_setopt(eh, CURLOPT_TIMEOUT, 300L);       // 5 min max for a single download
+
 	/* follow redirects */
 	curl_easy_setopt(eh, CURLOPT_AUTOREFERER, 1);
 	curl_easy_setopt(eh, CURLOPT_FOLLOWLOCATION, 1);
@@ -345,12 +352,29 @@ void *DownloadThread(void *arg)
 		if (downloadThreadHalt)
 			break;
 
-		while (!networkinit)
+		// Wait for networking to come back up. Same flicker/CPU-peg
+		// fix as menu.cpp: 50ms poll (not 1ms) + bounded timeout so
+		// a permanently-stuck network thread can't freeze the whole
+		// download queue.
+		int net_timeout = 100; // 100 * 50ms = 5 s
+		while (!networkinit && net_timeout > 0)
 		{
 			// manager->status->SetText("network down");
 			if (LWP_ThreadIsSuspended(networkthread))
 				InitNetwork();
-			usleep(1000);
+			usleep(50000);
+			net_timeout--;
+		}
+		if (!networkinit)
+		{
+			// Network never came back after 5s. Rather than looping
+			// forever (and pegging CPU), suspend ourselves so the
+			// next AddHandle() will resume us and we'll retry. This
+			// mirrors what happens at line 350 when U==0.
+			fprintf(stderr, "downloadthread: network init timed out, "
+			                "suspending until next request\n");
+			LWP_SuspendThread(downloadthread);
+			continue;
 		}
 
 		if (ExitRequested)

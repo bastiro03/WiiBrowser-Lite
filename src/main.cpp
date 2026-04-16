@@ -127,16 +127,37 @@ void LoadMPlayerFile(char *loadedFile)
 	controlledbygui = 2; // signal any previous file to end
 	char *partitionlabel = NULL;
 
-	// wait for previous file to end
-	while (controlledbygui == 2)
+	// Wait for the previous playback to acknowledge the shutdown
+	// signal. Bounded at ~3 seconds (30000 x 100us); if mplayer is
+	// deadlocked in demux/decode we'd rather proceed than hang
+	// forever. The new-file load below will overwrite the old
+	// state either way.
+	int waits = 30000;
+	while (controlledbygui == 2 && waits > 0)
+	{
 		usleep(100);
+		waits--;
+	}
+	if (waits == 0)
+		fprintf(stderr, "LoadMPlayerFile: previous playback did not end "
+		                "within 3s; proceeding anyway\n");
 
 	// set new file to load
 	ShowAction("Loading...");
 	wiiLoadFile(loadedFile, partitionlabel);
 
-	while (controlledbygui != 0)
+	// Wait for the new file to finish loading. Same timeout rationale
+	// — we cap at ~3s rather than spinning forever if wiiLoadFile
+	// never clears controlledbygui (e.g. bad file, codec deadlock).
+	waits = 30000;
+	while (controlledbygui != 0 && waits > 0)
+	{
 		usleep(100);
+		waits--;
+	}
+	if (waits == 0)
+		fprintf(stderr, "LoadMPlayerFile: new file did not finish loading "
+		                "within 3s; bailing to menu\n");
 }
 
 void ResumeMPlayerFile()

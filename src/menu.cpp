@@ -239,9 +239,21 @@ extern "C" void HaltGui()
 {
 	guiHalt = true;
 
-	// wait for thread to finish
-	while (!LWP_ThreadIsSuspended(guithread))
+	// Wait for the GUI thread to acknowledge the halt and suspend
+	// itself. If it's stuck in a libogc call (or deadlocked), don't
+	// spin forever — cap the wait at ~100ms (1000 x 100us) and log
+	// a diagnostic so the bug is visible rather than silently hanging.
+	int waits = 1000;
+	while (!LWP_ThreadIsSuspended(guithread) && waits > 0)
+	{
 		usleep(THREAD_SLEEP);
+		waits--;
+	}
+	if (waits == 0)
+	{
+		fprintf(stderr, "HaltGui: guithread did not suspend within 100ms; "
+		                "proceeding anyway (possible race)\n");
+	}
 }
 
 extern "C" void DoMPlayerGuiDraw()

@@ -2008,7 +2008,7 @@ jump:
 		mainWindow->Remove(&promptWindow);
 		mainWindow->SetState(STATE_DEFAULT);
 		ResumeGui();
-		return;
+		return MENU_HOME;
 	}
 
 	staticTxt.SetText("Loading...please wait");

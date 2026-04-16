@@ -39,6 +39,16 @@
 #define MBEDTLS_HAVE_TIME
 #define MBEDTLS_HAVE_TIME_DATE
 
+/* devkitPPC's newlib doesn't ship clock_gettime(CLOCK_MONOTONIC), so
+ * mbedtls_ms_time() has no default implementation on console targets
+ * and errors out at compile time. Supply our own via hooks, using
+ * libogc's gettime()/ticks_to_millisecs() on Wii and the hardware
+ * timer on DS/DSi. On the host target the upstream POSIX fallback
+ * works fine so we leave it alone. See src/wbl/mbedtls_hooks.c */
+#if defined(WBL_PLATFORM_WII) || defined(WBL_PLATFORM_DSI) || defined(WBL_PLATFORM_NDS)
+#  define MBEDTLS_PLATFORM_MS_TIME_ALT
+#endif
+
 /* ---- Crypto primitives ------------------------------------------------ */
 
 /* Cipher abstraction layer (required by GCM, TLS, etc.) */

@@ -151,6 +151,9 @@ jobs:
           build/wii/quickjs/*.o
 
     - name: Build WiiBrowser-Lite (Wii, PowerPC, -flto)
+      # Explicit bash: devkitpro/devkitppc container defaults `run:`
+      # scripts to /bin/sh which doesn't support ${PIPESTATUS[0]}.
+      shell: bash
       env:
         PATH: /opt/devkitpro/devkitPPC/bin:/opt/devkitpro/tools/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
       run: |
@@ -179,6 +182,7 @@ jobs:
         file wiibrowserlite.dol wiibrowserlite.elf
 
     - name: Validate .dol binary (PPC objdump + section sanity)
+      shell: bash
       env:
         PATH: /opt/devkitpro/devkitPPC/bin:/opt/devkitpro/tools/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
       run: |

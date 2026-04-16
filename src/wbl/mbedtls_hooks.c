@@ -17,11 +17,12 @@
     defined(WBL_PLATFORM_WII) || defined(WBL_PLATFORM_DSI) || defined(WBL_PLATFORM_NDS)
 
 #include <stddef.h>
+#include <stdint.h>
 #include <string.h>
 
 #if defined(WBL_PLATFORM_WII)
 #include <gccore.h>     /* for gettime() / SYS_Time() */
-#include <ogc/lwp_watchdog.h>
+#include <ogc/lwp_watchdog.h>   /* ticks_to_millisecs */
 #elif defined(WBL_PLATFORM_DSI) || defined(WBL_PLATFORM_NDS)
 #include <nds.h>
 #endif
@@ -70,3 +71,49 @@ int mbedtls_hardware_poll(void *data,
 }
 
 #endif /* MBEDTLS_ENTROPY_HARDWARE_ALT */
+
+
+/* ---- mbedtls_ms_time() --------------------------------------------------
+ *
+ * mbedTLS uses this for TLS 1.3 handshake record-layer timing and
+ * session-ticket expiry. The upstream fallback relies on
+ * clock_gettime(CLOCK_MONOTONIC) which devkitPPC's newlib does NOT
+ * provide, so without this the library won't even compile.
+ *
+ * MBEDTLS_PLATFORM_MS_TIME_ALT in wbl/mbedtls_config.h declares that
+ * WE provide the function. The mbedtls_ms_time_t return type is a
+ * signed 64-bit millisecond count; monotonicity matters more than
+ * absolute zero-point. */
+
+#if defined(MBEDTLS_PLATFORM_MS_TIME_ALT) || \
+    defined(WBL_PLATFORM_WII) || defined(WBL_PLATFORM_DSI) || defined(WBL_PLATFORM_NDS)
+
+/* mbedtls_ms_time_t is defined in mbedtls/platform_util.h, which is
+ * pulled in by any TU that includes us via mbedtls. But our own TU
+ * doesn't include mbedtls here (to keep this file standalone), so
+ * declare the signature matching upstream. */
+typedef int64_t mbedtls_ms_time_t;
+
+mbedtls_ms_time_t mbedtls_ms_time(void)
+{
+#if defined(WBL_PLATFORM_WII)
+    /* libogc's gettime() returns the PowerPC time-base tick count.
+     * ticks_to_millisecs() converts to wall-clock ms. The TB is
+     * monotonic across reboots (well, resets to 0 each reset but
+     * never goes backwards within a session). */
+    u64 t = gettime();
+    return (mbedtls_ms_time_t)ticks_to_millisecs(t);
+#elif defined(WBL_PLATFORM_DSI) || defined(WBL_PLATFORM_NDS)
+    /* ARM9 has no simple monotonic clock; timerTick() on libnds is
+     * driven by the REG_TIMER hardware timer. Assuming 59.8Hz frame
+     * rate -> convert to ms. */
+    extern unsigned int timerTick(int timer);
+    unsigned int ticks = timerTick(0);
+    /* libnds timer at default config runs at ~33kHz, so 1 tick ~= 30us */
+    return (mbedtls_ms_time_t)(ticks / 33);
+#else
+    return 0;
+#endif
+}
+
+#endif /* MBEDTLS_PLATFORM_MS_TIME_ALT */

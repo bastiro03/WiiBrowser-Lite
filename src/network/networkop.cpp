@@ -1,8 +1,20 @@
 #include "networkop.h"
 #include <string.h>
 #include <stdio.h>
+#include <sys/ioctl.h>         // FIONBIO for non-blocking socket setup
 #include <ogc/lwp_watchdog.h>  // gettime() / ticks_to_millisecs()
 #define host "www.google.com"
+
+// Target for the TCP reachability probe. We use 8.8.8.8:443 because:
+//   - 8.8.8.8 is Google DNS anycast - globally reachable, no DNS lookup.
+//   - Port 80 on 8.8.8.8 is unreliable: many networks (including some
+//     home ISPs) silently drop it. When it's firewalled a blocking
+//     connect() can hang for ~75s on macOS hosts (Dolphin's emulated
+//     SO_CONNECT inherits the host TCP connect timeout).
+//   - Port 443 is actively served by Google DNS for DoT/DoH and is
+//     not commonly blocked outbound. User-confirmed reachable.
+#define NET_PROBE_IP   "8.8.8.8"
+#define NET_PROBE_PORT 443
 
 u8 networkstack[GUITH_STACK] ATTRIBUTE_ALIGN(32);
 lwp_t networkthread = LWP_THREAD_NULL;
@@ -19,8 +31,8 @@ static struct NetDiag g_netdiag = {
 	/* retries_used */       0,
 	/* status_wait_ms */     0,
 	/* connect_elapsed_ms */ 0,
-	/* target_ip */          "8.8.8.8",
-	/* target_port */        80,
+	/* target_ip */          NET_PROBE_IP,
+	/* target_port */        NET_PROBE_PORT,
 };
 
 void GetNetDiag(struct NetDiag *out)
@@ -36,6 +48,11 @@ void GetNetDiag(struct NetDiag *out)
 //   ENETUNREACH   = ICMP Dest Unreachable (net code)
 //   ETIMEDOUT     = no reply, ARP/TCP SYN retry exhausted
 //   EACCES        = ICMP admin prohibited / firewalled
+// On Dolphin the emulated IOS_NET sometimes returns error codes that
+// libogc translates to plain numeric values not matching our header's
+// named constants (seen: -7 on Dolphin for a blocking connect to an
+// unreachable host). We fall back to a persistent "errno N" string so
+// the UI shows an actionable number instead of "unknown".
 const char *NetErrStr(int neg_errno)
 {
 	int e = (neg_errno < 0) ? -neg_errno : neg_errno;
@@ -55,7 +72,19 @@ const char *NetErrStr(int neg_errno)
 		case EINVAL:         return "EINVAL (bad argument - init race?)";
 		case EIO:            return "EIO (IOS network I/O error)";
 		case EAGAIN:         return "EAGAIN (would block)";
-		default:             return "unknown (see errno on host)";
+		case EFAULT:         return "EFAULT (bad address)";
+		case ENOMEM:         return "ENOMEM (out of memory in IOS)";
+		case ENOBUFS:        return "ENOBUFS (no buffer space in IOS)";
+		default: {
+			// Static thread-local-ish scratch for the numeric
+			// fallback. This is fine for a UI diagnostic: we
+			// only format one error at a time and the result is
+			// copied into the modal's text immediately.
+			static char buf[48];
+			snprintf(buf, sizeof(buf),
+			         "errno %d (not in WBL table; see libogc/_net_convert_error)", e);
+			return buf;
+		}
 	}
 }
 
@@ -183,49 +212,62 @@ bool CheckConnection()
 		return false;
 	}
 
+	// Force the socket into non-blocking mode BEFORE calling
+	// net_connect(). Otherwise Dolphin's emulated SO_CONNECT invokes
+	// the host-OS connect() synchronously - on macOS that means a
+	// ~75-second TCP connect timeout when the target port is
+	// firewalled/dropped, during which our UI believes the network
+	// thread has hung. With FIONBIO=1, net_connect() returns
+	// immediately with -EINPROGRESS and we drive completion from
+	// select() with a bounded wall-clock timeout we control.
+	u32 nonblocking = 1;
+	int ioctl_ret = net_ioctl(s, FIONBIO, &nonblocking);
+	if (ioctl_ret != 0)
+	{
+		// Not fatal - fall through with blocking semantics and
+		// hope libogc/IOS gives us EINPROGRESS anyway. Real Wii
+		// hardware reportedly does; Dolphin host-side generally
+		// doesn't.
+		fprintf(stderr, "CheckConnection: FIONBIO ioctl failed: %d\n", ioctl_ret);
+	}
+
 	memset(&sa, 0, sizeof(struct sockaddr_in));
 	sa.sin_family = AF_INET;
 	sa.sin_len = sizeof(struct sockaddr_in);
-	sa.sin_port = htons(80);
-	/* 8.8.8.8 = Google DNS anycast, always reachable on any global route.
-	 * Using inet_pton() because GCC 15 libc doesn't ship inet_aton by default. */
-	inet_pton(AF_INET, "8.8.8.8", &sa.sin_addr);
+	sa.sin_port = htons(NET_PROBE_PORT);
+	/* Using inet_pton() because GCC 15 libc doesn't ship inet_aton by default. */
+	inet_pton(AF_INET, NET_PROBE_IP, &sa.sin_addr);
 
-	g_netdiag.target_port = 80;
-	strncpy(g_netdiag.target_ip, "8.8.8.8", sizeof(g_netdiag.target_ip) - 1);
+	g_netdiag.target_port = NET_PROBE_PORT;
+	strncpy(g_netdiag.target_ip, NET_PROBE_IP, sizeof(g_netdiag.target_ip) - 1);
 	g_netdiag.target_ip[sizeof(g_netdiag.target_ip) - 1] = '\0';
 
-	// Dolphin's IOS_NET emulator treats SO_CONNECT as asynchronous: the
-	// first call returns immediately (often with -EINPROGRESS), and the
-	// handshake completes in the background. Subsequent connect() calls
-	// on the same socket return -EALREADY ("Operation already in
-	// progress") until the first one finishes.
-	//
-	// On real Wii hardware the behavior is similar - libogc's net_connect
-	// can return early if the IOS socket is in non-blocking mode.
-	//
-	// Correct pattern: issue connect(), then use select() to wait for
-	// writability (= handshake complete) with a bounded timeout. Treat
-	// EINPROGRESS/EALREADY on the initial connect as "pending, go wait"
-	// rather than "failed".
 	u64 connect_start = gettime();
 	int res = net_connect(s, (struct sockaddr *)&sa, sizeof(struct sockaddr_in));
 
-	fprintf(stderr, "CheckConnection: net_connect(fd=%d, 8.8.8.8:80) = %d (%s)\n",
-	        s, res, (res == 0) ? "OK" : NetErrStr(res));
+	fprintf(stderr, "CheckConnection: net_connect(fd=%d, %s:%d) = %d (%s)\n",
+	        s, NET_PROBE_IP, NET_PROBE_PORT, res,
+	        (res == 0) ? "OK" : NetErrStr(res));
 
 	bool connected = false;
+
+	// With non-blocking mode active, the expected return from a
+	// just-started connect is -EINPROGRESS (or on some IOS builds
+	// -EALREADY if a previous state leaked through). A return of 0
+	// means the handshake already completed (loopback-fast or a
+	// blocking IOS that ignored FIONBIO). Anything else negative is a
+	// "real" early failure (route missing, address invalid, etc.)
+	// and we don't bother select()-waiting on it.
 	if (res == 0)
 	{
-		// Fast path: some IOS builds actually block until complete.
 		connected = true;
 	}
 	else if (res == -EINPROGRESS || res == -EALREADY)
 	{
 		fprintf(stderr, "CheckConnection: socket pending, select() with 3s timeout...\n");
-		// Handshake running in background - wait up to 3s for the
-		// socket to become writable, then check SO_ERROR to confirm
-		// the connect actually succeeded (and wasn't silently rejected).
+		// Wait up to 3s for the socket to become writable, then
+		// check SO_ERROR to confirm the connect actually succeeded
+		// (and wasn't silently rejected in the background).
 		fd_set wset;
 		FD_ZERO(&wset);
 		FD_SET(s, &wset);
@@ -267,12 +309,13 @@ bool CheckConnection()
 			res = sel;
 		}
 	}
-	// else: res is some other negative errno, leave it for diag
+	// else: res is some other negative errno - leave it for diag.
 
 	g_netdiag.connect_elapsed_ms = ticks_delta_ms(connect_start, gettime());
 
-	fprintf(stderr, "CheckConnection: closing fd=%d, result=%s\n",
-	        s, connected ? "CONNECTED" : "FAILED");
+	fprintf(stderr, "CheckConnection: closing fd=%d, elapsed=%ums, result=%s\n",
+	        s, g_netdiag.connect_elapsed_ms,
+	        connected ? "CONNECTED" : "FAILED");
 	net_close(s);
 
 	if (!connected)

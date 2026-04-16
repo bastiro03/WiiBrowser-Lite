@@ -10,7 +10,7 @@ enum NetStage {
 	NET_STAGE_NONE         = 0,
 	NET_STAGE_INIT_ASYNC   = 1,  // net_init_async() returned non-zero
 	NET_STAGE_GET_STATUS   = 2,  // net_get_status() returned error or -EBUSY timeout
-	NET_STAGE_CONNECT      = 3,  // net_connect() to 8.8.8.8:80 failed
+	NET_STAGE_CONNECT      = 3,  // non-blocking connect() probe failed
 	NET_STAGE_SOCKET       = 4,  // net_socket() returned <0
 };
 

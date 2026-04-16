@@ -1980,17 +1980,14 @@ jump:
 			default:                   stage_name = "unknown";        break;
 		}
 
-		char errbuf[512];
+		char errbuf[640];
 		snprintf(errbuf, sizeof(errbuf),
-		    "Network connection failed.\n"
-		    "\n"
-		    "Stage:    %s\n"
-		    "Result:   %d  %s\n"
-		    "Retries:  %d/5\n"
-		    "Target:   %s:%u\n"
+		    "Stage: %s\n"
+		    "Result: %d  %s\n"
+		    "Retries: %d/5\n"
+		    "Target: %s:%u\n"
 		    "Status poll: %u ms (timeout 10000)\n"
-		    "Connect:     %u ms\n"
-		    "\n"
+		    "Connect: %u ms\n"
 		    "Total wait: 5000 ms (UI timeout)\n"
 		    "\n"
 		    "Check emulator network settings (SP1 / BBA)\n"
@@ -2002,12 +1999,24 @@ jump:
 		    nd.status_wait_ms,
 		    nd.connect_elapsed_ms);
 
-		staticTxt.SetText(errbuf);
-		usleep(8000000);  // Show detailed error for 8 seconds (user needs time to read)
+		// Tear down the "Resuming connection..." indicator before
+		// showing the error. WindowPrompt() installs its own modal
+		// on mainWindow and we don't want two prompts stacked.
 		HaltGui();
 		mainWindow->Remove(&promptWindow);
 		mainWindow->SetState(STATE_DEFAULT);
 		ResumeGui();
+
+		// Blocking modal - stays up until the user acknowledges with
+		// "Ok". This replaces the earlier usleep(8s) auto-dismiss,
+		// which flashed too quickly to read on Dolphin. The diagnostic
+		// payload goes into longText so GuiLongText renders it with
+		// wrapping/scroll rather than WindowPrompt's short msg field.
+		WindowPrompt("Network connection failed",
+		             NULL,             // msg (short) - unused
+		             "Ok",             // btn1
+		             NULL,             // btn2
+		             errbuf);          // longText (scrollable diagnostic)
 		return MENU_HOME;
 	}
 

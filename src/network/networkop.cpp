@@ -211,6 +211,9 @@ bool CheckConnection()
 	u64 connect_start = gettime();
 	int res = net_connect(s, (struct sockaddr *)&sa, sizeof(struct sockaddr_in));
 
+	fprintf(stderr, "CheckConnection: net_connect(fd=%d, 8.8.8.8:80) = %d (%s)\n",
+	        s, res, (res == 0) ? "OK" : NetErrStr(res));
+
 	bool connected = false;
 	if (res == 0)
 	{
@@ -219,6 +222,7 @@ bool CheckConnection()
 	}
 	else if (res == -EINPROGRESS || res == -EALREADY)
 	{
+		fprintf(stderr, "CheckConnection: socket pending, select() with 3s timeout...\n");
 		// Handshake running in background - wait up to 3s for the
 		// socket to become writable, then check SO_ERROR to confirm
 		// the connect actually succeeded (and wasn't silently rejected).
@@ -231,12 +235,15 @@ bool CheckConnection()
 		tv.tv_usec = 0;
 
 		int sel = net_select(s + 1, NULL, &wset, NULL, &tv);
+		fprintf(stderr, "CheckConnection: net_select() = %d\n", sel);
 		if (sel > 0 && FD_ISSET(s, &wset))
 		{
 			int so_err = 0;
 			socklen_t elen = sizeof(so_err);
 			int go = net_getsockopt(s, SOL_SOCKET, SO_ERROR,
 			                        &so_err, &elen);
+			fprintf(stderr, "CheckConnection: SO_ERROR = %d (getsockopt ret=%d)\n",
+			        so_err, go);
 			if (go == 0 && so_err == 0)
 			{
 				connected = true;
@@ -250,11 +257,13 @@ bool CheckConnection()
 		else if (sel == 0)
 		{
 			// select() timed out - handshake never completed
+			fprintf(stderr, "CheckConnection: select() timeout after 3s\n");
 			res = -ETIMEDOUT;
 		}
 		else
 		{
 			// select() itself failed
+			fprintf(stderr, "CheckConnection: select() failed: %d\n", sel);
 			res = sel;
 		}
 	}
@@ -262,6 +271,8 @@ bool CheckConnection()
 
 	g_netdiag.connect_elapsed_ms = ticks_delta_ms(connect_start, gettime());
 
+	fprintf(stderr, "CheckConnection: closing fd=%d, result=%s\n",
+	        s, connected ? "CONNECTED" : "FAILED");
 	net_close(s);
 
 	if (!connected)

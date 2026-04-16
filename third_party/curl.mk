@@ -73,7 +73,10 @@ RANLIB_LTO := $(if $(wildcard $(RANLIB_LTO_PROBE)),$(RANLIB_LTO_PROBE),$(RANLIB)
 # curl's configure script wants to run test programs on the target to
 # feature-detect (malloc(0), recv/send signatures, etc.). Cross builds
 # can't execute target code, so we pre-answer the tests with values
-# that match modern embedded environments.
+# that match the devkitPPC + libogc (or devkitARM + libnds) network
+# stack. These are bare-metal embedded targets with a BSD-ish sockets
+# API provided by libogc.net / dswifi, but NOT full Linux extensions
+# like accept4/recvmmsg/sendmmsg/epoll/eventfd.
 CURL_CROSS_CACHE := \
     ac_cv_func_malloc_0_nonnull=yes \
     ac_cv_func_realloc_0_nonnull=yes \
@@ -83,7 +86,16 @@ CURL_CROSS_CACHE := \
     curl_cv_func_send=yes \
     curl_cv_func_send_args="int,const void*,size_t,int,int" \
     curl_cv_recv=yes \
-    curl_cv_send=yes
+    curl_cv_send=yes \
+    ac_cv_func_accept4=no \
+    ac_cv_func_recvmmsg=no \
+    ac_cv_func_sendmmsg=no \
+    ac_cv_func_epoll_create=no \
+    ac_cv_func_epoll_create1=no \
+    ac_cv_func_eventfd=no \
+    ac_cv_func_fsetxattr=no \
+    ac_cv_func_pipe2=no \
+    ac_cv_func_if_nametoindex=no
 
 $(CURL_LIB): | $(MBEDTLS_LIB)
 	@for p in $(abspath $(CURL_PATCHES)); do \

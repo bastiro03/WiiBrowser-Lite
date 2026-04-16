@@ -94,7 +94,7 @@ void SSettings::SetDefault()
 	sprintf(Revision, "Rev000");
 	sscanf(Revision, "Rev%d", &RevInt);
 
-	for (int i = 0; i < N; i++)
+	for (int i = 0; i < WBL_FAV_COUNT; i++)
 	{
 		TopSites[i] = new char[512];
 		memset(TopSites[i], 0, 512);
@@ -143,7 +143,7 @@ bool SSettings::Save(bool clean)
 	fprintf(file, "Homepage = %s\r\n", Homepage);
 
 	fprintf(file, "\r\n# Top Sites\r\n\r\n");
-	for (int i = 0; i < N; i++)
+	for (int i = 0; i < WBL_FAV_COUNT; i++)
 		fprintf(file, "Favorite(%d) = %s\r\n", i, TopSites[i]);
 
 	fprintf(file, "\r\n# Advanced\r\n\r\n");
@@ -164,7 +164,7 @@ bool SSettings::Save(bool clean)
 		return false;
 	closedir(dir);
 
-	for (int i = 0; i < N; i++)
+	for (int i = 0; i < WBL_FAV_COUNT; i++)
 	{
 		snprintf(filedest, sizeof(filedest), "%s/thumbnails/thumb_%d.gxt", AppPath, i);
 		if (!Thumbnails[i])
@@ -255,7 +255,7 @@ bool SSettings::Load()
 	int size = 640 * 480 * 4;
 
 	// load thumbnails
-	for (int i = 0; i < N; i++)
+	for (int i = 0; i < WBL_FAV_COUNT; i++)
 	{
 		snprintf(filepath, sizeof(filepath), "%s/thumbnails/thumb_%d.gxt", AppPath, i);
 
@@ -489,7 +489,7 @@ struct favorite *SSettings::GetFav(int f)
 
 char *SSettings::GetUrl(int f)
 {
-	if (f < 0 || f >= N)
+	if (f < 0 || f >= WBL_FAV_COUNT)
 		return nullptr;
 	return TopSites[f];
 }
@@ -499,7 +499,7 @@ int SSettings::FindUrl(char *url)
 	if (!url || !url[0])
 		return -1;
 
-	for (int i = 0; i < N; i++)
+	for (int i = 0; i < WBL_FAV_COUNT; i++)
 	{
 		if (!strcmp(TopSites[i], url))
 			return i;
@@ -509,7 +509,7 @@ int SSettings::FindUrl(char *url)
 
 void SSettings::Remove(int f, bool update)
 {
-	if (f < 0 || f >= N)
+	if (f < 0 || f >= WBL_FAV_COUNT)
 		return;
 
 	if (!update)

@@ -125,13 +125,15 @@
 #  define WBL_HAS_CURL 1
 #endif
 
-/* Archive support (zip/rar/7z) */
+/* Archive support (zip/rar/7z).
+ *
+ * Currently disabled on every target: src/archiveoperations/ depends on
+ * legacy libunrar / libsevenzip / libzip builds that no longer match
+ * their upstream APIs and that we've not yet re-submoduled. See
+ * libs/wii/README.md for the migration plan. Re-enable once the
+ * archive libs are back as source submodules. */
 #ifndef WBL_HAS_ARCHIVES
-#  if defined(WBL_PLATFORM_WII)
-#    define WBL_HAS_ARCHIVES 1
-#  else
-#    define WBL_HAS_ARCHIVES 0
-#  endif
+#  define WBL_HAS_ARCHIVES 0
 #endif
 
 /* ---- Memory budgets (in KB) ------------------------------------------- */

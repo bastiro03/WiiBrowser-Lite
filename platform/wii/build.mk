@@ -84,9 +84,19 @@ LDFLAGS := -DGEKKO -mrvl -mcpu=750 -meabi -mhard-float \
 # on new toolchains:
 #   libfribidi libiconv libpng libjpeg libunrar libzip libsevenzip
 #   libz libnetport libvorbisidec libmxml libfreetype libexif
-LIBS := -lfribidi -ljpeg -liconv -ldi -lpng -lunrar -lzip -lsevenzip -lz \
-        -lnetport -lasnd -lvorbisidec \
-        -lmxml -lm -lfat -lwiiuse -lwiikeyboard -lbte -logc -lfreetype -lexif
+# Wii-specific libraries.
+# Order matters: libraries that provide symbols must come BEFORE
+# libraries that need them. freetype needs bz2 + brotli + harfbuzz;
+# vorbisidec needs ogg. archive libs removed for now (tech debt).
+# -lstdc++ is required because we compile C++ translation units that
+# use operator new[]/delete[] and std::string (_Znaj, _ZdlPvj,
+# std::__cxx11::basic_string::_M_dispose). devkitPPC ships libstdc++
+# as a portlib but doesn't auto-link it when invoking the gcc driver.
+LIBS := -lfribidi -ljpeg -liconv -ldi -lpng -lz \
+        -lnetport -lasnd -lvorbisidec -logg \
+        -lmxml -lm -lfat -lwiiuse -lwiikeyboard -lbte -logc \
+        -lfreetype -lharfbuzz -lbrotlidec -lbrotlicommon -lbz2 -lexif \
+        -lstdc++ -lsupc++
 
 # Output: .dol file for Wii
 TARGET_OUT := $(TARGET).dol

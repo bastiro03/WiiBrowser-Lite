@@ -3,7 +3,10 @@
 
 #include "fileop.h"
 #include "filebrowser.h"
+#include "wbl/platform.h"
+#if WBL_HAS_ARCHIVES
 #include "archiveoperations/Archive.h"
+#endif
 
 bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, const char *label)
 {
@@ -265,6 +268,7 @@ bool AutoDownloader(char *path)
 
 bool UnzipArchive(char *origfile)
 {
+#if WBL_HAS_ARCHIVES
 	char zipfilepath[512];
 	strcpy(zipfilepath, origfile);
 
@@ -275,6 +279,13 @@ bool UnzipArchive(char *origfile)
 		unzipfolder[1] = 0;
 
 	return (archive.ExtractAll(zipfilepath) > 0);
+#else
+	/* Archive ops disabled at build time (see include/wbl/platform.h).
+	 * Downloaded .zip files are kept as-is; the UI path in
+	 * network/transfer.cpp no longer offers to unzip. */
+	(void)origfile;
+	return false;
+#endif
 }
 
 bool isValidPath(char *name)

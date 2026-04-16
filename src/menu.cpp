@@ -39,7 +39,7 @@ extern "C"
 
 #define THREAD_SLEEP 100
 #define MAXLEN 512
-#define N 9
+#define WBL_FAV_COUNT 9
 
 static u8 loadstack[GUITH_STACK] ATTRIBUTE_ALIGN(32);
 static u8 updatestack[GUITH_STACK] ATTRIBUTE_ALIGN(32);
@@ -2061,7 +2061,7 @@ jump:
 
 bool Held(vector<GuiFavorite> &Block)
 {
-	for (int i = 0; i < N; i++)
+	for (int i = 0; i < WBL_FAV_COUNT; i++)
 	{
 		if (Block[i].Block->GetState() == STATE_HELD)
 			return true;
@@ -2097,7 +2097,7 @@ void SwapUrls(int i, int j)
 
 int findEmpty()
 {
-	for (int i = 0; i < N; i++)
+	for (int i = 0; i < WBL_FAV_COUNT; i++)
 	{
 		if (strlen(Settings.GetUrl(i)) == 0)
 			return i;
@@ -2117,10 +2117,10 @@ static int MenuTopSites()
 	fadeAnim = EFFECT_SLIDE_IN | EFFECT_SLIDE_RIGHT;
 	Right->Button->SetState(STATE_SELECTED);
 
-	vector<GuiFavorite> Block(N, GuiFavorite(TOPSITE));
+	vector<GuiFavorite> Block(WBL_FAV_COUNT, GuiFavorite(TOPSITE));
 	prevMenu = MENU_TOPSITES;
 
-	for (int i = 0, xpos = 40, ypos = 40; i < N; i++)
+	for (int i = 0, xpos = 40, ypos = 40; i < WBL_FAV_COUNT; i++)
 	{
 		Block[i].SetInit(xpos, ypos);
 		Block[i].SetEffect(fadeAnim, 50);
@@ -2147,7 +2147,7 @@ static int MenuTopSites()
 	}
 
 	HaltGui();
-	for (int i = 0; i < N; i++)
+	for (int i = 0; i < WBL_FAV_COUNT; i++)
 		mainWindow->Append(&Block[i]);
 	ResumeGui();
 
@@ -2169,7 +2169,7 @@ static int MenuTopSites()
 		if (App->btnSett->GetState() == STATE_CLICKED)
 		{
 			editing = !editing;
-			for (i = 0; i < N; i++)
+			for (i = 0; i < WBL_FAV_COUNT; i++)
 				Block[i].SetEditing(editing);
 
 			App->ChangeButtons(editing ? EDITING : FAVORITES);
@@ -2209,7 +2209,7 @@ static int MenuTopSites()
 			choice = MENU_FAVORITES;
 		}
 
-		for (i = 0; i < N; i++)
+		for (i = 0; i < WBL_FAV_COUNT; i++)
 		{
 			if (Block[i].Block->GetState() == STATE_SELECTED)
 				Block[i].Label->SetScroll(SCROLL_HORIZONTAL);
@@ -2234,7 +2234,7 @@ static int MenuTopSites()
 
 			if (editing && !Held(Block))
 			{
-				for (int j = 0; j < N; j++)
+				for (int j = 0; j < WBL_FAV_COUNT; j++)
 				{
 					if (j == i)
 						continue;
@@ -2253,19 +2253,19 @@ static int MenuTopSites()
 
 	if (editing)
 	{
-		for (i = 0; i < N; i++)
+		for (i = 0; i < WBL_FAV_COUNT; i++)
 			Block[i].Remove->SetEffect(EFFECT_FADE, -50);
-		while (Block[N - 1].Remove->GetEffect() > 0)
+		while (Block[WBL_FAV_COUNT - 1].Remove->GetEffect() > 0)
 			usleep(THREAD_SLEEP);
 	}
 
-	for (i = 0; i < N; i++)
+	for (i = 0; i < WBL_FAV_COUNT; i++)
 		Block[i].SetEffect(fadeAnim, 50);
-	while (Block[N - 1].GetEffect() > 0)
+	while (Block[WBL_FAV_COUNT - 1].GetEffect() > 0)
 		usleep(THREAD_SLEEP);
 
 	HaltGui();
-	for (i = 0; i < N; i++)
+	for (i = 0; i < WBL_FAV_COUNT; i++)
 		mainWindow->Remove(&Block[i]);
 	ResumeGui();
 
@@ -2304,7 +2304,7 @@ struct page GetPage(int page)
 	char *item;
 	int i, j;
 
-	for (i = 0, j = 0; i < N; j++)
+	for (i = 0, j = 0; i < WBL_FAV_COUNT; j++)
 	{
 		if (page)
 		{
@@ -2348,12 +2348,12 @@ static int MenuFavorites()
 	Right->Button->SetState(STATE_SELECTED);
 	Right->SetEffect(EFFECT_FADE, -50);
 
-	vector<GuiFavorite> Block(N, GuiFavorite(FAVORITE));
-	vector<GuiFavorite> Recent(N, GuiFavorite(FAVORITE));
+	vector<GuiFavorite> Block(WBL_FAV_COUNT, GuiFavorite(FAVORITE));
+	vector<GuiFavorite> Recent(WBL_FAV_COUNT, GuiFavorite(FAVORITE));
 	prevMenu = MENU_FAVORITES;
 
 	// favorites
-	for (i = 0; i < N; i++)
+	for (i = 0; i < WBL_FAV_COUNT; i++)
 	{
 		Block[i].SetEffect(EFFECT_FADE, 50);
 		Block[i].Block->SetUpdateCallback(DragCallback);
@@ -2510,7 +2510,7 @@ static int MenuFavorites()
 				mainWindow->Append(&Block[i]);
 			}
 
-			for (i = Page.n_url; i < N; i++)
+			for (i = Page.n_url; i < WBL_FAV_COUNT; i++)
 				mainWindow->Remove(&Block[i]);
 
 			mainWindow->Append(Left);

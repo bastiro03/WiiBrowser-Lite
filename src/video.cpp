@@ -20,7 +20,11 @@
 #define DEFAULT_FIFO_SIZE 256 * 1024
 static u32 *xfb[2] = {NULL, NULL}; // Double buffered
 static int whichfb = 0;			   // Switch
-static GXRModeObj *vmode;		   // Menu video mode
+// Menu video mode. Declared with external linkage so main.cpp /
+// menu.cpp can read .fbWidth / .efbHeight / .viHeight etc. for
+// screenshot + hi-dpi layout. (Was `static` historically, which
+// broke the link under LTO once menu.cpp started referencing it.)
+GXRModeObj *vmode;
 static unsigned char gp_fifo[DEFAULT_FIFO_SIZE] ATTRIBUTE_ALIGN(32);
 static Mtx GXmodelView2D;
 int screenheight;

@@ -61,9 +61,19 @@ green "[OK] .elf exists: $ELF ($ELF_SIZE bytes)"
 
 # --- 2. .dol header sanity ------------------------------------------------
 # Read big-endian u32 at offset $1 from $DOL and echo as decimal.
+#
+# We deliberately use `od` (POSIX, in every distro image including the
+# devkitpro CI container) rather than `xxd` (vim-extras, not always
+# present) or gawk's `strtonum` (mawk lacks it).
 beu32() {
-    local off=$1
-    xxd -s "$off" -l 4 -g 1 "$DOL" | awk '{printf "%d\n", strtonum("0x"$2$3$4$5)}'
+    # Accept offsets in either 0xHEX or decimal form, but dd's `skip=`
+    # needs decimal, so normalize via printf %d first.
+    local off
+    off=$(printf "%d" "$1")
+    local hex
+    hex=$(dd if="$DOL" bs=1 count=4 skip="$off" status=none 2>/dev/null \
+          | od -An -tx1 | tr -d ' \n\r')
+    printf "%d\n" "0x$hex"
 }
 
 # text section 0 offset lives at file offset 0x00
@@ -131,9 +141,16 @@ green "[OK] .elf format is elf32-powerpc"
 # (except .bss which is runtime-only).
 REQUIRED_SECTIONS=(.text .rodata .data)
 for section in "${REQUIRED_SECTIONS[@]}"; do
-    size=$("$OBJDUMP" -h "$ELF" | awk -v s="$section" '$2 == s {print strtonum("0x"$3); exit}')
-    if [[ -z "$size" || "$size" -eq 0 ]]; then
-        red "[FAIL] ELF section $section is missing or empty"
+    # Avoid gawk's strtonum(): `mawk` (default on devkitpro CI image)
+    # doesn't have it. Parse the hex size with printf in bash instead.
+    hex_size=$("$OBJDUMP" -h "$ELF" | awk -v s="$section" '$2 == s {print $3; exit}')
+    if [[ -z "$hex_size" ]]; then
+        red "[FAIL] ELF section $section is missing"
+        exit 1
+    fi
+    size=$(printf "%d" "0x$hex_size")
+    if (( size == 0 )); then
+        red "[FAIL] ELF section $section is empty"
         exit 1
     fi
     printf "    %-12s %d bytes\n" "$section" "$size"

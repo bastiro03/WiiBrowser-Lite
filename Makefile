@@ -17,12 +17,36 @@ TARGET ?= wiibrowserlite
 # CFLAGS (so our app source can resolve #include "foo.h" relative
 # to src/<subdir>). Must be set before the platform include.
 #
-# Exclusions:
+# Exclusions (TODO: migrate to submodules / rewrite against current
+# library APIs; see libs/wii/README.md for the full migration plan):
 # - src/archiveoperations/: legacy libunrar+libsevenzip wrappers that
-#   don't compile against current unrarlib headers (TODO: migrate to
-#   submodules). Not needed for Wikipedia browsing. Filter so the
-#   directory's .cpp files don't appear in CPPFILES.
-SOURCES := $(filter-out src/archiveoperations, $(shell find src -type d))
+#   don't compile against current unrarlib headers. Not needed for
+#   Wikipedia browsing.
+# - src/utils/: old JPEG/BMP loader glue (jmemsrc.cpp has jpeg API
+#   drift; easybmp.cpp + pngu.c reference MAX_TEX_WIDTH that came
+#   from an old dependency). For now we rely on portlibs' libjpeg/
+#   libpng directly; image decode wrapper needs rewriting.
+# - src/textoperations/: text editor (TextPointer, TextEditor) calls
+#   GuiText methods that no longer exist (GetFontSize, GetTextLine,
+#   GetStartWidth, getCharWidth). Not a browser core feature.
+SOURCES := $(filter-out \
+    src/archiveoperations \
+    src/textoperations \
+    , $(shell find src -type d))
+
+# Individual file excludes within kept dirs
+#
+# pngu.c is kept: it provides DecodePNG() used by gui_imagedata.cpp for
+# the app's built-in PNG assets (buttons, backgrounds). The old comment
+# about it "referencing MAX_TEX_WIDTH from an old dependency" no longer
+# applies - pngu.c now provides sane #ifndef defaults for those macros.
+#
+# Excluded:
+#  giflib.c       - legacy GIF loader, not needed for Wikipedia browsing
+#  mem2_manager.c - unused mem2 heap helper
+#  timer.c        - legacy perf timer (depends on wiibrowser-specific APIs)
+EXCLUDE_CFILES := giflib.c mem2_manager.c timer.c
+EXCLUDE_CPPFILES := Metaphrasis.cpp easybmp.cpp jmemsrc.cpp
 
 # Default goal MUST be declared before we include any third_party/*.mk,
 # because make uses the FIRST rule defined as the default target. The
@@ -37,7 +61,7 @@ include platform/$(WBL_PLATFORM)/build.mk
 # Directories
 BUILD := build/$(WBL_PLATFORM)
 # SOURCES set above, pre-platform-include
-DATA := images images/appbar fonts sounds certs
+DATA := images images/appbar fonts sounds certs src/lang
 INCLUDES := include
 
 VPATH := $(SOURCES) $(DATA)
@@ -69,8 +93,10 @@ CXXFLAGS := $(WBL_THIRD_PARTY_INC) $(WBL_CFLAGS) $(CXXFLAGS)
 #---------------------------------------------------------------------------------
 # Source Files
 #---------------------------------------------------------------------------------
-CFILES := $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
-CPPFILES := $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
+CFILES := $(filter-out $(EXCLUDE_CFILES), \
+    $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c))))
+CPPFILES := $(filter-out $(EXCLUDE_CPPFILES), \
+    $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp))))
 sFILES := $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
 SFILES := $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.S)))
 TTFFILES := $(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.ttf)))
@@ -129,38 +155,41 @@ $(BUILD)/%.o: %.c | $(BUILD) $(WBL_THIRD_PARTY_DEPS)
 $(BUILD)/%.o: %.cpp | $(BUILD) $(WBL_THIRD_PARTY_DEPS)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-# Binary data conversion (Wii uses bin2o macro from wii_rules)
-$(BUILD)/%.ttf.o: %.ttf | $(BUILD)
+# Binary data conversion.
+#
+# devkitPro's bin2o macro in base_tools outputs to $(<F).o in the
+# CURRENT directory, not to our $(BUILD) output path. Define our own
+# version that writes directly to $@ so the link step can find the
+# resulting objects.
+#
+# Modern bin2s (devkitPro) emits `NAME[]` and `NAME_end[]` as linker
+# symbols but defines `NAME_size` as a C++ constexpr in the generated
+# .h file - NOT as a linker symbol. Our app's src/filelist.h declares
+# `extern const u32 NAME_size;` expecting a real linker symbol.
+#
+# To bridge that, we append a small assembly stanza to each generated
+# .s that exports `NAME_size` as a 4-byte .int equal to
+# (NAME_end - NAME). This keeps both the legacy extern-symbol usage
+# and modern bin2s's constexpr header working, with no app-side churn.
+define wbl_bin2o
 	@echo $(notdir $<)
-	$(bin2o)
+	$(eval BIN2S_NAME := $(shell echo $(<F) | tr . _))
+	$(SILENTCMD)bin2s -a 32 -H $(BUILD)/$(BIN2S_NAME).h $< > $(BUILD)/$(<F).s
+	$(SILENTCMD)printf '\n\t.section .rodata.%s_size, "a"\n\t.balign 4\n\t.global %s_size\n%s_size:\n\t.int %s_end - %s\n' \
+		$(BIN2S_NAME) $(BIN2S_NAME) $(BIN2S_NAME) $(BIN2S_NAME) $(BIN2S_NAME) \
+		>> $(BUILD)/$(<F).s
+	$(SILENTCMD)$(CC) -x assembler-with-cpp $(CPPFLAGS) $(ASFLAGS) -c $(BUILD)/$(<F).s -o $@
+	@rm $(BUILD)/$(<F).s
+endef
 
-$(BUILD)/%.lang.o: %.lang | $(BUILD)
-	@echo $(notdir $<)
-	$(bin2o)
-
-$(BUILD)/%.png.o: %.png | $(BUILD)
-	@echo $(notdir $<)
-	$(bin2o)
-
-$(BUILD)/%.jpg.o: %.jpg | $(BUILD)
-	@echo $(notdir $<)
-	$(bin2o)
-
-$(BUILD)/%.gif.o: %.gif | $(BUILD)
-	@echo $(notdir $<)
-	$(bin2o)
-
-$(BUILD)/%.ogg.o: %.ogg | $(BUILD)
-	@echo $(notdir $<)
-	$(bin2o)
-
-$(BUILD)/%.pcm.o: %.pcm | $(BUILD)
-	@echo $(notdir $<)
-	$(bin2o)
-
-$(BUILD)/%.pem.o: %.pem | $(BUILD)
-	@echo $(notdir $<)
-	$(bin2o)
+$(BUILD)/%.ttf.o:  %.ttf  | $(BUILD) ; $(wbl_bin2o)
+$(BUILD)/%.lang.o: %.lang | $(BUILD) ; $(wbl_bin2o)
+$(BUILD)/%.png.o:  %.png  | $(BUILD) ; $(wbl_bin2o)
+$(BUILD)/%.jpg.o:  %.jpg  | $(BUILD) ; $(wbl_bin2o)
+$(BUILD)/%.gif.o:  %.gif  | $(BUILD) ; $(wbl_bin2o)
+$(BUILD)/%.ogg.o:  %.ogg  | $(BUILD) ; $(wbl_bin2o)
+$(BUILD)/%.pcm.o:  %.pcm  | $(BUILD) ; $(wbl_bin2o)
+$(BUILD)/%.pem.o:  %.pem  | $(BUILD) ; $(wbl_bin2o)
 
 # Link ELF
 $(TARGET).elf: $(OFILES) $(WBL_THIRD_PARTY_DEPS)

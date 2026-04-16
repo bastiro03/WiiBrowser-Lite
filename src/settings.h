@@ -33,7 +33,7 @@
 #include <stdio.h>
 #include <gctypes.h>
 
-#define N 9
+#define WBL_FAV_COUNT 9
 
 enum
 {
@@ -161,8 +161,8 @@ public:
 	bool IFrame;
 	bool CleanExit;
 
-	char *TopSites[N];
-	u8 *Thumbnails[N];
+	char *TopSites[WBL_FAV_COUNT];
+	u8 *Thumbnails[WBL_FAV_COUNT];
 
 	struct favorite *Favorites;
 

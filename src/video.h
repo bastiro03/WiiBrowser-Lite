@@ -25,4 +25,17 @@ extern int screenwidth;
 extern u32 FrameTimer;
 extern u8 *videoScreenshot;
 
+/* `vmode` must match the `extern "C"` declaration in
+ * include/mplayer/osdep/gx_supp.h (included from menu.cpp for the
+ * legacy-but-still-header-only MPlayer glue). Keeping C linkage here
+ * avoids a conflicting-declaration error when both headers are seen
+ * in the same translation unit. */
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern GXRModeObj *vmode;
+#ifdef __cplusplus
+}
+#endif
+
 #endif

@@ -239,8 +239,21 @@ void WaitExit()
 	}
 }
 
+// Embedded build fingerprint so `strings wiibrowserlite.dol | grep WBL_BUILD_ID`
+// reveals which commit + timestamp produced this binary. Declared `volatile`
+// + used below so LTO/--gc-sections don't strip it.
+#ifndef WBL_BUILD_ID_STRING
+#define WBL_BUILD_ID_STRING "WBL_BUILD_ID:unknown"
+#endif
+extern "C" {
+	volatile const char wbl_build_id[] = WBL_BUILD_ID_STRING;
+}
+
 int main(int argc, char *argv[])
 {
+	// Force a reference so the linker retains wbl_build_id.
+	fprintf(stderr, "%s\n", (const char *)wbl_build_id);
+
 	SYS_SetResetCallback(WiiResetPressed);
 	SYS_SetPowerCallback(WiiPowerPressed);
 	WPAD_SetPowerButtonCallback(WiimotePowerPressed);

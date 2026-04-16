@@ -73,6 +73,16 @@ WBL_CFLAGS := \
     -DWBL_PLATFORM_$(shell echo $(WBL_PLATFORM) | tr a-z A-Z) \
     -Iinclude
 
+# Embed a build-id string in every .o so the resulting .dol is
+# uniquely identifiable with `strings wiibrowserlite.dol | grep WBL_BUILD_ID`.
+# This lets us distinguish the latest build from a stale CI artifact or
+# a cached download. We use short SHA + UTC timestamp so even two builds
+# at the same commit differ (useful when rebuilding after a cache miss).
+WBL_BUILD_SHA := $(shell git rev-parse --short=12 HEAD 2>/dev/null || echo nogit)
+WBL_BUILD_TS := $(shell date -u +%Y%m%dT%H%M%SZ)
+WBL_BUILD_ID := WBL_BUILD_ID:$(WBL_BUILD_SHA)@$(WBL_BUILD_TS)
+WBL_CFLAGS += -DWBL_BUILD_ID_STRING='"$(WBL_BUILD_ID)"'
+
 # Headers for our third-party deps must come BEFORE portlib headers on the
 # search path so we pick up our pinned/patched versions rather than the
 # devkitpro portlibs copies of mbedtls/curl/etc.

@@ -204,7 +204,11 @@ jobs:
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: wiibrowser-lite-build
+        # Name includes the git SHA so it is obvious whether you are
+        # downloading the right build. Without this, every run uses
+        # the same name and it's easy to grab a stale artifact URL
+        # from a previous run's bookmark/tab.
+        name: wiibrowser-lite-build-${{ github.sha }}
         path: |
           wiibrowserlite.dol
           wiibrowserlite.elf
@@ -214,6 +218,21 @@ jobs:
     - name: Upload .dol for release
       uses: actions/upload-artifact@v4
       with:
-        name: wiibrowserlite.dol
+        name: wiibrowserlite.dol-${{ github.sha }}
         path: wiibrowserlite.dol
         retention-days: 90
+
+    - name: Report build fingerprint
+      # Print the sha256 + first-64-bytes hex + size of the .dol so the
+      # run log has a unique fingerprint; if you suspect a stale
+      # artifact, compare this against `sha256sum wiibrowserlite.dol`
+      # on the downloaded file.
+      run: |
+        echo "=== Build fingerprint (should match downloaded artifact) ==="
+        echo "commit:       ${{ github.sha }}"
+        echo "short-sha:    ${GITHUB_SHA::8}"
+        echo "size:         $(stat -c %s wiibrowserlite.dol) bytes"
+        echo "sha256:       $(sha256sum wiibrowserlite.dol | cut -d' ' -f1)"
+        echo "first-64:     $(head -c 64 wiibrowserlite.dol | od -A n -t x1 | tr -d ' \n')"
+        # Grep embedded build id (written by Makefile at link time)
+        echo "embedded-id:  $(strings wiibrowserlite.dol | grep WBL_BUILD_ID | head -1)"

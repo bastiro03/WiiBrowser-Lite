@@ -42,6 +42,8 @@ const char *NetErrStr(int neg_errno)
 	switch (e) {
 		case 0:              return "OK";
 		case EBUSY:          return "EBUSY (init still in progress)";
+		case EINPROGRESS:    return "EINPROGRESS (async connect pending - wait for select)";
+		case EALREADY:       return "EALREADY (connect on a socket already connecting)";
 		case ETIMEDOUT:      return "ETIMEDOUT (no reply - ARP/SYN retries exhausted)";
 		case ECONNREFUSED:   return "ECONNREFUSED (TCP RST - host reachable, port closed)";
 		case EHOSTUNREACH:   return "EHOSTUNREACH (ICMP Dest Unreachable - host code 1)";
@@ -193,13 +195,76 @@ bool CheckConnection()
 	strncpy(g_netdiag.target_ip, "8.8.8.8", sizeof(g_netdiag.target_ip) - 1);
 	g_netdiag.target_ip[sizeof(g_netdiag.target_ip) - 1] = '\0';
 
+	// Dolphin's IOS_NET emulator treats SO_CONNECT as asynchronous: the
+	// first call returns immediately (often with -EINPROGRESS), and the
+	// handshake completes in the background. Subsequent connect() calls
+	// on the same socket return -EALREADY ("Operation already in
+	// progress") until the first one finishes.
+	//
+	// On real Wii hardware the behavior is similar - libogc's net_connect
+	// can return early if the IOS socket is in non-blocking mode.
+	//
+	// Correct pattern: issue connect(), then use select() to wait for
+	// writability (= handshake complete) with a bounded timeout. Treat
+	// EINPROGRESS/EALREADY on the initial connect as "pending, go wait"
+	// rather than "failed".
 	u64 connect_start = gettime();
 	int res = net_connect(s, (struct sockaddr *)&sa, sizeof(struct sockaddr_in));
+
+	bool connected = false;
+	if (res == 0)
+	{
+		// Fast path: some IOS builds actually block until complete.
+		connected = true;
+	}
+	else if (res == -EINPROGRESS || res == -EALREADY)
+	{
+		// Handshake running in background - wait up to 3s for the
+		// socket to become writable, then check SO_ERROR to confirm
+		// the connect actually succeeded (and wasn't silently rejected).
+		fd_set wset;
+		FD_ZERO(&wset);
+		FD_SET(s, &wset);
+
+		struct timeval tv;
+		tv.tv_sec = 3;
+		tv.tv_usec = 0;
+
+		int sel = net_select(s + 1, NULL, &wset, NULL, &tv);
+		if (sel > 0 && FD_ISSET(s, &wset))
+		{
+			int so_err = 0;
+			socklen_t elen = sizeof(so_err);
+			int go = net_getsockopt(s, SOL_SOCKET, SO_ERROR,
+			                        &so_err, &elen);
+			if (go == 0 && so_err == 0)
+			{
+				connected = true;
+			}
+			else
+			{
+				// Remember whichever layer returned the real error.
+				res = (go != 0) ? go : -so_err;
+			}
+		}
+		else if (sel == 0)
+		{
+			// select() timed out - handshake never completed
+			res = -ETIMEDOUT;
+		}
+		else
+		{
+			// select() itself failed
+			res = sel;
+		}
+	}
+	// else: res is some other negative errno, leave it for diag
+
 	g_netdiag.connect_elapsed_ms = ticks_delta_ms(connect_start, gettime());
 
 	net_close(s);
 
-	if (res < 0)
+	if (!connected)
 	{
 		g_netdiag.stage    = NET_STAGE_CONNECT;
 		g_netdiag.last_res = res;

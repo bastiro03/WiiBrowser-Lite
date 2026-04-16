@@ -127,63 +127,38 @@ jobs:
         ls -la third_party/
         git submodule status
 
-    # Cache disabled until CI is green - force fresh builds so we
-    # know the build chain works from scratch.
-    # Re-enable once we have a known-good baseline.
-    # - name: Cache third_party Wii builds
-    #   uses: actions/cache@v4
-    #   ...
+    # Cache the Wii cross-built third_party libraries. Key hashes
+    # the submodule pinned commit + patch stack + our build
+    # config, so any change to patches/config/pin invalidates
+    # the cache automatically.
+    - name: Cache third_party Wii builds
+      uses: actions/cache@v4
+      with:
+        key: wii-thirdparty-${{ hashFiles('.gitmodules', 'third_party/*-patches/*.patch', 'include/wbl/mbedtls_config.h', 'third_party/*.mk', 'platform/wii/build.mk') }}-${{ hashFiles('.git/modules/third_party/**/HEAD') }}
+        restore-keys: |
+          wii-thirdparty-
+        path: |
+          third_party/mbedtls/library/*.a
+          third_party/mbedtls/library/*.o
+          third_party/mbedtls/.wbl-patches-applied
+          third_party/curl/lib/.libs/*.a
+          third_party/curl/lib/*.lo
+          third_party/curl/config.status
+          third_party/curl/config.log
+          third_party/curl/Makefile
+          third_party/quickjs/.wbl-patches-applied
+          build/wii/libquickjs.a
+          build/wii/quickjs/*.o
 
     - name: Build WiiBrowser-Lite (Wii, PowerPC, -flto)
-      shell: bash {0}    # no -eo pipefail
       env:
         PATH: /opt/devkitpro/devkitPPC/bin:/opt/devkitpro/tools/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
       run: |
         git config --global --add safe.directory '*'
-        {
-          echo '=== pwd ==='
-          pwd
-          echo '=== ls -la (pre-build) ==='
-          ls -la
-          echo '=== make -p output for all target ==='
-          make WBL_PLATFORM=wii -pn 2>&1 | grep -A3 -E '^all:|^\$\(TARGET\).elf|^\$\(TARGET\).dol|^wiibrowserlite' | head -20
-          echo '=== make run ==='
-        } > wii-build.log 2>&1
+        make WBL_PLATFORM=wii -j$(nproc) 2>&1 | tee wii-build.log
+        exit ${PIPESTATUS[0]}
 
-        make WBL_PLATFORM=wii </dev/null >> wii-build.log 2>&1
-        rc=$?
-
-        {
-          echo ''
-          echo "=== make exit code: $rc ==="
-          echo '=== ls -la (post-build) ==='
-          ls -la
-          echo '=== find . -name *.dol -o -name *.elf ==='
-          find . -maxdepth 3 \( -name '*.dol' -o -name '*.elf' \) 2>&1 | head -10
-          echo '=== third_party .a files ==='
-          find third_party -name '*.a' 2>&1 | head -10
-        } >> wii-build.log 2>&1
-
-        # Emit key lines: any "Error", "error", "undefined ref",
-        # plus the start of the make run plus the last 5 lines.
-        if [ -s wii-build.log ]; then
-          (
-              echo '-- starts at --'
-              grep -n . wii-build.log | head -8
-              echo '-- errors --'
-              grep -inE 'error[:0-9 ]|undefined reference|stop\.|make:|not found|fatal|cannot find' wii-build.log | head -8
-              echo '-- exit marker --'
-              grep -n 'make exit code' wii-build.log
-              echo '-- last 5 --'
-              tail -5 wii-build.log
-          ) | while IFS= read -r line; do
-              safe=$(echo "$line" | head -c 400 | sed 's/%/%25/g; s/\r/%0D/g')
-              echo "::error::${safe}"
-          done
-        fi
-        exit $rc
-
-    - name: Upload Wii build log (for debugging failures)
+    - name: Upload Wii build log (always)
       if: always()
       uses: actions/upload-artifact@v4
       with:
@@ -192,72 +167,11 @@ jobs:
         retention-days: 7
         if-no-files-found: warn
 
-    # Write the full build log into GITHUB_STEP_SUMMARY so it shows up
-    # on the run summary page (no auth required to view from the
-    # rendered HTML; can also be fetched via raw HTML view).
-    - name: Upload log to termbin (public, no auth)
-      if: failure()
-      shell: bash {0}
-      run: |
-        if [ -s wii-build.log ]; then
-          URL=$(cat wii-build.log | timeout 30 nc termbin.com 9999 2>&1 | tr -d '\0\r\n' | tr -c '[:print:]' '?' || echo "TERMBIN-FAILED")
-          # Use ::error:: so it's captured via check-runs/annotations endpoint
-          echo "::error::WII_BUILD_LOG_URL=${URL}"
-          echo "### Build log URL: $URL" >> "$GITHUB_STEP_SUMMARY"
-          echo "BUILD LOG URL: $URL"
-        else
-          echo "::error::wii-build.log is empty"
-        fi
-
-    - name: Emit errors as GitHub annotations (visible in CI API)
+    - name: Dump build log tail on failure
       if: failure()
       run: |
-        emit() {
-          local line="$1"
-          local safe=$(echo "$line" | sed 's/%/%25/g; s/\r/%0D/g; s/\n/%0A/g')
-          # Truncate to fit within annotation limits
-          echo "::error::${safe:0:480}"
-        }
-        # First show what fraction of the log we have
-        LINES=$(wc -l <wii-build.log 2>/dev/null || echo 0)
-        emit "wii-build.log has $LINES lines total"
-
-        # Grep for errors (any case)
-        grep -inE 'error|undefined reference|fatal|No such file|cannot find|stop\.|aborted|killed|recipe for target' wii-build.log 2>/dev/null | head -7 | while IFS= read -r line; do
-          emit "match: $line"
-        done
-        true
-
-    - name: Dump build log on failure (so error shows in CI output)
-      if: failure()
-      run: |
-        {
-          echo '## Wii build failure'
-          echo ''
-          echo '### errors grep'
-          echo '```'
-          grep -E 'error:|undefined reference|fatal error|No such file|Error [0-9]|make.*Error' wii-build.log | head -50 || echo "(nothing matched)"
-          echo '```'
-          echo ''
-          echo '### wii-build.log (last 150 lines)'
-          echo '```'
-          tail -150 wii-build.log || true
-          echo '```'
-          echo ''
-          echo '### artifact presence'
-          echo '```'
-          echo "third_party/curl:"
-          ls -la third_party/curl/lib/.libs/*.a 2>&1 || echo "  (none)"
-          echo "third_party/mbedtls:"
-          ls -la third_party/mbedtls/library/*.a 2>&1 || echo "  (none)"
-          echo "build/libquickjs.a:"
-          ls -la build/libquickjs.a 2>&1 || echo "  (none)"
-          echo "build/wii:"
-          ls -la build/wii 2>&1 | head -20 || echo "  (none)"
-          echo '```'
-        } | tee -a "$GITHUB_STEP_SUMMARY"
-        # Also echo to stdout for webhook consumers
-        cat "$GITHUB_STEP_SUMMARY"
+        echo "=== last 60 lines of wii-build.log ==="
+        tail -60 wii-build.log 2>/dev/null || echo "(no log)"
 
     - name: Verify build artifacts exist
       run: |

@@ -10,10 +10,15 @@ WBL_PLATFORM ?= wii
 
 # Project Name MUST be set before we include the platform-specific
 # build.mk, because the platform file uses $(TARGET) to build
-# target-output names like $(TARGET).dol. If TARGET were set after,
-# $(TARGET_OUT) would expand to just ".dol" and `make all` would
-# silently succeed without building anything.
+# target-output names like $(TARGET).dol.
 TARGET ?= wiibrowserlite
+
+# Default goal MUST be declared before we include any third_party/*.mk,
+# because make uses the FIRST rule defined as the default target. The
+# third_party makefiles define rules for libmbedtls.a etc. that would
+# otherwise become the default, making `make` silently build just one
+# library and exit without producing our .dol.
+.DEFAULT_GOAL := all
 
 # Include platform-specific build config
 include platform/$(WBL_PLATFORM)/build.mk

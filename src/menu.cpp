@@ -1937,13 +1937,28 @@ jump:
 	if (!CheckConnection())
 		InitNetwork();
 
-	while (!networkinit)
+	// Wait for network initialization with reasonable UI update rate.
+	// Setting text on every 1ms iteration caused rapid flicker in Dolphin.
+	staticTxt.SetText("Resuming connection...");
+	int net_timeout = 100;  // 100 * 50ms = 5 seconds max wait
+	while (!networkinit && net_timeout > 0)
 	{
-		staticTxt.SetText("Resuming connection...");
-
 		if (LWP_ThreadIsSuspended(networkthread))
 			InitNetwork();
-		usleep(1000);
+		usleep(50000);  // 50ms = 20 Hz update rate (was 1ms = 1000 Hz)
+		net_timeout--;
+	}
+
+	if (!networkinit)
+	{
+		// Network init timed out after 5 seconds. Show error and bail.
+		staticTxt.SetText("Network connection failed.\nCheck emulator network settings.");
+		usleep(2000000);  // Show error for 2 seconds
+		HaltGui();
+		mainWindow->Remove(&promptWindow);
+		mainWindow->SetState(STATE_DEFAULT);
+		ResumeGui();
+		return;
 	}
 
 	staticTxt.SetText("Loading...please wait");

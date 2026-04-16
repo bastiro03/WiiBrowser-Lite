@@ -91,7 +91,10 @@ curl_smoke: curl_smoke.c $(CURL_LIB) $(MBEDTLS_LIBS)
 	$(CC) $(LTO_CFLAGS) $(LTO_LDFLAGS) -I$(CURL_DIR)/include -Wall \
 	    $< $(CURL_LIB) $(MBEDTLS_LIBS) -lz -o $@
 
-# network_stress doesn't need third_party libs (just mocks the Wii network API)
+# network_stress: tests the InitNetwork() invariant that the bug fix
+# establishes. Verifies the BUGGY version fails the invariant checks
+# (bug reproduced) and the FIXED version passes them (bug gone). ASAN
+# also catches any heap bugs in the test harness itself.
 network_stress: network_stress.c
 	$(CC) $(CFLAGS) $(SANITIZE_FLAGS) $< -o $@
 

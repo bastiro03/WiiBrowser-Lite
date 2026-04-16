@@ -22,6 +22,17 @@ CURL_CONFIGURE_FLAGS := \
     --without-libssh2 \
     --without-nghttp2 \
     --without-ngtcp2 \
+    --without-gsasl \
+    --without-libgsasl \
+    --without-gssapi \
+    --without-libssh \
+    --without-wolfssh \
+    --without-msh3 \
+    --without-quiche \
+    --without-openssl-quic \
+    --without-ca-bundle \
+    --without-ca-path \
+    --without-ca-fallback \
     --with-mbedtls=$(CURDIR)/$(MBEDTLS_DIR) \
     --enable-http \
     --enable-proxy \
@@ -64,10 +75,12 @@ CURL_LIB := $(CURL_DIR)/lib/.libs/libcurl.a
 CURL_PATCHES := $(sort $(wildcard third_party/curl-patches/*.patch))
 
 # Same LTO archiver as mbedtls.mk uses (see comment there).
-AR_LTO_PROBE     := $(shell $(CC) -print-prog-name=gcc-ar 2>/dev/null)
-RANLIB_LTO_PROBE := $(shell $(CC) -print-prog-name=gcc-ranlib 2>/dev/null)
-AR_LTO     := $(if $(wildcard $(AR_LTO_PROBE)),$(AR_LTO_PROBE),$(AR))
-RANLIB_LTO := $(if $(wildcard $(RANLIB_LTO_PROBE)),$(RANLIB_LTO_PROBE),$(RANLIB))
+AR_LTO     := $(patsubst %-gcc,%-gcc-ar,$(CC))
+RANLIB_LTO := $(patsubst %-gcc,%-gcc-ranlib,$(CC))
+ifeq ($(wildcard $(AR_LTO)),)
+AR_LTO     := $(AR)
+RANLIB_LTO := $(RANLIB)
+endif
 
 # Cross-compile autoconf cache variables. When building for PPC/ARM,
 # curl's configure script wants to run test programs on the target to
@@ -95,7 +108,20 @@ CURL_CROSS_CACHE := \
     ac_cv_func_eventfd=no \
     ac_cv_func_fsetxattr=no \
     ac_cv_func_pipe2=no \
-    ac_cv_func_if_nametoindex=no
+    ac_cv_func_if_nametoindex=no \
+    ac_cv_func_socketpair=no \
+    ac_cv_func_getifaddrs=no \
+    ac_cv_func_fork=no \
+    ac_cv_func_setrlimit=no \
+    curl_disallow_socketpair=yes \
+    curl_disallow_getifaddrs=yes \
+    curl_disallow_fork=yes \
+    curl_disallow_pipe=yes \
+    curl_disallow_alarm=yes \
+    curl_disallow_sigaction=yes \
+    curl_disallow_sigsetjmp=yes \
+    curl_disallow_siginterrupt=yes \
+    curl_disallow_poll=yes
 
 $(CURL_LIB): | $(MBEDTLS_LIB)
 	@for p in $(abspath $(CURL_PATCHES)); do \
@@ -106,12 +132,31 @@ $(CURL_LIB): | $(MBEDTLS_LIB)
 	cd $(CURL_DIR) && [ -x ./configure ] || autoreconf -fi
 	# Use include-path override for mbedTLS config rather than
 	# -DMBEDTLS_CONFIG_FILE='"..."' (nested quotes get eaten by autoconf).
+	#
+	# Link-path notes for Wii (libogc):
+	# - libogc's sys/socket.h declares socket(), connect(), etc. but the
+	#   actual symbols are inside libnetport (which delegates to libogc's
+	#   net_socket()). Without -lnetport on LDFLAGS, curl's configure
+	#   link test for socket() fails and transfer.c fires
+	#   "#error We cannot compile without socket() support!".
+	# - libnetport itself requires -logc for net_*, so list both.
+	# CPPFLAGS needs libogc + portlib + mbedtls-wbl-config paths so
+	# curl's preprocessor-based feature checks (e.g. "is socket
+	# prototyped") can find <sys/socket.h> from libogc. Without it,
+	# curl thinks sockets are unavailable and fires
+	# "#error We cannot compile without socket() support!"
 	cd $(CURL_DIR) && env $(CURL_CROSS_CACHE) \
 	    CC="$(CC)" AR="$(AR_LTO)" RANLIB="$(RANLIB_LTO)" \
 	    CFLAGS="$(CFLAGS) -I$(CURDIR)/third_party/mbedtls-wbl-config -I$(CURDIR)/$(MBEDTLS_DIR)/include" \
-	    LDFLAGS="$(LDFLAGS) -L$(CURDIR)/$(MBEDTLS_DIR)/library" \
+	    CPPFLAGS="-I$(LIBOGC_INC) -I$(PORTLIBS_INC) -I$(CURDIR)/third_party/mbedtls-wbl-config -I$(CURDIR)/$(MBEDTLS_DIR)/include" \
+	    LDFLAGS="$(LDFLAGS) -L$(CURDIR)/$(MBEDTLS_DIR)/library -L$(CURDIR)/libs/wii -L$(LIBOGC_LIB)" \
+	    LIBS="-lnetport -logc" \
 	    ./configure $(CURL_CONFIGURE_FLAGS)
-	$(MAKE) -C $(CURL_DIR) \
+	# Build ONLY the libcurl archive, not the `curl` CLI binary.
+	# The CLI would link against mbedtls and need mbedtls_hardware_poll
+	# + mbedtls_ms_time from our hooks - but those live in the app,
+	# not in a standalone libmbedtls.a. We only need libcurl.a anyway.
+	$(MAKE) -C $(CURL_DIR)/lib \
 	    AR="$(AR_LTO)" RANLIB="$(RANLIB_LTO)"
 
 .PHONY: curl-clean

@@ -32,10 +32,11 @@ QUICKJS_CFLAGS := \
 # We inherit it and add only QuickJS-specific flags. Object files will
 # contain LTO bitcode so the final link can inline across QuickJS -> app.
 
-# Compile rule - use the compiler's ar wrapper so the linker plugin
-# knows how to look up LTO symbols in the archive.
-AR_LTO := $(shell $(CC) -print-prog-name=ar 2>/dev/null)
-ifeq ($(AR_LTO),)
+# Use gcc-ar so LTO bitcode in each .o is indexed properly (see
+# mbedtls.mk for full rationale). Derive from $(CC) by swapping
+# the trailing -gcc for -gcc-ar.
+AR_LTO := $(patsubst %-gcc,%-gcc-ar,$(CC))
+ifeq ($(wildcard $(AR_LTO)),)
 AR_LTO := $(AR)
 endif
 

@@ -24,16 +24,22 @@ MBEDTLS_PATCHES := $(sort $(wildcard third_party/mbedtls-patches/*.patch))
 
 # Use gcc-ar/gcc-ranlib so LTO bitcode in each .o ends up properly
 # indexed in the archive symbol table. Plain 'ar' drops the LTO
-# symbol index and the final link silently falls back to non-LTO
-# across the library boundary.
+# symbol index, the linker plugin can't find LTO symbols inside our
+# archives, and the final link fails with undefined references.
 #
-# `gcc -print-prog-name=X` returns either the full path to X if found
-# or the literal name "X" if not found. We check existence on disk
-# rather than just relying on the return value being empty.
-AR_LTO_PROBE     := $(shell $(CC) -print-prog-name=gcc-ar 2>/dev/null)
-RANLIB_LTO_PROBE := $(shell $(CC) -print-prog-name=gcc-ranlib 2>/dev/null)
-AR_LTO     := $(if $(wildcard $(AR_LTO_PROBE)),$(AR_LTO_PROBE),$(AR))
-RANLIB_LTO := $(if $(wildcard $(RANLIB_LTO_PROBE)),$(RANLIB_LTO_PROBE),$(RANLIB))
+# Strategy: derive the gcc-ar / gcc-ranlib paths from $(CC) by
+# substituting "-gcc" at the end with "-gcc-ar" / "-gcc-ranlib".
+# e.g. CC=/opt/.../powerpc-eabi-gcc -> /opt/.../powerpc-eabi-gcc-ar
+# This works for both devkitPPC (no -print-prog-name support for
+# these) and mainline toolchains (where the derived path exists
+# alongside gcc).
+AR_LTO     := $(patsubst %-gcc,%-gcc-ar,$(CC))
+RANLIB_LTO := $(patsubst %-gcc,%-gcc-ranlib,$(CC))
+# Fall back to plain AR/RANLIB if the derived path doesn't exist
+ifeq ($(wildcard $(AR_LTO)),)
+AR_LTO     := $(AR)
+RANLIB_LTO := $(RANLIB)
+endif
 
 # Patches from third_party/mbedtls-patches/ must be applied to the
 # submodule SOURCE TREE before any compile, because some patches affect

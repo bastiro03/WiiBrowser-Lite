@@ -13,6 +13,17 @@ WBL_PLATFORM ?= wii
 # target-output names like $(TARGET).dol.
 TARGET ?= wiibrowserlite
 
+# SOURCES list is used by platform/*/build.mk to add -Isrc/subdir to
+# CFLAGS (so our app source can resolve #include "foo.h" relative
+# to src/<subdir>). Must be set before the platform include.
+#
+# Exclusions:
+# - src/archiveoperations/: legacy libunrar+libsevenzip wrappers that
+#   don't compile against current unrarlib headers (TODO: migrate to
+#   submodules). Not needed for Wikipedia browsing. Filter so the
+#   directory's .cpp files don't appear in CPPFILES.
+SOURCES := $(filter-out src/archiveoperations, $(shell find src -type d))
+
 # Default goal MUST be declared before we include any third_party/*.mk,
 # because make uses the FIRST rule defined as the default target. The
 # third_party makefiles define rules for libmbedtls.a etc. that would
@@ -25,7 +36,7 @@ include platform/$(WBL_PLATFORM)/build.mk
 
 # Directories
 BUILD := build/$(WBL_PLATFORM)
-SOURCES := $(shell find src -type d)
+# SOURCES set above, pre-platform-include
 DATA := images images/appbar fonts sounds certs
 INCLUDES := include
 

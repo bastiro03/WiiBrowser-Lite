@@ -115,8 +115,15 @@
  * by default so no runtime overhead in release builds. */
 #define MBEDTLS_DEBUG_C
 
-/* Network I/O helpers */
-#define MBEDTLS_NET_C
+/* Network I/O helpers - ONLY on host. On console targets (Wii/DS/DSi),
+ * there is no POSIX BSD socket layer - libcurl handles all networking
+ * through its own socket abstraction (which on Wii goes through libogc's
+ * net_* functions). MBEDTLS_NET_C compiles net_sockets.c which #errors
+ * on anything that isn't Unix/Windows. */
+#if !defined(WBL_PLATFORM_WII) && !defined(WBL_PLATFORM_DSI) && \
+    !defined(WBL_PLATFORM_NDS) && !defined(WBL_PLATFORM_MACPLUS)
+#  define MBEDTLS_NET_C
+#endif
 
 /* Filesystem - host testing only (consoles use baked-in cert PEM) */
 #if !defined(WBL_PLATFORM_WII) && !defined(WBL_PLATFORM_DSI) && \

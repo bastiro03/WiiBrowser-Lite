@@ -45,6 +45,13 @@ CFLAGS := $(LTO_CFLAGS) -I../include \
           -DWBL_PLATFORM_HOST=1 \
           -Wall -Wno-unused-function
 
+# ASAN/UBSAN for host smoke tests (not available on Wii cross-compile).
+# ASAN catches heap bugs (use-after-free, double-free, buffer overruns).
+# UBSAN catches undefined behavior (integer overflow, null deref, etc.).
+# Leak sanitizer piggybacks on ASAN when available.
+SANITIZE_FLAGS := -fsanitize=address,undefined -fno-omit-frame-pointer
+CFLAGS += $(SANITIZE_FLAGS)
+
 MBEDTLS_LIBS := $(MBEDTLS_DIR)/library/libmbedtls.a \
                 $(MBEDTLS_DIR)/library/libmbedx509.a \
                 $(MBEDTLS_DIR)/library/libmbedcrypto.a
@@ -53,7 +60,7 @@ QUICKJS_LIBS := $(QUICKJS_DIR)/libquickjs.a
 
 CURL_LIB := $(CURL_DIR)/lib/.libs/libcurl.a
 
-all: tls_smoke js_smoke curl_smoke
+all: tls_smoke js_smoke curl_smoke network_stress
 	@echo ""
 	@echo "=== tls_smoke (raw mbedTLS handshake) ==="
 	./tls_smoke
@@ -63,6 +70,9 @@ all: tls_smoke js_smoke curl_smoke
 	@echo ""
 	@echo "=== js_smoke (QuickJS wrapper) ==="
 	./js_smoke
+	@echo ""
+	@echo "=== network_stress (net_init/deinit cycling with ASAN/UBSAN) ==="
+	./network_stress
 
 # Build each test binary with LTO_LDFLAGS so the linker plugin
 # runs over all of our static archives.
@@ -80,6 +90,10 @@ js_smoke: js_smoke.c ../src/wbl/js_engine.c $(QUICKJS_LIBS)
 curl_smoke: curl_smoke.c $(CURL_LIB) $(MBEDTLS_LIBS)
 	$(CC) $(LTO_CFLAGS) $(LTO_LDFLAGS) -I$(CURL_DIR)/include -Wall \
 	    $< $(CURL_LIB) $(MBEDTLS_LIBS) -lz -o $@
+
+# network_stress doesn't need third_party libs (just mocks the Wii network API)
+network_stress: network_stress.c
+	$(CC) $(CFLAGS) $(SANITIZE_FLAGS) $< -o $@
 
 MBEDTLS_PATCHES := $(sort $(wildcard ../third_party/mbedtls-patches/*.patch))
 CURL_PATCHES    := $(sort $(wildcard ../third_party/curl-patches/*.patch))
@@ -161,7 +175,7 @@ lto_check: $(MBEDTLS_LIBS) $(QUICKJS_LIBS) $(CURL_LIB)
 	done
 
 clean:
-	rm -f tls_smoke js_smoke curl_smoke *.o
+	rm -f tls_smoke js_smoke curl_smoke network_stress *.o
 	cd $(MBEDTLS_DIR)/library && $(MAKE) clean
 	cd $(QUICKJS_DIR) && rm -f *.o libquickjs.a
 	-cd $(CURL_DIR) && $(MAKE) distclean 2>/dev/null || true

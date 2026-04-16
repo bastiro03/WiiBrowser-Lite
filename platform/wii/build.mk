@@ -37,8 +37,24 @@ PORTLIBS_LIB ?= $(DEVKITPRO)/portlibs/ppc/lib
 WBL_HAS_JAVASCRIPT := 1
 WBL_HAS_HTTPS      := 1
 
-# Compiler flags - aggressive size + LTO + dead code elimination
-CFLAGS := -DGEKKO -Os -Wall -mrvl -mcpu=750 -meabi -mhard-float -flto \
+# Debug build mode: WBL_DEBUG=1 disables LTO and enables full debug symbols.
+# Use this for Dolphin debugging (addr2line will give exact source lines,
+# no LTO function-merging confusion). Default: release build with LTO.
+#
+# Example:
+#   make WBL_PLATFORM=wii WBL_DEBUG=1
+ifeq ($(WBL_DEBUG),1)
+OPT_FLAGS := -O0 -g3 -fno-lto -fno-inline
+LTO_LINK_FLAGS :=
+BUILD_SUFFIX := -debug
+else
+OPT_FLAGS := -Os -flto
+LTO_LINK_FLAGS := -flto -fuse-linker-plugin -flto-partition=one
+BUILD_SUFFIX :=
+endif
+
+# Compiler flags - aggressive size + LTO + dead code elimination (or -O0 -g for debug)
+CFLAGS := -DGEKKO $(OPT_FLAGS) -Wall -mrvl -mcpu=750 -meabi -mhard-float \
                 -ffunction-sections -fdata-sections \
                 -Wno-implicit-function-declaration \
                 -Wno-incompatible-pointer-types \
@@ -50,7 +66,7 @@ CFLAGS := -DGEKKO -Os -Wall -mrvl -mcpu=750 -meabi -mhard-float -flto \
 
 CXXFLAGS := $(CFLAGS) -fno-exceptions -fno-rtti
 
-# Final-link flags. Key LTO bits:
+# Final-link flags. Key LTO bits (disabled if WBL_DEBUG=1):
 #   -flto                  turn on the gcc driver's LTO pass
 #   -fuse-linker-plugin    enable the linker plugin (gold/lld/bfd+plugin)
 #                          so the linker can read LTO IR from static libs
@@ -62,8 +78,8 @@ CXXFLAGS := $(CFLAGS) -fno-exceptions -fno-rtti
 #                          -ffunction-sections/-fdata-sections we used
 #                          during compile)
 LDFLAGS := -DGEKKO -mrvl -mcpu=750 -meabi -mhard-float \
-                -flto -fuse-linker-plugin -flto-partition=one \
-                -Wl,-Map,$(TARGET).map -Wl,--gc-sections \
+                $(LTO_LINK_FLAGS) \
+                -Wl,-Map,$(TARGET)$(BUILD_SUFFIX).map -Wl,--gc-sections \
                 -L$(LIBOGC_LIB) -L$(PORTLIBS_LIB) -L$(CURDIR)/libs/wii
 
 # Wii-specific libraries.
@@ -98,7 +114,7 @@ LIBS := -lfribidi -ljpeg -liconv -ldi -lpng -lz \
         -lfreetype -lharfbuzz -lbrotlidec -lbrotlicommon -lbz2 -lexif \
         -lstdc++ -lsupc++
 
-# Output: .dol file for Wii
-TARGET_OUT := $(TARGET).dol
+# Output: .dol file for Wii (wiibrowserlite.dol or wiibrowserlite-debug.dol)
+TARGET_OUT := $(TARGET)$(BUILD_SUFFIX).dol
 
 export WBL_HAS_JAVASCRIPT WBL_HAS_HTTPS

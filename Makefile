@@ -201,18 +201,19 @@ $(BUILD)/%.ogg.o:  %.ogg  | $(BUILD) ; $(wbl_bin2o)
 $(BUILD)/%.pcm.o:  %.pcm  | $(BUILD) ; $(wbl_bin2o)
 $(BUILD)/%.pem.o:  %.pem  | $(BUILD) ; $(wbl_bin2o)
 
-# Link ELF
-$(TARGET).elf: $(OFILES) $(WBL_THIRD_PARTY_DEPS)
+# Link ELF (BUILD_SUFFIX is set by platform/*.mk, e.g. -debug for WBL_DEBUG=1)
+$(TARGET)$(BUILD_SUFFIX).elf: $(OFILES) $(WBL_THIRD_PARTY_DEPS)
 	$(CC) $(LDFLAGS) -o $@ $(OFILES) $(WBL_THIRD_PARTY_LIBS) $(LIBS)
 
 # Convert ELF to DOL (Wii-specific; other platforms override TARGET_OUT rule)
-$(TARGET).dol: $(TARGET).elf
+$(TARGET)$(BUILD_SUFFIX).dol: $(TARGET)$(BUILD_SUFFIX).elf
 	elf2dol $< $@
 
 # Clean
 clean:
 	@echo "Cleaning..."
-	@rm -rf $(BUILD) $(TARGET).elf $(TARGET).dol $(TARGET).map
+	@rm -rf $(BUILD) $(TARGET).elf $(TARGET).dol $(TARGET).map \
+	        $(TARGET)-debug.elf $(TARGET)-debug.dol $(TARGET)-debug.map
 
 # Deep clean - also wipes third-party builds
 distclean: clean quickjs-clean mbedtls-clean curl-clean

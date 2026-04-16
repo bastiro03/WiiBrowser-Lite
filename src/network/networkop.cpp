@@ -168,7 +168,7 @@ void *NetworkThread(void *arg)
 			}
 
 			retry--;
-			usleep(2000);
+			usleep(500000);  // 500ms delay between retries (was 2ms — way too aggressive)
 		}
 
 		if (!networkThreadHalt)
@@ -180,12 +180,24 @@ void *NetworkThread(void *arg)
 void InitNetwork()
 {
 	networkThreadHalt = 0;
-	networkinit = false;
 
-	if (networkthread == LWP_THREAD_NULL)
+	// Only reset networkinit to false when CREATING the thread for the
+	// first time. If we're resuming an existing thread (e.g. from the
+	// DownloadThread wait loop), leave networkinit at its current value
+	// so we don't create a feedback loop where calling InitNetwork()
+	// while polling on networkinit prevents it from ever becoming true.
+	//
+	// The bug: DownloadThread / MenuBrowse both have:
+	//   while (!networkinit) { if (suspended) InitNetwork(); usleep(50ms); }
+	// If InitNetwork unconditionally sets networkinit=false, the loop
+	// resets it to false faster than NetworkThread can set it to true.
+	if (networkthread == LWP_THREAD_NULL) {
+		networkinit = false;  // Reset state for new init attempt
 		LWP_CreateThread(&networkthread, NetworkThread, NULL, networkstack, GUITH_STACK, 30);
-	else
+	} else {
 		LWP_ResumeThread(networkthread);
+		// Keep existing networkinit value — thread will update when done
+	}
 }
 
 void StopNetwork()

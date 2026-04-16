@@ -6,11 +6,15 @@
 *.map
 wiibrowserlite.elf
 wiibrowserlite.dol
+wiibrowserlite-debug.elf
+wiibrowserlite-debug.dol
+wiibrowserlite-debug.map
 
 # Test binaries (rebuilt each run by tests/Makefile)
 tests/tls_smoke
 tests/js_smoke
 tests/curl_smoke
+tests/network_stress
 
 # Third-party build artifacts (never committed - curl submodule working tree)
 third_party/curl/config.log

@@ -1,10 +1,20 @@
+; `ignore = dirty` tells the outer repo to hide working-tree modifications
+; inside each submodule from `git status`. We still track pinned-commit
+; bumps (the submodule's HEAD OID) — what we're hiding is the build-time
+; application of third_party/<name>-patches/*.patch, plus stray artifacts
+; like autoconf's link-test output. Without this, every successful build
+; leaves `git status` dirty and trips up the stop-hook git check.
+
 [submodule "third_party/quickjs"]
 	path = third_party/quickjs
 	url = https://github.com/quickjs-ng/quickjs.git
 	branch = master
+	ignore = dirty
 [submodule "third_party/mbedtls"]
 	path = third_party/mbedtls
 	url = https://github.com/Mbed-TLS/mbedtls.git
+	ignore = dirty
 [submodule "third_party/curl"]
 	path = third_party/curl
 	url = https://github.com/curl/curl.git
+	ignore = dirty

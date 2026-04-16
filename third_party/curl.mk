@@ -130,6 +130,12 @@ $(CURL_LIB): | $(MBEDTLS_LIB)
 	        || true; \
 	done
 	cd $(CURL_DIR) && [ -x ./configure ] || autoreconf -fi
+	# If config.status exists, wipe it so we don't inherit stale cache
+	# results from a previous build that lacked our CURL_CROSS_CACHE
+	# env overrides (e.g. ac_cv_func_accept4=no). CI cache + incremental
+	# local builds would otherwise keep a configure result from before
+	# commit 8ddb5cc, causing accept4 implicit-decl errors at compile.
+	cd $(CURL_DIR) && [ ! -f config.status ] || $(MAKE) distclean
 	# Use include-path override for mbedTLS config rather than
 	# -DMBEDTLS_CONFIG_FILE='"..."' (nested quotes get eaten by autoconf).
 	#

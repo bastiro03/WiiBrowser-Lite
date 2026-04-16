@@ -230,7 +230,7 @@ jobs:
       run: |
         echo "=== Build fingerprint (should match downloaded artifact) ==="
         echo "commit:       ${{ github.sha }}"
-        echo "short-sha:    ${GITHUB_SHA::8}"
+        echo "short-sha:    $(echo $GITHUB_SHA | cut -c1-8)"
         echo "size:         $(stat -c %s wiibrowserlite.dol) bytes"
         echo "sha256:       $(sha256sum wiibrowserlite.dol | cut -d' ' -f1)"
         echo "first-64:     $(head -c 64 wiibrowserlite.dol | od -A n -t x1 | tr -d ' \n')"

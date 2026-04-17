@@ -196,6 +196,22 @@ int close_callback(void *clientp, curl_socket_t item)
 	return net_close(item);
 }
 
+// Dolphin's IOS network emulation doesn't support IPPROTO_TCP (6);
+// net_socket(AF_INET, SOCK_STREAM, 6) returns -EPROTONOSUPPORT (-123).
+// Use IPPROTO_IP (0) which works on both real hardware and Dolphin.
+static curl_socket_t opensocket_callback(void *clientp,
+                                         curlsocktype purpose,
+                                         struct curl_sockaddr *address)
+{
+	(void)clientp;
+	(void)purpose;
+	// Force protocol=0 (IPPROTO_IP) instead of curl's default IPPROTO_TCP=6
+	int fd = net_socket(address->family, address->socktype, 0);
+	fprintf(stderr, "opensocket_callback: net_socket(%d, %d, 0) = %d\n",
+	        address->family, address->socktype, fd);
+	return fd;
+}
+
 static size_t
 WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp)
 {
@@ -270,9 +286,10 @@ static int wbl_curl_debug_cb(CURL *handle, curl_infotype type,
                              char *data, size_t size, void *userptr)
 {
 	if (type == CURLINFO_TEXT) {
-		printf("[CURL] %.*s", (int)size, data);
+		fprintf(stderr, "[CURL] %.*s", (int)size, data);
 		if (size > 0 && data[size-1] != '\n')
-			printf("\n");
+			fprintf(stderr, "\n");
+		fflush(stderr);
 	}
 	return 0;
 }
@@ -325,7 +342,8 @@ void setmainheaders(CURL *curl_handle, const char *url)
 		curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0L);
 	}
 
-	/* proper function to close sockets */
+	/* override socket creation to use IPPROTO=0 (Dolphin compatibility) */
+	curl_easy_setopt(curl_handle, CURLOPT_OPENSOCKETFUNCTION, opensocket_callback);
 	curl_easy_setopt(curl_handle, CURLOPT_CLOSESOCKETFUNCTION, close_callback);
 	curl_easy_setopt(curl_handle, CURLOPT_URL, url);
 }

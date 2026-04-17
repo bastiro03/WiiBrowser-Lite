@@ -91,6 +91,19 @@ int netclose_callback(void *clientp, curl_socket_t item)
 	return net_close(item);
 }
 
+static curl_socket_t netopen_callback(void *clientp,
+                                      curlsocktype purpose,
+                                      struct curl_sockaddr *address)
+{
+	(void)clientp;
+	(void)purpose;
+	// Force protocol=0 (IPPROTO_IP) for Dolphin compatibility
+	int fd = net_socket(address->family, address->socktype, 0);
+	fprintf(stderr, "netopen_callback: net_socket(%d, %d, 0) = %d\n",
+	        address->family, address->socktype, fd);
+	return fd;
+}
+
 static size_t writedata(void *ptr, size_t size, size_t nmemb, void *stream)
 {
 	int written = fwrite(ptr, size, nmemb, static_cast<FILE *>(stream));
@@ -329,7 +342,8 @@ bool AddHandle(Private *data)
 		curl_easy_setopt(eh, CURLOPT_SSL_VERIFYPEER, 0L);
 	}
 
-	/* proper function to close sockets */
+	/* override socket creation to use IPPROTO=0 (Dolphin compatibility) */
+	curl_easy_setopt(eh, CURLOPT_OPENSOCKETFUNCTION, netopen_callback);
 	curl_easy_setopt(eh, CURLOPT_CLOSESOCKETFUNCTION, netclose_callback);
 
 	curl_multi_add_handle(curl_multi, eh);

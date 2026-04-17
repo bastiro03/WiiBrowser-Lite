@@ -111,29 +111,34 @@ void *NetworkThread(void *arg)
 	{
 		retry = 5;
 
+		// Clean up any previous network state ONCE before starting
+		// the retry loop. Do NOT deinit/init on every retry - that
+		// causes rapid heap churn that corrupts unrelated objects.
+		net_deinit();
+
+		if (prevInit)
+		{
+			prevInit = false;  // only call net_wc24cleanup once
+			net_wc24cleanup(); // kill wc24
+			usleep(10000);
+		}
+
+		res = net_init_async(NULL, NULL);
+
+		if (res != 0)
+		{
+			// net_init itself failed - wait and let outer loop retry
+			g_netdiag.stage        = NET_STAGE_INIT_ASYNC;
+			g_netdiag.last_res     = res;
+			g_netdiag.retries_used = 0;
+			sleep(1);
+			continue;  // Jump to outer loop → deinit and try again
+		}
+
+		// Network stack initialized successfully. Now retry the
+		// connection check WITHOUT tearing down the stack each time.
 		while (retry > 0 && !networkThreadHalt)
 		{
-			net_deinit();
-
-			if (prevInit)
-			{
-				prevInit = false;  // only call net_wc24cleanup once
-				net_wc24cleanup(); // kill wc24
-				usleep(10000);
-			}
-
-			res = net_init_async(NULL, NULL);
-
-			if (res != 0)
-			{
-				g_netdiag.stage        = NET_STAGE_INIT_ASYNC;
-				g_netdiag.last_res     = res;
-				g_netdiag.retries_used = 5 - retry;
-				sleep(1);
-				retry--;
-				continue;
-			}
-
 			u64 status_start = gettime();
 			res = net_get_status();
 			wait = 500; // only wait 10 sec
@@ -155,7 +160,7 @@ void *NetworkThread(void *arg)
 					g_netdiag.last_res = 0;
 					networkinit = true;
 					prevInit = true;
-					break;
+					break;  // Success - exit inner loop
 				}
 				// CheckConnection() populates its own diag stage on failure
 			}
@@ -168,7 +173,7 @@ void *NetworkThread(void *arg)
 			}
 
 			retry--;
-			usleep(500000);  // 500ms delay between retries (was 2ms — way too aggressive)
+			usleep(500000);  // 500ms delay between retries
 		}
 
 		if (!networkThreadHalt)

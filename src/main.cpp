@@ -251,6 +251,11 @@ extern "C" {
 
 int main(int argc, char *argv[])
 {
+	// Redirect stderr/stdout to Dolphin's OSReport UART so fprintf(stderr,...)
+	// output shows up in Dolphin's console (and USB Gecko on real hardware).
+	// Without this, libogc stdio goes nowhere visible during development.
+	SYS_STDIO_Report(true);
+
 	// Force a reference so the linker retains wbl_build_id.
 	fprintf(stderr, "%s\n", (const char *)wbl_build_id);
 

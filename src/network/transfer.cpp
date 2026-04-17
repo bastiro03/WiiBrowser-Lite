@@ -355,13 +355,12 @@ void *DownloadThread(void *arg)
 		// Wait for networking to come back up. Same flicker/CPU-peg
 		// fix as menu.cpp: 50ms poll (not 1ms) + bounded timeout so
 		// a permanently-stuck network thread can't freeze the whole
-		// download queue.
+		// download queue. Do NOT auto-restart the thread when it
+		// suspends - that creates a deinit/init feedback cycle that
+		// thrashes the heap (see menu.cpp for the detailed explanation).
 		int net_timeout = 100; // 100 * 50ms = 5 s
 		while (!networkinit && net_timeout > 0)
 		{
-			// manager->status->SetText("network down");
-			if (LWP_ThreadIsSuspended(networkthread))
-				InitNetwork();
 			usleep(50000);
 			net_timeout--;
 		}

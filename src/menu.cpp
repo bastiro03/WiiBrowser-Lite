@@ -1950,13 +1950,20 @@ jump:
 
 	// Wait for network initialization with reasonable UI update rate.
 	// Setting text on every 1ms iteration caused rapid flicker in Dolphin.
+	//
+	// Do NOT restart the network thread when it suspends itself. The
+	// thread runs up to 5 retries internally and suspends when it gives
+	// up. Auto-restarting here from the poll loop creates a feedback
+	// cycle where we repeatedly tear down and reinitialise the IOS
+	// network stack every ~2.5s, which causes heavy heap churn and
+	// corrupts unrelated objects (e.g. FreeTypeGX's glyph cache RB-tree).
+	// If the thread has suspended without success, just wait out the
+	// UI timeout and show the error modal.
 	staticTxt.SetText("Resuming connection...");
 	int net_timeout = 100;  // 100 * 50ms = 5 seconds max wait
 	while (!networkinit && net_timeout > 0)
 	{
-		if (LWP_ThreadIsSuspended(networkthread))
-			InitNetwork();
-		usleep(50000);  // 50ms = 20 Hz update rate (was 1ms = 1000 Hz)
+		usleep(50000);  // 50ms = 20 Hz update rate
 		net_timeout--;
 	}
 

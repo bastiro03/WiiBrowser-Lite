@@ -516,7 +516,7 @@ int WindowPrompt(const char *title, const char *msg, const char *btn1Label, cons
 
 	GuiWindow promptWindow(448, 288);
 	promptWindow.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-	promptWindow.SetPosition(0, -10);
+	promptWindow.SetPosition(-30, -10);
 	GuiSound btnSoundOver(button_over_pcm, button_over_pcm_size, SOUND_PCM);
 	GuiImageData btnOutline(button_png);
 	GuiImageData btnOutlineOver(button_over_png);
@@ -533,10 +533,10 @@ int WindowPrompt(const char *title, const char *msg, const char *btn1Label, cons
 	msgTxt.SetPosition(0, -20);
 	msgTxt.SetWrap(true, 400);
 
-	GuiLongText msgLongTxt(longText, 22, (GXColor){0, 0, 0, 255});
+	GuiLongText msgLongTxt(longText, 20, (GXColor){0, 0, 0, 255});
 		msgLongTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-	msgLongTxt.SetLinesToDraw(9);
-	msgLongTxt.SetMaxWidth(408);
+	msgLongTxt.SetLinesToDraw(10);
+	msgLongTxt.SetMaxWidth(420);
 
 	GuiText btn1Txt(btn1Label, 22, (GXColor){0, 0, 0, 255});
 		GuiImage btn1Img(&btnOutline);
@@ -1989,17 +1989,16 @@ jump:
 		char errbuf[640];
 		snprintf(errbuf, sizeof(errbuf),
 		    "Stage: %s\n"
-		    "Result: %d  %s\n"
+		    "Error: %s\n"
 		    "Retries: %d/5\n"
 		    "Target: %s:%u\n"
-		    "Status poll: %u ms (timeout 10000)\n"
+		    "Status poll: %u ms\n"
 		    "Connect: %u ms\n"
-		    "Total wait: 5000 ms (UI timeout)\n"
 		    "\n"
-		    "Check emulator network settings (SP1 / BBA)\n"
-		    "or real hardware Wi-Fi / LAN connection.",
+		    "Check emulator network settings\n"
+		    "(SP1/BBA) or Wi-Fi/LAN adapter.",
 		    stage_name,
-		    nd.last_res, NetErrStr(nd.last_res),
+		    NetErrStr(nd.last_res),
 		    nd.retries_used,
 		    nd.target_ip, nd.target_port,
 		    nd.status_wait_ms,

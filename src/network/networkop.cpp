@@ -76,12 +76,13 @@ const char *NetErrStr(int neg_errno)
 		case ENETDOWN:       return "ENETDOWN (network interface down)";
 		case ENOTCONN:       return "ENOTCONN (socket not connected)";
 		case EADDRNOTAVAIL:  return "EADDRNOTAVAIL (no local IP - DHCP failed?)";
-		case EINVAL:         return "EINVAL (bad argument - init race?)";
+		case EINVAL:         return "EINVAL (bad argument)";
 		case EIO:            return "EIO (IOS network I/O error)";
 		case EAGAIN:         return "EAGAIN (would block)";
 		case EFAULT:         return "EFAULT (bad address)";
 		case ENOMEM:         return "ENOMEM (out of memory in IOS)";
 		case ENOBUFS:        return "ENOBUFS (no buffer space in IOS)";
+		case 123:            return "IOS error 123 (net stack not ready? check Dolphin SP1/BBA config)";
 		default: {
 			// Static thread-local-ish scratch for the numeric
 			// fallback. This is fine for a UI diagnostic: we
@@ -226,19 +227,28 @@ void StopNetwork()
 
 bool CheckConnection()
 {
-	// IPPROTO_TCP (6) not IPPROTO_IP (0): libogc's IOS path is more
-	// reliable with an explicit protocol, and Dolphin's emulation has
-	// been observed to return -EINVAL from SO_CONNECT when the IPPROTO
-	// is left as 0/default.
+	// Try IPPROTO_TCP first (explicit protocol). If that fails with an
+	// unexpected error (e.g. -123 on some Dolphin versions), fall back
+	// to IPPROTO_IP (0 = let kernel choose).
 	s32 s = net_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (s < 0)
+	{
+		fprintf(stderr, "CheckConnection: net_socket(IPPROTO_TCP) = %d (%s), trying IPPROTO_IP fallback\n",
+		        s, NetErrStr(s));
+		s = net_socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
+	}
+
 	struct sockaddr_in sa;
 
 	if (s < 0)
 	{
+		fprintf(stderr, "CheckConnection: net_socket(IPPROTO_IP) also failed: %d (%s)\n",
+		        s, NetErrStr(s));
 		g_netdiag.stage    = NET_STAGE_SOCKET;
 		g_netdiag.last_res = s;
 		return false;
 	}
+	fprintf(stderr, "CheckConnection: net_socket() = %d (success)\n", s);
 
 	g_netdiag.target_port = NET_PROBE_PORT;
 	strncpy(g_netdiag.target_ip, NET_PROBE_IP, sizeof(g_netdiag.target_ip) - 1);

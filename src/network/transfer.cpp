@@ -71,13 +71,15 @@ enum
  * Thread to handle file downloads.
  ***************************************************************************/
 int showmultiprogress(void *bar,
-					  double total, /* dltotal */
-					  double done,	/* dlnow */
-					  double ultotal,
-					  double ulnow)
+					  curl_off_t dltotal,
+					  curl_off_t dlnow,
+					  curl_off_t ultotal,
+					  curl_off_t ulnow)
 {
 	auto data = static_cast<Private *>(bar);
-	manager->SetProgress(data, (done + data->bytes) * 100.0 / (total + data->bytes));
+	double total_bytes = (double)dltotal + (double)data->bytes;
+	if (total_bytes > 0)
+		manager->SetProgress(data, ((double)dlnow + (double)data->bytes) * 100.0 / total_bytes);
 
 	if (manager->CancelDownload(data->bar))
 		return 1;
@@ -138,13 +140,15 @@ void CompleteDownload(CURLMsg *msg)
 	char message[256];
 	long http_response;
 
-	double dl_bytes_total;
+	curl_off_t dl_bytes_total = 0;
+	curl_off_t dl_bytes_size = 0;
 	int retval = -1;
 
 	Private *data;
 	curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &data);
-	curl_easy_getinfo(msg->easy_handle, CURLINFO_SIZE_DOWNLOAD, &(data->bytes));
-	curl_easy_getinfo(msg->easy_handle, CURLINFO_CONTENT_LENGTH_DOWNLOAD, &dl_bytes_total);
+	curl_easy_getinfo(msg->easy_handle, CURLINFO_SIZE_DOWNLOAD_T, &dl_bytes_size);
+	curl_easy_getinfo(msg->easy_handle, CURLINFO_CONTENT_LENGTH_DOWNLOAD_T, &dl_bytes_total);
+	data->bytes = (double)dl_bytes_size;
 	curl_easy_getinfo(msg->easy_handle, CURLINFO_RESPONSE_CODE, &http_response);
 	curl_easy_cleanup(msg->easy_handle);
 
@@ -303,8 +307,8 @@ bool AddHandle(Private *data)
 	curl_easy_setopt(eh, CURLOPT_COOKIEFILE, "");
 	curl_easy_setopt(eh, CURLOPT_SHARE, curl_share);
 
-	curl_easy_setopt(eh, CURLOPT_PROGRESSFUNCTION, showmultiprogress);
-	curl_easy_setopt(eh, CURLOPT_PROGRESSDATA, data);
+	curl_easy_setopt(eh, CURLOPT_XFERINFOFUNCTION, showmultiprogress);
+	curl_easy_setopt(eh, CURLOPT_XFERINFODATA, data);
 	curl_easy_setopt(eh, CURLOPT_PRIVATE, data);
 
 	/* some servers don't like requests that are made without a user-agent

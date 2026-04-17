@@ -331,13 +331,16 @@ void setmainheaders(CURL *curl_handle, const char *url)
 }
 
 int showprogress(void *bar,
-				 double total, /* dltotal */
-				 double done,  /* dlnow */
-				 double ultotal,
-				 double ulnow)
+				 curl_off_t dltotal,
+				 curl_off_t dlnow,
+				 curl_off_t ultotal,
+				 curl_off_t ulnow)
 {
 	char msg[20];
-	sprintf(msg, "Loading...%2.2f%%", done * 100.0 / total);
+	if (dltotal > 0)
+		sprintf(msg, "Loading...%2.2f%%", (double)dlnow * 100.0 / (double)dltotal);
+	else
+		sprintf(msg, "Loading...");
 	SetMessage(msg);
 
 	if (CancelDownload())
@@ -362,7 +365,7 @@ void setrequestheaders(CURL *curl_handle, int request)
 		/* reset handle to perform get */
 		curl_easy_setopt(curl_handle, CURLOPT_HTTPGET, 1);
 		curl_easy_setopt(curl_handle, CURLOPT_NOPROGRESS, 0);
-		curl_easy_setopt(curl_handle, CURLOPT_PROGRESSFUNCTION, showprogress);
+		curl_easy_setopt(curl_handle, CURLOPT_XFERINFOFUNCTION, showprogress);
 	}
 
 	else if (request == POST)
@@ -374,7 +377,7 @@ void setrequestheaders(CURL *curl_handle, int request)
 // REQUEST FUNCTIONS
 // -----------------------------------------------------------
 
-struct block postrequest(CURL *curl_handle, const char *url, curl_httppost *data)
+struct block postrequest(CURL *curl_handle, const char *url, curl_mime *data)
 {
 	char *ct = nullptr;
 	char *post = findRchr(url, '?');
@@ -404,12 +407,12 @@ struct block postrequest(CURL *curl_handle, const char *url, curl_httppost *data
 		if (data == nullptr)
 			curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, post + 1);
 		else
-			curl_easy_setopt(curl_handle, CURLOPT_HTTPPOST, data);
+			curl_easy_setopt(curl_handle, CURLOPT_MIMEPOST, data);
 
 		if ((res = curl_easy_perform(curl_handle)) != 0) /*error!*/
 		{
 			if (data)
-				curl_formfree(data);
+				curl_mime_free(data);
 
 			if (res == CURLE_WRITE_ERROR)
 			{
@@ -424,7 +427,7 @@ struct block postrequest(CURL *curl_handle, const char *url, curl_httppost *data
 		}
 
 		if (data)
-			curl_formfree(data);
+			curl_mime_free(data);
 
 		if (CURLE_OK != curl_easy_getinfo(curl_handle, CURLINFO_CONTENT_TYPE, &ct) || !ct)
 		{
@@ -541,10 +544,9 @@ struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
 	return b;
 }
 
-struct curl_httppost *multipartform(const char *url)
+curl_mime *multipartform(CURL *curl_handle, const char *url)
 {
-	struct curl_httppost *formpost = nullptr;
-	struct curl_httppost *lastptr = nullptr;
+	curl_mime *form = curl_mime_init(curl_handle);
 
 	char *temp = strrchr(url, '?');
 	char *begin = url_decode(temp);
@@ -568,26 +570,21 @@ struct curl_httppost *multipartform(const char *url)
 		else
 			value = strndup(mid, begin - mid);
 
+		curl_mimepart *part = curl_mime_addpart(form);
+		curl_mime_name(part, name);
+
 		if (strstr(value, "_UPLOAD"))
 		{
 			path = strrchr(value, '_');
 			file = strndup(value, path - value);
 
-			curl_formadd(&formpost,
-						 &lastptr,
-						 CURLFORM_COPYNAME, name,
-						 CURLFORM_FILE, file,
-						 CURLFORM_END);
+			curl_mime_filedata(part, file);
 
 			free(file);
 		}
 		else
 		{
-			curl_formadd(&formpost,
-						 &lastptr,
-						 CURLFORM_COPYNAME, name,
-						 CURLFORM_COPYCONTENTS, value,
-						 CURLFORM_END);
+			curl_mime_data(part, value, CURL_ZERO_TERMINATED);
 		}
 
 		free(name);
@@ -595,7 +592,7 @@ struct curl_httppost *multipartform(const char *url)
 	} while (begin);
 
 	free(begin);
-	return formpost;
+	return form;
 }
 
 struct block downloadfile(CURL *curl_handle, const char *url, FILE *hfile)
@@ -615,7 +612,7 @@ struct block downloadfile(CURL *curl_handle, const char *url, FILE *hfile)
 		return postrequest(curl_handle, url, nullptr);
 	if (strcasestr(mode + 1, "multipart"))
 	{
-		curl_httppost *data = multipartform(url);
+		curl_mime *data = multipartform(curl_handle, url);
 		return postrequest(curl_handle, url, data);
 	}
 

@@ -535,8 +535,8 @@ int WindowPrompt(const char *title, const char *msg, const char *btn1Label, cons
 
 	GuiLongText msgLongTxt(longText, 22, (GXColor){0, 0, 0, 255});
 		msgLongTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-	msgLongTxt.SetLinesToDraw(8);
-	msgLongTxt.SetMaxWidth(400);
+	msgLongTxt.SetLinesToDraw(9);
+	msgLongTxt.SetMaxWidth(408);
 
 	GuiText btn1Txt(btn1Label, 22, (GXColor){0, 0, 0, 255});
 		GuiImage btn1Img(&btnOutline);
@@ -544,9 +544,9 @@ int WindowPrompt(const char *title, const char *msg, const char *btn1Label, cons
 	GuiButton btn1(btnOutline.GetWidth(), btnOutline.GetHeight());
 
 	if (msg)
-		msgLongTxt.SetPosition(20, 130);
+		msgLongTxt.SetPosition(20, 110);
 	else
-		msgLongTxt.SetPosition(20, 90);
+		msgLongTxt.SetPosition(20, 75);
 
 	if (btn2Label)
 	{

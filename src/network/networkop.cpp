@@ -130,6 +130,9 @@ static unsigned ticks_delta_ms(u64 start, u64 end)
  ***************************************************************************/
 void *NetworkThread(void *arg)
 {
+	fprintf(stderr, "NetworkThread: started\n");
+	fflush(stderr);
+
 	s32 res = -1;
 	int retry;
 	int wait;
@@ -259,11 +262,13 @@ bool CheckConnection()
 	{
 		fprintf(stderr, "CheckConnection: net_socket() failed: %d (%s)\n",
 		        s, NetErrStr(s));
+		fflush(stderr);
 		g_netdiag.stage    = NET_STAGE_SOCKET;
 		g_netdiag.last_res = s;
 		return false;
 	}
 	fprintf(stderr, "CheckConnection: net_socket() = %d (success)\n", s);
+	fflush(stderr);
 
 	g_netdiag.target_port = NET_PROBE_PORT;
 	strncpy(g_netdiag.target_ip, NET_PROBE_IP, sizeof(g_netdiag.target_ip) - 1);
@@ -282,6 +287,7 @@ bool CheckConnection()
 	if (addr == 0xFFFFFFFFu)
 	{
 		fprintf(stderr, "CheckConnection: inet_addr(%s) failed\n", NET_PROBE_IP);
+	fflush(stderr);
 		g_netdiag.stage    = NET_STAGE_CONNECT;
 		g_netdiag.last_res = -EINVAL;
 		net_close(s);
@@ -310,6 +316,7 @@ bool CheckConnection()
 	fprintf(stderr, "CheckConnection: net_connect(fd=%d, %s:%d) = %d (%s)\n",
 	        s, NET_PROBE_IP, NET_PROBE_PORT, res,
 	        (res == 0) ? "OK" : NetErrStr(res));
+	fflush(stderr);
 
 	bool connected = false;
 
@@ -330,6 +337,7 @@ bool CheckConnection()
 		// Poll net_connect() for up to 3s. This is what mplayer does
 		// on libogc and is more portable to Dolphin than select().
 		fprintf(stderr, "CheckConnection: socket pending (res=%d), polling connect (3s budget)...\n", res);
+	fflush(stderr);
 		u64 poll_start = gettime();
 		while (ticks_delta_ms(poll_start, gettime()) < 3000)
 		{
@@ -350,6 +358,7 @@ bool CheckConnection()
 		fprintf(stderr, "CheckConnection: poll ended after %ums, final res=%d (%s)\n",
 		        ticks_delta_ms(poll_start, gettime()), res,
 		        connected ? "CONNECTED" : NetErrStr(res));
+		fflush(stderr);
 	}
 	// else: res is some other negative errno - leave it for diag.
 
@@ -361,6 +370,7 @@ bool CheckConnection()
 	fprintf(stderr, "CheckConnection: closing fd=%d, elapsed=%ums, result=%s\n",
 	        s, g_netdiag.connect_elapsed_ms,
 	        connected ? "CONNECTED" : "FAILED");
+	fflush(stderr);
 	net_close(s);
 
 	if (!connected)

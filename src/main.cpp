@@ -258,6 +258,10 @@ int main(int argc, char *argv[])
 
 	// Force a reference so the linker retains wbl_build_id.
 	fprintf(stderr, "%s\n", (const char *)wbl_build_id);
+	fflush(stderr);
+
+	fprintf(stderr, "main: stdio redirected, build ID printed\n");
+	fflush(stderr);
 
 	SYS_SetResetCallback(WiiResetPressed);
 	SYS_SetPowerCallback(WiiPowerPressed);
@@ -295,6 +299,9 @@ int main(int argc, char *argv[])
 
 	LoadLanguage();
 	__exception_setreload(10);
+
+	fprintf(stderr, "main: post-init, entering main menu\n");
+	fflush(stderr);
 
 	ResetVideo_Menu();
 	MainMenu(MENU_SPLASH);

@@ -1946,7 +1946,16 @@ jump:
 #endif
 
 	if (!CheckConnection())
+	{
+		fprintf(stderr, "MenuBrowse: CheckConnection() returned false, calling InitNetwork()\n");
+		fflush(stderr);
 		InitNetwork();
+	}
+	else
+	{
+		fprintf(stderr, "MenuBrowse: CheckConnection() returned true\n");
+		fflush(stderr);
+	}
 
 	// Wait for network initialization with reasonable UI update rate.
 	// Setting text on every 1ms iteration caused rapid flicker in Dolphin.

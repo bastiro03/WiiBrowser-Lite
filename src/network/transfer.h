@@ -3,6 +3,7 @@
 
 #include <unistd.h>
 #include <network.h>
+#include <curl/curl.h>
 
 #include "common.h"
 #include "menu.h"
@@ -24,6 +25,7 @@ using Private = struct data
 	int code;
 	double bytes;
 	bool keep;
+	struct curl_slist *resolve; // owned; freed in CompleteDownload
 };
 
 void *DownloadThread(void *arg);

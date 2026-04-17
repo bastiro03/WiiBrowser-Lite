@@ -6,6 +6,7 @@
 #include "transfer.h"
 #include "networkop.h"
 #include "filelist.h"
+#include "httplib.h"
 
 using namespace std;
 extern GuiToolbar *App;
@@ -119,6 +120,7 @@ Private *PushQueue(CURLM *cm, char *url, file *file, bool keep)
 	data->bar = nullptr;
 	data->url = strdup(url);
 	data->keep = keep;
+	data->resolve = nullptr;
 
 	data->bytes = 0;
 	data->code = -1;
@@ -164,6 +166,12 @@ void CompleteDownload(CURLMsg *msg)
 	data->bytes = (double)dl_bytes_size;
 	curl_easy_getinfo(msg->easy_handle, CURLINFO_RESPONSE_CODE, &http_response);
 	curl_easy_cleanup(msg->easy_handle);
+
+	if (data->resolve)
+	{
+		curl_slist_free_all(data->resolve);
+		data->resolve = nullptr;
+	}
 
 	manager->RemoveBar(data->bar);
 	data->code = msg->data.result;
@@ -345,6 +353,12 @@ bool AddHandle(Private *data)
 	/* override socket creation to use IPPROTO=0 (Dolphin compatibility) */
 	curl_easy_setopt(eh, CURLOPT_OPENSOCKETFUNCTION, netopen_callback);
 	curl_easy_setopt(eh, CURLOPT_CLOSESOCKETFUNCTION, netclose_callback);
+
+	/* bypass c-ares: resolve hostname via libogc and feed CURLOPT_RESOLVE.
+	 * Slist is owned by the Private data and freed in CompleteDownload. */
+	data->resolve = wbl_build_resolve_list(data->url);
+	if (data->resolve)
+		curl_easy_setopt(eh, CURLOPT_RESOLVE, data->resolve);
 
 	curl_multi_add_handle(curl_multi, eh);
 	return true;

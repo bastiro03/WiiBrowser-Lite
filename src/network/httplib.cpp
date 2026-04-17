@@ -212,6 +212,82 @@ static curl_socket_t opensocket_callback(void *clientp,
 	return fd;
 }
 
+// curl's bundled c-ares resolver doesn't work on Wii: it tries to read
+// /etc/resolv.conf (absent), falls back to querying 127.0.0.1, and also
+// creates DNS sockets with IPPROTO_TCP=6 which Dolphin's IOS rejects
+// before our opensocket_callback runs. Bypass c-ares entirely by
+// resolving via libogc's net_gethostbyname() (which uses IOS's configured
+// DNS) and feeding the result to curl via CURLOPT_RESOLVE.
+//
+// Returned slist (if non-NULL) must be kept alive until the transfer
+// completes, then freed with curl_slist_free_all().
+struct curl_slist *wbl_build_resolve_list(const char *url)
+{
+	CURLU *u = curl_url();
+	if (!u)
+		return NULL;
+
+	if (curl_url_set(u, CURLUPART_URL, url, 0) != CURLUE_OK)
+	{
+		curl_url_cleanup(u);
+		return NULL;
+	}
+
+	char *host = NULL, *port = NULL;
+	curl_url_get(u, CURLUPART_HOST, &host, 0);
+	curl_url_get(u, CURLUPART_PORT, &port, CURLU_DEFAULT_PORT);
+
+	struct curl_slist *list = NULL;
+	if (host && port)
+	{
+		// Skip pre-resolution if host is already an IPv4 literal.
+		bool is_ip = (host[0] >= '0' && host[0] <= '9');
+		if (!is_ip)
+		{
+			struct hostent *he = net_gethostbyname(host);
+			if (he && he->h_addr_list && he->h_addr_list[0])
+			{
+				const unsigned char *ip = (const unsigned char *)he->h_addr_list[0];
+				char entry[256];
+				snprintf(entry, sizeof(entry), "%s:%s:%u.%u.%u.%u",
+				         host, port, ip[0], ip[1], ip[2], ip[3]);
+				list = curl_slist_append(list, entry);
+				fprintf(stderr, "wbl_build_resolve_list: %s\n", entry);
+				fflush(stderr);
+			}
+			else
+			{
+				fprintf(stderr,
+				        "wbl_build_resolve_list: net_gethostbyname(%s) failed\n",
+				        host);
+				fflush(stderr);
+			}
+		}
+	}
+
+	if (host) curl_free(host);
+	if (port) curl_free(port);
+	curl_url_cleanup(u);
+	return list;
+}
+
+// httplib reuses one CURL easy handle across all page fetches, so a
+// single static slist is fine here — freeing it at the top of each new
+// request is safe because the previous request has already completed.
+static struct curl_slist *httplib_resolve_list = NULL;
+
+static void pre_resolve(CURL *handle, const char *url)
+{
+	if (httplib_resolve_list)
+	{
+		curl_slist_free_all(httplib_resolve_list);
+		httplib_resolve_list = NULL;
+	}
+	httplib_resolve_list = wbl_build_resolve_list(url);
+	if (httplib_resolve_list)
+		curl_easy_setopt(handle, CURLOPT_RESOLVE, httplib_resolve_list);
+}
+
 static size_t
 WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp)
 {
@@ -345,6 +421,10 @@ void setmainheaders(CURL *curl_handle, const char *url)
 	/* override socket creation to use IPPROTO=0 (Dolphin compatibility) */
 	curl_easy_setopt(curl_handle, CURLOPT_OPENSOCKETFUNCTION, opensocket_callback);
 	curl_easy_setopt(curl_handle, CURLOPT_CLOSESOCKETFUNCTION, close_callback);
+
+	/* bypass c-ares: resolve hostname via libogc and feed CURLOPT_RESOLVE */
+	pre_resolve(curl_handle, url);
+
 	curl_easy_setopt(curl_handle, CURLOPT_URL, url);
 }
 

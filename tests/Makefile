@@ -61,7 +61,7 @@ QUICKJS_LIBS := $(QUICKJS_DIR)/libquickjs.a
 
 CURL_LIB := $(CURL_DIR)/lib/.libs/libcurl.a
 
-all: tls_smoke js_smoke curl_smoke network_stress test_freetype_init
+all: tls_smoke js_smoke curl_smoke network_stress test_freetype_init test_guitext_init
 	@echo ""
 	@echo "=== tls_smoke (raw mbedTLS handshake) ==="
 	./tls_smoke
@@ -105,6 +105,15 @@ network_stress: network_stress.c
 # Crash manifested as DSI exception at PC=0x800066C4 with r3=0xC (garbage
 # this pointer) in RB-tree::find() when GuiFileBrowser tried to render.
 test_freetype_init: test_freetype_init.cpp
+	$(CXX) -std=c++11 -O0 -g $(SANITIZE_FLAGS) $< -o $@
+
+# test_guitext_init: Reproduces the GuiText constructor bug where
+# `font` (FreeTypeGX*) and `currentSize` (int) members are left
+# uninitialized. Combined with gui_longtext.cpp's
+#   ftgx = (font ? font : fontSystem[currentSize])
+# line, this causes dereference of garbage pointers → DSI crash
+# with r3 = 0xC (offset of FreeTypeGX::fontData).
+test_guitext_init: test_guitext_init.cpp
 	$(CXX) -std=c++11 -O0 -g $(SANITIZE_FLAGS) $< -o $@
 
 MBEDTLS_PATCHES := $(sort $(wildcard ../third_party/mbedtls-patches/*.patch))

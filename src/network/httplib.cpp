@@ -404,6 +404,12 @@ void setmainheaders(CURL *curl_handle, const char *url)
 	field, so we provide one */
 	curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, Agents[Settings.UserAgent]);
 
+	/* Disable TCP_NODELAY: Dolphin's IOS doesn't support IPPROTO_TCP
+	 * socket options (level=6), and curl closes the socket when
+	 * setsockopt(TCP_NODELAY) fails. Buffering TCP writes is fine for
+	 * our page-fetch use case (downloads have their own settings). */
+	curl_easy_setopt(curl_handle, CURLOPT_TCP_NODELAY, 0L);
+
 	/* Enable SSL certificate verification for HTTPS security */
 	setup_cacert();
 	if (cacert_path[0] != 0)

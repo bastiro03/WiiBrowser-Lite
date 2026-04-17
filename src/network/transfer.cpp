@@ -336,6 +336,10 @@ bool AddHandle(Private *data)
 	field, so we provide one */
 	curl_easy_setopt(eh, CURLOPT_USERAGENT, "libcurl-agent/1.0");
 
+	/* Disable TCP_NODELAY: Dolphin's IOS doesn't support IPPROTO_TCP
+	 * socket options, and curl closes the socket when setsockopt fails. */
+	curl_easy_setopt(eh, CURLOPT_TCP_NODELAY, 0L);
+
 	/* Enable SSL certificate verification for HTTPS security */
 	setup_dl_cacert();
 	if (dl_cacert_path[0] != 0)

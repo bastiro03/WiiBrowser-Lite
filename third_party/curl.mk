@@ -121,7 +121,9 @@ CURL_CROSS_CACHE := \
     curl_disallow_sigaction=yes \
     curl_disallow_sigsetjmp=yes \
     curl_disallow_siginterrupt=yes \
-    curl_disallow_poll=yes
+    curl_disallow_poll=yes \
+    ac_cv_func_poll=no \
+    ac_cv_header_poll_h=no
 
 $(CURL_LIB): | $(MBEDTLS_LIB)
 	@for p in $(abspath $(CURL_PATCHES)); do \

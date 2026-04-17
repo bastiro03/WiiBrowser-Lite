@@ -34,7 +34,7 @@ void InitFreeType(uint8_t* fontBuffer, FT_Long bufferSize)
 	FT_New_Memory_Face(ftLibrary, (FT_Byte *)fontBuffer, bufferSize, 0, &ftFace);
 	ftSlot = ftFace->glyph;
 
-	for(int i=0; i<50; i++)
+	for(int i = 0; i <= MAX_FONT_SIZE; i++)
 		fontSystem[i] = NULL;
 }
 
@@ -52,7 +52,7 @@ void ChangeFontSize(FT_UInt pixelSize)
 
 void ClearFontData()
 {
-	for(int i=0; i<50; i++)
+	for(int i = 0; i <= MAX_FONT_SIZE; i++)
 	{
 		if(fontSystem[i])
 			delete fontSystem[i];

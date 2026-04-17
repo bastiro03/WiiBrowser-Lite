@@ -12,6 +12,7 @@
 #   make lto_check       # symbol/bitcode verification
 
 CC      ?= gcc
+CXX     ?= g++
 AR      ?= gcc-ar
 RANLIB  ?= gcc-ranlib
 
@@ -60,7 +61,7 @@ QUICKJS_LIBS := $(QUICKJS_DIR)/libquickjs.a
 
 CURL_LIB := $(CURL_DIR)/lib/.libs/libcurl.a
 
-all: tls_smoke js_smoke curl_smoke network_stress
+all: tls_smoke js_smoke curl_smoke network_stress test_freetype_init
 	@echo ""
 	@echo "=== tls_smoke (raw mbedTLS handshake) ==="
 	./tls_smoke
@@ -97,6 +98,14 @@ curl_smoke: curl_smoke.c $(CURL_LIB) $(MBEDTLS_LIBS)
 # also catches any heap bugs in the test harness itself.
 network_stress: network_stress.c
 	$(CC) $(CFLAGS) $(SANITIZE_FLAGS) $< -o $@
+
+# test_freetype_init: Reproduces the FreeTypeGX fontSystem[] array
+# initialization bug where slots 50-100 were left uninitialized, causing
+# dereference of garbage pointers when rendering text with size >= 50.
+# Crash manifested as DSI exception at PC=0x800066C4 with r3=0xC (garbage
+# this pointer) in RB-tree::find() when GuiFileBrowser tried to render.
+test_freetype_init: test_freetype_init.cpp
+	$(CXX) -std=c++11 -O0 -g $(SANITIZE_FLAGS) $< -o $@
 
 MBEDTLS_PATCHES := $(sort $(wildcard ../third_party/mbedtls-patches/*.patch))
 CURL_PATCHES    := $(sort $(wildcard ../third_party/curl-patches/*.patch))

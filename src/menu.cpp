@@ -2095,7 +2095,8 @@ jump:
 
 		if (!searchWord)
 		{
-			WindowPrompt("WiiBrowser", "Failed", "Ok", nullptr);
+			WindowPrompt("Download failed", NULL, "Ok", NULL,
+			             GetLastDownloadError());
 			return MENU_HOME;
 		}
 

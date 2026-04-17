@@ -86,6 +86,32 @@ const struct block emptyblock = {nullptr, 0};
 static int firstRun = true;
 static char cacert_path[256] = {0};
 
+// Last download error, captured from curl_easy_perform() / getinfo() so
+// the "Failed" UI modal can show something more actionable than just
+// "Failed". Written from getrequest/postrequest, read via
+// GetLastDownloadError().
+static char last_dl_error[256] = "no error recorded";
+
+static void record_dl_error(CURL *curl_handle, int curl_res)
+{
+	const char *msg = (curl_res != 0) ? curl_easy_strerror((CURLcode)curl_res) : "empty response";
+	long http_code = 0;
+	char *effective_url = nullptr;
+	if (curl_handle)
+	{
+		curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &http_code);
+		curl_easy_getinfo(curl_handle, CURLINFO_EFFECTIVE_URL, &effective_url);
+	}
+	snprintf(last_dl_error, sizeof(last_dl_error),
+	         "curl: %s\nHTTP: %ld\nURL: %s",
+	         msg, http_code, effective_url ? effective_url : "(unknown)");
+}
+
+const char *GetLastDownloadError(void)
+{
+	return last_dl_error;
+}
+
 // -----------------------------------------------------------
 // SSL CERTIFICATE SETUP
 // -----------------------------------------------------------
@@ -378,6 +404,7 @@ struct block postrequest(CURL *curl_handle, const char *url, curl_httppost *data
 			}
 
 			Debug(curl_easy_strerror(static_cast<CURLcode>(res)));
+			record_dl_error(curl_handle, res);
 			return emptyblock;
 		}
 
@@ -385,7 +412,10 @@ struct block postrequest(CURL *curl_handle, const char *url, curl_httppost *data
 			curl_formfree(data);
 
 		if (CURLE_OK != curl_easy_getinfo(curl_handle, CURLINFO_CONTENT_TYPE, &ct) || !ct)
+		{
+			record_dl_error(curl_handle, 0);
 			return emptyblock;
+		}
 	}
 	else
 		return emptyblock;
@@ -467,11 +497,15 @@ struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
 			}
 
 			Debug(curl_easy_strerror(static_cast<CURLcode>(res)));
+			record_dl_error(curl_handle, res);
 			return emptyblock;
 		}
 
 		if (CURLE_OK != curl_easy_getinfo(curl_handle, CURLINFO_CONTENT_TYPE, &ct) || !ct)
+		{
+			record_dl_error(curl_handle, 0);
 			return emptyblock;
+		}
 	}
 	else
 		return emptyblock;

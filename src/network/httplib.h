@@ -43,6 +43,13 @@ extern const struct block emptyblock;
 struct block downloadfile(CURL *curl_handle, const char *url, FILE *hfile);
 bool postcomment(CURL *curl_handle, const char *name, const char *content);
 
+// Last downloadfile() failure reason, in human-readable form. Written by
+// getrequest/postrequest on curl_easy_perform error or when we get an
+// empty body. Read by the "Failed" modal in menu.cpp so the user sees
+// the actual curl error (e.g. "Couldn't resolve host") instead of
+// just "Failed". Returns a pointer to an internal static buffer.
+const char *GetLastDownloadError(void);
+
 void save(struct block *b, FILE *hfile);
 bool validProxy();
 

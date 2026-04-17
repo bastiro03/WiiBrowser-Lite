@@ -1,9 +1,16 @@
 #include "networkop.h"
 #include <string.h>
 #include <stdio.h>
-#include <sys/ioctl.h>         // FIONBIO for non-blocking socket setup
+#include <fcntl.h>             // F_GETFL, F_SETFL
 #include <ogc/lwp_watchdog.h>  // gettime() / ticks_to_millisecs()
 #define host "www.google.com"
+
+// libogc/IOS uses its own non-blocking flag that doesn't match newlib's
+// O_NONBLOCK (04000U). See include/mplayer/stream/tcp.c which uses the
+// same value — the only known-working pattern on Wii hardware.
+#ifndef IOS_O_NONBLOCK
+#define IOS_O_NONBLOCK 0x04
+#endif
 
 // Target for the TCP reachability probe. We use 8.8.8.8:443 because:
 //   - 8.8.8.8 is Google DNS anycast - globally reachable, no DNS lookup.
@@ -219,7 +226,11 @@ void StopNetwork()
 
 bool CheckConnection()
 {
-	s32 s = net_socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
+	// IPPROTO_TCP (6) not IPPROTO_IP (0): libogc's IOS path is more
+	// reliable with an explicit protocol, and Dolphin's emulation has
+	// been observed to return -EINVAL from SO_CONNECT when the IPPROTO
+	// is left as 0/default.
+	s32 s = net_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	struct sockaddr_in sa;
 
 	if (s < 0)
@@ -229,35 +240,44 @@ bool CheckConnection()
 		return false;
 	}
 
-	// Force the socket into non-blocking mode BEFORE calling
-	// net_connect(). Otherwise Dolphin's emulated SO_CONNECT invokes
-	// the host-OS connect() synchronously - on macOS that means a
-	// ~75-second TCP connect timeout when the target port is
-	// firewalled/dropped, during which our UI believes the network
-	// thread has hung. With FIONBIO=1, net_connect() returns
-	// immediately with -EINPROGRESS and we drive completion from
-	// select() with a bounded wall-clock timeout we control.
-	u32 nonblocking = 1;
-	int ioctl_ret = net_ioctl(s, FIONBIO, &nonblocking);
-	if (ioctl_ret != 0)
-	{
-		// Not fatal - fall through with blocking semantics and
-		// hope libogc/IOS gives us EINPROGRESS anyway. Real Wii
-		// hardware reportedly does; Dolphin host-side generally
-		// doesn't.
-		fprintf(stderr, "CheckConnection: FIONBIO ioctl failed: %d\n", ioctl_ret);
-	}
-
-	memset(&sa, 0, sizeof(struct sockaddr_in));
-	sa.sin_family = AF_INET;
-	sa.sin_len = sizeof(struct sockaddr_in);
-	sa.sin_port = htons(NET_PROBE_PORT);
-	/* Using inet_pton() because GCC 15 libc doesn't ship inet_aton by default. */
-	inet_pton(AF_INET, NET_PROBE_IP, &sa.sin_addr);
-
 	g_netdiag.target_port = NET_PROBE_PORT;
 	strncpy(g_netdiag.target_ip, NET_PROBE_IP, sizeof(g_netdiag.target_ip) - 1);
 	g_netdiag.target_ip[sizeof(g_netdiag.target_ip) - 1] = '\0';
+
+	// Parse the target IP. Using libogc's inet_addr() (declared in
+	// <network.h>) instead of newlib's inet_pton() because inet_pton
+	// has silently returned 0 on some builds, leaving sin_addr=0 and
+	// causing EINVAL-on-connect. inet_addr returns INADDR_NONE
+	// (0xFFFFFFFF) on parse failure.
+	memset(&sa, 0, sizeof(struct sockaddr_in));
+	sa.sin_family = AF_INET;
+	sa.sin_len    = sizeof(struct sockaddr_in);
+	sa.sin_port   = htons(NET_PROBE_PORT);
+	u32 addr = inet_addr(NET_PROBE_IP);
+	if (addr == 0xFFFFFFFFu)
+	{
+		fprintf(stderr, "CheckConnection: inet_addr(%s) failed\n", NET_PROBE_IP);
+		g_netdiag.stage    = NET_STAGE_CONNECT;
+		g_netdiag.last_res = -EINVAL;
+		net_close(s);
+		return false;
+	}
+	sa.sin_addr.s_addr = addr;
+
+	// Put the socket in non-blocking mode using the libogc-idiomatic
+	// net_fcntl/IOS_O_NONBLOCK pattern. Previously this code used
+	// net_ioctl(FIONBIO), which libogc internally re-writes to the
+	// same fcntl call - but Dolphin's IOS emulation doesn't always
+	// honour the FIONBIO translation, so doing the fcntl directly
+	// matches the known-working pattern in mplayer/stream/tcp.c.
+	//
+	// Rationale for non-blocking: on Dolphin hosts (especially macOS)
+	// a blocking connect to a firewalled port can hang for ~75s while
+	// the host TCP stack retries SYN. Non-blocking + polling lets us
+	// bound that to our own 3s budget.
+	int flags = net_fcntl(s, F_GETFL, 0);
+	if (flags >= 0)
+		net_fcntl(s, F_SETFL, flags | IOS_O_NONBLOCK);
 
 	u64 connect_start = gettime();
 	int res = net_connect(s, (struct sockaddr *)&sa, sizeof(struct sockaddr_in));
@@ -268,63 +288,42 @@ bool CheckConnection()
 
 	bool connected = false;
 
-	// With non-blocking mode active, the expected return from a
-	// just-started connect is -EINPROGRESS (or on some IOS builds
-	// -EALREADY if a previous state leaked through). A return of 0
-	// means the handshake already completed (loopback-fast or a
-	// blocking IOS that ignored FIONBIO). Anything else negative is a
-	// "real" early failure (route missing, address invalid, etc.)
-	// and we don't bother select()-waiting on it.
-	if (res == 0)
+	// libogc/IOS connect return codes on a non-blocking socket:
+	//   0            = handshake already completed (loopback-fast)
+	//  -EISCONN      = socket is now connected (success, libogc-native)
+	//  -EINPROGRESS  = handshake started (POSIX-style)
+	//  -EALREADY     = handshake already in progress (stale state)
+	//  -EAGAIN       = resource temporarily unavailable (try again)
+	// Anything else is a real error.
+	if (res == 0 || res == -EISCONN)
 	{
 		connected = true;
 	}
-	else if (res == -EINPROGRESS || res == -EALREADY)
+	else if (res == -EINPROGRESS || res == -EALREADY || res == -EAGAIN)
 	{
-		fprintf(stderr, "CheckConnection: socket pending, select() with 3s timeout...\n");
-		// Wait up to 3s for the socket to become writable, then
-		// check SO_ERROR to confirm the connect actually succeeded
-		// (and wasn't silently rejected in the background).
-		fd_set wset;
-		FD_ZERO(&wset);
-		FD_SET(s, &wset);
-
-		struct timeval tv;
-		tv.tv_sec = 3;
-		tv.tv_usec = 0;
-
-		int sel = net_select(s + 1, NULL, &wset, NULL, &tv);
-		fprintf(stderr, "CheckConnection: net_select() = %d\n", sel);
-		if (sel > 0 && FD_ISSET(s, &wset))
+		// Poll net_connect() for up to 3s. This is what mplayer does
+		// on libogc and is more portable to Dolphin than select().
+		fprintf(stderr, "CheckConnection: socket pending, polling connect (3s budget)...\n");
+		u64 poll_start = gettime();
+		while (ticks_delta_ms(poll_start, gettime()) < 3000)
 		{
-			int so_err = 0;
-			socklen_t elen = sizeof(so_err);
-			int go = net_getsockopt(s, SOL_SOCKET, SO_ERROR,
-			                        &so_err, &elen);
-			fprintf(stderr, "CheckConnection: SO_ERROR = %d (getsockopt ret=%d)\n",
-			        so_err, go);
-			if (go == 0 && so_err == 0)
+			usleep(20 * 1000); // 20ms between polls
+			res = net_connect(s, (struct sockaddr *)&sa, sizeof(struct sockaddr_in));
+			if (res == 0 || res == -EISCONN)
 			{
 				connected = true;
+				break;
 			}
-			else
-			{
-				// Remember whichever layer returned the real error.
-				res = (go != 0) ? go : -so_err;
-			}
+			if (res == -EINPROGRESS || res == -EALREADY || res == -EAGAIN)
+				continue;
+			// any other return = real error; bail
+			break;
 		}
-		else if (sel == 0)
-		{
-			// select() timed out - handshake never completed
-			fprintf(stderr, "CheckConnection: select() timeout after 3s\n");
+		if (!connected && (res == -EINPROGRESS || res == -EALREADY || res == -EAGAIN))
 			res = -ETIMEDOUT;
-		}
-		else
-		{
-			// select() itself failed
-			fprintf(stderr, "CheckConnection: select() failed: %d\n", sel);
-			res = sel;
-		}
+		fprintf(stderr, "CheckConnection: poll ended after %ums, final res=%d (%s)\n",
+		        ticks_delta_ms(poll_start, gettime()), res,
+		        connected ? "CONNECTED" : NetErrStr(res));
 	}
 	// else: res is some other negative errno - leave it for diag.
 

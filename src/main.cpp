@@ -268,6 +268,9 @@ int main(int argc, char *argv[])
 	WPAD_SetPowerButtonCallback(WiimotePowerPressed);
 
 	InitVideo();	  // Initialize video
+	SYS_STDIO_Report(true); // Re-establish stderr after video init
+	fprintf(stderr, "main: video initialized\n");
+	fflush(stderr);
 	SetupPads();	  // Initialize input
 	InitAudio();	  // Initialize audio
 	fatInitDefault(); // Initialize file system

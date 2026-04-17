@@ -12,6 +12,20 @@
 #define IOS_O_NONBLOCK 0x04
 #endif
 
+// libogc returns BSD-style errno values from net_connect / net_socket,
+// NOT newlib's values. This matters because newlib's <errno.h> uses
+// Linux-ish numbers (EINPROGRESS=119, EISCONN=127, etc.) while libogc
+// passes through the IOS socket driver's BSD numbers. Compare against
+// these constants when interpreting libogc network return codes.
+//
+// Verified against Dolphin IOS_NET logs: a successful connect progresses
+// 36 (EINPROGRESS) → 37 (EALREADY) → 56 (EISCONN). Without using these
+// values explicitly, we'd miss the EISCONN and abort a good connection.
+#define IOS_EAGAIN        6   /* resource temporarily unavailable       */
+#define IOS_EINPROGRESS   36  /* connect handshake in flight            */
+#define IOS_EALREADY      37  /* connect already in progress            */
+#define IOS_EISCONN       56  /* socket is connected (success terminator) */
+
 // Target for the TCP reachability probe. We use 8.8.8.8:443 because:
 //   - 8.8.8.8 is Google DNS anycast - globally reachable, no DNS lookup.
 //   - Port 80 on 8.8.8.8 is unreliable: many networks (including some
@@ -66,8 +80,14 @@ const char *NetErrStr(int neg_errno)
 	switch (e) {
 		case 0:              return "OK";
 		case EBUSY:          return "EBUSY (init still in progress)";
-		case EINPROGRESS:    return "EINPROGRESS (async connect pending - wait for select)";
-		case EALREADY:       return "EALREADY (connect on a socket already connecting)";
+		// BSD-numbered values that libogc passes through from IOS.
+		// Duplicated with the newlib-named cases below because the
+		// numeric constants differ (EINPROGRESS: 36 BSD vs 119 newlib).
+		case IOS_EINPROGRESS: return "EINPROGRESS (BSD/IOS 36 - connect in flight)";
+		case IOS_EALREADY:    return "EALREADY (BSD/IOS 37 - connect in progress)";
+		case IOS_EISCONN:     return "EISCONN (BSD/IOS 56 - already connected, SUCCESS)";
+		case EINPROGRESS:    return "EINPROGRESS (newlib 119 - async connect pending)";
+		case EALREADY:       return "EALREADY (newlib 120 - connect on connecting socket)";
 		case ETIMEDOUT:      return "ETIMEDOUT (no reply - ARP/SYN retries exhausted)";
 		case ECONNREFUSED:   return "ECONNREFUSED (TCP RST - host reachable, port closed)";
 		case EHOSTUNREACH:   return "EHOSTUNREACH (ICMP Dest Unreachable - host code 1)";
@@ -82,7 +102,7 @@ const char *NetErrStr(int neg_errno)
 		case EFAULT:         return "EFAULT (bad address)";
 		case ENOMEM:         return "ENOMEM (out of memory in IOS)";
 		case ENOBUFS:        return "ENOBUFS (no buffer space in IOS)";
-		case 123:            return "IOS error 123 (net stack not ready? check Dolphin SP1/BBA config)";
+		case EPROTONOSUPPORT: return "EPROTONOSUPPORT (IPPROTO not recognized - using IPPROTO_IP fallback)";
 		default: {
 			// Static thread-local-ish scratch for the numeric
 			// fallback. This is fine for a UI diagnostic: we
@@ -227,22 +247,17 @@ void StopNetwork()
 
 bool CheckConnection()
 {
-	// Try IPPROTO_TCP first (explicit protocol). If that fails with an
-	// unexpected error (e.g. -123 on some Dolphin versions), fall back
-	// to IPPROTO_IP (0 = let kernel choose).
-	s32 s = net_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-	if (s < 0)
-	{
-		fprintf(stderr, "CheckConnection: net_socket(IPPROTO_TCP) = %d (%s), trying IPPROTO_IP fallback\n",
-		        s, NetErrStr(s));
-		s = net_socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
-	}
-
+	// Pass protocol=0 (not IPPROTO_TCP=6). This matches the Theme-Wii
+	// and libreshop-client pattern that works on Dolphin. IPPROTO_TCP
+	// triggers Dolphin to return -EPROTONOSUPPORT (-44 internally, which
+	// libogc's broken fallback path turns into a spurious setsockopt on
+	// fd=-123 visible in IOS_NET logs).
+	s32 s = net_socket(AF_INET, SOCK_STREAM, 0);
 	struct sockaddr_in sa;
 
 	if (s < 0)
 	{
-		fprintf(stderr, "CheckConnection: net_socket(IPPROTO_IP) also failed: %d (%s)\n",
+		fprintf(stderr, "CheckConnection: net_socket() failed: %d (%s)\n",
 		        s, NetErrStr(s));
 		g_netdiag.stage    = NET_STAGE_SOCKET;
 		g_netdiag.last_res = s;
@@ -298,44 +313,48 @@ bool CheckConnection()
 
 	bool connected = false;
 
-	// libogc/IOS connect return codes on a non-blocking socket:
-	//   0            = handshake already completed (loopback-fast)
-	//  -EISCONN      = socket is now connected (success, libogc-native)
-	//  -EINPROGRESS  = handshake started (POSIX-style)
-	//  -EALREADY     = handshake already in progress (stale state)
-	//  -EAGAIN       = resource temporarily unavailable (try again)
-	// Anything else is a real error.
-	if (res == 0 || res == -EISCONN)
+	// Accept BOTH BSD-numbered (IOS_*) and newlib-numbered (E*) values
+	// because _net_convert_error may or may not remap between platforms:
+	//   Dolphin IOS_NET log shows 36→37→56 (BSD); libogc passes through.
+	//   Real hardware may use libogc's own mapping. Belt + braces.
+	#define IS_CONNECTED(r)  ((r) == 0 || (r) == -IOS_EISCONN || (r) == -EISCONN)
+	#define IS_PENDING(r)    ((r) == -IOS_EINPROGRESS || (r) == -IOS_EALREADY || (r) == -IOS_EAGAIN || \
+	                          (r) == -EINPROGRESS    || (r) == -EALREADY    || (r) == -EAGAIN)
+
+	if (IS_CONNECTED(res))
 	{
 		connected = true;
 	}
-	else if (res == -EINPROGRESS || res == -EALREADY || res == -EAGAIN)
+	else if (IS_PENDING(res))
 	{
 		// Poll net_connect() for up to 3s. This is what mplayer does
 		// on libogc and is more portable to Dolphin than select().
-		fprintf(stderr, "CheckConnection: socket pending, polling connect (3s budget)...\n");
+		fprintf(stderr, "CheckConnection: socket pending (res=%d), polling connect (3s budget)...\n", res);
 		u64 poll_start = gettime();
 		while (ticks_delta_ms(poll_start, gettime()) < 3000)
 		{
 			usleep(20 * 1000); // 20ms between polls
 			res = net_connect(s, (struct sockaddr *)&sa, sizeof(struct sockaddr_in));
-			if (res == 0 || res == -EISCONN)
+			if (IS_CONNECTED(res))
 			{
 				connected = true;
 				break;
 			}
-			if (res == -EINPROGRESS || res == -EALREADY || res == -EAGAIN)
+			if (IS_PENDING(res))
 				continue;
 			// any other return = real error; bail
 			break;
 		}
-		if (!connected && (res == -EINPROGRESS || res == -EALREADY || res == -EAGAIN))
+		if (!connected && IS_PENDING(res))
 			res = -ETIMEDOUT;
 		fprintf(stderr, "CheckConnection: poll ended after %ums, final res=%d (%s)\n",
 		        ticks_delta_ms(poll_start, gettime()), res,
 		        connected ? "CONNECTED" : NetErrStr(res));
 	}
 	// else: res is some other negative errno - leave it for diag.
+
+	#undef IS_CONNECTED
+	#undef IS_PENDING
 
 	g_netdiag.connect_elapsed_ms = ticks_delta_ms(connect_start, gettime());
 

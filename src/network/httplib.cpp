@@ -266,23 +266,11 @@ int parseline(HeaderStruct *mem, size_t realsize)
 // SET HEADERS
 // -----------------------------------------------------------
 
-static int curl_debug_callback(CURL *handle, curl_infotype type,
-                               char *data, size_t size, void *userptr)
+static int wbl_curl_debug_cb(CURL *handle, curl_infotype type,
+                             char *data, size_t size, void *userptr)
 {
-	const char *prefix = "";
-	switch (type) {
-		case CURLINFO_TEXT:         prefix = "== Info"; break;
-		case CURLINFO_HEADER_OUT:   prefix = "=> Send header"; break;
-		case CURLINFO_DATA_OUT:     prefix = "=> Send data"; break;
-		case CURLINFO_SSL_DATA_OUT: prefix = "=> Send SSL"; break;
-		case CURLINFO_HEADER_IN:    prefix = "<= Recv header"; break;
-		case CURLINFO_DATA_IN:      prefix = "<= Recv data"; break;
-		case CURLINFO_SSL_DATA_IN:  prefix = "<= Recv SSL"; break;
-		default: return 0;
-	}
-	// Only log text info, not binary data
 	if (type == CURLINFO_TEXT) {
-		printf("[CURL] %s: %.*s", prefix, (int)size, data);
+		printf("[CURL] %.*s", (int)size, data);
 		if (size > 0 && data[size-1] != '\n')
 			printf("\n");
 	}
@@ -299,7 +287,7 @@ void setmainheaders(CURL *curl_handle, const char *url)
 
 	/* enable verbose debugging to diagnose DNS issues */
 	curl_easy_setopt(curl_handle, CURLOPT_VERBOSE, 1L);
-	curl_easy_setopt(curl_handle, CURLOPT_DEBUGFUNCTION, curl_debug_callback);
+	curl_easy_setopt(curl_handle, CURLOPT_DEBUGFUNCTION, wbl_curl_debug_cb);
 
 	/* set proxy if specified */
 	if (validProxy())

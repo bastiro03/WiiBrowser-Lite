@@ -78,7 +78,12 @@ static int socket_writable(int fd, int *err_out)
 	socklen_t len = sizeof(err);
 	int rc = net_getsockopt(fd, SOL_SOCKET, SO_ERROR, &err, &len);
 	if (rc < 0)
-		return -1;
+	{
+		// SO_ERROR query failed. On Dolphin this can happen if the
+		// option isn't fully supported. Treat as "not ready yet"
+		// rather than fatal error, so select() keeps polling.
+		return 0;
+	}
 	if (err_out)
 		*err_out = err;
 	if (err == 0)

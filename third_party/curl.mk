@@ -6,6 +6,9 @@
 
 CURL_DIR := third_party/curl
 
+# For use inside $(filter-out ...) where literal commas are needed.
+COMMA := ,
+
 # Host triplet from platform/*/build.mk. For Wii it's powerpc-eabi,
 # for DS/DSi it's arm-none-eabi, for Mac Plus m68k-apple-macos.
 CURL_HOST_TRIPLET ?= powerpc-eabi
@@ -123,7 +126,9 @@ CURL_CROSS_CACHE := \
     curl_disallow_siginterrupt=yes \
     curl_disallow_poll=yes \
     ac_cv_func_poll=no \
-    ac_cv_header_poll_h=no
+    ac_cv_header_poll_h=no \
+    curl_disallow_getsockname=yes \
+    ac_cv_func_connect=yes
 
 $(CURL_LIB): | $(MBEDTLS_LIB)
 	@for p in $(abspath $(CURL_PATCHES)); do \
@@ -157,7 +162,7 @@ $(CURL_LIB): | $(MBEDTLS_LIB)
 	    CC="$(CC)" AR="$(AR_LTO)" RANLIB="$(RANLIB_LTO)" \
 	    CFLAGS="$(CFLAGS) -I$(CURDIR)/third_party/mbedtls-wbl-config -I$(CURDIR)/$(MBEDTLS_DIR)/include" \
 	    CPPFLAGS="-I$(LIBOGC_INC) -I$(PORTLIBS_INC) -I$(CURDIR)/third_party/mbedtls-wbl-config -I$(CURDIR)/$(MBEDTLS_DIR)/include" \
-	    LDFLAGS="$(LDFLAGS) -L$(CURDIR)/$(MBEDTLS_DIR)/library -L$(CURDIR)/libs/wii -L$(LIBOGC_LIB)" \
+	    LDFLAGS="$(filter-out -Wl$(COMMA)--wrap=%,$(LDFLAGS)) -L$(CURDIR)/$(MBEDTLS_DIR)/library -L$(CURDIR)/libs/wii -L$(LIBOGC_LIB)" \
 	    LIBS="-lnetport -logc" \
 	    ./configure $(CURL_CONFIGURE_FLAGS)
 	# Build ONLY the libcurl archive, not the `curl` CLI binary.

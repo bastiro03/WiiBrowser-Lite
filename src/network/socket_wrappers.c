@@ -1,19 +1,21 @@
 // Libc-compatible wrappers around libogc's net_* for IOS network sockets.
 //
 // Provides:
-//   - fcntl()  -> net_fcntl with O_NONBLOCK translation
+//   - fcntl()  -> forces blocking mode (ignores O_NONBLOCK)
 //   - select() -> SO_ERROR + MSG_PEEK loop (bypasses net_poll)
 //   - poll()   -> same, iterating pollfd array
 //
-// Why we override libnetport.a's select()/poll():
-//   libnetport's select() delegates to net_select() which is internally
-//   implemented via net_poll()/SO_POLL. Dolphin's IOS emulation does
-//   not handle all the IOS-specific POLL event flags that libogc emits
-//   (e.g. 0xc0000, 0x88a00), so SO_POLL becomes a no-op and curl spins
-//   in a 15-second timeout loop before giving up. Providing our own
-//   select()/poll() that check socket state via SO_ERROR (for writable/
-//   connect-complete) and MSG_PEEK (for readable) sidesteps the broken
-//   poll path entirely.
+// Strategy: Force all sockets to blocking mode to match the pattern used
+// by CheckConnection and other Wii homebrew. This avoids the async connect
+// code path that requires select/poll, sidestepping libogc/Dolphin bugs.
+//
+// Why we still override libnetport.a's select()/poll():
+//   Even with blocking sockets, curl may call select() for read/write
+//   operations during transfers. libnetport's select() delegates to
+//   net_select() which uses net_poll()/SO_POLL internally. Dolphin's
+//   IOS emulation doesn't handle all POLL event flags that libogc emits
+//   (e.g. 0xc0000, 0x88a00 from uninitialized memory), causing no-op
+//   behavior. Our wrappers use SO_ERROR + MSG_PEEK instead.
 //
 // Defining BOTH select() and poll() here prevents libnetport's
 // select.o (which bundles both) from being pulled in, avoiding the
@@ -48,21 +50,20 @@ int fcntl(int fd, int cmd, ...)
 
 	if (cmd == F_SETFL)
 	{
-		unsigned int ios_flags = 0;
-		if (arg & O_NONBLOCK)
-			ios_flags |= IOS_O_NONBLOCK;
-		return net_fcntl(fd, F_SETFL, ios_flags);
+		// Force blocking mode: ignore O_NONBLOCK requests.
+		// This matches the pattern used by CheckConnection and other
+		// Wii homebrew, avoiding the async connect + select/poll
+		// code path that hits libogc/Dolphin bugs.
+		return net_fcntl(fd, F_SETFL, 0);
 	}
 
 	if (cmd == F_GETFL)
 	{
+		// Always report blocking mode (no O_NONBLOCK).
 		int ios_flags = net_fcntl(fd, F_GETFL, 0);
 		if (ios_flags < 0)
 			return ios_flags;
-		int ret = 0;
-		if (ios_flags & IOS_O_NONBLOCK)
-			ret |= O_NONBLOCK;
-		return ret;
+		return 0;
 	}
 
 	return net_fcntl(fd, cmd, arg);

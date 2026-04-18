@@ -98,11 +98,16 @@ int __wrap_connect(int s, struct sockaddr *addr, socklen_t addrlen)
 
 int __wrap_connect(int s, struct sockaddr *addr, socklen_t addrlen)
 {
+	extern int *__errno(void);
 	int res = __real_connect(s, addr, addrlen);
 
-	// Already connected or succeeded synchronously.
+	// Already connected or succeeded synchronously. Clear errno so curl
+	// doesn't see stale error values alongside return=0.
 	if (res == 0)
+	{
+		*__errno() = 0;
 		return 0;
+	}
 
 	// net_connect returns negative errno on failure. Dolphin's IOS
 	// emulation gives us IOS_EINPROGRESS on the first call; subsequent
@@ -126,10 +131,16 @@ int __wrap_connect(int s, struct sockaddr *addr, socklen_t addrlen)
 		usleep(20 * 1000); // 20ms between polls (matches CheckConnection)
 		res = __real_connect(s, addr, addrlen);
 		if (res == 0)
+		{
+			*__errno() = 0;
 			return 0;
+		}
 		err = -res;
 		if (err == IOS_EISCONN || err == EISCONN)
+		{
+			*__errno() = 0;
 			return 0;
+		}
 		if (err == IOS_EINPROGRESS || err == IOS_EALREADY ||
 		    err == IOS_EAGAIN_VAL || err == EINPROGRESS || err == EALREADY ||
 		    err == EAGAIN)

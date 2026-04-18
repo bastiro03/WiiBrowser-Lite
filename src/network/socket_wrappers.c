@@ -105,6 +105,8 @@ int __wrap_connect(int s, struct sockaddr *addr, socklen_t addrlen)
 	// doesn't see stale error values alongside return=0.
 	if (res == 0)
 	{
+		fprintf(stderr, "__wrap_connect(fd=%d): immediate success\n", s);
+		fflush(stderr);
 		*__errno() = 0;
 		return 0;
 	}
@@ -119,12 +121,16 @@ int __wrap_connect(int s, struct sockaddr *addr, socklen_t addrlen)
 	    err != EAGAIN)
 	{
 		// Real error, not a pending-connect signal.
+		fprintf(stderr, "__wrap_connect(fd=%d): error %d\n", s, err);
+		fflush(stderr);
 		return res;
 	}
 
 	// Poll up to 30 seconds for the connect to complete. curl's
 	// CURLOPT_CONNECTTIMEOUT gates the overall retry budget; we just
 	// need to keep advancing the state machine while curl waits.
+	fprintf(stderr, "__wrap_connect(fd=%d): polling for completion...\n", s);
+	fflush(stderr);
 	u64 start = gettime();
 	while (ticks_to_millisecs(gettime() - start) < 30000)
 	{
@@ -132,12 +138,18 @@ int __wrap_connect(int s, struct sockaddr *addr, socklen_t addrlen)
 		res = __real_connect(s, addr, addrlen);
 		if (res == 0)
 		{
+			fprintf(stderr, "__wrap_connect(fd=%d): success after %ums\n",
+			        s, (unsigned)ticks_to_millisecs(gettime() - start));
+			fflush(stderr);
 			*__errno() = 0;
 			return 0;
 		}
 		err = -res;
 		if (err == IOS_EISCONN || err == EISCONN)
 		{
+			fprintf(stderr, "__wrap_connect(fd=%d): EISCONN after %ums\n",
+			        s, (unsigned)ticks_to_millisecs(gettime() - start));
+			fflush(stderr);
 			*__errno() = 0;
 			return 0;
 		}
@@ -146,9 +158,13 @@ int __wrap_connect(int s, struct sockaddr *addr, socklen_t addrlen)
 		    err == EAGAIN)
 			continue;
 		// Real error; surface it.
+		fprintf(stderr, "__wrap_connect(fd=%d): poll error %d\n", s, err);
+		fflush(stderr);
 		return res;
 	}
 	// Timed out. Return -ETIMEDOUT so curl sees a connect failure.
+	fprintf(stderr, "__wrap_connect(fd=%d): poll timeout\n", s);
+	fflush(stderr);
 	return -ETIMEDOUT;
 }
 
@@ -215,6 +231,18 @@ int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
 	long timeout_ms = timeval_to_ms(timeout);
 	u64 start = gettime();
 
+	// Debug: log select() calls to trace curl's post-connect behavior
+	int r_count = 0, w_count = 0;
+	if (readfds)
+		for (int i = 0; i < nfds && i < FD_SETSIZE; i++)
+			if (FD_ISSET(i, readfds)) r_count++;
+	if (writefds)
+		for (int i = 0; i < nfds && i < FD_SETSIZE; i++)
+			if (FD_ISSET(i, writefds)) w_count++;
+	fprintf(stderr, "select(nfds=%d, r=%d, w=%d, timeout=%ldms)\n",
+	        nfds, r_count, w_count, timeout_ms);
+	fflush(stderr);
+
 	fd_set r_in, w_in;
 	FD_ZERO(&r_in);
 	FD_ZERO(&w_in);
@@ -263,16 +291,28 @@ int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
 		}
 
 		if (ready > 0)
+		{
+			fprintf(stderr, "select: returning %d ready\n", ready);
+			fflush(stderr);
 			return ready;
+		}
 
 		if (timeout_ms == 0)
+		{
+			fprintf(stderr, "select: timeout=0, returning 0\n");
+			fflush(stderr);
 			return 0;
+		}
 
 		if (timeout_ms > 0)
 		{
 			u32 elapsed = (u32)ticks_to_millisecs(gettime() - start);
 			if (elapsed >= (u32)timeout_ms)
+			{
+				fprintf(stderr, "select: timeout after %ums\n", elapsed);
+				fflush(stderr);
 				return 0;
+			}
 		}
 
 		usleep(5000); // 5ms poll interval
@@ -284,6 +324,8 @@ int poll(struct pollfd *fds, nfds_t nfds, int timeout_ms)
 
 int poll(struct pollfd *fds, nfds_t nfds, int timeout_ms)
 {
+	fprintf(stderr, "poll(nfds=%u, timeout=%dms)\n", (unsigned)nfds, timeout_ms);
+	fflush(stderr);
 	u64 start = gettime();
 
 	for (;;)
@@ -317,16 +359,28 @@ int poll(struct pollfd *fds, nfds_t nfds, int timeout_ms)
 		}
 
 		if (ready > 0)
+		{
+			fprintf(stderr, "poll: returning %d ready\n", ready);
+			fflush(stderr);
 			return ready;
+		}
 
 		if (timeout_ms == 0)
+		{
+			fprintf(stderr, "poll: timeout=0, returning 0\n");
+			fflush(stderr);
 			return 0;
+		}
 
 		if (timeout_ms > 0)
 		{
 			u32 elapsed = (u32)ticks_to_millisecs(gettime() - start);
 			if (elapsed >= (u32)timeout_ms)
+			{
+				fprintf(stderr, "poll: timeout after %ums\n", elapsed);
+				fflush(stderr);
 				return 0;
+			}
 		}
 
 		usleep(5000);

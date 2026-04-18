@@ -187,7 +187,11 @@ static int socket_writable(int fd, int *err_out)
 	}
 	if (err_out)
 		*err_out = err;
-	if (err == 0)
+	// err == 0 OR err == EISCONN means connected and writable.
+	// After our synchronous __wrap_connect returns, SO_ERROR may still
+	// report EISCONN (56, "already connected") instead of clearing to 0.
+	// Both mean the socket is ready for I/O.
+	if (err == 0 || err == IOS_EISCONN || err == EISCONN)
 		return 1;
 	// EINPROGRESS/EAGAIN/EALREADY mean the connect is still pending.
 	// Anything else is a terminal error we should surface via except.

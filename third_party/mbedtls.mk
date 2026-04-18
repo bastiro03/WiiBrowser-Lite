@@ -63,10 +63,11 @@ $(MBEDTLS_PATCH_STAMP): $(MBEDTLS_PATCHES)
 	done
 	@touch $@
 
-# Make the lib targets depend on the patch stamp so patches apply
-# before compilation. The stamp is also a public dep so other rules
-# (e.g. curl.mk) can depend on it.
-$(MBEDTLS_LIB) $(MBEDX509_LIB) $(MBEDCRYPTO_LIB): $(MBEDTLS_PATCH_STAMP)
+# Make the lib targets depend on the patch stamp AND this mk file
+# itself so a config change (CFLAGS, extra patches, etc.) forces a
+# rebuild even when CI cache restored a stale libmbedtls.a. The stamp
+# is also a public dep so other rules (e.g. curl.mk) can depend on it.
+$(MBEDTLS_LIB) $(MBEDX509_LIB) $(MBEDCRYPTO_LIB): $(MBEDTLS_PATCH_STAMP) third_party/mbedtls.mk
 	$(MAKE) -C $(MBEDTLS_DIR)/library \
 	    CC="$(CC)" AR="$(AR_LTO)" RANLIB="$(RANLIB_LTO)" \
 	    CFLAGS="$(CFLAGS) $(MBEDTLS_CFLAGS)" \

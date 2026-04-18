@@ -130,19 +130,26 @@ CURL_CROSS_CACHE := \
     curl_disallow_getsockname=yes \
     ac_cv_func_connect=yes
 
-$(CURL_LIB): | $(MBEDTLS_LIB)
+# Depend on curl.mk itself and the patch stack so that any change to
+# our configure flags, CURL_CROSS_CACHE variables, or patches triggers
+# a full curl rebuild. Without this, a CI cache restore-keys fallback
+# or an incremental local rebuild would accept a stale libcurl.a that
+# was configured with obsolete settings (e.g. HAVE_GETSOCKNAME=1 before
+# we added curl_disallow_getsockname=yes).
+$(CURL_LIB): third_party/curl.mk $(CURL_PATCHES) | $(MBEDTLS_LIB)
 	@for p in $(abspath $(CURL_PATCHES)); do \
 	    (cd $(CURL_DIR) && git apply --check "$$p" 2>/dev/null) \
 	        && (cd $(CURL_DIR) && git apply "$$p" && echo "applied $$(basename $$p)") \
 	        || true; \
 	done
 	cd $(CURL_DIR) && [ -x ./configure ] || autoreconf -fi
-	# If config.status exists, wipe it so we don't inherit stale cache
-	# results from a previous build that lacked our CURL_CROSS_CACHE
-	# env overrides (e.g. ac_cv_func_accept4=no). CI cache + incremental
-	# local builds would otherwise keep a configure result from before
-	# commit 8ddb5cc, causing accept4 implicit-decl errors at compile.
-	cd $(CURL_DIR) && [ ! -f config.status ] || $(MAKE) distclean
+	# Force a full distclean + config wipe whenever this rule fires.
+	# Previously we only distcleaned when config.status existed, which
+	# meant a partial cache restore (cached libcurl.a + config.status)
+	# could skip reconfiguration and reuse stale feature-detection
+	# results like HAVE_GETSOCKNAME=1 from before commit 151ca1a.
+	cd $(CURL_DIR) && { [ -f Makefile ] && $(MAKE) distclean || true; }
+	cd $(CURL_DIR) && rm -f config.status config.log config.cache
 	# Use include-path override for mbedTLS config rather than
 	# -DMBEDTLS_CONFIG_FILE='"..."' (nested quotes get eaten by autoconf).
 	#

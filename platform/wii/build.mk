@@ -80,6 +80,7 @@ CXXFLAGS := $(CFLAGS) -fno-exceptions -fno-rtti
 LDFLAGS := -DGEKKO -mrvl -mcpu=750 -meabi -mhard-float \
                 $(LTO_LINK_FLAGS) \
                 -Wl,-Map,$(TARGET)$(BUILD_SUFFIX).map -Wl,--gc-sections \
+                -Wl,--wrap=connect \
                 -L$(LIBOGC_LIB) -L$(PORTLIBS_LIB) -L$(CURDIR)/libs/wii
 
 # Wii-specific libraries.

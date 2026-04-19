@@ -183,10 +183,15 @@ static int socket_writable(int fd, int *err_out)
 		// SO_ERROR query failed. On Dolphin this can happen if the
 		// option isn't fully supported. Treat as "not ready yet"
 		// rather than fatal error, so select() keeps polling.
+		fprintf(stderr, "socket_writable(fd=%d): SO_ERROR query failed rc=%d\n",
+		        fd, rc);
+		fflush(stderr);
 		return 0;
 	}
 	if (err_out)
 		*err_out = err;
+	fprintf(stderr, "socket_writable(fd=%d): SO_ERROR=%d\n", fd, err);
+	fflush(stderr);
 	// err == 0 OR err == EISCONN means connected and writable.
 	// After our synchronous __wrap_connect returns, SO_ERROR may still
 	// report EISCONN (56, "already connected") instead of clearing to 0.

@@ -16,35 +16,40 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <strings.h>
 #include <stdbool.h>
 
 /* Types mirror html.cpp */
 typedef enum { UNKNOWN = 0, WEB, TEXT, IMAGE, VIDEO } content_type_t;
 
-/* Production logic, kept in sync with src/network/httplib.cpp */
+/* Production logic, kept in sync with src/network/httplib.cpp.
+ * Case-insensitive so callers that don't pre-lowercase the raw value
+ * from CURLINFO_CONTENT_TYPE still classify correctly. */
 static bool mustdownload(const char *content)
 {
-	if (strstr(content, "text/html") ||
-	    strstr(content, "application/xhtml") ||
-	    strstr(content, "image")
+	if (strcasestr(content, "text/html") ||
+	    strcasestr(content, "application/xhtml") ||
+	    strcasestr(content, "image")
 #ifdef WBL_MPLAYER
-	    || strstr(content, "video")
+	    || strcasestr(content, "video")
 #endif
 	)
 		return false;
 	return true;
 }
 
-/* Production logic, kept in sync with src/html.cpp:knownType() */
+/* Production logic, kept in sync with src/html.cpp:knownType()
+ * (case-insensitive — RFC 7231 says Content-Type type/subtype is
+ * case-insensitive, so "TEXT/HTML" is equivalent to "text/html"). */
 static content_type_t knownType(const char *type)
 {
-	if (!strcmp(type, "text/html") || strstr(type, "application/xhtml"))
+	if (!strcasecmp(type, "text/html") || strcasestr(type, "application/xhtml"))
 		return WEB;
-	if (strstr(type, "text"))
+	if (strcasestr(type, "text"))
 		return TEXT;
-	if (strstr(type, "image"))
+	if (strcasestr(type, "image"))
 		return IMAGE;
-	if (strstr(type, "video"))
+	if (strcasestr(type, "video"))
 		return VIDEO;
 	return UNKNOWN;
 }
@@ -107,14 +112,29 @@ int main(void)
 	fprintf(stderr, "[WEB dispatch]\n");
 	ASSERT(knownType("text/html") == WEB,
 	       "text/html → WEB");
-	/* knownType uses strcmp for text/html exact match - charset-decorated
-	 * types fall through to the substring "text" check → TEXT.
-	 * This is the behavior we currently have; flag it so we notice if
-	 * production diverges. */
+	/* knownType uses strcasecmp on the exact "text/html" value. In
+	 * practice getrequest() calls findChr(ct, ';') which strips the
+	 * charset suffix before knownType() ever sees the type, so the
+	 * charset-decorated case routes via the strcasestr fallback. */
 	ASSERT(knownType("text/html; charset=utf-8") == TEXT,
-	       "text/html with charset currently routes to TEXT (strcmp exact-match)");
+	       "text/html;charset=... reaches TEXT via strcasestr fallback (charset would normally be stripped earlier)");
 	ASSERT(knownType("application/xhtml+xml") == WEB,
 	       "application/xhtml → WEB");
+
+	/* Case-insensitive classification (RFC 7231) */
+	fprintf(stderr, "\n[Case-insensitive Content-Type (RFC 7231)]\n");
+	ASSERT(knownType("TEXT/HTML") == WEB,
+	       "uppercase TEXT/HTML → WEB (strcasecmp)");
+	ASSERT(knownType("Text/Html") == WEB,
+	       "mixed-case Text/Html → WEB");
+	ASSERT(knownType("APPLICATION/XHTML+XML") == WEB,
+	       "uppercase XHTML → WEB (strcasestr)");
+	ASSERT(knownType("IMAGE/PNG") == IMAGE,
+	       "uppercase IMAGE/PNG → IMAGE");
+	ASSERT(!mustdownload("TEXT/HTML"),
+	       "uppercase TEXT/HTML not classified as download");
+	ASSERT(!mustdownload("Image/JPEG"),
+	       "mixed-case Image/JPEG not classified as download");
 
 	fprintf(stderr, "\n[IMAGE dispatch]\n");
 	ASSERT(knownType("image/jpeg") == IMAGE, "image/jpeg → IMAGE");

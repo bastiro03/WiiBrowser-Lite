@@ -60,8 +60,8 @@ struct curl_slist *wbl_build_resolve_list(const char *url);
 void save(struct block *b, FILE *hfile);
 bool validProxy();
 
-char *findChr(const char *str, char chr);
-char *findRchr(const char *str, char chr);
+char *findChr(char *str, char chr);
+char *findRchr(char *str, char chr);
 
 void DebugInt(u32 msg);
 void Debug(const char *msg);

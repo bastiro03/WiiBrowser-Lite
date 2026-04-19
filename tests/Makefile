@@ -61,7 +61,7 @@ QUICKJS_LIBS := $(QUICKJS_DIR)/libquickjs.a
 
 CURL_LIB := $(CURL_DIR)/lib/.libs/libcurl.a
 
-all: tls_smoke js_smoke curl_smoke network_stress errno_translation_test content_type_test parseline_test test_freetype_init test_guitext_init
+all: tls_smoke js_smoke curl_smoke network_stress errno_translation_test content_type_test parseline_test page_limit_test test_freetype_init test_guitext_init
 	@echo ""
 	@echo "=== tls_smoke (raw mbedTLS handshake) ==="
 	./tls_smoke
@@ -83,6 +83,9 @@ all: tls_smoke js_smoke curl_smoke network_stress errno_translation_test content
 	@echo ""
 	@echo "=== parseline_test (HTTP header parser) ==="
 	./parseline_test
+	@echo ""
+	@echo "=== page_limit_test (WriteMemoryCallback cap + graceful OOM) ==="
+	./page_limit_test
 
 # Build each test binary with LTO_LDFLAGS so the linker plugin
 # runs over all of our static archives.
@@ -126,6 +129,12 @@ content_type_test: content_type_test.c
 # Returning 0 on end-of-headers aborts curl's body transfer (download path).
 # A regression that flips this inverts render-vs-download on every fetch.
 parseline_test: parseline_test.c
+	$(CC) $(CFLAGS) $(SANITIZE_FLAGS) $< -o $@
+
+# page_limit_test: Verifies WriteMemoryCallback caps pages at
+# WBL_MAX_PAGE_BYTES and gracefully aborts on realloc failure instead of
+# calling exit() (previous behavior crashed the whole app on any OOM).
+page_limit_test: page_limit_test.c
 	$(CC) $(CFLAGS) $(SANITIZE_FLAGS) $< -o $@
 
 # test_freetype_init: Reproduces the FreeTypeGX fontSystem[] array

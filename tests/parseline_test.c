@@ -50,24 +50,25 @@ static char *findChr(char *str, char chr)
 /* parseline mirrored from httplib.cpp:parseline(). Must stay in sync. */
 static int parseline(HeaderStruct *mem, size_t realsize)
 {
+	/* Upper bound is `<`, not `<=`, to avoid tolower'ing the NUL past data */
 	size_t i;
-	for (i = mem->size - realsize; i <= mem->size; i++)
+	for (i = mem->size - realsize; i < mem->size; i++)
 		mem->memory[i] = tolower(mem->memory[i]);
 
 	char *line = &mem->memory[mem->size - realsize];
-	char buff[50];
+	char buff[128];
 	memset(buff, 0, sizeof(buff));
 
 	if (!strncmp(line, "content-type", 12))
 	{
-		sscanf(line, "content-type: %s", buff);
+		/* Bounded width so a pathological Content-Type cannot overrun */
+		sscanf(line, "content-type: %127s", buff);
 		findChr(buff, ';');
 		if (mustdownload(buff))
 			mem->download = true;
 	}
 	else if (!strncmp(line, "content-disposition", 19))
 	{
-		/* Use snprintf to avoid overflow of filename[256] on long lines */
 		snprintf(mem->filename, sizeof(mem->filename), "%s", line);
 	}
 	else if (!strncmp(line, "\r\n", 2))
@@ -162,6 +163,55 @@ int main(void)
 	hs_reset(&h);
 	ASSERT(h.download == false, "hs_reset clears download flag");
 	ASSERT(h.filename[0] == 0,  "hs_reset clears filename[0]");
+
+	/* ---- Long Content-Disposition does NOT overflow filename[256] ---- */
+	fprintf(stderr, "\n[long Content-Disposition header]\n");
+	hs_reset(&h);
+	char long_line[512];
+	/* RFC 5987 filename*=UTF-8''<percent-encoded...> can be very long */
+	memset(long_line, 0, sizeof(long_line));
+	strcpy(long_line, "Content-Disposition: attachment; filename=\"");
+	size_t prefix_len = strlen(long_line);
+	memset(long_line + prefix_len, 'A', 400);
+	strcpy(long_line + prefix_len + 400, "\"\r\n");
+	feed_header(&h, long_line);
+	ASSERT(strlen(h.filename) < sizeof(h.filename),
+	       "filename[] stays within bounds for a 400-byte filename header");
+	ASSERT(h.filename[sizeof(h.filename) - 1] == 0 ||
+	       strlen(h.filename) == sizeof(h.filename) - 1,
+	       "filename[] is NUL-terminated after truncation");
+
+	/* ---- Long Content-Type does NOT overflow buff ---- */
+	fprintf(stderr, "\n[pathological long Content-Type]\n");
+	hs_reset(&h);
+	char long_ct[512];
+	strcpy(long_ct, "Content-Type: ");
+	size_t ct_prefix = strlen(long_ct);
+	memset(long_ct + ct_prefix, 'x', 400);
+	strcpy(long_ct + ct_prefix + 400, "\r\n");
+	/* If the sscanf width spec is missing, this overruns buff[128] on
+	 * stack. With the %127s cap the write is bounded and we just get a
+	 * truncated "xxxx..." in buff (classified as download, not HTML). */
+	feed_header(&h, long_ct);
+	feed_header(&h, "\r\n");  /* end of headers */
+	/* We're mainly testing that we didn't crash with -fsanitize=address.
+	 * A 400-char "xxx..." doesn't match "text/html" so it gets flagged
+	 * as a download — that's fine; the cap is about safety, not content. */
+	ASSERT(h.download == true,
+	       "long bogus Content-Type is classified as download");
+
+	/* ---- Case-insensitive recognition through parseline+mustdownload ---- */
+	fprintf(stderr, "\n[Case-insensitive end-to-end through parseline]\n");
+	hs_reset(&h);
+	/* parseline lowercases the header line, so even TEXT/HTML reaches
+	 * mustdownload as "text/html" — but if the tolower loop regressed,
+	 * this would flip to download=true. */
+	feed_header(&h, "Content-Type: TEXT/HTML; charset=UTF-8\r\n");
+	rc = feed_header(&h, "\r\n");
+	ASSERT(!h.download,
+	       "uppercase Content-Type after tolower reaches mustdownload as lowercase");
+	ASSERT(rc > 0,
+	       "uppercase text/html → end-of-headers returns realsize");
 
 	/* ---- Cleanup ---- */
 	free(h.memory);

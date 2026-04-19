@@ -7,3 +7,4 @@ network_stress
 errno_translation_test
 content_type_test
 parseline_test
+page_limit_test

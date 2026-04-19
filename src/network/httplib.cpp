@@ -31,6 +31,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 
 #include "config.h"
 #include "httplib.h"
@@ -317,17 +318,37 @@ static void pre_resolve(CURL *handle, const char *url)
 		curl_easy_setopt(handle, CURLOPT_RESOLVE, httplib_resolve_list);
 }
 
+/* Cap a single page body at 8 MiB. Wii has 88 MB total RAM, much of
+ * which is already committed to GX framebuffers, fonts, app state,
+ * and libcurl/mbedtls. A runaway page (chunked response with no
+ * length, content spam) must not be allowed to OOM the whole app. */
+#define WBL_MAX_PAGE_BYTES (8u * 1024u * 1024u)
+
 static size_t
 WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp)
 {
 	size_t realsize = size * nmemb;
 	auto mem = static_cast<struct MemoryStruct *>(userp);
-	mem->memory = static_cast<char *>(realloc(mem->memory, mem->size + realsize + 1));
-	if (mem->memory == nullptr)
+
+	/* Reject pages that would exceed our cap. Returning 0 makes curl
+	 * treat it as CURLE_WRITE_ERROR and the caller surfaces an error. */
+	if (mem->size + realsize > WBL_MAX_PAGE_BYTES)
 	{
-		Debug("not enough memory (realloc returned NULL)\n");
-		exit(EXIT_FAILURE);
+		Debug("page exceeds WBL_MAX_PAGE_BYTES, aborting transfer\n");
+		return 0;
 	}
+
+	char *grown = static_cast<char *>(realloc(mem->memory, mem->size + realsize + 1));
+	if (grown == nullptr)
+	{
+		/* Previously called exit(EXIT_FAILURE) which killed the whole
+		 * app on any transient alloc failure. Returning 0 aborts just
+		 * the transfer (CURLE_WRITE_ERROR) so the UI can report an
+		 * error and the user can continue browsing. */
+		Debug("realloc failed in WriteMemoryCallback\n");
+		return 0;
+	}
+	mem->memory = grown;
 	memcpy(&(mem->memory[mem->size]), contents, realsize);
 	mem->memory[mem->size += realsize] = 0;
 	return realsize;
@@ -343,12 +364,14 @@ static size_t parseheader(void *contents, size_t size, size_t nmemb, void *userp
 {
 	size_t realsize = size * nmemb;
 	auto mem = static_cast<struct HeaderStruct *>(userp);
-	mem->memory = static_cast<char *>(realloc(mem->memory, mem->size + realsize + 1));
-	if (mem->memory == nullptr)
+	char *grown = static_cast<char *>(realloc(mem->memory, mem->size + realsize + 1));
+	if (grown == nullptr)
 	{
-		Debug("not enough memory (realloc returned NULL)\n");
-		exit(EXIT_FAILURE);
+		/* See WriteMemoryCallback: graceful abort beats killing the app. */
+		Debug("realloc failed in parseheader\n");
+		return 0;
 	}
+	mem->memory = grown;
 	memcpy(&(mem->memory[mem->size]), contents, realsize);
 	mem->memory[mem->size += realsize] = 0;
 	return parseline(mem, realsize);
@@ -356,17 +379,24 @@ static size_t parseheader(void *contents, size_t size, size_t nmemb, void *userp
 
 int parseline(HeaderStruct *mem, size_t realsize)
 {
+	/* Fix: upper bound was `<= mem->size` which touches one byte past the
+	 * newly-added data (the trailing NUL). tolower(0)==0 so it's benign,
+	 * but flag-and-fix so future refactors don't widen the off-by-one. */
 	unsigned int i;
-	for (i = mem->size - realsize; i <= mem->size; i++)
+	for (i = mem->size - realsize; i < mem->size; i++)
 		mem->memory[i] = tolower(mem->memory[i]);
 
 	char *line = &mem->memory[mem->size - realsize];
-	char buff[50];
+	char buff[128];
 	bzero(buff, sizeof(buff));
 
 	if (!strncmp(line, "content-type", 12))
 	{
-		sscanf(line, "content-type: %s", buff);
+		/* sscanf %s skips leading whitespace but stops at whitespace so
+		 * trailing "\r\n" or trailing spaces before ';' do not end up
+		 * in buff. Defensively cap to buff size-1 so a pathological
+		 * Content-Type never overruns. */
+		sscanf(line, "content-type: %127s", buff);
 		findChr(buff, ';');
 
 		if (mustdownload(buff))
@@ -375,7 +405,9 @@ int parseline(HeaderStruct *mem, size_t realsize)
 
 	else if (!strncmp(line, "content-disposition", 19))
 	{
-		strcpy(mem->filename, line);
+		/* Was strcpy() which can overflow filename[256] if the header
+		 * line is long (e.g. long RFC 5987 filename*=UTF-8''...). */
+		snprintf(mem->filename, sizeof(mem->filename), "%s", line);
 	}
 
 	else if (!strncmp(line, "\r\n", 2))
@@ -524,7 +556,7 @@ void setrequestheaders(CURL *curl_handle, int request)
 struct block postrequest(CURL *curl_handle, const char *url, curl_mime *data)
 {
 	char *ct = nullptr;
-	char *post = findRchr(url, '?');
+	char *post = findRchr(const_cast<char *>(url), '?');
 	struct block b, h;
 	int res;
 
@@ -744,7 +776,9 @@ curl_mime *multipartform(CURL *curl_handle, const char *url)
 struct block downloadfile(CURL *curl_handle, const char *url, FILE *hfile)
 {
 	const char *mode = strrchr(url, '\\');
-	findRchr(url, '\\');
+	/* Splits the URL at '\\': part before becomes null-terminated, `mode`
+	 * points to the new NUL, mode+1 addresses the suffix (e.g. "post"). */
+	findRchr(const_cast<char *>(url), '\\');
 
 	if (firstRun)
 		firstRun = false;
@@ -804,18 +838,25 @@ void save(struct block *b, FILE *hfile)
 
 bool mustdownload(char content[])
 {
-	if (strstr(content, "text/html") || strstr(content, "application/xhtml")
-		/* || strstr(content, "text") */
-		|| strstr(content, "image")
+	/* strcasestr so callers that don't pre-lowercase (e.g. fillstruct
+	 * acting on the raw CURLINFO_CONTENT_TYPE value) still classify
+	 * "TEXT/HTML" as renderable. parseline tolower()s before calling
+	 * this, so both paths converge. */
+	if (strcasestr(content, "text/html") || strcasestr(content, "application/xhtml")
+		/* || strcasestr(content, "text") */
+		|| strcasestr(content, "image")
 #ifdef MPLAYER
-		|| strstr(content, "video")
+		|| strcasestr(content, "video")
 #endif
 	)
 		return false;
 	return true;
 }
 
-char *findChr(const char *str, char chr)
+/* Note: these mutate the input — parameter is char*, not const char*.
+ * Previously typed const char* which was UB when called on mutable
+ * buffers (strcmp/strncmp etc. downstream depend on the truncation). */
+char *findChr(char *str, char chr)
 {
 	char *c = strchr(str, chr);
 	if (c != nullptr)
@@ -823,7 +864,7 @@ char *findChr(const char *str, char chr)
 	return c;
 }
 
-char *findRchr(const char *str, char chr)
+char *findRchr(char *str, char chr)
 {
 	char *c = strrchr(str, chr);
 	if (c != nullptr)

@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <string.h>
+#include <strings.h>
 #include "audio.h"
 #include "html.h"
 #include "config.h"
@@ -190,13 +192,15 @@ void AddButton(Lista::iterator lista, int type, GuiImage *image, void *arg)
 
 int knownType(char type[])
 {
-	if (!strcmp(type, "text/html") || strstr(type, "application/xhtml"))
+	/* HTTP Content-Type type/subtype is case-insensitive per RFC 7231.
+	 * A server sending "TEXT/HTML" must be treated as text/html. */
+	if (!strcasecmp(type, "text/html") || strcasestr(type, "application/xhtml"))
 		return WEB;
-	if (strstr(type, "text"))
+	if (strcasestr(type, "text"))
 		return TEXT;
-	if (strstr(type, "image"))
+	if (strcasestr(type, "image"))
 		return IMAGE;
-	if (strstr(type, "video"))
+	if (strcasestr(type, "video"))
 		return VIDEO;
 	return UNKNOWN;
 }

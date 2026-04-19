@@ -158,6 +158,7 @@ struct HeaderStruct
 	char *memory;
 	u32 size;
 	bool download;
+	bool in_redirect;   /* true while parsing a 3xx response's headers */
 	char filename[256];
 };
 
@@ -362,17 +363,38 @@ int parseline(HeaderStruct *mem, size_t realsize)
 	char buff[128];
 	bzero(buff, sizeof(buff));
 
-	if (!strncmp(line, "content-type", 12))
+	/* Status line ("HTTP/1.1 302 ...", "HTTP/2 302 ...") starts a new
+	 * response. curl calls HEADERFUNCTION once per header line INCLUDING
+	 * intermediate redirect responses. Two regressions to avoid:
+	 *   1. Leaking download=true from a 3xx hop's Content-Type to a later
+	 *      hop's end-of-headers — reset download on every status line.
+	 *   2. Setting download=true on a 3xx hop (e.g. x.com's 302 response
+	 *      has Content-Type: text/plain) which would abort curl's redirect
+	 *      follow — track in_redirect and skip Content-Type classification
+	 *      while in a 3xx response. */
+	if (!strncmp(line, "http/", 5))
 	{
-		/* sscanf %s skips leading whitespace but stops at whitespace so
-		 * trailing "\r\n" or trailing spaces before ';' do not end up
-		 * in buff. Defensively cap to buff size-1 so a pathological
-		 * Content-Type never overruns. */
-		sscanf(line, "content-type: %127s", buff);
-		findChr(buff, ';');
+		mem->download = false;
+		int code = 0;
+		sscanf(line, "http/%*s %d", &code);
+		mem->in_redirect = (code >= 300 && code < 400);
+	}
+	else if (!strncmp(line, "content-type", 12))
+	{
+		/* Skip Content-Type classification on 3xx responses: the Content-Type
+		 * describes the redirect-explainer body, not the final target. */
+		if (!mem->in_redirect)
+		{
+			/* sscanf %s skips leading whitespace but stops at whitespace so
+			 * trailing "\r\n" or trailing spaces before ';' do not end up
+			 * in buff. Defensively cap to buff size-1 so a pathological
+			 * Content-Type never overruns. */
+			sscanf(line, "content-type: %127s", buff);
+			findChr(buff, ';');
 
-		if (mustdownload(buff))
-			mem->download = true;
+			if (mustdownload(buff))
+				mem->download = true;
+		}
 	}
 
 	else if (!strncmp(line, "content-disposition", 19))
@@ -465,7 +487,10 @@ void setmainheaders(CURL *curl_handle, const char *url)
 	cacert_blob.flags = CURL_BLOB_NOCOPY;  /* cacert_pem is const global */
 
 	curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 1L);
-	curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 2L);
+	/* curl 7.66+ treats CURLOPT_SSL_VERIFYHOST as boolean (0 or 1);
+	 * value 2 (the legacy "check name matches cert") is accepted but
+	 * emits a warning. Use 1 which has the same semantics today. */
+	curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 1L);
 	curl_easy_setopt(curl_handle, CURLOPT_CAINFO_BLOB, &cacert_blob);
 #endif
 
@@ -543,6 +568,7 @@ struct block postrequest(CURL *curl_handle, const char *url, curl_mime *data)
 	head.memory = static_cast<char *>(malloc(1)); /* will be grown as needed by the realloc above */
 	head.size = 0;								  /* no data at this point */
 	head.download = false;						  /* not yet known at this point */
+	head.in_redirect = false;					  /* set on each 3xx status line */
 	head.filename[0] = 0;						  /* read by fillstruct() via strstr */
 
 	setmainheaders(curl_handle, url);
@@ -630,6 +656,7 @@ struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
 	head.memory = static_cast<char *>(malloc(1)); /* will be grown as needed by the realloc above */
 	head.size = 0;								  /* no data at this point */
 	head.download = false;						  /* not yet known at this point */
+	head.in_redirect = false;					  /* set on each 3xx status line */
 	head.filename[0] = 0;						  /* read by fillstruct() via strstr */
 
 	setmainheaders(curl_handle, url);

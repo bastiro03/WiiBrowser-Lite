@@ -26,6 +26,7 @@ typedef struct {
 	char  *memory;
 	size_t size;
 	bool   download;
+	bool   in_redirect;   /* true while parsing headers of a 3xx response */
 	char   filename[256];
 } HeaderStruct;
 
@@ -59,13 +60,34 @@ static int parseline(HeaderStruct *mem, size_t realsize)
 	char buff[128];
 	memset(buff, 0, sizeof(buff));
 
-	if (!strncmp(line, "content-type", 12))
+	/* Status line ("HTTP/1.1 302 ...", "HTTP/2 302 ...") starts a new
+	 * response. curl calls HEADERFUNCTION once per header line INCLUDING
+	 * intermediate redirect responses. Two regressions to avoid:
+	 *   1. Leaking download=true from a 3xx hop's Content-Type to a later
+	 *      hop's end-of-headers — reset download on every status line.
+	 *   2. Setting download=true on a 3xx hop (e.g. x.com 302 text/plain)
+	 *      which would abort curl's redirect follow — track in_redirect
+	 *      and skip Content-Type classification while in a 3xx response. */
+	if (!strncmp(line, "http/", 5))
 	{
-		/* Bounded width so a pathological Content-Type cannot overrun */
-		sscanf(line, "content-type: %127s", buff);
-		findChr(buff, ';');
-		if (mustdownload(buff))
-			mem->download = true;
+		mem->download = false;
+		int code = 0;
+		/* "http/1.1 302 ..." or "http/2 302 ..." — sscanf handles both */
+		sscanf(line, "http/%*s %d", &code);
+		mem->in_redirect = (code >= 300 && code < 400);
+	}
+	else if (!strncmp(line, "content-type", 12))
+	{
+		/* Skip Content-Type classification on 3xx responses: the Content-Type
+		 * there describes the redirect-explainer body, not the final target. */
+		if (!mem->in_redirect)
+		{
+			/* Bounded width so a pathological Content-Type cannot overrun */
+			sscanf(line, "content-type: %127s", buff);
+			findChr(buff, ';');
+			if (mustdownload(buff))
+				mem->download = true;
+		}
 	}
 	else if (!strncmp(line, "content-disposition", 19))
 	{
@@ -95,6 +117,7 @@ static void hs_reset(HeaderStruct *h)
 	h->memory = calloc(1, 1);
 	h->size = 0;
 	h->download = false;
+	h->in_redirect = false;
 	h->filename[0] = 0;
 }
 
@@ -212,6 +235,86 @@ int main(void)
 	       "uppercase Content-Type after tolower reaches mustdownload as lowercase");
 	ASSERT(rc > 0,
 	       "uppercase text/html → end-of-headers returns realsize");
+
+	/* ---- x.com 302 redirect regression ----
+	 * x.com returns 302 with Content-Type: text/plain + Location header.
+	 * If we abort here (download=true because text/plain→download), curl
+	 * NEVER follows the Location redirect. Result: user sees Download modal
+	 * instead of the redirected page. The fix: reset download flag on each
+	 * new status line so only the FINAL response's Content-Type decides.
+	 *
+	 * Real x.com response observed 2026-04-19 with iOS watchOS UA:
+	 *   HTTP/1.1 302 Found
+	 *   content-type: text/plain; charset=utf-8
+	 *   location: x-safari-https://redirect.x.com/?ct=rw-null
+	 */
+	fprintf(stderr, "\n[x.com 302 redirect: must NOT abort for text/plain mid-redirect]\n");
+	hs_reset(&h);
+	feed_header(&h, "HTTP/1.1 302 Found\r\n");
+	feed_header(&h, "Content-Type: text/plain; charset=utf-8\r\n");
+	feed_header(&h, "Location: https://redirect.x.com/?ct=rw-null\r\n");
+	rc = feed_header(&h, "\r\n");
+	ASSERT(rc > 0,
+	       "302 end-of-headers returns realsize (don't abort 3xx, let curl follow Location)");
+	ASSERT(!h.download,
+	       "3xx redirect response does NOT set download flag (cleared by status line)");
+
+	/* ---- Multi-hop redirect chain: final 200 text/html should render ----
+	 * After following a 301/302 chain, the final 200 response's Content-Type
+	 * is what matters. If we leaked download=true from an earlier hop with
+	 * Content-Type: text/plain, we'd incorrectly download an HTML page. */
+	fprintf(stderr, "\n[Redirect chain 301 text/plain → 200 text/html]\n");
+	hs_reset(&h);
+	feed_header(&h, "HTTP/1.1 301 Moved Permanently\r\n");
+	feed_header(&h, "Content-Type: text/plain\r\n");
+	feed_header(&h, "Location: https://example.com/\r\n");
+	feed_header(&h, "\r\n");
+	/* New redirect hop: status line resets download flag */
+	feed_header(&h, "HTTP/1.1 200 OK\r\n");
+	feed_header(&h, "Content-Type: text/html; charset=utf-8\r\n");
+	rc = feed_header(&h, "\r\n");
+	ASSERT(!h.download,
+	       "final 200 text/html renders (prior 301 text/plain cleared)");
+	ASSERT(rc > 0,
+	       "final response end-of-headers returns realsize");
+
+	/* ---- Final response IS a download: 200 application/pdf ----
+	 * After optional redirects, if the final response is a PDF, we SHOULD
+	 * abort with download flag. Verify this still works. */
+	fprintf(stderr, "\n[Redirect chain 302 → 200 application/pdf: download]\n");
+	hs_reset(&h);
+	feed_header(&h, "HTTP/1.1 302 Found\r\n");
+	feed_header(&h, "Content-Type: text/html\r\n");
+	feed_header(&h, "Location: https://cdn.example.com/file.pdf\r\n");
+	feed_header(&h, "\r\n");
+	feed_header(&h, "HTTP/1.1 200 OK\r\n");
+	feed_header(&h, "Content-Type: application/pdf\r\n");
+	rc = feed_header(&h, "\r\n");
+	ASSERT(h.download,
+	       "final 200 application/pdf sets download flag");
+	ASSERT(rc == 0,
+	       "final application/pdf end-of-headers returns 0 to abort");
+
+	/* ---- Single 200 response (no redirect) still works ----
+	 * The status-line reset should not regress plain non-redirect responses. */
+	fprintf(stderr, "\n[Single 200 response: regression check]\n");
+	hs_reset(&h);
+	feed_header(&h, "HTTP/1.1 200 OK\r\n");
+	feed_header(&h, "Content-Type: application/pdf\r\n");
+	rc = feed_header(&h, "\r\n");
+	ASSERT(h.download, "200 PDF still triggers download after status-line reset");
+	ASSERT(rc == 0, "200 PDF still returns 0 at end-of-headers");
+
+	/* ---- HTTP/2 status line ---- */
+	fprintf(stderr, "\n[HTTP/2 status line recognition]\n");
+	hs_reset(&h);
+	feed_header(&h, "HTTP/2 302\r\n");
+	feed_header(&h, "Content-Type: text/plain\r\n");
+	feed_header(&h, "Location: https://example.com/\r\n");
+	rc = feed_header(&h, "\r\n");
+	ASSERT(!h.download,
+	       "HTTP/2 302 response: text/plain does not trigger download");
+	ASSERT(rc > 0, "HTTP/2 302 end-of-headers returns realsize");
 
 	/* ---- Cleanup ---- */
 	free(h.memory);

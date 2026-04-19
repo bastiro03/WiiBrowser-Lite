@@ -61,7 +61,7 @@ QUICKJS_LIBS := $(QUICKJS_DIR)/libquickjs.a
 
 CURL_LIB := $(CURL_DIR)/lib/.libs/libcurl.a
 
-all: tls_smoke js_smoke curl_smoke network_stress test_freetype_init test_guitext_init
+all: tls_smoke js_smoke curl_smoke network_stress errno_translation_test test_freetype_init test_guitext_init
 	@echo ""
 	@echo "=== tls_smoke (raw mbedTLS handshake) ==="
 	./tls_smoke
@@ -74,6 +74,9 @@ all: tls_smoke js_smoke curl_smoke network_stress test_freetype_init test_guitex
 	@echo ""
 	@echo "=== network_stress (net_init/deinit cycling with ASAN/UBSAN) ==="
 	./network_stress
+	@echo ""
+	@echo "=== errno_translation_test (IOS errno → newlib errno mapping) ==="
+	./errno_translation_test
 
 # Build each test binary with LTO_LDFLAGS so the linker plugin
 # runs over all of our static archives.
@@ -97,6 +100,13 @@ curl_smoke: curl_smoke.c $(CURL_LIB) $(MBEDTLS_LIBS)
 # (bug reproduced) and the FIXED version passes them (bug gone). ASAN
 # also catches any heap bugs in the test harness itself.
 network_stress: network_stress.c
+	$(CC) $(CFLAGS) $(SANITIZE_FLAGS) $< -o $@
+
+# errno_translation_test: Verifies IOS (BSD-style) errno → newlib errno
+# translation in socket_wrappers.c. Critical for curl: recv returns -1
+# with IOS errno 35 (EAGAIN), but curl checks errno == EAGAIN (newlib 11).
+# Without translation, curl treats EAGAIN as fatal ("Recv failure: Success").
+errno_translation_test: errno_translation_test.c
 	$(CC) $(CFLAGS) $(SANITIZE_FLAGS) $< -o $@
 
 # test_freetype_init: Reproduces the FreeTypeGX fontSystem[] array

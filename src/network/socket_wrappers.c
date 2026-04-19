@@ -80,12 +80,65 @@ int fcntl(int fd, int cmd, ...)
 	return net_fcntl(fd, cmd, arg);
 }
 
+// Wrap close() to untrack fds when they're closed. This prevents stale
+// tracking entries and handles fd reuse correctly.
+int close(int fd) __attribute__((externally_visible, used));
+
+int close(int fd)
+{
+	unmark_fd_connected(fd);
+	return net_close(fd);
+}
+
 // IOS errno values (BSD numbering). Dolphin's IOS emulation returns
 // these from net_connect as negative values.
 #define IOS_EINPROGRESS 36
 #define IOS_EALREADY    37
 #define IOS_EAGAIN_VAL  35
 #define IOS_EISCONN     56
+
+// Track which fds have successfully connected. Dolphin's SO_GETSOCKOPT
+// for SO_ERROR returns -22 (EINVAL), so we can't query connect status
+// that way. Instead, track successful connects in __wrap_connect and
+// check this set in socket_writable(). Wii apps typically have <10 open
+// sockets, so a simple fixed array is sufficient.
+#define MAX_TRACKED_FDS 16
+static int connected_fds[MAX_TRACKED_FDS];
+static int connected_fd_count = 0;
+
+static void mark_fd_connected(int fd)
+{
+	// Check if already tracked
+	for (int i = 0; i < connected_fd_count; i++)
+		if (connected_fds[i] == fd)
+			return;
+	// Add if room
+	if (connected_fd_count < MAX_TRACKED_FDS)
+		connected_fds[connected_fd_count++] = fd;
+}
+
+static int is_fd_connected(int fd)
+{
+	for (int i = 0; i < connected_fd_count; i++)
+		if (connected_fds[i] == fd)
+			return 1;
+	return 0;
+}
+
+static void unmark_fd_connected(int fd)
+{
+	for (int i = 0; i < connected_fd_count; i++)
+	{
+		if (connected_fds[i] == fd)
+		{
+			// Shift remaining fds down
+			for (int j = i; j < connected_fd_count - 1; j++)
+				connected_fds[j] = connected_fds[j + 1];
+			connected_fd_count--;
+			return;
+		}
+	}
+}
 
 // Synchronous connect: call net_connect repeatedly until the connection
 // actually completes (EISCONN) or fails. This matches CheckConnection's
@@ -109,6 +162,7 @@ int __wrap_connect(int s, struct sockaddr *addr, socklen_t addrlen)
 		fprintf(stderr, "__wrap_connect(fd=%d): immediate success\n", s);
 		fflush(stderr);
 		*__errno() = 0;
+		mark_fd_connected(s);
 		return 0;
 	}
 
@@ -143,6 +197,7 @@ int __wrap_connect(int s, struct sockaddr *addr, socklen_t addrlen)
 			        s, (unsigned)ticks_to_millisecs(gettime() - start));
 			fflush(stderr);
 			*__errno() = 0;
+			mark_fd_connected(s);
 			return 0;
 		}
 		err = -res;
@@ -152,6 +207,7 @@ int __wrap_connect(int s, struct sockaddr *addr, socklen_t addrlen)
 			        s, (unsigned)ticks_to_millisecs(gettime() - start));
 			fflush(stderr);
 			*__errno() = 0;
+			mark_fd_connected(s);
 			return 0;
 		}
 		if (err == IOS_EINPROGRESS || err == IOS_EALREADY ||
@@ -170,41 +226,31 @@ int __wrap_connect(int s, struct sockaddr *addr, socklen_t addrlen)
 }
 
 // Check if a socket is writable: connect has completed (successfully or
-// with an error). Uses SO_ERROR to probe pending connect status.
+// with an error). On Dolphin, SO_GETSOCKOPT(SO_ERROR) returns -22 EINVAL,
+// so we can't query connect status that way. Instead, check if the fd was
+// marked connected by __wrap_connect. Since __wrap_connect is synchronous
+// and only returns after the connection completes, any fd it marked is
+// definitively writable.
 // Returns: 1 if writable, -1 if error (socket unusable), 0 if still
-// pending. On error, *err_out receives the pending error code.
+// pending. On error, *err_out receives the pending error code (unused now).
 static int socket_writable(int fd, int *err_out)
 {
-	int err = 0;
-	socklen_t len = sizeof(err);
-	int rc = net_getsockopt(fd, SOL_SOCKET, SO_ERROR, &err, &len);
-	if (rc < 0)
+	// If __wrap_connect successfully connected this fd, it's writable.
+	if (is_fd_connected(fd))
 	{
-		// SO_ERROR query failed. On Dolphin this can happen if the
-		// option isn't fully supported. Treat as "not ready yet"
-		// rather than fatal error, so select() keeps polling.
-		fprintf(stderr, "socket_writable(fd=%d): SO_ERROR query failed rc=%d\n",
-		        fd, rc);
+		fprintf(stderr, "socket_writable(fd=%d): connected (tracked)\n", fd);
 		fflush(stderr);
-		return 0;
-	}
-	if (err_out)
-		*err_out = err;
-	fprintf(stderr, "socket_writable(fd=%d): SO_ERROR=%d\n", fd, err);
-	fflush(stderr);
-	// err == 0 OR err == EISCONN means connected and writable.
-	// After our synchronous __wrap_connect returns, SO_ERROR may still
-	// report EISCONN (56, "already connected") instead of clearing to 0.
-	// Both mean the socket is ready for I/O.
-	if (err == 0 || err == IOS_EISCONN || err == EISCONN)
+		if (err_out)
+			*err_out = 0;
 		return 1;
-	// EINPROGRESS/EAGAIN/EALREADY mean the connect is still pending.
-	// Anything else is a terminal error we should surface via except.
-	if (err == 36 /* EINPROGRESS */ ||
-	    err == 35 /* EWOULDBLOCK/EAGAIN on IOS */ ||
-	    err == 37 /* EALREADY */)
-		return 0;
-	return -1;
+	}
+
+	// Not in our connected set. Either connect hasn't been called yet,
+	// or it's still in progress (shouldn't happen with synchronous
+	// __wrap_connect, but possible if code calls select() before connect).
+	fprintf(stderr, "socket_writable(fd=%d): not connected (not tracked)\n", fd);
+	fflush(stderr);
+	return 0;
 }
 
 // Check if a socket has data (or EOF/error) ready to read.

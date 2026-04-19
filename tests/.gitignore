@@ -5,3 +5,5 @@ curl_smoke
 js_smoke
 network_stress
 errno_translation_test
+content_type_test
+parseline_test

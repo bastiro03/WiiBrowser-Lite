@@ -433,6 +433,16 @@ void setmainheaders(CURL *curl_handle, const char *url)
 	field, so we provide one */
 	curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, Agents[Settings.UserAgent]);
 
+	/* Accept any compression curl was built with (gzip via libz here).
+	 * Without this, CloudFlare-fronted sites like x.com send gzip
+	 * anyway and we'd receive unreadable bytes. "" = use all supported
+	 * encodings and auto-decompress before delivery to the write cb. */
+	curl_easy_setopt(curl_handle, CURLOPT_ACCEPT_ENCODING, "");
+
+	/* Cap redirects at a sane limit so a pathological server can't loop
+	 * us until CURLOPT_TIMEOUT. */
+	curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10L);
+
 	/* Disable TCP_NODELAY: Dolphin's IOS doesn't support IPPROTO_TCP
 	 * socket options (level=6), and curl closes the socket when
 	 * setsockopt(TCP_NODELAY) fails. Buffering TCP writes is fine for
@@ -527,6 +537,7 @@ struct block postrequest(CURL *curl_handle, const char *url, curl_mime *data)
 	head.memory = static_cast<char *>(malloc(1)); /* will be grown as needed by the realloc above */
 	head.size = 0;								  /* no data at this point */
 	head.download = false;						  /* not yet known at this point */
+	head.filename[0] = 0;						  /* read by fillstruct() via strstr */
 
 	setmainheaders(curl_handle, url);
 	setrequestheaders(curl_handle, POST);
@@ -613,6 +624,7 @@ struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
 	head.memory = static_cast<char *>(malloc(1)); /* will be grown as needed by the realloc above */
 	head.size = 0;								  /* no data at this point */
 	head.download = false;						  /* not yet known at this point */
+	head.filename[0] = 0;						  /* read by fillstruct() via strstr */
 
 	setmainheaders(curl_handle, url);
 	setrequestheaders(curl_handle, GET);

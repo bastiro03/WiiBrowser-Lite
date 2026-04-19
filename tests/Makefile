@@ -61,7 +61,7 @@ QUICKJS_LIBS := $(QUICKJS_DIR)/libquickjs.a
 
 CURL_LIB := $(CURL_DIR)/lib/.libs/libcurl.a
 
-all: tls_smoke js_smoke curl_smoke network_stress errno_translation_test test_freetype_init test_guitext_init
+all: tls_smoke js_smoke curl_smoke network_stress errno_translation_test content_type_test parseline_test test_freetype_init test_guitext_init
 	@echo ""
 	@echo "=== tls_smoke (raw mbedTLS handshake) ==="
 	./tls_smoke
@@ -77,6 +77,12 @@ all: tls_smoke js_smoke curl_smoke network_stress errno_translation_test test_fr
 	@echo ""
 	@echo "=== errno_translation_test (IOS errno → newlib errno mapping) ==="
 	./errno_translation_test
+	@echo ""
+	@echo "=== content_type_test (mustdownload/knownType classification) ==="
+	./content_type_test
+	@echo ""
+	@echo "=== parseline_test (HTTP header parser) ==="
+	./parseline_test
 
 # Build each test binary with LTO_LDFLAGS so the linker plugin
 # runs over all of our static archives.
@@ -107,6 +113,19 @@ network_stress: network_stress.c
 # with IOS errno 35 (EAGAIN), but curl checks errno == EAGAIN (newlib 11).
 # Without translation, curl treats EAGAIN as fatal ("Recv failure: Success").
 errno_translation_test: errno_translation_test.c
+	$(CC) $(CFLAGS) $(SANITIZE_FLAGS) $< -o $@
+
+# content_type_test: Verifies mustdownload() and knownType() classify
+# real-world Content-Type values (wikipedia, x.com, image CDNs) correctly.
+# A misclassification here routes HTML to the download prompt or renders
+# garbage for images/PDFs.
+content_type_test: content_type_test.c
+	$(CC) $(CFLAGS) $(SANITIZE_FLAGS) $< -o $@
+
+# parseline_test: Verifies the HTTP header parser's return-value contract.
+# Returning 0 on end-of-headers aborts curl's body transfer (download path).
+# A regression that flips this inverts render-vs-download on every fetch.
+parseline_test: parseline_test.c
 	$(CC) $(CFLAGS) $(SANITIZE_FLAGS) $< -o $@
 
 # test_freetype_init: Reproduces the FreeTypeGX fontSystem[] array

@@ -250,8 +250,12 @@ struct curl_slist *wbl_build_resolve_list(const char *url)
 			{
 				const unsigned char *ip = (const unsigned char *)he->h_addr_list[0];
 				char entry[256];
-				snprintf(entry, sizeof(entry), "%s:%s:%u.%u.%u.%u",
-				         host, port, ip[0], ip[1], ip[2], ip[3]);
+				// Use wildcard port '*' so this DNS entry applies to
+				// any port (80, 443, etc.). Without this, an HTTP→HTTPS
+				// redirect (port 80→443) would fail DNS lookup because
+				// curl has no entry for hostname:443.
+				snprintf(entry, sizeof(entry), "%s:*:%u.%u.%u.%u",
+				         host, ip[0], ip[1], ip[2], ip[3]);
 				list = curl_slist_append(list, entry);
 				fprintf(stderr, "wbl_build_resolve_list: %s\n", entry);
 				fflush(stderr);

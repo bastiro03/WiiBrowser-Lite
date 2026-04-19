@@ -255,15 +255,33 @@ struct curl_slist *wbl_build_resolve_list(const char *url)
 			if (he && he->h_addr_list && he->h_addr_list[0])
 			{
 				const unsigned char *ip = (const unsigned char *)he->h_addr_list[0];
-				char entry[256];
-				// Use wildcard port '*' so this DNS entry applies to
-				// any port (80, 443, etc.). Without this, an HTTP→HTTPS
-				// redirect (port 80→443) would fail DNS lookup because
-				// curl has no entry for hostname:443.
-				snprintf(entry, sizeof(entry), "%s:*:%u.%u.%u.%u",
-				         host, ip[0], ip[1], ip[2], ip[3]);
-				list = curl_slist_append(list, entry);
-				fprintf(stderr, "wbl_build_resolve_list: %s\n", entry);
+				// CURLOPT_RESOLVE requires a specific numeric port per
+				// entry; there is NO wildcard port syntax. Add entries
+				// for BOTH 80 and 443 so an HTTP→HTTPS redirect (the
+				// common pattern for x.com, google.com, etc.) finds a
+				// DNS entry for the new port without requiring another
+				// net_gethostbyname call. Also add the URL's own port
+				// if it's not 80/443 (explicit e.g. :8080).
+				static const unsigned short common_ports[] = {80, 443, 0};
+				unsigned long url_port = strtoul(port, NULL, 10);
+				for (int i = 0; common_ports[i] != 0; i++)
+				{
+					char entry[256];
+					snprintf(entry, sizeof(entry), "%s:%u:%u.%u.%u.%u",
+					         host, (unsigned)common_ports[i],
+					         ip[0], ip[1], ip[2], ip[3]);
+					list = curl_slist_append(list, entry);
+					fprintf(stderr, "wbl_build_resolve_list: %s\n", entry);
+				}
+				if (url_port != 80 && url_port != 443 &&
+				    url_port > 0 && url_port < 65536)
+				{
+					char entry[256];
+					snprintf(entry, sizeof(entry), "%s:%lu:%u.%u.%u.%u",
+					         host, url_port, ip[0], ip[1], ip[2], ip[3]);
+					list = curl_slist_append(list, entry);
+					fprintf(stderr, "wbl_build_resolve_list: %s\n", entry);
+				}
 				fflush(stderr);
 			}
 			else

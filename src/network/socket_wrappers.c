@@ -87,6 +87,44 @@ int fcntl(int fd, int cmd, ...)
 #define IOS_EAGAIN_VAL  35
 #define IOS_EISCONN     56
 
+// Translate IOS (BSD-style) errno values to newlib errno values.
+// libogc's net_recv/net_send/net_connect return negative IOS errno on
+// error. curl (and other POSIX code) checks errno against newlib values,
+// e.g. EAGAIN=11 not 35. Without this translation, curl treats an
+// EAGAIN-on-nonblocking-recv (IOS 35) as a fatal error because it
+// doesn't match newlib EAGAIN (11).
+static int ios_errno_to_newlib(int ios_err)
+{
+	switch (ios_err)
+	{
+	case 35: return EAGAIN;       // IOS_EAGAIN/EWOULDBLOCK -> newlib 11
+	case 36: return EINPROGRESS;  // IOS 36 -> newlib 119
+	case 37: return EALREADY;     // IOS 37 -> newlib 120
+	case 49: return EADDRNOTAVAIL;// IOS 49 -> newlib 125
+	case 56: return EISCONN;      // IOS 56 -> newlib 127
+	case 57: return ENOTCONN;     // IOS 57 -> newlib 128
+	case 60: return ETIMEDOUT;    // IOS 60 -> newlib 116
+	case 61: return ECONNREFUSED; // IOS 61 -> newlib 111
+	case 51: return ENETUNREACH;  // IOS 51 -> newlib 114
+	case 65: return EHOSTUNREACH; // IOS 65 -> newlib 118
+	case 54: return ECONNRESET;   // IOS 54 -> newlib 104
+	case 40: return EMSGSIZE;     // IOS 40 -> newlib 122
+	case 32: return EPIPE;        // IOS 32 -> newlib 32 (same)
+	case 55: return ENOBUFS;      // IOS 55 -> newlib 105
+	// Values that are the same across IOS and newlib:
+	case 1:  return EPERM;
+	case 2:  return ENOENT;
+	case 4:  return EINTR;
+	case 5:  return EIO;
+	case 9:  return EBADF;
+	case 12: return ENOMEM;
+	case 13: return EACCES;
+	case 14: return EFAULT;
+	case 22: return EINVAL;
+	default: return ios_err;      // Unknown - pass through
+	}
+}
+
 // Track which fds have successfully connected. Dolphin's SO_GETSOCKOPT
 // for SO_ERROR returns -22 (EINVAL), so we can't query connect status
 // that way. Instead, track successful connects in __wrap_connect and
@@ -223,6 +261,43 @@ int __wrap_connect(int s, struct sockaddr *addr, socklen_t addrlen)
 	fprintf(stderr, "__wrap_connect(fd=%d): poll timeout\n", s);
 	fflush(stderr);
 	return -ETIMEDOUT;
+}
+
+// Wrap recv/send to translate IOS errno values to newlib errno values.
+// libnetport's recv/send either don't set errno correctly or set it to
+// raw IOS values. curl checks errno == EAGAIN (newlib 11) but IOS
+// returns 35; without translation, curl treats non-blocking EAGAIN as
+// a fatal error ("Recv failure: Success" in the log).
+//
+// These call net_recv/net_send directly to bypass libnetport's errno
+// handling and do the translation ourselves.
+ssize_t __wrap_recv(int s, void *mem, size_t len, int flags)
+    __attribute__((externally_visible, used));
+ssize_t __wrap_send(int s, const void *mem, size_t len, int flags)
+    __attribute__((externally_visible, used));
+
+ssize_t __wrap_recv(int s, void *mem, size_t len, int flags)
+{
+	int ret = net_recv(s, mem, len, flags);
+	if (ret < 0)
+	{
+		extern int *__errno(void);
+		*__errno() = ios_errno_to_newlib(-ret);
+		return -1;
+	}
+	return ret;
+}
+
+ssize_t __wrap_send(int s, const void *mem, size_t len, int flags)
+{
+	int ret = net_send(s, mem, len, flags);
+	if (ret < 0)
+	{
+		extern int *__errno(void);
+		*__errno() = ios_errno_to_newlib(-ret);
+		return -1;
+	}
+	return ret;
 }
 
 // Check if a socket is writable: connect has completed (successfully or

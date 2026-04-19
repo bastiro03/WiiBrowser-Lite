@@ -497,6 +497,7 @@ void setrequestheaders(CURL *curl_handle, int request)
 	{
 		/* reset handle to perform get */
 		curl_easy_setopt(curl_handle, CURLOPT_HTTPGET, 1);
+		curl_easy_setopt(curl_handle, CURLOPT_NOBODY, 0);  /* ensure body is fetched */
 		curl_easy_setopt(curl_handle, CURLOPT_NOPROGRESS, 0);
 		curl_easy_setopt(curl_handle, CURLOPT_XFERINFOFUNCTION, showprogress);
 	}

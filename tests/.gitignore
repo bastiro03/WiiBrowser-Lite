@@ -1,2 +1,7 @@
 test_freetype_init
 test_guitext_init
+tls_smoke
+curl_smoke
+js_smoke
+network_stress
+errno_translation_test

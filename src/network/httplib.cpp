@@ -92,7 +92,6 @@ const char Agents[MAXAGENTS][256] =
 
 const struct block emptyblock = {nullptr, 0};
 static int firstRun = true;
-static char cacert_path[256] = {0};
 
 // Last download error, captured from curl_easy_perform() / getinfo() so
 // the "Failed" UI modal can show something more actionable than just
@@ -148,33 +147,6 @@ static void setup_cacert()
 #if WBL_HAS_HTTPS
 	psa_init_once();
 #endif
-	if (cacert_path[0] != 0)
-		return; // Already initialized
-
-	// Write the embedded CA certificate bundle to SD card
-	snprintf(cacert_path, sizeof(cacert_path), "%s/cacert.pem", Settings.AppPath);
-
-	FILE *f = fopen(cacert_path, "wb");
-	if (f)
-	{
-		fwrite(cacert_pem, 1, cacert_pem_size, f);
-		fclose(f);
-	}
-	else
-	{
-		// Fallback: try writing to /tmp
-		snprintf(cacert_path, sizeof(cacert_path), "/tmp/cacert.pem");
-		f = fopen(cacert_path, "wb");
-		if (f)
-		{
-			fwrite(cacert_pem, 1, cacert_pem_size, f);
-			fclose(f);
-		}
-		else
-		{
-			cacert_path[0] = 0; // Failed to write cert
-		}
-	}
 }
 
 // -----------------------------------------------------------
@@ -481,19 +453,21 @@ void setmainheaders(CURL *curl_handle, const char *url)
 	 * our page-fetch use case (downloads have their own settings). */
 	curl_easy_setopt(curl_handle, CURLOPT_TCP_NODELAY, 0L);
 
-	/* Enable SSL certificate verification for HTTPS security */
+	/* Enable SSL certificate verification for HTTPS security.
+	 * On Wii/DS/DSi, mbedTLS is built without MBEDTLS_FS_IO (no file I/O),
+	 * so we use CURLOPT_CAINFO_BLOB to load the CA bundle from memory
+	 * instead of disk. cacert_pem is embedded binary data from filelist.h */
 	setup_cacert();
-	if (cacert_path[0] != 0)
-	{
-		curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 1L);
-		curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 2L);
-		curl_easy_setopt(curl_handle, CURLOPT_CAINFO, cacert_path);
-	}
-	else
-	{
-		/* Fallback: disable verification if cert bundle couldn't be written */
-		curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0L);
-	}
+#if WBL_HAS_HTTPS
+	struct curl_blob cacert_blob;
+	cacert_blob.data = (void *)cacert_pem;
+	cacert_blob.len = cacert_pem_size;
+	cacert_blob.flags = CURL_BLOB_NOCOPY;  /* cacert_pem is const global */
+
+	curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 1L);
+	curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 2L);
+	curl_easy_setopt(curl_handle, CURLOPT_CAINFO_BLOB, &cacert_blob);
+#endif
 
 	/* override socket creation to use IPPROTO=0 (Dolphin compatibility) */
 	curl_easy_setopt(curl_handle, CURLOPT_OPENSOCKETFUNCTION, opensocket_callback);

@@ -76,11 +76,17 @@ const char Agents[MAXAGENTS][256] =
 		"Mozilla/5.0 (Windows NT 6.2; WOW64; rv:16.0.1) Gecko/20121011 Firefox/16.0.1",
 		"Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; Trident/6.0)",
 		"Mozilla/5.0 (Linux; U; Android 1.1; en-gb; dream) AppleWebKit/525.10+ (KHTML, like Gecko) Version/3.0.4 Mobile Safari/523.12.2",
-		/* Modern iPhone UA: iOS 17.2 on iPhone 15 Pro. Wikipedia/Google/X
-		 * serve mobile layouts for this UA, which our LiteHTML renderer
-		 * can handle on Wii. Updated from iOS 6.1.6 (2013) to avoid
-		 * "unsupported browser" rejections from modern sites. */
-		"Mozilla/5.0 (iPhone; CPU iPhone OS 17_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Mobile/15E148 Safari/604.1",
+		/* watchOS 8.8.1 embedded WebKit on Apple Watch Series 3.
+		 *
+		 * watchOS identifies as iPhone in WebKit for site compatibility,
+		 * paired with the iOS build it shipped alongside (iOS 15.6.1,
+		 * build 19G82). Crucially we OMIT both "Version/X" and "Safari/X"
+		 * — embedded WebKit (link previews in Messages/Mail) is not
+		 * full Safari, and many sites serve a stripped-down layout to
+		 * this signature to keep JS/DOM bundles small. That matches
+		 * the Wii's memory budget (~88MB total) far better than iOS 17
+		 * on iPhone 15 which triggers multi-MB JS bundles. */
+		"Mozilla/5.0 (iPhone; CPU iPhone OS 15_6_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/19G82",
 };
 
 const struct block emptyblock = {nullptr, 0};

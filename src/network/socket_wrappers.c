@@ -80,16 +80,6 @@ int fcntl(int fd, int cmd, ...)
 	return net_fcntl(fd, cmd, arg);
 }
 
-// Wrap close() to untrack fds when they're closed. This prevents stale
-// tracking entries and handles fd reuse correctly.
-int close(int fd) __attribute__((externally_visible, used));
-
-int close(int fd)
-{
-	unmark_fd_connected(fd);
-	return net_close(fd);
-}
-
 // IOS errno values (BSD numbering). Dolphin's IOS emulation returns
 // these from net_connect as negative values.
 #define IOS_EINPROGRESS 36
@@ -138,6 +128,16 @@ static void unmark_fd_connected(int fd)
 			return;
 		}
 	}
+}
+
+// Wrap close() to untrack fds when they're closed. This prevents stale
+// tracking entries and handles fd reuse correctly.
+int close(int fd) __attribute__((externally_visible, used));
+
+int close(int fd)
+{
+	unmark_fd_connected(fd);
+	return net_close(fd);
 }
 
 // Synchronous connect: call net_connect repeatedly until the connection

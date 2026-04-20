@@ -8,3 +8,4 @@ errno_translation_test
 content_type_test
 parseline_test
 page_limit_test
+css_parser_asan_test

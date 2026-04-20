@@ -44,7 +44,26 @@
 #pragma GCC diagnostic ignored "-Wimplicit-function-declaration"
 
 #define YYPARSE_PARAM yyparam
-#define YYERROR_VERBOSE 1
+/* YYERROR_VERBOSE disabled: bison 1.35's verbose-error code generation
+ * (line ~1755 below) iterates yyx up to sizeof(yytname)/sizeof(char*)
+ * and indexes yycheck[yyx + yyn]. yycheck is sized for the transition
+ * table (158 entries here) while yytname is larger — so the loop reads
+ * past yycheck's end. ASAN reports: global-buffer-overflow on yycheck.
+ *
+ * On Wii this OOB read returned unpredictable data that drove the parser
+ * state machine into nonsense, eventually corrupting heap metadata and
+ * crashing inside newlib's _free_r (DSI at DAR=0x5A during the freelist-
+ * unlink pattern: stw r6, 12(r7); stw r7, 8(r6)).
+ *
+ * Disabling verbose error messages sidesteps the buggy codepath. Error
+ * RECOVERY still works; we only lose the "expecting X or Y" details in
+ * the yyerror() string (which we never surface to the user anyway).
+ *
+ * Caught by tests/css_parser_asan_test.c against real google.com CSS.
+ * The .y file keeps its original #define; if anyone ever regenerates
+ * this .c, they'll get the bug back and the ASAN test will flag it.
+ */
+/* #define YYERROR_VERBOSE 1 */
 //#define YYDEBUG 1
 
 #line 15 "css_syntax.y"

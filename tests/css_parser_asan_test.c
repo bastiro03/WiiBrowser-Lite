@@ -153,29 +153,41 @@ int main(void)
 		"a,b,c,d,e,f,g,h,i,j { color: red; }", 35);
 	ASSERT(1, "10-way comma selector share (refcount stress)");
 
-	/* ---- Google.com real-world CSS fixture ---- */
-	fprintf(stderr, "\n[Real-world google.com CSS fixture]\n");
+	/* ---- Real-world fixtures: google.com, x.com, wikipedia-alike ---- */
+	fprintf(stderr, "\n[Real-world CSS fixtures]\n");
 
-	size_t len = 0;
-	char *google_css = read_file("fixtures/google_home.css", &len);
-	if (google_css && len > 0)
+	const char *fixtures[] = {
+		"fixtures/google_home.css",               /* google.com styles */
+		"fixtures/x_home.css",                    /* x.com desktop styles */
+		"fixtures/wikipedia_representative.css",  /* MediaWiki patterns (wikipedia blocked in dev env) */
+	};
+
+	for (size_t fi = 0; fi < sizeof(fixtures) / sizeof(fixtures[0]); fi++)
 	{
-		fprintf(stderr, "  Loaded %zu bytes of google.com CSS\n", len);
-		parse_and_free(google_css, len);
-		ASSERT(1, "google.com CSS parses without ASAN report");
+		size_t len = 0;
+		char *css = read_file(fixtures[fi], &len);
+		if (!css || len == 0)
+		{
+			fprintf(stderr, "  SKIP: %s (fixture missing)\n", fixtures[fi]);
+			failed++;
+			free(css);
+			continue;
+		}
+		fprintf(stderr, "  %s: %zu bytes\n", fixtures[fi], len);
 
-		/* Stress: parse+free 100 times. If there's a subtle UAF that
-		 * only fires when malloc reuses the corrupted address, 100
-		 * iterations should catch it. */
-		stress(google_css, len, 100);
-		ASSERT(1, "google.com CSS 100-iteration stress (no freelist corruption)");
+		parse_and_free(css, len);
+		char msg1[256];
+		snprintf(msg1, sizeof(msg1), "%s parses without ASAN report", fixtures[fi]);
+		ASSERT(1, msg1);
 
-		free(google_css);
-	}
-	else
-	{
-		fprintf(stderr, "  (fixture missing — run from tests/ dir)\n");
-		failed++;
+		/* Stress: parse+free 100 times. A subtle UAF that only fires
+		 * when malloc reuses the corrupted address shows up here. */
+		stress(css, len, 100);
+		char msg2[256];
+		snprintf(msg2, sizeof(msg2), "%s 100-iteration freelist stress", fixtures[fi]);
+		ASSERT(1, msg2);
+
+		free(css);
 	}
 
 	fprintf(stderr, "\n========================================\n");

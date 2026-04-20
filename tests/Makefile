@@ -69,7 +69,7 @@ QUICKJS_LIBS := $(QUICKJS_DIR)/libquickjs.a
 
 CURL_LIB := $(CURL_DIR)/lib/.libs/libcurl.a
 
-all: tls_smoke js_smoke curl_smoke network_stress errno_translation_test content_type_test parseline_test page_limit_test css_parser_asan_test test_freetype_init test_guitext_init
+all: tls_smoke js_smoke curl_smoke network_stress errno_translation_test content_type_test parseline_test page_limit_test css_parser_asan_test js_parser_asan_test test_freetype_init test_guitext_init
 	@echo ""
 	@echo "=== tls_smoke (raw mbedTLS handshake) ==="
 	./tls_smoke
@@ -95,8 +95,11 @@ all: tls_smoke js_smoke curl_smoke network_stress errno_translation_test content
 	@echo "=== page_limit_test (WriteMemoryCallback cap + graceful OOM) ==="
 	./page_limit_test
 	@echo ""
-	@echo "=== css_parser_asan_test (CSS parser + real google.com CSS under ASAN) ==="
+	@echo "=== css_parser_asan_test (CSS parser + real google/x.com CSS under ASAN) ==="
 	./css_parser_asan_test
+	@echo ""
+	@echo "=== js_parser_asan_test (QuickJS + real google/x.com inline JS under ASAN) ==="
+	./js_parser_asan_test
 
 # Build each test binary with LTO_LDFLAGS so the linker plugin
 # runs over all of our static archives.
@@ -169,6 +172,17 @@ css_parser_asan_test: css_parser_asan_test.c $(CSS_PARSER_SRCS)
 	    -Wno-deprecated-non-prototype -Wno-unused-but-set-variable \
 	    $(SANITIZE_FLAGS) \
 	    $< $(CSS_PARSER_SRCS) -o $@
+
+# js_parser_asan_test: feeds real inline <script> blocks extracted from
+# google.com and x.com through the QuickJS wrapper (src/wbl/js_engine.c)
+# under ASAN+UBSAN. Catches parser/GC issues on modern JS constructs
+# (optional chaining, class private fields, async/await, BigInt edge
+# cases stubbed out in MicroQuickJS) BEFORE Wii users hit them.
+#
+# Depends on the QuickJS static archive like js_smoke does.
+js_parser_asan_test: js_parser_asan_test.c ../src/wbl/js_engine.c $(QUICKJS_LIBS)
+	$(CC) $(CFLAGS) $(LTO_LDFLAGS) $< ../src/wbl/js_engine.c $(QUICKJS_LIBS) \
+	    -o $@ -lm -lpthread -ldl
 
 # test_freetype_init: Reproduces the FreeTypeGX fontSystem[] array
 # initialization bug where slots 50-100 were left uninitialized, causing

@@ -13,6 +13,7 @@ js_parser_asan_test
 html_parser_asan_test
 index_list_asan_test
 omnibox_test
+redirect_test
 
 # libFuzzer binaries + artifacts
 fuzz_parseline

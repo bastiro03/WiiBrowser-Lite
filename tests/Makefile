@@ -69,7 +69,7 @@ QUICKJS_LIBS := $(QUICKJS_DIR)/libquickjs.a
 
 CURL_LIB := $(CURL_DIR)/lib/.libs/libcurl.a
 
-all: tls_smoke js_smoke curl_smoke network_stress errno_translation_test content_type_test parseline_test page_limit_test css_parser_asan_test js_parser_asan_test html_parser_asan_test index_list_asan_test omnibox_test test_freetype_init test_guitext_init
+all: tls_smoke js_smoke curl_smoke network_stress errno_translation_test content_type_test parseline_test page_limit_test css_parser_asan_test js_parser_asan_test html_parser_asan_test index_list_asan_test omnibox_test redirect_test test_freetype_init test_guitext_init
 	@echo ""
 	@echo "=== tls_smoke (raw mbedTLS handshake) ==="
 	./tls_smoke
@@ -109,6 +109,9 @@ all: tls_smoke js_smoke curl_smoke network_stress errno_translation_test content
 	@echo ""
 	@echo "=== omnibox_test (URL-vs-search heuristic + heap overflow) ==="
 	./omnibox_test
+	@echo ""
+	@echo "=== redirect_test (CURLOPT_RESOLVE + redirect hostname handling) ==="
+	./redirect_test
 
 # Build each test binary with LTO_LDFLAGS so the linker plugin
 # runs over all of our static archives.
@@ -217,6 +220,14 @@ html_parser_asan_test: html_parser_asan_test.c html_parser_asan_wrapper.cpp $(HT
 # chars URL-expanded to 1500+ bytes and overflowed the heap).
 omnibox_test: omnibox_test.c
 	$(CC) $(CFLAGS) $(SANITIZE_FLAGS) $< -o $@
+
+# redirect_test: Tests CURLOPT_RESOLVE + redirect handling. The bug: when
+# x.com → www.x.com or wikipedia.org → www.wikipedia.org, curl needs a
+# resolve entry for the NEW hostname, but wbl_build_resolve_list() only
+# populates the INITIAL hostname. Fix: pre-populate www.HOSTNAME too.
+redirect_test: redirect_test.c $(CURL_LIB)
+	$(CC) $(LTO_CFLAGS) $(LTO_LDFLAGS) -I$(CURL_DIR)/include \
+	    $< $(CURL_LIB) $(MBEDTLS_LIBS) -lz -o $@
 
 # index_list_asan_test: Tests the Index doubly-linked list (src/liste.cpp).
 # The on-Wii crash at DSI DAR=0x0000000C points directly at `struct Index`'s

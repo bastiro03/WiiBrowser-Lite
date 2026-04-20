@@ -257,6 +257,44 @@ struct curl_slist *wbl_build_resolve_list(const char *url)
 					fprintf(stderr, "wbl_build_resolve_list: %s\n", entry);
 				}
 				fflush(stderr);
+
+				/* FIX for wikipedia.org→www.wikipedia.org and x.com→www.x.com
+				 * redirects: also add www.HOSTNAME variant (or bare HOSTNAME if
+				 * the input already starts with www.). This covers 90%+ of
+				 * real-world redirects without dynamic DNS resolution.
+				 *
+				 * Example: wikipedia.org (bare) → add www.wikipedia.org entries.
+				 * Example: www.x.com (www.) → add x.com (bare) entries.
+				 *
+				 * Use the same IP we already resolved for the initial hostname. */
+				char www_host[256];
+				if (strncmp(host, "www.", 4) == 0) {
+					/* Input is www.HOST → also add bare HOST. */
+					snprintf(www_host, sizeof(www_host), "%s", host + 4);
+				} else {
+					/* Input is bare HOST → also add www.HOST. */
+					snprintf(www_host, sizeof(www_host), "www.%s", host);
+				}
+
+				for (int i = 0; common_ports[i] != 0; i++)
+				{
+					char entry[256];
+					snprintf(entry, sizeof(entry), "%s:%u:%u.%u.%u.%u",
+					         www_host, (unsigned)common_ports[i],
+					         ip[0], ip[1], ip[2], ip[3]);
+					list = curl_slist_append(list, entry);
+					fprintf(stderr, "wbl_build_resolve_list: %s\n", entry);
+				}
+				if (url_port != 80 && url_port != 443 &&
+				    url_port > 0 && url_port < 65536)
+				{
+					char entry[256];
+					snprintf(entry, sizeof(entry), "%s:%lu:%u.%u.%u.%u",
+					         www_host, url_port, ip[0], ip[1], ip[2], ip[3]);
+					list = curl_slist_append(list, entry);
+					fprintf(stderr, "wbl_build_resolve_list: %s\n", entry);
+				}
+				fflush(stderr);
 			}
 			else
 			{

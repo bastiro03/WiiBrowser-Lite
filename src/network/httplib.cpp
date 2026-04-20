@@ -329,6 +329,110 @@ static void pre_resolve(CURL *handle, const char *url)
 		curl_easy_setopt(handle, CURLOPT_RESOLVE, httplib_resolve_list);
 }
 
+/* Check whether the resolve list already has an entry for host:port.
+ * Used by the redirect hook to avoid duplicate entries. */
+static bool resolve_list_has(struct curl_slist *list, const char *host, unsigned port)
+{
+	char prefix[256];
+	int n = snprintf(prefix, sizeof(prefix), "%s:%u:", host, port);
+	if (n <= 0 || n >= (int)sizeof(prefix))
+		return false;
+	for (struct curl_slist *p = list; p; p = p->next)
+	{
+		if (strncmp(p->data, prefix, n) == 0)
+			return true;
+	}
+	return false;
+}
+
+/* Resolve a hostname via libogc and append entries to httplib_resolve_list
+ * for common ports (80, 443). Called when we detect a redirect target with
+ * a hostname we haven't yet resolved. Returns true if entries were added. */
+static bool append_resolve_for_host(CURL *handle, const char *host)
+{
+	/* Skip if host is already an IPv4 literal. */
+	if (host[0] >= '0' && host[0] <= '9')
+		return false;
+
+	/* Skip if we already have entries for this host at port 443. */
+	if (resolve_list_has(httplib_resolve_list, host, 443))
+		return false;
+
+	struct hostent *he = net_gethostbyname(host);
+	if (!he || !he->h_addr_list || !he->h_addr_list[0])
+	{
+		fprintf(stderr, "append_resolve_for_host: net_gethostbyname(%s) failed\n", host);
+		fflush(stderr);
+		return false;
+	}
+	const unsigned char *ip = (const unsigned char *)he->h_addr_list[0];
+
+	static const unsigned short common_ports[] = {80, 443, 0};
+	for (int i = 0; common_ports[i] != 0; i++)
+	{
+		char entry[256];
+		snprintf(entry, sizeof(entry), "%s:%u:%u.%u.%u.%u",
+		         host, (unsigned)common_ports[i],
+		         ip[0], ip[1], ip[2], ip[3]);
+		httplib_resolve_list = curl_slist_append(httplib_resolve_list, entry);
+		fprintf(stderr, "append_resolve_for_host: %s\n", entry);
+	}
+	fflush(stderr);
+
+	/* Re-set CURLOPT_RESOLVE so curl picks up the new entries for the
+	 * upcoming redirect hop. curl re-processes this option on each new
+	 * connection attempt. */
+	curl_easy_setopt(handle, CURLOPT_RESOLVE, httplib_resolve_list);
+	return true;
+}
+
+/* Extract hostname from a curl debug log message of the form:
+ *   "Issue another request to this URL: 'https://host/path'"
+ * Returns true on success with hostname in out_host. */
+static bool extract_redirect_host(const char *data, size_t size,
+                                  char *out_host, size_t out_size)
+{
+	static const char MARKER[] = "Issue another request to this URL: '";
+	size_t marker_len = sizeof(MARKER) - 1;
+
+	if (size <= marker_len)
+		return false;
+	if (memcmp(data, MARKER, marker_len) != 0)
+		return false;
+
+	const char *url_start = data + marker_len;
+	const char *url_end = (const char *)memchr(url_start, '\'', size - marker_len);
+	if (!url_end || url_end == url_start)
+		return false;
+
+	size_t url_len = url_end - url_start;
+	char url[512];
+	if (url_len >= sizeof(url))
+		return false;
+	memcpy(url, url_start, url_len);
+	url[url_len] = 0;
+
+	CURLU *u = curl_url();
+	if (!u) return false;
+	if (curl_url_set(u, CURLUPART_URL, url, 0) != CURLUE_OK)
+	{
+		curl_url_cleanup(u);
+		return false;
+	}
+	char *host = NULL;
+	if (curl_url_get(u, CURLUPART_HOST, &host, 0) != CURLUE_OK || !host)
+	{
+		curl_url_cleanup(u);
+		return false;
+	}
+	bool ok = (strlen(host) < out_size);
+	if (ok)
+		snprintf(out_host, out_size, "%s", host);
+	curl_free(host);
+	curl_url_cleanup(u);
+	return ok;
+}
+
 /* Cap a single page body at 8 MiB. Wii has 88 MB total RAM, much of
  * which is already committed to GX framebuffers, fonts, app state,
  * and libcurl/mbedtls. A runaway page (chunked response with no
@@ -459,6 +563,30 @@ static int wbl_curl_debug_cb(CURL *handle, curl_infotype type,
 		if (size > 0 && data[size-1] != '\n')
 			fprintf(stderr, "\n");
 		fflush(stderr);
+
+		/* Hook for redirect chains with arbitrary subdomain changes.
+		 * Example chain we must handle:
+		 *   http://x.com → https://x.com → https://www.x.com
+		 *                → https://ssl.x.com → https://www.x.com/help
+		 *
+		 * The static wbl_build_resolve_list() seeds entries for the
+		 * INITIAL hostname + its www/bare variant. But curl follows
+		 * redirects to arbitrary subdomains (ssl.x.com, mobile.x.com,
+		 * accounts.google.com, etc.) that we can't predict. Without a
+		 * resolve entry for the new host, curl tries c-ares (which we've
+		 * disabled via IPPROTO_IP workarounds) and fails with
+		 * "Could not resolve host".
+		 *
+		 * When curl prints "Issue another request to this URL: '...'",
+		 * we extract the target hostname, resolve via net_gethostbyname,
+		 * and append to the resolve list BEFORE curl attempts the new
+		 * connection. curl re-reads CURLOPT_RESOLVE on each new
+		 * connection so the added entries take effect immediately. */
+		char new_host[256];
+		if (extract_redirect_host(data, size, new_host, sizeof(new_host)))
+		{
+			append_resolve_for_host(handle, new_host);
+		}
 	}
 	return 0;
 }

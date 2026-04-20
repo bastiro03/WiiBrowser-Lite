@@ -69,7 +69,7 @@ QUICKJS_LIBS := $(QUICKJS_DIR)/libquickjs.a
 
 CURL_LIB := $(CURL_DIR)/lib/.libs/libcurl.a
 
-all: tls_smoke js_smoke curl_smoke network_stress errno_translation_test content_type_test parseline_test page_limit_test css_parser_asan_test js_parser_asan_test html_parser_asan_test index_list_asan_test omnibox_test redirect_test test_freetype_init test_guitext_init
+all: tls_smoke js_smoke curl_smoke network_stress errno_translation_test content_type_test parseline_test page_limit_test css_parser_asan_test js_parser_asan_test html_parser_asan_test index_list_asan_test omnibox_test redirect_test redirect_chain_test test_freetype_init test_guitext_init
 	@echo ""
 	@echo "=== tls_smoke (raw mbedTLS handshake) ==="
 	./tls_smoke
@@ -112,6 +112,9 @@ all: tls_smoke js_smoke curl_smoke network_stress errno_translation_test content
 	@echo ""
 	@echo "=== redirect_test (CURLOPT_RESOLVE + redirect hostname handling) ==="
 	./redirect_test
+	@echo ""
+	@echo "=== redirect_chain_test (multi-hop redirect chain handling) ==="
+	./redirect_chain_test
 
 # Build each test binary with LTO_LDFLAGS so the linker plugin
 # runs over all of our static archives.
@@ -226,6 +229,14 @@ omnibox_test: omnibox_test.c
 # resolve entry for the NEW hostname, but wbl_build_resolve_list() only
 # populates the INITIAL hostname. Fix: pre-populate www.HOSTNAME too.
 redirect_test: redirect_test.c $(CURL_LIB)
+	$(CC) $(LTO_CFLAGS) $(LTO_LDFLAGS) -I$(CURL_DIR)/include \
+	    $< $(CURL_LIB) $(MBEDTLS_LIBS) -lz -o $@
+
+# redirect_chain_test: Multi-hop redirect chain unit tests. Exercises the
+# extract-hostname-from-curl-debug-log logic + dynamic resolve-list
+# append, covering arbitrary-subdomain redirects (ssl.x.com, mobile.x.com)
+# that the static www/bare fix doesn't reach.
+redirect_chain_test: redirect_chain_test.c $(CURL_LIB)
 	$(CC) $(LTO_CFLAGS) $(LTO_LDFLAGS) -I$(CURL_DIR)/include \
 	    $< $(CURL_LIB) $(MBEDTLS_LIBS) -lz -o $@
 

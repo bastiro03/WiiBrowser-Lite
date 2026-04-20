@@ -655,6 +655,20 @@ void setmainheaders(CURL *curl_handle, const char *url)
 	 * us until CURLOPT_TIMEOUT. */
 	curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10L);
 
+	/* Disable connection reuse to avoid mbedTLS state corruption.
+	 * When curl follows redirects with CURLOPT_FOLLOWLOCATION, it keeps
+	 * earlier connections "alive" in the pool while opening new ones
+	 * (e.g., wikipedia.org:443 stays at fd=0 while www.wikipedia.org:443
+	 * opens at fd=1). On Dolphin/Wii, this triggers mbedTLS to return
+	 * MBEDTLS_ERR_SSL_BAD_INPUT_DATA (-0x7100) during ssl_read on the
+	 * new connection — the ssl context pointer is NULL, suggesting our
+	 * IOS socket wrapper doesn't cleanly handle concurrent HTTPS
+	 * connections. CURLOPT_FORBID_REUSE forces curl to close+teardown
+	 * each connection immediately after use, so only one mbedTLS context
+	 * is active at a time. Cost: extra TLS handshakes on redirect chains.
+	 * Benefit: actually works. */
+	curl_easy_setopt(curl_handle, CURLOPT_FORBID_REUSE, 1L);
+
 	/* Disable TCP_NODELAY: Dolphin's IOS doesn't support IPPROTO_TCP
 	 * socket options (level=6), and curl closes the socket when
 	 * setsockopt(TCP_NODELAY) fails. Buffering TCP writes is fine for

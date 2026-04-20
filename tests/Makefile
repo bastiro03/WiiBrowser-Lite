@@ -69,7 +69,7 @@ QUICKJS_LIBS := $(QUICKJS_DIR)/libquickjs.a
 
 CURL_LIB := $(CURL_DIR)/lib/.libs/libcurl.a
 
-all: tls_smoke js_smoke curl_smoke network_stress errno_translation_test content_type_test parseline_test page_limit_test css_parser_asan_test js_parser_asan_test html_parser_asan_test test_freetype_init test_guitext_init
+all: tls_smoke js_smoke curl_smoke network_stress errno_translation_test content_type_test parseline_test page_limit_test css_parser_asan_test js_parser_asan_test html_parser_asan_test index_list_asan_test omnibox_test test_freetype_init test_guitext_init
 	@echo ""
 	@echo "=== tls_smoke (raw mbedTLS handshake) ==="
 	./tls_smoke
@@ -103,6 +103,12 @@ all: tls_smoke js_smoke curl_smoke network_stress errno_translation_test content
 	@echo ""
 	@echo "=== html_parser_asan_test (htmlcxx + real google/x.com HTML under ASAN) ==="
 	./html_parser_asan_test
+	@echo ""
+	@echo "=== index_list_asan_test (Index doubly-linked list + stack overflow) ==="
+	./index_list_asan_test
+	@echo ""
+	@echo "=== omnibox_test (URL-vs-search heuristic + heap overflow) ==="
+	./omnibox_test
 
 # Build each test binary with LTO_LDFLAGS so the linker plugin
 # runs over all of our static archives.
@@ -204,6 +210,24 @@ html_parser_asan_test: html_parser_asan_test.c html_parser_asan_wrapper.cpp $(HT
 	    $(SANITIZE_FLAGS) -I../include \
 	    html_parser_asan_test.c html_parser_asan_wrapper.cpp $(HTML_PARSER_SRCS) \
 	    -o $@
+
+# omnibox_test: verifies the URL-vs-search heuristic that gates the Google
+# search fallback, and verifies omniBox()'s buffer is large enough for
+# URL-encoded queries (previously 612 bytes — a 500-char query with special
+# chars URL-expanded to 1500+ bytes and overflowed the heap).
+omnibox_test: omnibox_test.c
+	$(CC) $(CFLAGS) $(SANITIZE_FLAGS) $< -o $@
+
+# index_list_asan_test: Tests the Index doubly-linked list (src/liste.cpp).
+# The on-Wii crash at DSI DAR=0x0000000C points directly at `struct Index`'s
+# `prec` field (offset 12). Two bugs in liste.cpp contribute:
+#   1. InsIndex uses `new Index` (no () → no value-init) → garbage in
+#      elem/content/screenSize fields until caller overrides.
+#   2. DistruggiIndex is tail-recursive on prox → blows Wii's 32 KB stack
+#      for long lists, trashing adjacent heap metadata.
+# Test reproduces both and asserts the fixed (iterative + value-init) version.
+index_list_asan_test: index_list_asan_test.cpp
+	$(CXX) -std=c++11 -O0 -g -Wall $(SANITIZE_FLAGS) $< -o $@
 
 # test_freetype_init: Reproduces the FreeTypeGX fontSystem[] array
 # initialization bug where slots 50-100 were left uninitialized, causing

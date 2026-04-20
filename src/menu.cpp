@@ -1861,12 +1861,39 @@ bool CancelDownload()
 
 char *omniBox()
 {
-	auto url = static_cast<char *>(malloc(sizeof(new_page) + 100));
+	/* url_encode expands each non-alnum byte to three chars (%XX), so the
+	 * encoded form can be up to 3× the input length. With MAXLEN=512 input
+	 * and a ~90-char format string, the previous sizeof(new_page)+100=612
+	 * buffer overflowed the heap on any non-trivial query, corrupting
+	 * adjacent allocations and triggering crashes inside _free_r on cleanup. */
 	char *encode = url_encode(new_page);
+	size_t bufsize = strlen(encode) + 256;
+	auto url = static_cast<char *>(malloc(bufsize));
 
-	sprintf(url, "http://www.google.com/search?hl=en&source=hp&biw=&bih=&q=%s&btnG=Google+Search&gbv=1", encode);
+	snprintf(url, bufsize,
+	         "http://www.google.com/search?hl=en&source=hp&biw=&bih=&q=%s&btnG=Google+Search&gbv=1",
+	         encode);
 	free(encode);
 	return url;
+}
+
+/* Heuristic: does the user's input look like a URL rather than a search query?
+ * Treat any input containing a dot (without spaces) as a URL. This prevents
+ * "x.com" or "wikipedia.org" from falling back to a Google search on a
+ * transient fetch failure — the user expected a direct site visit, not a
+ * search, and the redirect-to-Google confused the renderer on top of that. */
+static bool looksLikeUrl(const char *input)
+{
+	if (!input || !*input) return false;
+	if (strncmp(input, "http://", 7) == 0 || strncmp(input, "https://", 8) == 0)
+		return true;
+	bool has_space = false, has_dot = false;
+	for (const char *p = input; *p; p++)
+	{
+		if (*p == ' ' || *p == '\t') has_space = true;
+		else if (*p == '.') has_dot = true;
+	}
+	return has_dot && !has_space;
 }
 
 static int MenuBrowse()
@@ -2102,7 +2129,12 @@ jump:
 	{
 		free(url);
 
-		if (!searchWord)
+		/* Only fall back to a Google search when the input actually looked
+		 * like a query. "x.com" or "wikipedia.org" is a URL the user wanted
+		 * to visit directly — showing them Google search results for that
+		 * string is surprising, and the resulting Google page previously
+		 * triggered the rendering path that crashes on malformed input. */
+		if (!searchWord || looksLikeUrl(new_page))
 		{
 			WindowPrompt("Download failed", NULL, "Ok", NULL,
 			             GetLastDownloadError());

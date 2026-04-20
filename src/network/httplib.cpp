@@ -546,6 +546,17 @@ int parseline(HeaderStruct *mem, size_t realsize)
 		snprintf(mem->filename, sizeof(mem->filename), "%s", line);
 	}
 
+	else if (!strncmp(line, "location:", 9))
+	{
+		/* Log redirect target so we can diagnose "Unsupported URL scheme"
+		 * errors. x.com returns malformed Location headers that curl can't
+		 * parse — seeing the raw value helps identify the issue. */
+		fprintf(stderr, "[REDIRECT] Location header: %s", line);
+		if (realsize > 0 && line[realsize-1] != '\n')
+			fprintf(stderr, "\n");
+		fflush(stderr);
+	}
+
 	else if (!strncmp(line, "\r\n", 2))
 		return (!mem->download) * realsize;
 	return realsize;
@@ -563,6 +574,15 @@ static int wbl_curl_debug_cb(CURL *handle, curl_infotype type,
 		if (size > 0 && data[size-1] != '\n')
 			fprintf(stderr, "\n");
 		fflush(stderr);
+
+		/* Detect URL parsing errors during redirect to diagnose what's
+		 * causing CURLE_UNSUPPORTED_PROTOCOL. Common issue: x.com returns
+		 * uppercase "HTTP://" or protocol-relative "//" Location headers
+		 * that older curl versions can't handle. */
+		if (strstr(data, "could not be parsed") || strstr(data, "Unsupported")) {
+			fprintf(stderr, "[REDIRECT_ERROR] curl URL parsing failed - check Location header above\n");
+			fflush(stderr);
+		}
 
 		/* Hook for redirect chains with arbitrary subdomain changes.
 		 * Example chain we must handle:

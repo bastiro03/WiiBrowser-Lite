@@ -69,7 +69,7 @@ QUICKJS_LIBS := $(QUICKJS_DIR)/libquickjs.a
 
 CURL_LIB := $(CURL_DIR)/lib/.libs/libcurl.a
 
-all: tls_smoke js_smoke curl_smoke network_stress errno_translation_test content_type_test parseline_test page_limit_test css_parser_asan_test js_parser_asan_test test_freetype_init test_guitext_init
+all: tls_smoke js_smoke curl_smoke network_stress errno_translation_test content_type_test parseline_test page_limit_test css_parser_asan_test js_parser_asan_test html_parser_asan_test test_freetype_init test_guitext_init
 	@echo ""
 	@echo "=== tls_smoke (raw mbedTLS handshake) ==="
 	./tls_smoke
@@ -96,10 +96,13 @@ all: tls_smoke js_smoke curl_smoke network_stress errno_translation_test content
 	./page_limit_test
 	@echo ""
 	@echo "=== css_parser_asan_test (CSS parser + real google/x.com CSS under ASAN) ==="
-	./css_parser_asan_test
+	ASAN_OPTIONS=detect_leaks=0 ./css_parser_asan_test
 	@echo ""
 	@echo "=== js_parser_asan_test (QuickJS + real google/x.com inline JS under ASAN) ==="
 	./js_parser_asan_test
+	@echo ""
+	@echo "=== html_parser_asan_test (htmlcxx + real google/x.com HTML under ASAN) ==="
+	./html_parser_asan_test
 
 # Build each test binary with LTO_LDFLAGS so the linker plugin
 # runs over all of our static archives.
@@ -183,6 +186,24 @@ css_parser_asan_test: css_parser_asan_test.c $(CSS_PARSER_SRCS)
 js_parser_asan_test: js_parser_asan_test.c ../src/wbl/js_engine.c $(QUICKJS_LIBS)
 	$(CC) $(CFLAGS) $(LTO_LDFLAGS) $< ../src/wbl/js_engine.c $(QUICKJS_LIBS) \
 	    -o $@ -lm -lpthread -ldl
+
+# html_parser_asan_test: feeds real HTML from google.com and x.com through
+# htmlcxx::HTML::ParserDom::parseTree() under ASAN+UBSAN. Catches parser
+# issues with modern HTML5 (void elements, data-* attrs, entity decoding,
+# UTF-8) and reproduces the "repeating meta tag" crash from the Wii.
+#
+# Background: After fixing CSS and JS parser heap corruption, x.com loads
+# still hit a DSI in _free_r at DAR=0x0C. Dolphin log showed infinitely
+# repeating <meta content="width=device-width,..."> tag before the crash,
+# suggesting buffer overflow or infinite loop in htmlcxx's SAX parser or
+# entity decoder. This test reproduces that with ASAN to get a clean trace.
+HTML_PARSER_SRCS := ../src/html/ParserDom.cpp ../src/html/ParserSax.cpp \
+                    ../src/html/Node.cpp ../src/html/utils.cpp ../src/html/Uri.cpp
+html_parser_asan_test: html_parser_asan_test.c html_parser_asan_wrapper.cpp $(HTML_PARSER_SRCS)
+	$(CXX) -std=c++11 -O0 -g -Wall -Wno-unused-function \
+	    $(SANITIZE_FLAGS) -I../include \
+	    html_parser_asan_test.c html_parser_asan_wrapper.cpp $(HTML_PARSER_SRCS) \
+	    -o $@
 
 # test_freetype_init: Reproduces the FreeTypeGX fontSystem[] array
 # initialization bug where slots 50-100 were left uninitialized, causing

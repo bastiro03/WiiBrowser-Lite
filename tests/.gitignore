@@ -10,3 +10,4 @@ parseline_test
 page_limit_test
 css_parser_asan_test
 js_parser_asan_test
+html_parser_asan_test

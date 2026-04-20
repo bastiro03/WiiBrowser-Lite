@@ -325,8 +325,165 @@ lto_check: $(MBEDTLS_LIBS) $(QUICKJS_LIBS) $(CURL_LIB)
 	    echo "  LTO sections in first 10 objects: $$count"; \
 	done
 
+# =============================================================================
+# libFuzzer harnesses (coverage-guided fuzzing + ASAN/UBSAN)
+# =============================================================================
+#
+# Catch memory-safety issues and parser edge cases that curated fixtures and
+# hand-written assertions miss. Each harness is a short libFuzzer stub that
+# feeds arbitrary bytes into one parser; clang's coverage instrumentation
+# plus ASAN/UBSAN detect OOB, UAF, uninit, and double-free.
+#
+# Build requires clang (not gcc — libFuzzer is an LLVM runtime). QuickJS /
+# CSS / htmlcxx are compiled from source rather than linked from the
+# pre-built gcc archives so the fuzzer gets coverage feedback from inside
+# the parsers (which is what drives the search).
+#
+# Usage:
+#   make fuzz_targets                       # build all fuzzers
+#   make fuzz_parseline_run  TIME=60        # run one, 60 s
+#   make fuzz                               # run all, 60 s each
+#   make coverage                           # gcov/gcovr report
+#
+# Corpus directories live at fuzz/corpus/<name>/ and are seeded with the
+# real google/x.com fixtures — libFuzzer uses these as starting seeds and
+# mutates from there.
+
+FUZZ_CC      := clang
+FUZZ_CXX     := clang++
+FUZZ_FLAGS   := -O1 -g -fno-omit-frame-pointer \
+                -fsanitize=fuzzer,address,undefined
+FUZZ_TIME    ?= 60
+FUZZ_CORPUS  := fuzz/corpus
+
+# --- fuzz_parseline: self-contained, no external deps ---
+fuzz_parseline: fuzz/fuzz_parseline.c
+	$(FUZZ_CC) $(FUZZ_FLAGS) -Wall $< -o $@
+
+# --- fuzz_css_parse: compile CSS parser sources directly ---
+CSS_FUZZ_FLAGS := $(FUZZ_FLAGS) \
+                  -Wno-implicit-function-declaration \
+                  -Wno-deprecated-non-prototype \
+                  -Wno-unused-but-set-variable
+fuzz_css_parse: fuzz/fuzz_css_parse.c $(CSS_PARSER_SRCS)
+	$(FUZZ_CC) $(CSS_FUZZ_FLAGS) $< $(CSS_PARSER_SRCS) -o $@
+
+# --- fuzz_html_parse: compile htmlcxx sources directly ---
+fuzz_html_parse: fuzz/fuzz_html_parse.cpp $(HTML_PARSER_SRCS)
+	$(FUZZ_CXX) -std=c++11 $(FUZZ_FLAGS) -I../include \
+	    $< $(HTML_PARSER_SRCS) -o $@
+
+# --- fuzz_js_eval: compile QuickJS + wrapper directly ---
+QJS_SRC_C := $(QUICKJS_DIR)/quickjs.c $(QUICKJS_DIR)/libregexp.c \
+             $(QUICKJS_DIR)/libunicode.c $(QUICKJS_DIR)/dtoa.c
+JS_FUZZ_FLAGS := $(FUZZ_FLAGS) -I../include -I$(QUICKJS_DIR) \
+                 -D_GNU_SOURCE -DCONFIG_VERSION=\"0.14.0-micro\" \
+                 -Wno-array-bounds -Wno-format-truncation \
+                 -Wno-unused-but-set-variable -fwrapv -funsigned-char
+fuzz_js_eval: fuzz/fuzz_js_eval.c ../src/wbl/js_engine.c $(QJS_SRC_C)
+	$(FUZZ_CC) $(JS_FUZZ_FLAGS) $< ../src/wbl/js_engine.c $(QJS_SRC_C) \
+	    -o $@ -lm -lpthread -ldl
+
+.PHONY: fuzz_targets fuzz fuzz-seed
+# Populate per-fuzzer corpus directories with seed inputs. Corpus directories
+# are gitignored (libFuzzer writes discovered inputs into them and they grow
+# into the 10s of MB), so seed them from fixtures/ on demand.
+fuzz-seed:
+	@mkdir -p $(FUZZ_CORPUS)/parseline $(FUZZ_CORPUS)/css \
+	          $(FUZZ_CORPUS)/js $(FUZZ_CORPUS)/html
+	@[ -f $(FUZZ_CORPUS)/css/google.css  ] || cp fixtures/google_home.css              $(FUZZ_CORPUS)/css/google.css
+	@[ -f $(FUZZ_CORPUS)/css/x.css       ] || cp fixtures/x_home.css                   $(FUZZ_CORPUS)/css/x.css
+	@[ -f $(FUZZ_CORPUS)/css/wiki.css    ] || cp fixtures/wikipedia_representative.css $(FUZZ_CORPUS)/css/wiki.css
+	@[ -f $(FUZZ_CORPUS)/js/google.js    ] || cp fixtures/google_home.js               $(FUZZ_CORPUS)/js/google.js
+	@[ -f $(FUZZ_CORPUS)/js/x.js         ] || cp fixtures/x_home.js                    $(FUZZ_CORPUS)/js/x.js
+	@[ -f $(FUZZ_CORPUS)/html/google.html ] || cp fixtures/google_home.html            $(FUZZ_CORPUS)/html/google.html
+	@[ -f $(FUZZ_CORPUS)/html/x.html     ] || cp fixtures/x_home.html                  $(FUZZ_CORPUS)/html/x.html
+	@printf 'HTTP/1.1 200 OK\r\n'                > $(FUZZ_CORPUS)/parseline/status_200.txt
+	@printf 'content-type: text/html\r\n'        > $(FUZZ_CORPUS)/parseline/ct_html.txt
+	@printf 'HTTP/1.1 302 Found\r\n'             > $(FUZZ_CORPUS)/parseline/status_302.txt
+	@printf '\r\n'                               > $(FUZZ_CORPUS)/parseline/eoh.txt
+	@echo "Seeded $(FUZZ_CORPUS)/"
+
+fuzz_targets: fuzz_parseline fuzz_css_parse fuzz_html_parse fuzz_js_eval
+
+# Run each fuzzer for $(FUZZ_TIME) seconds (default 60). libFuzzer exits 77
+# on a finding; we propagate that so CI fails. Use -max_total_time so the
+# run is bounded regardless of mutation rate.
+define FUZZ_RUN
+	@echo ""
+	@echo "=== $(1) (fuzzing $(FUZZ_TIME)s) ==="
+	./$(1) $(FUZZ_CORPUS)/$(2) \
+	    -max_total_time=$(FUZZ_TIME) -print_final_stats=1 \
+	    -rss_limit_mb=2048 -timeout=30 -max_len=$(3)
+endef
+
+fuzz: fuzz_targets fuzz-seed
+	$(call FUZZ_RUN,fuzz_parseline,parseline,8192)
+	$(call FUZZ_RUN,fuzz_css_parse,css,65536)
+	$(call FUZZ_RUN,fuzz_html_parse,html,262144)
+	$(call FUZZ_RUN,fuzz_js_eval,js,16384)
+
+# =============================================================================
+# Coverage report (gcov + gcovr)
+# =============================================================================
+#
+# Measures branch coverage of the existing tests against the real parsers.
+# Builds a parallel set of *_cov binaries with gcc -fprofile-arcs/-ftest-coverage
+# (no ASAN — sanitizer+coverage on the same build is flaky) and aggregates.
+#
+# Usage:
+#   make coverage                           # prints branch coverage summary
+#   make coverage-html                      # writes coverage.html
+#
+# Output goes to coverage/ and the HTML report to coverage/index.html.
+
+COV_FLAGS := -O0 -g --coverage -fprofile-arcs -ftest-coverage -fprofile-abs-path
+COV_DIR   := coverage_out
+
+$(COV_DIR):
+	mkdir -p $@
+
+# Rebuild each covered test without ASAN (ASAN + gcov are not stable together).
+coverage_css_test: css_parser_asan_test.c $(CSS_PARSER_SRCS) | $(COV_DIR)
+	$(CC) $(COV_FLAGS) -Wall -Wno-unused-function \
+	    -Wno-implicit-function-declaration -Wno-deprecated-non-prototype \
+	    -Wno-unused-but-set-variable \
+	    $< $(CSS_PARSER_SRCS) -o $@
+
+coverage_html_test: html_parser_asan_test.c html_parser_asan_wrapper.cpp $(HTML_PARSER_SRCS) | $(COV_DIR)
+	$(CXX) -std=c++11 $(COV_FLAGS) -Wall -Wno-unused-function -I../include \
+	    html_parser_asan_test.c html_parser_asan_wrapper.cpp $(HTML_PARSER_SRCS) \
+	    -o $@
+
+coverage_parseline_test: parseline_test.c | $(COV_DIR)
+	$(CC) $(COV_FLAGS) -Wall $< -o $@
+
+.PHONY: coverage coverage-html
+coverage: coverage_css_test coverage_html_test coverage_parseline_test
+	@rm -f *.gcda
+	@echo "--- Running coverage-instrumented tests ---"
+	./coverage_css_test > /dev/null 2>&1 || true
+	./coverage_html_test > /dev/null 2>&1 || true
+	./coverage_parseline_test > /dev/null 2>&1 || true
+	@echo ""
+	@echo "--- Coverage summary (branch, parsers only) ---"
+	@gcovr --root .. --filter '.*/src/css/.*' --filter '.*/src/html/.*' \
+	    --filter '.*/src/network/.*' --branches --print-summary \
+	    --gcov-ignore-errors=source_not_found 2>&1 \
+	    | grep -vE "^(GCC|Reading|Processing|\(WARNING\))" || true
+
+coverage-html: coverage | $(COV_DIR)
+	@gcovr --root .. --filter '.*/src/css/.*' --filter '.*/src/html/.*' \
+	    --filter '.*/src/network/.*' --html --html-details \
+	    -o $(COV_DIR)/index.html \
+	    --gcov-ignore-errors=source_not_found 2>/dev/null
+	@echo "Coverage report → $(COV_DIR)/index.html"
+
 clean:
 	rm -f tls_smoke js_smoke curl_smoke network_stress *.o
+	rm -f fuzz_parseline fuzz_css_parse fuzz_html_parse fuzz_js_eval
+	rm -f coverage_*_test *.gcda *.gcno
+	rm -rf $(COV_DIR) fuzz-*.profraw
 	cd $(MBEDTLS_DIR)/library && $(MAKE) clean
 	cd $(QUICKJS_DIR) && rm -f *.o libquickjs.a
 	-cd $(CURL_DIR) && $(MAKE) distclean 2>/dev/null || true

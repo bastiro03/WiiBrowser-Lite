@@ -663,6 +663,13 @@ void setmainheaders(CURL *curl_handle, const char *url)
 	/* Cap redirects at a sane limit (enforced in getrequest() manual loop). */
 	curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10L);
 
+	/* Force connection close after each request. With manual redirect
+	 * following, we need to ensure the connection closes completely before
+	 * the next hop opens. Without this, curl keeps connections alive in the
+	 * pool across redirect hops, causing overlapping SSL contexts and
+	 * mbedTLS corruption (-0x7100). Cost: extra TLS handshakes. */
+	curl_easy_setopt(curl_handle, CURLOPT_FORBID_REUSE, 1L);
+
 	/* Disable TCP_NODELAY: Dolphin's IOS doesn't support IPPROTO_TCP
 	 * socket options (level=6), and curl closes the socket when
 	 * setsockopt(TCP_NODELAY) fails. Buffering TCP writes is fine for

@@ -69,7 +69,7 @@ QUICKJS_LIBS := $(QUICKJS_DIR)/libquickjs.a
 
 CURL_LIB := $(CURL_DIR)/lib/.libs/libcurl.a
 
-all: tls_smoke js_smoke curl_smoke network_stress errno_translation_test content_type_test parseline_test page_limit_test css_parser_asan_test js_parser_asan_test html_parser_asan_test index_list_asan_test omnibox_test redirect_test redirect_chain_test test_freetype_init test_guitext_init
+all: tls_smoke js_smoke curl_smoke network_stress errno_translation_test content_type_test parseline_test page_limit_test css_parser_asan_test js_parser_asan_test html_parser_asan_test index_list_asan_test omnibox_test redirect_test redirect_chain_test manual_redirect_test test_freetype_init test_guitext_init
 	@echo ""
 	@echo "=== tls_smoke (raw mbedTLS handshake) ==="
 	./tls_smoke
@@ -115,6 +115,9 @@ all: tls_smoke js_smoke curl_smoke network_stress errno_translation_test content
 	@echo ""
 	@echo "=== redirect_chain_test (multi-hop redirect chain handling) ==="
 	./redirect_chain_test
+	@echo ""
+	@echo "=== manual_redirect_test (manual redirect following + connection close) ==="
+	./manual_redirect_test
 
 # Build each test binary with LTO_LDFLAGS so the linker plugin
 # runs over all of our static archives.
@@ -239,6 +242,14 @@ redirect_test: redirect_test.c $(CURL_LIB)
 redirect_chain_test: redirect_chain_test.c $(CURL_LIB)
 	$(CC) $(LTO_CFLAGS) $(LTO_LDFLAGS) -I$(CURL_DIR)/include \
 	    $< $(CURL_LIB) $(MBEDTLS_LIBS) -lz -o $@
+
+# manual_redirect_test: Validates the manual redirect following logic that
+# fixes wikipedia.org mbedTLS context corruption. Tests Location header
+# extraction, max redirect limits, connection close between hops, and
+# x-safari-* URL rewriting. This approach prevents curl from keeping
+# multiple SSL connections open simultaneously (which causes -0x7100).
+manual_redirect_test: manual_redirect_test.c
+	$(CC) $(CFLAGS) $(SANITIZE_FLAGS) $< -o $@
 
 # index_list_asan_test: Tests the Index doubly-linked list (src/liste.cpp).
 # The on-Wii crash at DSI DAR=0x0000000C points directly at `struct Index`'s

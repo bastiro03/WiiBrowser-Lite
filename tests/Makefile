@@ -69,7 +69,7 @@ QUICKJS_LIBS := $(QUICKJS_DIR)/libquickjs.a
 
 CURL_LIB := $(CURL_DIR)/lib/.libs/libcurl.a
 
-all: tls_smoke js_smoke curl_smoke network_stress errno_translation_test content_type_test parseline_test page_limit_test css_parser_asan_test js_parser_asan_test html_parser_asan_test index_list_asan_test omnibox_test redirect_test redirect_chain_test manual_redirect_test test_freetype_init test_guitext_init
+all: tls_smoke js_smoke curl_smoke network_stress errno_translation_test content_type_test parseline_test page_limit_test css_parser_asan_test js_parser_asan_test html_parser_asan_test index_list_asan_test omnibox_test redirect_test redirect_chain_test manual_redirect_test redirect_loop_test test_freetype_init test_guitext_init
 	@echo ""
 	@echo "=== tls_smoke (raw mbedTLS handshake) ==="
 	./tls_smoke
@@ -118,6 +118,9 @@ all: tls_smoke js_smoke curl_smoke network_stress errno_translation_test content
 	@echo ""
 	@echo "=== manual_redirect_test (manual redirect following + connection close) ==="
 	./manual_redirect_test
+	@echo ""
+	@echo "=== redirect_loop_test (redirect loop detection + ASan/UBSan validation) ==="
+	./redirect_loop_test
 
 # Build each test binary with LTO_LDFLAGS so the linker plugin
 # runs over all of our static archives.
@@ -249,6 +252,13 @@ redirect_chain_test: redirect_chain_test.c $(CURL_LIB)
 # x-safari-* URL rewriting. This approach prevents curl from keeping
 # multiple SSL connections open simultaneously (which causes -0x7100).
 manual_redirect_test: manual_redirect_test.c
+	$(CC) $(CFLAGS) $(SANITIZE_FLAGS) $< -o $@
+
+# redirect_loop_test: ASan/UBSan validation of redirect loop detection,
+# memory management, x-safari-* rewriting, and max redirect enforcement.
+# Simulates redirect chains without real network calls to test edge cases:
+# infinite loops (x.com ↔ redirect.x.com), long URLs, buffer safety.
+redirect_loop_test: redirect_loop_test.c
 	$(CC) $(CFLAGS) $(SANITIZE_FLAGS) $< -o $@
 
 # index_list_asan_test: Tests the Index doubly-linked list (src/liste.cpp).

@@ -16,6 +16,7 @@ omnibox_test
 redirect_test
 redirect_chain_test
 manual_redirect_test
+redirect_loop_test
 
 # libFuzzer binaries + artifacts
 fuzz_parseline

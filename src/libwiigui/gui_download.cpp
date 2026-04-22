@@ -48,19 +48,11 @@ GuiDownloadManager::GuiDownloadManager()
 	trigA = new GuiTrigger;
 	trigA->SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
 
-	titleTxt = new GuiText("Downloads", 26, (GXColor)
-	{
-		0, 0, 0, 255
-	}
-	)
+	titleTxt = new GuiText("Downloads", 26, (GXColor){0, 0, 0, 255});
 	titleTxt->SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	titleTxt->SetPosition(0, 40);
 
-	status = new GuiText("", 20, (GXColor)
-	{
-		0, 0, 0, 255
-	}
-	)
+	status = new GuiText("", 20, (GXColor){0, 0, 0, 255});
 	status->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
 
 	this->Append(dialogBoxImg);
@@ -105,21 +97,13 @@ GuiDownloadManager::GuiDownloadManager()
 		progressRightImg[i]->SetForce(true);
 		progressRightImg[i]->SetVisible(false);
 
-		downloads[i] = new GuiText("", 20, (GXColor)
-		{
-			0, 0, 0, 255
-		}
-		)
+		downloads[i] = new GuiText("", 20, (GXColor){0, 0, 0, 255});
 		downloads[i]->SetMaxWidth(270);
 		downloads[i]->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 		downloads[i]->SetScroll(SCROLL_DOTTED);
 		downloads[i]->SetVisible(false);
 
-		progress[i] = new GuiText("", 20, (GXColor)
-		{
-			0, 0, 0, 255
-		}
-		)
+		progress[i] = new GuiText("", 20, (GXColor){0, 0, 0, 255});
 		progress[i]->SetMaxWidth(100);
 		progress[i]->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
 		progress[i]->SetVisible(false);
@@ -171,11 +155,16 @@ GuiDownloadManager::~GuiDownloadManager()
 
 	for (int i = 0; i < MAX_DOWNLOADS; i++)
 	{
-		delete(progressEmptyImg);
-		delete(progressLeftImg);
-		delete(progressMidImg);
-		delete(progressLineImg);
-		delete(progressRightImg);
+		// progress*Img are DECLARED as GuiImage*[MAX_DOWNLOADS] in gui.h,
+		// so we must index into them. The prior `delete(progressEmptyImg)`
+		// tried to delete the whole array as if it were a single pointer,
+		// which is undefined behavior (UBSAN/ASAN would flag it) and also
+		// leaked every element. We now delete the element for this iteration.
+		delete progressEmptyImg[i];
+		delete progressLeftImg[i];
+		delete progressMidImg[i];
+		delete progressLineImg[i];
+		delete progressRightImg[i];
 
 		delete(downloads[i]);
 		delete(progress[i]);
@@ -328,10 +317,7 @@ void GuiDownloadManager::Update(GuiTrigger* t)
 
 	for (u8 i = 0; i < _elements.size(); i++)
 	{
-		try { _elements.at(i)->Update(t); }
-		catch (const std::exception& e)
-		{
-		}
+		if (i < _elements.size()) _elements.at(i)->Update(t);
 	}
 
 	this->ToggleFocus(t);

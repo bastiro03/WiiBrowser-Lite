@@ -19,19 +19,20 @@ int NoText(ListaDiTesto lista)
 
 ListaDiTesto InsText(ListaDiTesto lista)
 {
-	ListaDiTesto punt;
-	punt = new Text;
+	auto punt = new Text();               /* () → value-init: txt = nullptr */
 	punt->prox = lista;
 	return punt;
 }
 
 void DistruggiText(ListaDiTesto lista)
 {
-	if (NoText(lista))
-		return;
-	DistruggiText(lista->prox);
-	delete (lista->txt);
-	delete (lista);
+	while (lista)                         /* iterative — deep-list safe on Wii */
+	{
+		ListaDiTesto next = lista->prox;
+		delete lista->txt;
+		delete lista;
+		lista = next;
+	}
 }
 
 // Button
@@ -47,10 +48,9 @@ int NoButton(ListaDiBottoni lista)
 
 ListaDiBottoni InsButton(ListaDiBottoni lista, int outline)
 {
-	ListaDiBottoni punt;
-	punt = new Button;
+	auto punt = new Button();             /* () → value-init covers btn/tooltip/url */
 	punt->refs = nullptr;
-	punt->label = NULL;
+	punt->label = nullptr;
 	punt->outline = outline;
 	punt->prox = lista;
 	return punt;
@@ -58,11 +58,13 @@ ListaDiBottoni InsButton(ListaDiBottoni lista, int outline)
 
 void DistruggiButton(ListaDiBottoni lista)
 {
-	if (NoButton(lista))
-		return;
-	DistruggiButton(lista->prox);
-	delete (lista->btn);
-	delete (lista);
+	while (lista)                         /* iterative — deep-list safe on Wii */
+	{
+		ListaDiBottoni next = lista->prox;
+		delete lista->btn;
+		delete lista;
+		lista = next;
+	}
 }
 
 // Input
@@ -107,10 +109,12 @@ void SetOption(ListaDiInput element, TipoElemento value)
 
 void DistruggiInput(ListaDiInput lista)
 {
-	if (NoInput(lista))
-		return;
-	DistruggiInput(lista->prox);
-	delete (lista);
+	while (lista)                         /* iterative — deep-list safe on Wii */
+	{
+		ListaDiInput next = lista->prox;
+		delete lista;
+		lista = next;
+	}
 }
 
 // Image
@@ -126,10 +130,9 @@ int NoImg(ListaDiImg lista)
 
 ListaDiImg InsImg(ListaDiImg lista)
 {
-	ListaDiImg punt;
-	punt = new Image;
+	auto punt = new Image();              /* () → value-init covers img etc. */
 	punt->tag = nullptr;
-	punt->imgdata = NULL;
+	punt->imgdata = nullptr;
 	punt->fetched = false;
 	punt->prox = lista;
 	return punt;
@@ -137,12 +140,14 @@ ListaDiImg InsImg(ListaDiImg lista)
 
 void DistruggiImg(ListaDiImg lista)
 {
-	if (NoImg(lista))
-		return;
-	DistruggiImg(lista->prox);
-	delete (lista->img);
-	delete (lista->imgdata);
-	delete (lista);
+	while (lista)                         /* iterative — deep-list safe on Wii */
+	{
+		ListaDiImg next = lista->prox;
+		delete lista->img;
+		delete lista->imgdata;
+		delete lista;
+		lista = next;
+	}
 }
 
 // Index
@@ -158,7 +163,7 @@ int NoIndex(Indice lista)
 
 Indice InsIndex(Indice lista)
 {
-	auto punt = new Index;
+	auto punt = new Index();                /* () → value-init: elem/content/screenSize = 0 */
 	if (!NoIndex(lista))
 		lista->prec = punt;
 	punt->prec = nullptr;
@@ -168,10 +173,16 @@ Indice InsIndex(Indice lista)
 
 void DistruggiIndex(Indice lista)
 {
-	if (NoIndex(lista))
-		return;
-	DistruggiIndex(lista->prox);
-	delete (lista);
+	/* Iterative — a 30 KB page yields hundreds of Index nodes and
+	 * tail-recursion here previously overflowed Wii's ~32 KB stack,
+	 * corrupting heap metadata and crashing inside _free_r (DAR=0x0C,
+	 * the offset of `prec` in struct Index). */
+	while (lista)
+	{
+		Indice next = lista->prox;
+		delete lista;
+		lista = next;
+	}
 }
 
 // History

@@ -127,16 +127,37 @@ void LoadMPlayerFile(char *loadedFile)
 	controlledbygui = 2; // signal any previous file to end
 	char *partitionlabel = NULL;
 
-	// wait for previous file to end
-	while (controlledbygui == 2)
+	// Wait for the previous playback to acknowledge the shutdown
+	// signal. Bounded at ~3 seconds (30000 x 100us); if mplayer is
+	// deadlocked in demux/decode we'd rather proceed than hang
+	// forever. The new-file load below will overwrite the old
+	// state either way.
+	int waits = 30000;
+	while (controlledbygui == 2 && waits > 0)
+	{
 		usleep(100);
+		waits--;
+	}
+	if (waits == 0)
+		fprintf(stderr, "LoadMPlayerFile: previous playback did not end "
+		                "within 3s; proceeding anyway\n");
 
 	// set new file to load
 	ShowAction("Loading...");
 	wiiLoadFile(loadedFile, partitionlabel);
 
-	while (controlledbygui != 0)
+	// Wait for the new file to finish loading. Same timeout rationale
+	// — we cap at ~3s rather than spinning forever if wiiLoadFile
+	// never clears controlledbygui (e.g. bad file, codec deadlock).
+	waits = 30000;
+	while (controlledbygui != 0 && waits > 0)
+	{
 		usleep(100);
+		waits--;
+	}
+	if (waits == 0)
+		fprintf(stderr, "LoadMPlayerFile: new file did not finish loading "
+		                "within 3s; bailing to menu\n");
 }
 
 void ResumeMPlayerFile()
@@ -195,8 +216,9 @@ void ExitApp()
 
 u8 HWButton;
 
-void WiiResetPressed()
+void WiiResetPressed(u32 irq, void *ctx)
 {
+	(void)irq; (void)ctx;
 	HWButton = SYS_RETURNTOMENU;
 }
 
@@ -217,13 +239,38 @@ void WaitExit()
 	}
 }
 
+// Embedded build fingerprint so `strings wiibrowserlite.dol | grep WBL_BUILD_ID`
+// reveals which commit + timestamp produced this binary. Declared `volatile`
+// + used below so LTO/--gc-sections don't strip it.
+#ifndef WBL_BUILD_ID_STRING
+#define WBL_BUILD_ID_STRING "WBL_BUILD_ID:unknown"
+#endif
+extern "C" {
+	volatile const char wbl_build_id[] = WBL_BUILD_ID_STRING;
+}
+
 int main(int argc, char *argv[])
 {
+	// Redirect stderr/stdout to Dolphin's OSReport UART so fprintf(stderr,...)
+	// output shows up in Dolphin's console (and USB Gecko on real hardware).
+	// Without this, libogc stdio goes nowhere visible during development.
+	SYS_STDIO_Report(true);
+
+	// Force a reference so the linker retains wbl_build_id.
+	fprintf(stderr, "%s\n", (const char *)wbl_build_id);
+	fflush(stderr);
+
+	fprintf(stderr, "main: stdio redirected, build ID printed\n");
+	fflush(stderr);
+
 	SYS_SetResetCallback(WiiResetPressed);
 	SYS_SetPowerCallback(WiiPowerPressed);
 	WPAD_SetPowerButtonCallback(WiimotePowerPressed);
 
 	InitVideo();	  // Initialize video
+	SYS_STDIO_Report(true); // Re-establish stderr after video init
+	fprintf(stderr, "main: video initialized\n");
+	fflush(stderr);
 	SetupPads();	  // Initialize input
 	InitAudio();	  // Initialize audio
 	fatInitDefault(); // Initialize file system
@@ -235,8 +282,7 @@ int main(int argc, char *argv[])
 			   (32 * 1024);																				   // padding
 #endif
 
-	InitVideo2();
-	InitFreeType(); // Initialize font system
+	InitFreeType((uint8_t *)font_ttf, font_ttf_size); // Initialize font system
 
 #ifdef MPLAYER
 	// mplayer cache thread
@@ -256,6 +302,9 @@ int main(int argc, char *argv[])
 
 	LoadLanguage();
 	__exception_setreload(10);
+
+	fprintf(stderr, "main: post-init, entering main menu\n");
+	fflush(stderr);
 
 	ResetVideo_Menu();
 	MainMenu(MENU_SPLASH);

@@ -1,0 +1,41 @@
+From 645ea552823e4e000e9434135aa83d876fc07b34 Mon Sep 17 00:00:00 2001
+From: WiiBrowser-Lite <noreply@matthargett.github.io>
+Date: Wed, 15 Apr 2026 07:06:30 +0000
+Subject: [PATCH] vtls/mbedtls: gate TLS 1.3 session-ticket signal on
+ MBEDTLS_SSL_PROTO_TLS1_3
+
+The call to mbedtls_ssl_conf_tls13_enable_signal_new_session_tickets()
+is gated only by MBEDTLS_SSL_SESSION_TICKETS, but the function itself
+is only defined by mbedTLS when MBEDTLS_SSL_PROTO_TLS1_3 is also
+enabled. An mbedTLS build that keeps session tickets (for TLS 1.2
+resumption) but drops TLS 1.3 (to avoid the PSA Crypto dependency)
+currently fails to link against libcurl:
+
+  vtls/mbedtls.c: undefined reference to
+    'mbedtls_ssl_conf_tls13_signal_new_session_tickets'
+
+Add the missing protocol guard so the call is only issued when the
+function is actually present.
+
+Signed-off-by: WiiBrowser-Lite <noreply@matthargett.github.io>
+---
+ lib/vtls/mbedtls.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/lib/vtls/mbedtls.c b/lib/vtls/mbedtls.c
+index 7b1a31e42f..3df19416d9 100644
+--- a/lib/vtls/mbedtls.c
++++ b/lib/vtls/mbedtls.c
+@@ -747,7 +747,8 @@ mbed_connect_step1(struct Curl_cfilter *cf, struct Curl_easy *data)
+     return CURLE_SSL_CONNECT_ERROR;
+   }
+ 
+-#ifdef MBEDTLS_SSL_SESSION_TICKETS
++#if defined(MBEDTLS_SSL_SESSION_TICKETS) && \
++    defined(MBEDTLS_SSL_PROTO_TLS1_3)
+   /* New in mbedTLS 3.6.1, need to enable, default is now disabled */
+   mbedtls_ssl_conf_tls13_enable_signal_new_session_tickets(&backend->config,
+     MBEDTLS_SSL_TLS1_3_SIGNAL_NEW_SESSION_TICKETS_ENABLED);
+-- 
+2.43.0
+

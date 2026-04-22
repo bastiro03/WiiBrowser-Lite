@@ -1,3 +1,38 @@
 /.vscode
 /build
 /output
+*.o
+*.a
+*.map
+wiibrowserlite.elf
+wiibrowserlite.dol
+wiibrowserlite-debug.elf
+wiibrowserlite-debug.dol
+wiibrowserlite-debug.map
+
+# Test binaries (rebuilt each run by tests/Makefile)
+tests/tls_smoke
+tests/js_smoke
+tests/curl_smoke
+tests/network_stress
+
+# Third-party build artifacts (never committed - curl submodule working tree)
+third_party/curl/config.log
+third_party/curl/config.status
+third_party/curl/Makefile
+third_party/curl/**/*.lo
+third_party/curl/**/.libs/
+third_party/curl/**/.deps/
+third_party/curl/**/*.o
+third_party/curl/src/curl
+third_party/curl/src/curlinfo
+
+# bin2o generated headers (one per data file)
+/*_png.h
+/*_pcm.h
+/*_ttf.h
+/*_lang.h
+/*_jpg.h
+/*_gif.h
+/*_pem.h
+/wiibrowser.cfg

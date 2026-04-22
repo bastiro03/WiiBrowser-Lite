@@ -11,7 +11,7 @@
 #define _MAIN_H_
 
 #include "FreeTypeGX.h"
-#include "Settings.h"
+#include "settings.h"
 
 bool InitMPlayer();
 void LoadMPlayerFile(char *loadedFile);

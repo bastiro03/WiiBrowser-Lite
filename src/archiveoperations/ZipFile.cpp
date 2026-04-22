@@ -31,6 +31,7 @@
 #include <string.h>
 #include <malloc.h>
 #include <sys/dir.h>
+#include <sys/param.h>  /* MAXPATHLEN */
 
 #include "ZipFile.h"
 #include "../fileop.h"

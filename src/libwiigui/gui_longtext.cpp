@@ -19,6 +19,23 @@
 
 extern FreeTypeGX* fontSystem[];
 
+// Resolve the FreeTypeGX instance to use for rendering, lazy-allocating
+// if necessary. Returns NULL only if size is out of range or allocation
+// fails; callers must check. Centralises the NULL-guard logic so the
+// several fontSystem[currentSize]->xxx() call sites below don't each
+// need to re-implement it (which previously caused DSI crashes when
+// fontSystem[currentSize] had never been allocated).
+static FreeTypeGX* resolveFont(FreeTypeGX* custom, int size)
+{
+	if (custom) return custom;
+	if (size < 0 || size > MAX_FONT_SIZE) return NULL;
+	if (!fontSystem[size]) {
+		ChangeFontSize(size);
+		fontSystem[size] = new FreeTypeGX(size);
+	}
+	return fontSystem[size];
+}
+
 GuiLongText::GuiLongText(const char* t, int s, GXColor c)
 	: GuiText(t, s, c)
 {
@@ -94,7 +111,7 @@ void GuiLongText::SetTextPos(int pos)
 
 	for (u32 i = 0; i < TextLines.size(); i++)
 	{
-		int curDiff = abs(TextLines[i] - pos);
+		int curDiff = abs(static_cast<int>(TextLines[i]) - pos);
 		if (curDiff < diff)
 		{
 			diff = curDiff;
@@ -200,10 +217,16 @@ void GuiLongText::CheckMaxLineWidth(int iPos)
 
 	int ch = iPos;
 	int lineWidth = 0;
+	wchar_t tmp[2] = {0, 0};
+
+	FreeTypeGX* ftgx = resolveFont(font, currentSize);
+	if (!ftgx)
+		return;
 
 	while (text[ch] && text[ch] != '\n')
 	{
-		lineWidth += fontSystem[currentSize]->getCharWidth(text[ch]);
+		tmp[0] = text[ch];
+		lineWidth += ftgx->getWidth(tmp);
 		ch++;
 	}
 
@@ -259,10 +282,16 @@ void GuiLongText::CalcLineOffsets()
 	int ch = 0;
 	int lineWidth = 0;
 	maxLineWidth = 0;
+	wchar_t tmp[2] = {0, 0};
+
+	FreeTypeGX* ftgx = resolveFont(font, currentSize);
+	if (!ftgx)
+		return;
 
 	while (text[ch])
 	{
-		lineWidth += fontSystem[currentSize]->getCharWidth(text[ch]);
+		tmp[0] = text[ch];
+		lineWidth += ftgx->getWidth(tmp);
 
 		if (text[ch] == '\n')
 		{
@@ -298,8 +327,15 @@ void GuiLongText::Draw()
 
 	currentSize = size * GetScale();
 
-	(font ? font : fontSystem[currentSize])->drawLongText(this->GetLeft(), this->GetTop(),
-	                                                      &text[TextLines[curLineStart]], c,
-	                                                      alignmentHor | alignmentVert, currentSize + 5,
-	                                                      linestodraw, startWidth, maxWidth);
+	FreeTypeGX* ftgx = resolveFont(font, currentSize);
+	if (!ftgx)
+		return;  // Out-of-range size or allocation failed - draw nothing.
+
+	int ypos = this->GetTop();
+	for (int i = 0; i < linestodraw && (curLineStart + i) < static_cast<int>(TextLines.size()); i++)
+	{
+		wchar_t *line = &text[TextLines[curLineStart + i]];
+		ftgx->drawText(this->GetLeft() + startWidth, ypos, line, c, alignmentHor | alignmentVert);
+		ypos += currentSize + 5;
+	}
 }

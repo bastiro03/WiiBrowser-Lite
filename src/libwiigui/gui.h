@@ -77,7 +77,8 @@ enum
 	STATE_SELECTED,
 	STATE_CLICKED,
 	STATE_HELD,
-	STATE_DISABLED
+	STATE_DISABLED,
+	STATE_HIGHLIGHTED
 };
 
 enum
@@ -104,7 +105,8 @@ enum
 enum
 {
 	SCROLL_NONE,
-	SCROLL_HORIZONTAL
+	SCROLL_HORIZONTAL,
+	SCROLL_DOTTED
 };
 
 typedef struct _paddata {
@@ -128,6 +130,10 @@ typedef struct _paddata {
 #define EFFECT_FADE					64
 #define EFFECT_SCALE				128
 #define EFFECT_COLOR_TRANSITION		256
+#define EFFECT_ROTATE				512
+#define EFFECT_MOVE					1024
+#define EFFECT_SLIDE_TO				2048
+#define EFFECT_RUMBLE				4096
 
 //!Sound conversion and playback. A wrapper for other sound libraries - ASND, libmad, ltremor, etc
 class GuiSound
@@ -235,8 +241,13 @@ class GuiElement
 	public:
 		//!Constructor
 		GuiElement();
-		//!Destructor
-		~GuiElement();
+		//!Destructor.
+		//!Must be virtual because GuiElement has virtual methods and
+		//!we delete derived objects (GuiText/Button/Image/Window/...)
+		//!via GuiElement* pointers. Without `virtual`, only the base
+		//!destructor runs, leaking the derived object's members and
+		//!tripping UBSAN's vptr check at runtime.
+		virtual ~GuiElement();
 		//!Set the element's parent
 		//!\param e Pointer to parent element
 		void SetParent(GuiElement * e);
@@ -251,6 +262,16 @@ class GuiElement
 		//!Considers vertical alignment, y offset, height, and parent element's GetTop() / GetHeight() values
 		//!\return top coordinate
 		int GetTop();
+		//!Gets the element's x offset
+		int GetXPosition() { return xoffset; }
+		//!Gets the element's y offset
+		int GetYPosition() { return yoffset; }
+		//!Sets the element's x offset
+		void SetXPosition(int x) { xoffset = x; }
+		//!Sets the element's y offset
+		void SetYPosition(int y) { yoffset = y; }
+		//!Sets force rendering flag
+		void SetForce(bool f) { (void)f; }
 		//!Sets the minimum y offset of the element
 		//!\param y Y offset
 		void SetMinY(int y);
@@ -366,6 +387,8 @@ class GuiElement
 		void SetEffectOnOver(int e, int a, int t=0);
 		//!Shortcut to SetEffectOnOver(EFFECT_SCALE, 4, 110)
 		void SetEffectGrow();
+		//!Stops the specified effect
+		void StopEffect(int e) { if(effects == e) effects = 0; }
 		//!Gets the current element effects
 		//!\return element effects
 		int GetEffect();
@@ -471,6 +494,9 @@ class GuiWindow : public GuiElement
 		//!\param e The GuiElement to insert. If it is already in the GuiWindow, it is removed first
 		//!\param i Index in which to insert the element
 		void Insert(GuiElement* e, u32 i);
+		//!Inserts a GuiElement at the beginning of the GuiWindow
+		//!\param e The GuiElement to insert
+		void BInsert(GuiElement* e) { Insert(e, 0); }
 		//!Removes the specified GuiElement from the GuiWindow
 		//!\param e GuiElement to be removed
 		void Remove(GuiElement* e);
@@ -492,9 +518,13 @@ class GuiWindow : public GuiElement
 		void SetVisible(bool v);
 		//!Resets the window's state to STATE_DEFAULT
 		void ResetState();
-		//!Sets the window's state
-		//!\param s State
-		void SetState(int s);
+		//!Sets the window's state (and propagates to child elements).
+		//!Matches the base class signature (int s, int c = -1) so it
+		//!OVERRIDES rather than hides. The previous 1-arg signature
+		//!triggered -Woverloaded-virtual and caused subtle wrong-
+		//!dispatch bugs where base::SetState(s, chan) would be picked
+		//!when callers meant to hit the window-level override.
+		void SetState(int s, int c = -1) override;
 		//!Gets the index of the GuiElement inside the window that is currently selected
 		//!\return index of selected GuiElement
 		int GetSelected();
@@ -592,6 +622,10 @@ class GuiImage : public GuiElement
 		//!Gets the image data
 		//!\return pointer to image data
 		u8 * GetImage();
+		//!Gets the unscaled image width
+		int GetRealWidth() { return width; }
+		//!Gets the unscaled image height
+		int GetRealHeight() { return height; }
 		//!Sets up a new image using the GuiImageData object specified
 		//!\param img Pointer to GuiImageData object
 		void SetImage(GuiImageData * img);
@@ -634,6 +668,7 @@ class GuiText : public GuiElement
 		//!\param s Font size
 		//!\param c Font color
 		GuiText(const char * t, int s, GXColor c);
+		GuiText(const wchar_t * t, int s, GXColor c);
 		//!\overload
 		//!Assumes SetPresets() has been called to setup preferred text attributes
 		//!\param t Text
@@ -684,6 +719,22 @@ class GuiText : public GuiElement
 		void SetAlignment(int hor, int vert);
 		//!Updates the text to the selected language
 		void ResetText();
+		//!Sets the font data
+		//!\param f Font data
+		//!\param s Font data size
+		void SetFont(const u8 * f, u32 s) { (void)f; (void)s; }
+		//!Sets the document offset for positioning
+		//!\param o Pointer to offset value
+		void SetOffset(int * o) { (void)o; }
+		//!Sets word spacing
+		//!\param s Spacing enabled
+		void SetSpace(bool s) { (void)s; }
+		//!Gets the number of rendered text lines
+		int GetLinesCount() { return textDynNum > 0 ? textDynNum : 1; }
+		//!Gets the maximum width setting
+		int GetMaxWidth() { return maxWidth; }
+		//!Gets the original text string
+		const char * GetText() { return origText; }
 		//!Constantly called to draw the text
 		void Draw();
 	protected:
@@ -700,6 +751,8 @@ class GuiText : public GuiElement
 		int textScrollDelay; //!< Scrolling speed
 		u16 style; //!< FreeTypeGX style attributes
 		bool wrap; //!< Wrapping toggle
+		int currentSize; //!< Current computed font size
+		FreeTypeGX* font; //!< Custom font (if null, use default)
 };
 
 //!Display, manage, and manipulate tooltips in the GUI
@@ -716,16 +769,28 @@ class GuiTooltip : public GuiElement
 		//!Sets the text of the GuiTooltip element
 		//!\param t Text
 		void SetText(const char * t);
+		//!Sets the tooltip offset
+		void SetOffset(int x, int y);
+		//!Sets tooltip text with timeout
+		void SetTimeout(const char *t, int s);
+		//!Reset tooltip text
+		void ResetText();
+		//!Callback when effect finished
+		void OnEffectFinished(GuiElement* e);
 		//!Constantly called to draw the GuiTooltip
 		void DrawTooltip();
 	
-		time_t time1, time2; //!< Tooltip times
+		time_t time1, time2, time3, time4; //!< Tooltip times
+		int timeout; //!< Tooltip timeout value
 
 	protected:
 		GuiImage leftImage; //!< Tooltip left image
 		GuiImage tileImage; //!< Tooltip tile image
 		GuiImage rightImage; //!< Tooltip right image
 		GuiText *text; //!< Tooltip text
+		int offsetHr; //!< Horizontal offset
+		int offsetVr; //!< Vertical offset
+		char *origtext; //!< Original text
 };
 
 //!Display, manage, and manipulate buttons in the GUI. Buttons can have images, icons, text, and sound set (all of which are optional)
@@ -750,6 +815,13 @@ class GuiButton : public GuiElement
 		//!Sets the button's image on click
 		//!\param i Pointer to GuiImage object
 		void SetImageClick(GuiImage* i);
+		//!Sets the button's image when disabled
+		//!\param i Pointer to GuiImage object
+		void SetImageDisabled(GuiImage* i) { (void)i; }
+		//!Sets the button model type
+		void SetModel(int m) { (void)m; }
+		//!Sets a fade effect on the button
+		void SetEffectFade() { SetEffect(EFFECT_FADE, 50); }
 		//!Sets the button's icon
 		//!\param i Pointer to GuiImage object
 		void SetIcon(GuiImage* i);
@@ -762,6 +834,9 @@ class GuiButton : public GuiElement
 		//!Sets the button's icon on click
 		//!\param i Pointer to GuiImage object
 		void SetIconClick(GuiImage* i);
+		//!Gets the button's icon
+		//!\return Pointer to GuiImage object
+		GuiImage* GetIcon() { return icon; }
 		//!Sets the button's label
 		//!\param t Pointer to GuiText object
 		//!\param n Index of label to set (optional, default is 0)
@@ -816,6 +891,72 @@ class GuiButton : public GuiElement
 		GuiSound * soundHold; //!< Sound to play for STATE_HELD
 		GuiSound * soundClick; //!< Sound to play for STATE_CLICKED
 		GuiTooltip * tooltip; //!< Tooltip to display on over
+};
+
+//!Simple point structure for x,y coordinates
+#ifndef _POINT_DEFINED
+#define _POINT_DEFINED
+typedef struct { int x; int y; } POINT;
+#endif
+
+#define MAX_DOWNLOADS 5
+
+//!Page switch arrows
+class GuiSwitch : public GuiWindow
+{
+	public:
+		GuiSwitch(int d);
+		~GuiSwitch();
+		void Update(GuiTrigger * t);
+		int direction;
+		GuiButton * Button;
+		GuiImageData * dataDef;
+		GuiImageData * dataSel;
+		GuiImageData * dataMore;
+		GuiImage * imgDef;
+		GuiImage * imgSel;
+		GuiImage * imgMore;
+		GuiSound * btnSound;
+		GuiTrigger * trigA;
+};
+
+//!Download manager window
+class GuiDownloadManager : public GuiWindow
+{
+	public:
+		GuiDownloadManager();
+		~GuiDownloadManager();
+		void SetProgress(void *p, float t);
+		bool CancelDownload(int *d);
+		int *CreateBar();
+		void RemoveBar(int *i);
+		void Update(GuiTrigger * t);
+	protected:
+		int baroffset;
+		int maxtile;
+		GuiImageData * btnOutline;
+		GuiImageData * btnOutlineOver;
+		GuiImageData * dialogBox;
+		GuiImageData * progressLeft;
+		GuiImageData * progressMid;
+		GuiImageData * progressRight;
+		GuiImageData * progressLine;
+		GuiImageData * progressEmpty;
+		GuiImage * dialogBoxImg;
+		GuiImage * progressEmptyImg[MAX_DOWNLOADS];
+		GuiImage * progressLeftImg[MAX_DOWNLOADS];
+		GuiImage * progressMidImg[MAX_DOWNLOADS];
+		GuiImage * progressLineImg[MAX_DOWNLOADS];
+		GuiImage * progressRightImg[MAX_DOWNLOADS];
+		GuiButton * cancelBtn[MAX_DOWNLOADS];
+		GuiImage * cancelBtnImg[MAX_DOWNLOADS];
+		GuiImage * cancelBtnImgOver[MAX_DOWNLOADS];
+		GuiText * downloads[MAX_DOWNLOADS];
+		GuiText * progress[MAX_DOWNLOADS];
+		GuiText * titleTxt;
+		GuiText * status;
+		GuiSound * btnSoundOver;
+		GuiTrigger * trigA;
 };
 
 typedef struct _keytype {
@@ -979,6 +1120,144 @@ class GuiFileBrowser : public GuiElement
 		int selectedItem;
 		int numEntries;
 		bool listChanged;
+};
+
+enum
+{
+	NAVIGATION = 0,
+	HOMEPAGE,
+	FAVORITES,
+	EDITING,
+	TOOLBAR_SCREENSHOT
+};
+
+//!Toolbar for browser navigation
+class GuiToolbar : public GuiWindow
+{
+	public:
+		GuiToolbar(int set);
+		~GuiToolbar();
+		void ChangeButtons(int set);
+		void Update(GuiTrigger * t);
+
+		bool checked;
+		int buttons;
+
+		GuiImage * Toolbar;
+		GuiImage * Back;
+		GuiImage * BackFlat;
+		GuiImage * BackOver;
+		GuiImage * Forward;
+		GuiImage * ForwardFlat;
+		GuiImage * ForwardOver;
+		GuiImage * WWW;
+		GuiImage * WWWOver;
+		GuiImage * Save;
+		GuiImage * SaveFlat;
+		GuiImage * SaveOver;
+		GuiImage * Sett;
+		GuiImage * SettFlat;
+		GuiImage * SettOver;
+		GuiImage * Home;
+		GuiImage * HomeOver;
+		GuiImage * Reload;
+		GuiImage * ReloadFlat;
+		GuiImage * ReloadOver;
+
+		GuiButton * btnBack;
+		GuiButton * btnForward;
+		GuiButton * btnWWW;
+		GuiButton * btnSave;
+		GuiButton * btnHome;
+		GuiButton * btnReload;
+		GuiButton * btnSett;
+
+		GuiImageData * imgFavorites;
+		GuiImageData * imgFavoritesOver;
+		GuiImageData * imgEdit;
+		GuiImageData * imgEditOver;
+
+		GuiTooltip * BackTooltip;
+		GuiTooltip * ForwardTooltip;
+		GuiTooltip * WWWTooltip;
+		GuiTooltip * SaveTooltip;
+		GuiTooltip * HomeTooltip;
+		GuiTooltip * ReloadTooltip;
+		GuiTooltip * SettTooltip;
+
+	protected:
+		GuiImageData * imgToolbar;
+		GuiImageData * imgWWW;
+		GuiImageData * imgWWWOver;
+		GuiImageData * imgSave;
+		GuiImageData * imgSaveOver;
+		GuiImageData * imgSaveFlat;
+		GuiImageData * imgSett;
+		GuiImageData * imgSettOver;
+		GuiImageData * imgSettFlat;
+		GuiImageData * imgHome;
+		GuiImageData * imgHomeOver;
+		GuiImageData * imgReload;
+		GuiImageData * imgReloadOver;
+		GuiImageData * imgReloadFlat;
+		GuiImageData * imgBack;
+		GuiImageData * imgBackFlat;
+		GuiImageData * imgBackOver;
+		GuiImageData * imgForward;
+		GuiImageData * imgForwardFlat;
+		GuiImageData * imgForwardOver;
+
+		GuiSound * btnSound;
+		GuiTrigger * trigA;
+};
+
+enum { TOPSITE = 0, FAVORITE };
+
+//!Favorite/top site block
+class GuiFavorite : public GuiWindow
+{
+	public:
+		GuiFavorite(int outl);
+		GuiFavorite(const GuiFavorite& ref);
+		~GuiFavorite();
+		void SetEditing(bool e);
+		void SetInit(int x, int y);
+		int GetDataWidth();
+		int GetDataHeight();
+		void Update(GuiTrigger * t);
+
+		bool editing;
+		int outline;
+		int xpos;
+		int ypos;
+		GuiButton * Block;
+		GuiButton * Remove;
+		GuiImage * BlockImg;
+		GuiImage * BlockImgOver;
+		GuiImage * Thumb;
+		GuiText * Label;
+
+	protected:
+		GuiImageData * BlockData;
+		GuiImageData * BlockDataOver;
+		GuiImageData * RemoveData;
+		GuiImageData * RemoveDataOver;
+		GuiImage * RemoveImg;
+		GuiImage * RemoveImgOver;
+		GuiSound * btnSound;
+		GuiTrigger * trigA;
+		GuiTrigger * trigH;
+};
+
+class Document
+{
+	public:
+		Document();
+		~Document();
+		void SetOffset(int* offset);
+		int GetOffset();
+	private:
+		int* document;
 };
 
 #endif

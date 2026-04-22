@@ -44,6 +44,14 @@ GuiText::GuiText(const char * t, int s, GXColor c)
 	alignmentHor = ALIGN_CENTRE;
 	alignmentVert = ALIGN_MIDDLE;
 
+	// Initialize font/currentSize to safe defaults. Previously these
+	// were left uninitialized, so GuiLongText::Draw() could read
+	// garbage from `font` and dereference a bogus FreeTypeGX pointer,
+	// producing DSI exceptions with r3 = offset_of(FreeTypeGX::fontData)
+	// = 0xC when the compiler computed &((FreeTypeGX*)0)->fontData.
+	currentSize = 0;
+	font = NULL;
+
 	if(t)
 	{
 		origText = strdup(t);
@@ -75,6 +83,10 @@ GuiText::GuiText(const char * t)
 
 	alignmentHor = presetAlignmentHor;
 	alignmentVert = presetAlignmentVert;
+
+	// See the primary constructor above for why these matter.
+	currentSize = 0;
+	font = NULL;
 
 	if(t)
 	{

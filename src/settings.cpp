@@ -38,7 +38,7 @@
 #include <sys/stat.h>
 #include <dirent.h>
 
-#include "Settings.h"
+#include "settings.h"
 #include "menu.h"
 #include "config.h"
 
@@ -68,7 +68,10 @@ SSettings::~SSettings()
 void SSettings::SetDefault()
 {
 	Language = LANG_ENGLISH;
-	UserAgent = LIBCURL;
+	/* Default UA is iPhone 3G Safari (iOS 6.1.6). Modern sites serve
+	 * a leaner mobile layout for this which our LiteHTML renderer
+	 * handles comfortably on console hardware. */
+	UserAgent = IPHONE_SAFARI_IOS6;
 	Autoupdate = STABLE;
 	ZipFile = ASK;
 
@@ -80,7 +83,6 @@ void SSettings::SetDefault()
 
 	MuteSound = false;
 	IFrame = false;
-	ExecLua = false;
 
 	sprintf(Homepage, DEFAULT_HOMEPAGE);
 	sprintf(DefaultFolder, DEFAULT_APP_PATH);
@@ -92,7 +94,7 @@ void SSettings::SetDefault()
 	sprintf(Revision, "Rev000");
 	sscanf(Revision, "Rev%d", &RevInt);
 
-	for (int i = 0; i < N; i++)
+	for (int i = 0; i < WBL_FAV_COUNT; i++)
 	{
 		TopSites[i] = new char[512];
 		memset(TopSites[i], 0, 512);
@@ -141,14 +143,13 @@ bool SSettings::Save(bool clean)
 	fprintf(file, "Homepage = %s\r\n", Homepage);
 
 	fprintf(file, "\r\n# Top Sites\r\n\r\n");
-	for (int i = 0; i < N; i++)
+	for (int i = 0; i < WBL_FAV_COUNT; i++)
 		fprintf(file, "Favorite(%d) = %s\r\n", i, TopSites[i]);
 
 	fprintf(file, "\r\n# Advanced\r\n\r\n");
 	fprintf(file, "UserAgent = %d\r\n", UserAgent);
 	fprintf(file, "IFrame = %d\r\n", IFrame);
 	fprintf(file, "DocWrite = %d\r\n", DocWrite);
-	fprintf(file, "ExecLua = %d\r\n", ExecLua);
 	fprintf(file, "CleanExit = %d\r\n", clean);
 	fprintf(file, "Proxy = %s\r\n", Proxy);
 	fclose(file);
@@ -163,7 +164,7 @@ bool SSettings::Save(bool clean)
 		return false;
 	closedir(dir);
 
-	for (int i = 0; i < N; i++)
+	for (int i = 0; i < WBL_FAV_COUNT; i++)
 	{
 		snprintf(filedest, sizeof(filedest), "%s/thumbnails/thumb_%d.gxt", AppPath, i);
 		if (!Thumbnails[i])
@@ -254,7 +255,7 @@ bool SSettings::Load()
 	int size = 640 * 480 * 4;
 
 	// load thumbnails
-	for (int i = 0; i < N; i++)
+	for (int i = 0; i < WBL_FAV_COUNT; i++)
 	{
 		snprintf(filepath, sizeof(filepath), "%s/thumbnails/thumb_%d.gxt", AppPath, i);
 
@@ -378,14 +379,6 @@ bool SSettings::SetSetting(char *name, char *value)
 		}
 		return true;
 	}
-	if (strcmp(name, "ExecLua") == 0)
-	{
-		if (sscanf(value, "%d", &i) == 1)
-		{
-			ExecLua = i;
-		}
-		return true;
-	}
 	if (strcmp(name, "CleanExit") == 0)
 	{
 		if (sscanf(value, "%d", &i) == 1)
@@ -496,7 +489,7 @@ struct favorite *SSettings::GetFav(int f)
 
 char *SSettings::GetUrl(int f)
 {
-	if (f < 0 || f >= N)
+	if (f < 0 || f >= WBL_FAV_COUNT)
 		return nullptr;
 	return TopSites[f];
 }
@@ -506,7 +499,7 @@ int SSettings::FindUrl(char *url)
 	if (!url || !url[0])
 		return -1;
 
-	for (int i = 0; i < N; i++)
+	for (int i = 0; i < WBL_FAV_COUNT; i++)
 	{
 		if (!strcmp(TopSites[i], url))
 			return i;
@@ -516,7 +509,7 @@ int SSettings::FindUrl(char *url)
 
 void SSettings::Remove(int f, bool update)
 {
-	if (f < 0 || f >= N)
+	if (f < 0 || f >= WBL_FAV_COUNT)
 		return;
 
 	if (!update)
@@ -625,7 +618,7 @@ bool SSettings::LoadFavorites()
 		 node = mxmlFindElement(node, xml, "a", "href", NULL, MXML_DESCEND))
 	{
 		const char *tmp = mxmlElementGetAttr(node, "href");
-		const char *name = node->child->value.opaque;
+		const char *name = mxmlGetOpaque(mxmlGetFirstChild(node));
 
 		if (tmp)
 		{

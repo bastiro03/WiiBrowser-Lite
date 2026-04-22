@@ -1,10 +1,18 @@
 #include <stdio.h>
+#include <string.h>
+#include <strings.h>
 #include "audio.h"
 #include "html.h"
 #include "config.h"
 
 #define minwidth MIN(width, screenwidth - 80)
 #define LEN 15
+
+// Button model types for AddButton
+enum {
+	ANCHOR = 100,
+	BACKGROUND
+};
 
 enum html htm;
 char tags[END][LEN] = {
@@ -31,8 +39,24 @@ void ResumeThread(lwp_t thread)
 void HaltThread(lwp_t thread)
 {
 	threadState = THREAD_SUSPEND;
-	while (!LWP_ThreadIsSuspended(thread)) // wait for thread to finish
+	// Wait for the image-download thread to honor the suspend flag.
+	// Capped at ~2 seconds (20000 x 100us) so a thread stuck inside a
+	// blocking curl call (e.g. during a page-navigation mid-image)
+	// can't freeze the entire UI. Per curl's CURLOPT_TIMEOUT we set
+	// elsewhere, any stuck transfer will itself abort within 60s, so
+	// the worst case is we proceed before the thread has fully
+	// unwound — the thread checks threadState on its next iteration.
+	int waits = 20000;
+	while (!LWP_ThreadIsSuspended(thread) && waits > 0)
+	{
 		usleep(100);
+		waits--;
+	}
+	if (waits == 0)
+	{
+		fprintf(stderr, "HaltThread: image thread did not suspend within 2s; "
+		                "proceeding (check for stuck curl transfer)\n");
+	}
 }
 
 static void *DownloadImage(void *arg)
@@ -62,7 +86,7 @@ static void *DownloadImage(void *arg)
 					struct block THREAD = downloadfile(curl_img, tmp.c_str(), NULL);
 					if (THREAD.size > 0 && strstr(THREAD.type, "image"))
 					{
-						lista->imgdata = new GuiImageData(static_cast<u8 *>(THREAD.data), THREAD.size);
+						lista->imgdata = new GuiImageData((const u8 *)THREAD.data, THREAD.size);
 						lista->img->SetImage(lista->imgdata);
 						width = MIN(imageSize(lista->tag, lista->img).width, screenwidth - 80);
 						height = MIN(imageSize(lista->tag, lista->img).height, screenheight);
@@ -99,7 +123,7 @@ bool AddImage(Lista::iterator lista, char *url)
 	if (IMAGE.size > 0 && strstr(IMAGE.type, "image"))
 	{
 		img = InsImg(img);
-		img->imgdata = new GuiImageData(static_cast<u8 *>(IMAGE.data), IMAGE.size);
+		img->imgdata = new GuiImageData((const u8 *)IMAGE.data, IMAGE.size);
 		img->img = new GuiImage(img->imgdata);
 		img->img->SetEffect(EFFECT_FADE, 50);
 
@@ -118,8 +142,8 @@ void AddButton(Lista::iterator lista, int type, GuiImage *image, void *arg)
 	switch (type)
 	{
 	case ANCHOR:
-		btn->label = new GuiText(static_cast<char *>(lista->value[*static_cast<int *>(arg)].text.c_str()), 20, (GXColor){0, 0, 255, 255})
-						 btn->label->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
+		btn->label = new GuiText(lista->value[*static_cast<int *>(arg)].text.c_str(), 20, (GXColor){0, 0, 255, 255});
+		btn->label->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 		btn->label->SetSpace(false);
 		SetFont(btn->label, lista->value[*static_cast<int *>(arg)].mode);
 
@@ -168,13 +192,15 @@ void AddButton(Lista::iterator lista, int type, GuiImage *image, void *arg)
 
 int knownType(char type[])
 {
-	if (!strcmp(type, "text/html") || strstr(type, "application/xhtml"))
+	/* HTTP Content-Type type/subtype is case-insensitive per RFC 7231.
+	 * A server sending "TEXT/HTML" must be treated as text/html. */
+	if (!strcasecmp(type, "text/html") || strcasestr(type, "application/xhtml"))
 		return WEB;
-	if (strstr(type, "text"))
+	if (strcasestr(type, "text"))
 		return TEXT;
-	if (strstr(type, "image"))
+	if (strcasestr(type, "image"))
 		return IMAGE;
-	if (strstr(type, "video"))
+	if (strcasestr(type, "video"))
 		return VIDEO;
 	return UNKNOWN;
 }
@@ -297,8 +323,8 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
 				if (lista->name == "title" && !lista->value.empty())
 				{
 					text = InsText(text);
-					title = static_cast<char *>(lista->value[0].text.c_str());
-					text->txt = new GuiText(title, 30, (GXColor){0, 0, 0, 255})
+					title = const_cast<char *>(lista->value[0].text.c_str());
+					text->txt = new GuiText(title, 30, (GXColor){0, 0, 0, 255});
 									text->txt->SetOffset(&offset);
 					text->txt->SetAlignment(ALIGN_MIDDLE, ALIGN_TOP);
 					text->txt->SetPosition(offset + screenwidth / 2, Doc.YPos + Doc.Height);
@@ -441,7 +467,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
 					for (i = 0; i < lista->value.size(); i++)
 					{
 						text = InsText(text);
-						text->txt = new GuiText(static_cast<char *>(lista->value[i].text.c_str()), 20, (GXColor){0, 0, 0, 255})
+						text->txt = new GuiText(lista->value[i].text.c_str(), 20, (GXColor){0, 0, 0, 255});
 										text->txt->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 						text->txt->SetSpace(false);
 						text->txt->SetOffset(&offset);
@@ -530,7 +556,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
 
 	else if (type == IMAGE)
 	{
-		GuiImageData image_data(static_cast<u8 *>(HTML->data), HTML->size);
+		GuiImageData image_data((const u8 *)HTML->data, HTML->size);
 		image = new GuiImage(&image_data);
 		image->SetEffect(EFFECT_FADE, 50);
 		image->SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);

@@ -44,7 +44,7 @@ GuiTooltip::GuiTooltip(const char* t)
 		SetText(t);
 
 	this->SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
-	this->EffectFinished.connect(this, &GuiTooltip::OnEffectFinished);
+	// 	this->EffectFinished.connect(this, &GuiTooltip::OnEffectFinished);
 
 	leftImage.SetParent(this);
 	tileImage.SetParent(this);
@@ -89,7 +89,7 @@ void GuiTooltip::SetText(const char* t)
 	{
 		0, 0, 0, 255
 	}
-	)
+	);
 	text->SetMaxWidth(250);
 	text->SetParent(this);
 	text->SetPosition(offsetHr, offsetVr);

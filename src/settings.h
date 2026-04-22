@@ -33,7 +33,7 @@
 #include <stdio.h>
 #include <gctypes.h>
 
-#define N 9
+#define WBL_FAV_COUNT 9
 
 enum
 {
@@ -159,11 +159,10 @@ public:
 
 	bool DocWrite;
 	bool IFrame;
-	bool ExecLua;
 	bool CleanExit;
 
-	char *TopSites[N];
-	u8 *Thumbnails[N];
+	char *TopSites[WBL_FAV_COUNT];
+	u8 *Thumbnails[WBL_FAV_COUNT];
 
 	struct favorite *Favorites;
 
@@ -223,6 +222,7 @@ enum
 	MOZILLA,
 	IEXPLORER,
 	ANDROID,
+	IPHONE_SAFARI_IOS6,   /* default: triggers mobile layout on most sites */
 	MAXAGENTS
 };
 
@@ -234,6 +234,7 @@ const char AgentName[MAXAGENTS][11] =
 		"Firefox",
 		"IExplorer",
 		"Android",
+		"iPhone-3G",
 };
 
 int CheckFolder(const char *folder);

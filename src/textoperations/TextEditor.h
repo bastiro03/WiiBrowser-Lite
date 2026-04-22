@@ -29,6 +29,7 @@
 #define TEXTEDITOR_H
 
 #include "libwiigui/gui.h"
+#include "gui_longtext.h"
 #include "TextPointer.h"
 
 //! Display a list of files
@@ -36,7 +37,7 @@ class TextEditor : public GuiWindow
 {
 public:
 	TextEditor(const wchar_t *intext, int LinesToDraw, const char *path);
-	~TextEditor() override;
+	~TextEditor();
 	void SetTriggerUpdate(bool set);
 	void SetText(const wchar_t *intext);
 	void WriteTextFile(const char *path);

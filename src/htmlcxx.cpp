@@ -262,7 +262,6 @@ Lista getTag(char *buffer, char *url)
 	tree<HTML::Node> dom;
 	Lista l1;
 
-	try
 	{
 		string html(buffer);
 		apply_ruleset(&html, url);
@@ -550,15 +549,6 @@ Lista getTag(char *buffer, char *url)
 		}
 	}
 
-	catch (exception &e)
-	{
-		cerr << "Exception " << e.what() << " caught" << endl;
-		exit(1);
-	}
-	catch (...)
-	{
-		cerr << "Unknow exception caught " << endl;
-	}
 	return l1;
 }
 

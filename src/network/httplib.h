@@ -41,13 +41,27 @@ struct block
 
 extern const struct block emptyblock;
 struct block downloadfile(CURL *curl_handle, const char *url, FILE *hfile);
-bool postcomment(CURL *curl_handle, char *name, char *content);
+bool postcomment(CURL *curl_handle, const char *name, const char *content);
+
+// Last downloadfile() failure reason, in human-readable form. Written by
+// getrequest/postrequest on curl_easy_perform error or when we get an
+// empty body. Read by the "Failed" modal in menu.cpp so the user sees
+// the actual curl error (e.g. "Couldn't resolve host") instead of
+// just "Failed". Returns a pointer to an internal static buffer.
+const char *GetLastDownloadError(void);
+
+// Build a CURLOPT_RESOLVE slist for the given URL by resolving its
+// hostname through libogc (net_gethostbyname). Returned slist must be
+// kept alive until the transfer completes, then freed with
+// curl_slist_free_all(). Returns NULL if the URL can't be parsed, the
+// host is already an IP literal, or DNS resolution fails.
+struct curl_slist *wbl_build_resolve_list(const char *url);
 
 void save(struct block *b, FILE *hfile);
 bool validProxy();
 
-char *findChr(const char *str, char chr);
-char *findRchr(const char *str, char chr);
+char *findChr(char *str, char chr);
+char *findRchr(char *str, char chr);
 
 void DebugInt(u32 msg);
 void Debug(const char *msg);

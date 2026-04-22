@@ -1,0 +1,43 @@
+test_freetype_init
+test_guitext_init
+tls_smoke
+curl_smoke
+js_smoke
+network_stress
+errno_translation_test
+content_type_test
+parseline_test
+page_limit_test
+css_parser_asan_test
+js_parser_asan_test
+html_parser_asan_test
+index_list_asan_test
+omnibox_test
+redirect_test
+redirect_chain_test
+manual_redirect_test
+redirect_loop_test
+
+# libFuzzer binaries + artifacts
+fuzz_parseline
+fuzz_css_parse
+fuzz_html_parse
+fuzz_js_eval
+crash-*
+leak-*
+timeout-*
+*.profraw
+# Corpus directories are populated at runtime from fixtures/ by the
+# Makefile `fuzz-seed` target; don't commit the (large, churning) contents.
+fuzz/corpus/css/
+fuzz/corpus/html/
+fuzz/corpus/js/
+fuzz/corpus/parseline/
+
+# gcov / coverage report artifacts
+coverage_*_test
+coverage_out/
+*.gcda
+*.gcno
+*.gcov
+curl_reset_test

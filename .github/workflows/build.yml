@@ -1,0 +1,238 @@
+name: Build WiiBrowser-Lite
+
+on:
+  push:
+    branches: [ main, claude/** ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+# GITHUB_TOKEN needs write access to push the ci-log/wii-{sha} branch
+# from the failure-debug step.
+permissions:
+  contents: write
+  actions: read
+  checks: read
+
+jobs:
+  # -------------------------------------------------------------------
+  # Host smoke tests - fast feedback before paying for a Wii cross-build
+  # -------------------------------------------------------------------
+  host-smoke:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Cache third_party host builds
+      # Host-side third_party objects depend only on the submodule HEADs
+      # and the patch stack. Rekey cache on those so a branch push that
+      # doesn't touch deps reuses the existing .a files.
+      uses: actions/cache@v4
+      with:
+        key: host-thirdparty-${{ hashFiles('.gitmodules', 'third_party/*-patches/*.patch', 'include/wbl/mbedtls_config.h', 'third_party/*.mk', 'tests/Makefile') }}-${{ hashFiles('.git/modules/third_party/**/HEAD') }}
+        restore-keys: |
+          host-thirdparty-
+        path: |
+          third_party/mbedtls/library/*.a
+          third_party/mbedtls/library/*.o
+          third_party/curl/lib/.libs/*.a
+          third_party/curl/lib/*.lo
+          third_party/curl/config.status
+          third_party/curl/config.log
+          third_party/curl/Makefile
+          third_party/quickjs/libquickjs.a
+          third_party/quickjs/*.o
+
+    - name: Install host build deps
+      run: |
+        sudo apt-get update -qq
+        sudo apt-get install -y --no-install-recommends \
+            build-essential autoconf automake libtool pkg-config \
+            perl python3 zlib1g-dev
+
+    - name: Report toolchain
+      run: |
+        set -x
+        gcc --version | head -1
+        which gcc-ar gcc-ranlib
+        ls -la third_party/ tests/
+        ls -la third_party/mbedtls-wbl-config/wbl/ || true
+        git submodule status
+
+    - name: Build + run host smoke tests
+      run: |
+        set -x
+        cd tests
+        make -j$(nproc) 2>&1 | tee ../host-smoke.log
+        echo "smoke tests pass: $?"
+
+    - name: Upload host smoke test log (for debugging failures)
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: host-smoke-log
+        path: host-smoke.log
+        retention-days: 7
+        if-no-files-found: warn
+
+    - name: Verify LTO bitcode in all third-party archives
+      run: tests/lto_check.sh
+
+  # -------------------------------------------------------------------
+  # Wii PowerPC cross-compile - only runs if host-smoke passes
+  # -------------------------------------------------------------------
+  build:
+    needs: host-smoke
+    runs-on: ubuntu-latest
+    container:
+      image: devkitpro/devkitppc:latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Verify devkitPPC environment
+      run: |
+        echo "DEVKITPRO=$DEVKITPRO"
+        echo "DEVKITPPC=$DEVKITPPC"
+        export PATH=$DEVKITPPC/bin:$DEVKITPRO/tools/bin:$PATH
+        powerpc-eabi-gcc --version
+        ls -la $DEVKITPRO
+
+    - name: Install build dependencies for third_party
+      run: |
+        # Needed by curl autoreconf and mbedTLS make;
+        # netcat (ncat) is for the log-paste step on failure
+        apt-get update -qq && apt-get install -y --no-install-recommends \
+          autoconf automake libtool pkg-config python3 perl xxd \
+          coreutils netcat-openbsd
+        # numfmt is in coreutils; no separate package
+
+    - name: Report toolchain
+      continue-on-error: true
+      env:
+        PATH: /opt/devkitpro/devkitPPC/bin:/opt/devkitpro/tools/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      run: |
+        set -x
+        powerpc-eabi-gcc --version | head -1
+        # gcc-ar/gcc-ranlib needed for LTO across static archives
+        which powerpc-eabi-gcc-ar powerpc-eabi-gcc-ranlib || \
+            echo "WARNING: powerpc-eabi-gcc-ar/ranlib missing; LTO cross-archive may degrade"
+        ls -la $DEVKITPPC/bin/ | head -30
+        ls -la third_party/
+        git submodule status
+
+    # Cache the Wii cross-built third_party libraries. Key hashes
+    # the submodule pinned commit + patch stack + our build
+    # config, so any change to patches/config/pin invalidates
+    # the cache automatically.
+    - name: Cache third_party Wii builds
+      uses: actions/cache@v4
+      with:
+        key: wii-thirdparty-${{ hashFiles('.gitmodules', 'third_party/*-patches/*.patch', 'include/wbl/mbedtls_config.h', 'third_party/*.mk', 'platform/wii/build.mk') }}-${{ hashFiles('.git/modules/third_party/**/HEAD') }}
+        restore-keys: |
+          wii-thirdparty-
+        path: |
+          third_party/mbedtls/library/*.a
+          third_party/mbedtls/library/*.o
+          third_party/mbedtls/.wbl-patches-applied
+          third_party/curl/lib/.libs/*.a
+          third_party/curl/lib/*.lo
+          third_party/curl/config.status
+          third_party/curl/config.log
+          third_party/curl/Makefile
+          third_party/quickjs/.wbl-patches-applied
+          build/wii/libquickjs.a
+          build/wii/quickjs/*.o
+
+    - name: Build WiiBrowser-Lite (Wii, PowerPC, -flto)
+      # Explicit bash: devkitpro/devkitppc container defaults `run:`
+      # scripts to /bin/sh which doesn't support ${PIPESTATUS[0]}.
+      shell: bash
+      env:
+        PATH: /opt/devkitpro/devkitPPC/bin:/opt/devkitpro/tools/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      run: |
+        git config --global --add safe.directory '*'
+        make WBL_PLATFORM=wii -j$(nproc) 2>&1 | tee wii-build.log
+        exit ${PIPESTATUS[0]}
+
+    - name: Upload Wii build log (always)
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: wii-build-log
+        path: wii-build.log
+        retention-days: 7
+        if-no-files-found: warn
+
+    - name: Dump build log tail on failure
+      if: failure()
+      run: |
+        echo "=== last 60 lines of wii-build.log ==="
+        tail -60 wii-build.log 2>/dev/null || echo "(no log)"
+
+    - name: Verify build artifacts exist
+      run: |
+        ls -lh wiibrowserlite.dol wiibrowserlite.elf
+        file wiibrowserlite.dol wiibrowserlite.elf
+
+    - name: Validate .dol binary (PPC objdump + section sanity)
+      shell: bash
+      env:
+        PATH: /opt/devkitpro/devkitPPC/bin:/opt/devkitpro/tools/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      run: |
+        scripts/verify-dol.sh wiibrowserlite.dol wiibrowserlite.elf
+
+    - name: Report binary section breakdown
+      env:
+        PATH: /opt/devkitpro/devkitPPC/bin:/opt/devkitpro/tools/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      run: |
+        echo "=== Section sizes ==="
+        powerpc-eabi-size wiibrowserlite.elf
+        echo ""
+        echo "=== ELF section headers ==="
+        powerpc-eabi-objdump -h wiibrowserlite.elf | head -30
+        echo ""
+        echo "=== Top 20 largest symbols ==="
+        powerpc-eabi-nm --size-sort -S wiibrowserlite.elf 2>/dev/null | tail -20
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        # Name includes the git SHA so it is obvious whether you are
+        # downloading the right build. Without this, every run uses
+        # the same name and it's easy to grab a stale artifact URL
+        # from a previous run's bookmark/tab.
+        name: wiibrowser-lite-build-${{ github.sha }}
+        path: |
+          wiibrowserlite.dol
+          wiibrowserlite.elf
+          wiibrowserlite.map
+        retention-days: 30
+
+    - name: Upload .dol for release
+      uses: actions/upload-artifact@v4
+      with:
+        name: wiibrowserlite.dol-${{ github.sha }}
+        path: wiibrowserlite.dol
+        retention-days: 90
+
+    - name: Report build fingerprint
+      # Print the sha256 + first-64-bytes hex + size of the .dol so the
+      # run log has a unique fingerprint; if you suspect a stale
+      # artifact, compare this against `sha256sum wiibrowserlite.dol`
+      # on the downloaded file.
+      run: |
+        echo "=== Build fingerprint (should match downloaded artifact) ==="
+        echo "commit:       ${{ github.sha }}"
+        echo "short-sha:    $(echo $GITHUB_SHA | cut -c1-8)"
+        echo "size:         $(stat -c %s wiibrowserlite.dol) bytes"
+        echo "sha256:       $(sha256sum wiibrowserlite.dol | cut -d' ' -f1)"
+        echo "first-64:     $(head -c 64 wiibrowserlite.dol | od -A n -t x1 | tr -d ' \n')"
+        # Grep embedded build id (written by Makefile at link time)
+        echo "embedded-id:  $(strings wiibrowserlite.dol | grep WBL_BUILD_ID | head -1)"

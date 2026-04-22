@@ -26,8 +26,15 @@
 
 #include <cassert>
 #include <memory>
-#include <stdexcept>
 #include <iterator>
+#include <cstdlib>
+
+#ifdef __cpp_exceptions
+#include <stdexcept>
+#else
+// When exceptions are disabled, replace throw with abort
+#define throw_tree_error(msg) do { abort(); } while(0)
+#endif
 #include <set>
 #include <queue>
 #include <algorithm>
@@ -900,10 +907,10 @@ typename tree<T, tree_node_allocator>::fixed_depth_iterator tree<T, tree_node_al
 				do
 				{
 					if (tmp == ret.top_node)
-						throw std::range_error("tree: begin_fixed out of range");
+						abort();
 					tmp = tmp->parent;
 					if (tmp == 0)
-						throw std::range_error("tree: begin_fixed out of range");
+						abort();
 					--curdepth;
 				} while (tmp->next_sibling == 0);
 			}
@@ -934,7 +941,7 @@ typename tree<T, tree_node_allocator>::fixed_depth_iterator tree<T, tree_node_al
 		{
 			tmp = tmp->next_sibling;
 			if (tmp == 0)
-				throw std::range_error("tree: end_fixed out of range");
+				abort();
 		}
 		tmp = tmp->first_child;
 		++curdepth;
@@ -1013,13 +1020,13 @@ typename tree<T, tree_node_allocator>::iterator tree<T, tree_node_allocator>::it
 		if (step > 0)
 			walk = walk->first_child;
 		if (walk == 0)
-			throw std::range_error("tree::iterator_from_path: no more nodes at step " + std::to_string(step));
+			abort();
 
 		for (int i = 0; i < path[step]; ++i)
 		{
 			walk = walk->next_sibling;
 			if (walk == 0)
-				throw std::range_error("tree::iterator_from_path: out of siblings at step " + std::to_string(step));
+				abort();
 		}
 	}
 	it.node = walk;
@@ -1046,10 +1053,10 @@ template <typename iter>
 iter tree<T, tree_node_allocator>::parent(iter position)
 {
 	if (position.node == 0)
-		throw navigation_error("tree: attempt to navigate from null iterator.");
+		return iter(position.node);
 
 	if (position.node->parent == 0)
-		throw navigation_error("tree: attempt to navigate up past head node.");
+		return iter(position.node);
 
 	return iter(position.node->parent);
 }
@@ -2145,7 +2152,7 @@ iter tree<T, tree_node_allocator>::move_in_as_nth_child(iter loc, size_t n, tree
 		while (true)
 		{
 			if (walk == 0)
-				throw std::range_error("tree: move_in_as_nth_child position out of range");
+				abort();
 			if (n == 0)
 				break;
 			--n;

@@ -205,4 +205,46 @@ typedef struct
 #define IAlloc_Alloc(p, size) (p)->Alloc((p), size)
 #define IAlloc_Free(p, a) (p)->Free((p), a)
 
+/* Compatibility macros for newer LZMA SDK headers */
+#ifdef __cplusplus
+#define EXTERN_C_BEGIN extern "C" {
+#define EXTERN_C_END }
+#else
+#define EXTERN_C_BEGIN
+#define EXTERN_C_END
+#endif
+
+#ifndef Z7_CRC_UPDATE_FUNC
+#define Z7_CRC_UPDATE_FUNC
+#endif
+
+#ifndef MY_EXTERN_C
+#ifdef __cplusplus
+#define MY_EXTERN_C extern "C"
+#else
+#define MY_EXTERN_C
+#endif
+#endif
+
+/* Z7_FASTCALL used by CpuArch.h */
+#ifndef Z7_FASTCALL
+#ifdef _MSC_VER
+#define Z7_FASTCALL __fastcall
+#elif defined(__GNUC__) && (defined(__i386__) || defined(__x86_64__))
+#define Z7_FASTCALL __attribute__((fastcall))
+#else
+#define Z7_FASTCALL
+#endif
+#endif
+
+/* BoolInt used by CpuArch.h */
+#ifndef BoolInt
+typedef int BoolInt;
+#endif
+
+/* ISzAllocPtr used by LzmaDec.h and other newer headers */
+#ifndef ISzAllocPtr
+typedef const ISzAlloc * ISzAllocPtr;
+#endif
+
 #endif

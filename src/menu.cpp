@@ -26,18 +26,20 @@
 #include "fileop.h"
 #include "filelist.h"
 
-#include "textoperations/texteditor.h"
+#include "textoperations/TextEditor.h"
+#include "gui_longtext.h"
 #include "config.h"
 
 extern "C"
 {
 #include "mplayer/stream/url.h"
+#include "mplayer/osdep/gx_supp.h"
 #include "urlcode.h"
 }
 
 #define THREAD_SLEEP 100
 #define MAXLEN 512
-#define N 9
+#define WBL_FAV_COUNT 9
 
 static u8 loadstack[GUITH_STACK] ATTRIBUTE_ALIGN(32);
 static u8 updatestack[GUITH_STACK] ATTRIBUTE_ALIGN(32);
@@ -75,7 +77,6 @@ static GuiButton *actionButton = nullptr;
 
 static GuiImageData *SplashImage = nullptr;
 static GuiImage *Splash = nullptr;
-static GuiImage *videoImg = nullptr;
 
 static GuiWindow *guiWindow = nullptr;
 static GuiWindow *videoWindow = nullptr;
@@ -237,9 +238,21 @@ extern "C" void HaltGui()
 {
 	guiHalt = true;
 
-	// wait for thread to finish
-	while (!LWP_ThreadIsSuspended(guithread))
+	// Wait for the GUI thread to acknowledge the halt and suspend
+	// itself. If it's stuck in a libogc call (or deadlocked), don't
+	// spin forever — cap the wait at ~100ms (1000 x 100us) and log
+	// a diagnostic so the bug is visible rather than silently hanging.
+	int waits = 1000;
+	while (!LWP_ThreadIsSuspended(guithread) && waits > 0)
+	{
 		usleep(THREAD_SLEEP);
+		waits--;
+	}
+	if (waits == 0)
+	{
+		fprintf(stderr, "HaltGui: guithread did not suspend within 100ms; "
+		                "proceeding anyway (possible race)\n");
+	}
 }
 
 extern "C" void DoMPlayerGuiDraw()
@@ -255,7 +268,7 @@ void UpdatePointer()
 {
 	if (userInput[0].wpad->ir.valid)
 		Menu_DrawImg(userInput[0].wpad->ir.x - 48, userInput[0].wpad->ir.y - 48,
-					 96, 96, pointer[0]->GetImage(), userInput[0].wpad->ir.angle, 1, 1, 255, GX_TF_RGBA8);
+					 96, 96, pointer[0]->GetImage(), userInput[0].wpad->ir.angle, 1, 1, 255);
 }
 
 /****************************************************************************
@@ -398,7 +411,7 @@ ProgressWindow(char *msg)
 	throbberImg.SetPosition(0, 40);
 	throbberImg.SetScale(0.60);
 
-	msgTxt = new GuiText(msg, 20, (GXColor){0, 0, 0, 255})
+	msgTxt = new GuiText(msg, 20, (GXColor){0, 0, 0, 255});
 				 msgTxt->SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	msgTxt->SetPosition(0, 73);
 
@@ -503,7 +516,7 @@ int WindowPrompt(const char *title, const char *msg, const char *btn1Label, cons
 
 	GuiWindow promptWindow(448, 288);
 	promptWindow.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
-	promptWindow.SetPosition(0, -10);
+	promptWindow.SetPosition(-30, -10);
 	GuiSound btnSoundOver(button_over_pcm, button_over_pcm_size, SOUND_PCM);
 	GuiImageData btnOutline(button_png);
 	GuiImageData btnOutlineOver(button_over_png);
@@ -511,29 +524,29 @@ int WindowPrompt(const char *title, const char *msg, const char *btn1Label, cons
 	GuiImageData dialogBox(dialogue_box_png);
 	GuiImage dialogBoxImg(&dialogBox);
 
-	GuiText titleTxt(title, 26, (GXColor){0, 0, 0, 255})
+	GuiText titleTxt(title, 26, (GXColor){0, 0, 0, 255});
 		titleTxt.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	titleTxt.SetPosition(0, 40);
 
-	GuiText msgTxt(msg, 22, (GXColor){0, 0, 0, 255})
+	GuiText msgTxt(msg, 22, (GXColor){0, 0, 0, 255});
 		msgTxt.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
 	msgTxt.SetPosition(0, -20);
 	msgTxt.SetWrap(true, 400);
 
-	GuiLongText msgLongTxt(longText, 22, (GXColor){0, 0, 0, 255})
+	GuiLongText msgLongTxt(longText, 20, (GXColor){0, 0, 0, 255});
 		msgLongTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
-	msgLongTxt.SetLinesToDraw(8);
-	msgLongTxt.SetMaxWidth(400);
+	msgLongTxt.SetLinesToDraw(10);
+	msgLongTxt.SetMaxWidth(420);
 
-	GuiText btn1Txt(btn1Label, 22, (GXColor){0, 0, 0, 255})
+	GuiText btn1Txt(btn1Label, 22, (GXColor){0, 0, 0, 255});
 		GuiImage btn1Img(&btnOutline);
 	GuiImage btn1ImgOver(&btnOutlineOver);
 	GuiButton btn1(btnOutline.GetWidth(), btnOutline.GetHeight());
 
 	if (msg)
-		msgLongTxt.SetPosition(20, 130);
+		msgLongTxt.SetPosition(20, 110);
 	else
-		msgLongTxt.SetPosition(20, 90);
+		msgLongTxt.SetPosition(20, 75);
 
 	if (btn2Label)
 	{
@@ -554,7 +567,7 @@ int WindowPrompt(const char *title, const char *msg, const char *btn1Label, cons
 	btn1.SetState(STATE_SELECTED);
 	btn1.SetEffectGrow();
 
-	GuiText btn2Txt(btn2Label, 22, (GXColor){0, 0, 0, 255})
+	GuiText btn2Txt(btn2Label, 22, (GXColor){0, 0, 0, 255});
 		GuiImage btn2Img(&btnOutline);
 	GuiImage btn2ImgOver(&btnOutlineOver);
 	GuiButton btn2(btnOutline.GetWidth(), btnOutline.GetHeight());
@@ -707,7 +720,7 @@ static void *UpdateGUI(void *arg)
 			{
 				if (userInput[i].wpad->ir.valid)
 					Menu_DrawImg(userInput[i].wpad->ir.x - 48, userInput[i].wpad->ir.y - 48,
-								 96, 96, pointer[i]->GetImage(), userInput[i].wpad->ir.angle, 1, 1, 255, GX_TF_RGBA8);
+								 96, 96, pointer[i]->GetImage(), userInput[i].wpad->ir.angle, 1, 1, 255);
 				DoRumble(i);
 			}
 #endif
@@ -731,9 +744,8 @@ static void *UpdateGUI(void *arg)
 				for (i = guiRun = 0; i <= 255; i += 15)
 				{
 					mainWindow->Draw();
-					Menu_DrawRectangle(0, 0, screenwidth, screenheight, (GXColor){0, 0, 0, static_cast<u8>(i)},
-									   1)
-						Menu_Render();
+					Menu_DrawRectangle(0, 0, screenwidth, screenheight, (GXColor){0, 0, 0, static_cast<u8>(i)}, 1);
+					Menu_Render();
 				}
 			}
 
@@ -835,7 +847,7 @@ int OnScreenKeyboard(GuiWindow *keyboardWindow, char *var, u16 maxlen)
 	GuiImageData btnOutline(button_png);
 	GuiImageData btnOutlineOver(button_over_png);
 
-	GuiText okBtnTxt("OK", 22, (GXColor){0, 0, 0, 255})
+	GuiText okBtnTxt("OK", 22, (GXColor){0, 0, 0, 255});
 		GuiImage okBtnImg(&btnOutline);
 	GuiImage okBtnImgOver(&btnOutlineOver);
 	GuiButton okBtn(btnOutline.GetWidth(), btnOutline.GetHeight());
@@ -850,7 +862,7 @@ int OnScreenKeyboard(GuiWindow *keyboardWindow, char *var, u16 maxlen)
 	okBtn.SetTrigger(trigA);
 	okBtn.SetEffectGrow();
 
-	GuiText cancelBtnTxt("Cancel", 22, (GXColor){0, 0, 0, 255})
+	GuiText cancelBtnTxt("Cancel", 22, (GXColor){0, 0, 0, 255});
 		GuiImage cancelBtnImg(&btnOutline);
 	GuiImage cancelBtnImgOver(&btnOutlineOver);
 	GuiButton cancelBtn(btnOutline.GetWidth(), btnOutline.GetHeight());
@@ -936,7 +948,7 @@ void SetPointer(bool drag, int chan)
 
 void SetupGui()
 {
-	bgImg = new GuiImage(screenwidth, screenheight, (GXColor){225, 225, 225, 255})
+	bgImg = new GuiImage(screenwidth, screenheight, (GXColor){225, 225, 225, 255});
 				bgImg->SetEffect(EFFECT_FADE, 50);
 	trigA = new GuiTrigger();
 	trigA->SetSimpleTrigger(-1, WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A, PAD_BUTTON_A);
@@ -1005,6 +1017,7 @@ static int MenuBrowseDevice()
 {
 	char title[100];
 	char path[256];
+	char fullpath[MAXPATHLEN];
 	int i;
 
 	ShutoffRumble();
@@ -1034,7 +1047,7 @@ static int MenuBrowseDevice()
 	GuiImage TextboxImg(&Textbox);
 	GuiButton InsertURL(TextboxImg.GetWidth(), TextboxImg.GetHeight());
 
-	GuiText URL("", 20, (GXColor){0, 0, 0, 255})
+	GuiText URL("", 20, (GXColor){0, 0, 0, 255});
 		URL.SetMaxWidth(TextboxImg.GetWidth() - 20);
 	URL.SetScroll(SCROLL_HORIZONTAL);
 
@@ -1046,7 +1059,7 @@ static int MenuBrowseDevice()
 	InsertURL.SetTrigger(trigA);
 	InsertURL.SetEffectGrow();
 
-	GuiText titleTxt(title, 28, (GXColor){0, 0, 0, 255})
+	GuiText titleTxt(title, 28, (GXColor){0, 0, 0, 255});
 		titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	titleTxt.SetPosition(50, 50);
 
@@ -1056,7 +1069,7 @@ static int MenuBrowseDevice()
 
 	GuiImageData btnOutline(button_png);
 	GuiImageData btnOutlineOver(button_over_png);
-	GuiText backBtnTxt("Go Back", 24, (GXColor){0, 0, 0, 255})
+	GuiText backBtnTxt("Go Back", 24, (GXColor){0, 0, 0, 255});
 		GuiImage backBtnImg(&btnOutline);
 	GuiImage backBtnImgOver(&btnOutlineOver);
 	GuiButton backBtn(btnOutline.GetWidth(), btnOutline.GetHeight());
@@ -1155,13 +1168,12 @@ static int MenuAdvanced()
 
 	OptionList options;
 	sprintf(options.name[i++], "Render IFrames");
-	sprintf(options.name[i++], "Execute Lua scripts");
 	sprintf(options.name[i++], "Document.write");
 	sprintf(options.name[i++], "Proxy (url:port)");
 	options.length = i;
 
 	sprintf(version, "WiiBrowser %s", Settings.Revision);
-	GuiText titleTxt(version, 28, (GXColor){0, 0, 0, 255})
+	GuiText titleTxt(version, 28, (GXColor){0, 0, 0, 255});
 		titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	titleTxt.SetPosition(50, 45);
 
@@ -1169,7 +1181,7 @@ static int MenuAdvanced()
 	GuiImageData btnOutline(button_png);
 	GuiImageData btnOutlineOver(button_over_png);
 
-	GuiText backBtnTxt("Go Back", 22, (GXColor){0, 0, 0, 255})
+	GuiText backBtnTxt("Go Back", 22, (GXColor){0, 0, 0, 255});
 		GuiImage backBtnImg(&btnOutline);
 	GuiImage backBtnImgOver(&btnOutlineOver);
 	GuiButton backBtn(btnOutline.GetWidth(), btnOutline.GetHeight());
@@ -1182,7 +1194,7 @@ static int MenuAdvanced()
 	backBtn.SetTrigger(trigA);
 	backBtn.SetEffectGrow();
 
-	GuiText sendBtnTxt("Send report", 22, (GXColor){0, 0, 0, 255})
+	GuiText sendBtnTxt("Send report", 22, (GXColor){0, 0, 0, 255});
 		GuiImage sendBtnImg(&btnOutline);
 	GuiImage sendBtnImgOver(&btnOutlineOver);
 	GuiButton sendBtn(btnOutline.GetWidth(), btnOutline.GetHeight());
@@ -1201,12 +1213,12 @@ static int MenuAdvanced()
 	TextboxImg.SetScaleY(static_cast<float>(120) / TextboxImg.GetHeight());
 	GuiButton postComment(TextboxImg.GetRealWidth(), TextboxImg.GetRealHeight());
 
-	GuiText Post("Report bug", 20, (GXColor){0, 0, 0, 255})
+	GuiText Post("Report bug", 20, (GXColor){0, 0, 0, 255});
 		Post.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	Post.SetPosition(0, -25);
 	postComment.SetLabel(&Post);
 
-	GuiLongText Content("", 20, (GXColor){0, 0, 0, 255})
+	GuiLongText Content("", 20, (GXColor){0, 0, 0, 255});
 		Content.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	Content.SetLinesToDraw(TextboxImg.GetRealHeight() / 25);
 	Content.SetMaxWidth(TextboxImg.GetRealWidth() - 45);
@@ -1252,12 +1264,9 @@ static int MenuAdvanced()
 			Settings.IFrame = !Settings.IFrame;
 			break;
 		case 1:
-			Settings.ExecLua = !Settings.ExecLua;
-			break;
-		case 2:
 			Settings.DocWrite = !Settings.DocWrite;
 			break;
-		case 3:
+		case 2:
 			OnScreenKeyboard(mainWindow, Settings.Proxy, 256);
 			break;
 		}
@@ -1271,14 +1280,10 @@ static int MenuAdvanced()
 				sprintf(options.value[0], "Off");
 			else if (Settings.IFrame == 1)
 				sprintf(options.value[0], "On");
-			if (Settings.ExecLua == 0)
-				sprintf(options.value[1], "Off");
-			else if (Settings.ExecLua == 1)
-				sprintf(options.value[1], "On");
 			if (Settings.DocWrite == 0)
-				sprintf(options.value[2], "Disabled");
+				sprintf(options.value[1], "Disabled");
 			else if (Settings.DocWrite == 1)
-				sprintf(options.value[2], "Enabled");
+				sprintf(options.value[1], "Enabled");
 
 			optionBrowser.TriggerUpdate();
 		}
@@ -1344,7 +1349,7 @@ static int MenuSettings()
 	sprintf(options.name[i++], "User Agent");
 	options.length = i;
 
-	GuiText titleTxt("Settings", 28, (GXColor){0, 0, 0, 255})
+	GuiText titleTxt("Settings", 28, (GXColor){0, 0, 0, 255});
 		titleTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	titleTxt.SetPosition(50, 45);
 
@@ -1352,7 +1357,7 @@ static int MenuSettings()
 	GuiImageData btnOutline(button_png);
 	GuiImageData btnOutlineOver(button_over_png);
 
-	GuiText backBtnTxt("Go Back", 22, (GXColor){0, 0, 0, 255})
+	GuiText backBtnTxt("Go Back", 22, (GXColor){0, 0, 0, 255});
 		GuiImage backBtnImg(&btnOutline);
 	GuiImage backBtnImgOver(&btnOutlineOver);
 	GuiButton backBtn(btnOutline.GetWidth(), btnOutline.GetHeight());
@@ -1365,7 +1370,7 @@ static int MenuSettings()
 	backBtn.SetTrigger(trigA);
 	backBtn.SetEffectGrow();
 
-	GuiText devBtnTxt("Advanced", 22, (GXColor){0, 0, 0, 255})
+	GuiText devBtnTxt("Advanced", 22, (GXColor){0, 0, 0, 255});
 		GuiImage devBtnImg(&btnOutline);
 	GuiImage devBtnImgOver(&btnOutlineOver);
 	GuiButton devBtn(btnOutline.GetWidth(), btnOutline.GetHeight());
@@ -1569,7 +1574,7 @@ static int MenuSplash()
 		menu = MENU_EXIT;
 		conn = NET_ERR;
 	}
-	if (if_config(myIP, NULL, NULL, true) < 0)
+	if (if_config(myIP, NULL, NULL, true, 3) < 0)
 	{
 		menu = MENU_EXIT;
 		conn = IP_ERR;
@@ -1656,7 +1661,7 @@ static int MenuHome()
 	GuiImage TextboxImg(&Textbox);
 	GuiButton InsertURL(TextboxImg.GetWidth(), TextboxImg.GetHeight());
 
-	GuiText URL(new_page, 20, (GXColor){0, 0, 0, 255})
+	GuiText URL(new_page, 20, (GXColor){0, 0, 0, 255});
 		URL.SetMaxWidth(TextboxImg.GetWidth() - 20);
 	URL.SetScroll(SCROLL_HORIZONTAL);
 
@@ -1856,12 +1861,39 @@ bool CancelDownload()
 
 char *omniBox()
 {
-	auto url = static_cast<char *>(malloc(sizeof(new_page) + 100));
+	/* url_encode expands each non-alnum byte to three chars (%XX), so the
+	 * encoded form can be up to 3× the input length. With MAXLEN=512 input
+	 * and a ~90-char format string, the previous sizeof(new_page)+100=612
+	 * buffer overflowed the heap on any non-trivial query, corrupting
+	 * adjacent allocations and triggering crashes inside _free_r on cleanup. */
 	char *encode = url_encode(new_page);
+	size_t bufsize = strlen(encode) + 256;
+	auto url = static_cast<char *>(malloc(bufsize));
 
-	sprintf(url, "http://www.google.com/search?hl=en&source=hp&biw=&bih=&q=%s&btnG=Google+Search&gbv=1", encode);
+	snprintf(url, bufsize,
+	         "http://www.google.com/search?hl=en&source=hp&biw=&bih=&q=%s&btnG=Google+Search&gbv=1",
+	         encode);
 	free(encode);
 	return url;
+}
+
+/* Heuristic: does the user's input look like a URL rather than a search query?
+ * Treat any input containing a dot (without spaces) as a URL. This prevents
+ * "x.com" or "wikipedia.org" from falling back to a Google search on a
+ * transient fetch failure — the user expected a direct site visit, not a
+ * search, and the redirect-to-Google confused the renderer on top of that. */
+static bool looksLikeUrl(const char *input)
+{
+	if (!input || !*input) return false;
+	if (strncmp(input, "http://", 7) == 0 || strncmp(input, "https://", 8) == 0)
+		return true;
+	bool has_space = false, has_dot = false;
+	for (const char *p = input; *p; p++)
+	{
+		if (*p == ' ' || *p == '\t') has_space = true;
+		else if (*p == '.') has_dot = true;
+	}
+	return has_dot && !has_space;
 }
 
 static int MenuBrowse()
@@ -1888,11 +1920,11 @@ static int MenuBrowse()
 	GuiImage dialogBoxImg(&dialogBox);
 	prevMenu = MENU_BROWSE;
 
-	GuiText title("WiiBrowser", 26, (GXColor){0, 0, 0, 255})
+	GuiText title("WiiBrowser", 26, (GXColor){0, 0, 0, 255});
 		title.SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
 	title.SetPosition(0, 40);
 
-	GuiText staticTxt("", 20, (GXColor){0, 0, 0, 255})
+	GuiText staticTxt("", 20, (GXColor){0, 0, 0, 255});
 		staticTxt.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
 	staticTxt.SetPosition(0, -20);
 	staticTxt.SetWrap(true, 400);
@@ -1903,7 +1935,7 @@ static int MenuBrowse()
 	GuiImage btnImg(&btnOutline);
 	GuiImage btnImgOver(&btnOutlineOver);
 
-	GuiText btnTxt("Cancel", 22, (GXColor){0, 0, 0, 255})
+	GuiText btnTxt("Cancel", 22, (GXColor){0, 0, 0, 255});
 
 		actionButton = new GuiButton(btnOutline.GetWidth(), btnOutline.GetHeight());
 	actionButton->SetAlignment(ALIGN_CENTRE, ALIGN_BOTTOM);
@@ -1941,15 +1973,92 @@ jump:
 #endif
 
 	if (!CheckConnection())
-		InitNetwork();
-
-	while (!networkinit)
 	{
-		staticTxt.SetText("Resuming connection...");
+		fprintf(stderr, "MenuBrowse: CheckConnection() returned false, calling InitNetwork()\n");
+		fflush(stderr);
+		InitNetwork();
+	}
+	else
+	{
+		fprintf(stderr, "MenuBrowse: CheckConnection() returned true\n");
+		fflush(stderr);
+	}
 
-		if (LWP_ThreadIsSuspended(networkthread))
-			InitNetwork();
-		usleep(1000);
+	// Wait for network initialization with reasonable UI update rate.
+	// Setting text on every 1ms iteration caused rapid flicker in Dolphin.
+	//
+	// Do NOT restart the network thread when it suspends itself. The
+	// thread runs up to 5 retries internally and suspends when it gives
+	// up. Auto-restarting here from the poll loop creates a feedback
+	// cycle where we repeatedly tear down and reinitialise the IOS
+	// network stack every ~2.5s, which causes heavy heap churn and
+	// corrupts unrelated objects (e.g. FreeTypeGX's glyph cache RB-tree).
+	// If the thread has suspended without success, just wait out the
+	// UI timeout and show the error modal.
+	staticTxt.SetText("Resuming connection...");
+	int net_timeout = 100;  // 100 * 50ms = 5 seconds max wait
+	while (!networkinit && net_timeout > 0)
+	{
+		usleep(50000);  // 50ms = 20 Hz update rate
+		net_timeout--;
+	}
+
+	if (!networkinit)
+	{
+		// Network init timed out after 5 seconds. Build a detailed error
+		// string so the user can tell whether this is a DHCP problem,
+		// a firewall/NAT problem (EHOSTUNREACH/ENETUNREACH), or an
+		// emulator network-stack config issue.
+		struct NetDiag nd;
+		GetNetDiag(&nd);
+
+		const char *stage_name;
+		switch (nd.stage) {
+			case NET_STAGE_INIT_ASYNC: stage_name = "net_init_async"; break;
+			case NET_STAGE_GET_STATUS: stage_name = "net_get_status"; break;
+			case NET_STAGE_CONNECT:    stage_name = "net_connect";    break;
+			case NET_STAGE_SOCKET:     stage_name = "net_socket";     break;
+			case NET_STAGE_NONE:       stage_name = "(no failure recorded - init hung?)"; break;
+			default:                   stage_name = "unknown";        break;
+		}
+
+		char errbuf[640];
+		snprintf(errbuf, sizeof(errbuf),
+		    "Stage: %s\n"
+		    "Error: %s\n"
+		    "Retries: %d/5\n"
+		    "Target: %s:%u\n"
+		    "Status poll: %u ms\n"
+		    "Connect: %u ms\n"
+		    "\n"
+		    "Check emulator network settings\n"
+		    "(SP1/BBA) or Wi-Fi/LAN adapter.",
+		    stage_name,
+		    NetErrStr(nd.last_res),
+		    nd.retries_used,
+		    nd.target_ip, nd.target_port,
+		    nd.status_wait_ms,
+		    nd.connect_elapsed_ms);
+
+		// Tear down the "Resuming connection..." indicator before
+		// showing the error. WindowPrompt() installs its own modal
+		// on mainWindow and we don't want two prompts stacked.
+		HaltGui();
+		mainWindow->Remove(&promptWindow);
+		mainWindow->SetState(STATE_DEFAULT);
+		ResumeGui();
+
+		// Blocking modal - stays up until the user acknowledges with
+		// "Ok". This replaces the earlier usleep(8s) auto-dismiss,
+		// which flashed too quickly to read on Dolphin. The diagnostic
+		// payload goes into longText so GuiLongText renders it with
+		// wrapping/scroll rather than WindowPrompt's short msg field.
+		WindowPrompt("Network connection failed",
+		             NULL,             // msg (short) - unused
+		             "Ok",             // btn1
+		             NULL,             // btn2
+		             errbuf);          // longText (scrollable diagnostic)
+		return MENU_HOME;
 	}
 
 	staticTxt.SetText("Loading...please wait");
@@ -2020,9 +2129,15 @@ jump:
 	{
 		free(url);
 
-		if (!searchWord)
+		/* Only fall back to a Google search when the input actually looked
+		 * like a query. "x.com" or "wikipedia.org" is a URL the user wanted
+		 * to visit directly — showing them Google search results for that
+		 * string is surprising, and the resulting Google page previously
+		 * triggered the rendering path that crashes on malformed input. */
+		if (!searchWord || looksLikeUrl(new_page))
 		{
-			WindowPrompt("WiiBrowser", "Failed", "Ok", nullptr);
+			WindowPrompt("Download failed", NULL, "Ok", NULL,
+			             GetLastDownloadError());
 			return MENU_HOME;
 		}
 
@@ -2067,7 +2182,7 @@ jump:
 
 bool Held(vector<GuiFavorite> &Block)
 {
-	for (int i = 0; i < N; i++)
+	for (int i = 0; i < WBL_FAV_COUNT; i++)
 	{
 		if (Block[i].Block->GetState() == STATE_HELD)
 			return true;
@@ -2103,7 +2218,7 @@ void SwapUrls(int i, int j)
 
 int findEmpty()
 {
-	for (int i = 0; i < N; i++)
+	for (int i = 0; i < WBL_FAV_COUNT; i++)
 	{
 		if (strlen(Settings.GetUrl(i)) == 0)
 			return i;
@@ -2123,10 +2238,10 @@ static int MenuTopSites()
 	fadeAnim = EFFECT_SLIDE_IN | EFFECT_SLIDE_RIGHT;
 	Right->Button->SetState(STATE_SELECTED);
 
-	vector<GuiFavorite> Block(N, GuiFavorite(TOPSITE));
+	vector<GuiFavorite> Block(WBL_FAV_COUNT, GuiFavorite(TOPSITE));
 	prevMenu = MENU_TOPSITES;
 
-	for (int i = 0, xpos = 40, ypos = 40; i < N; i++)
+	for (int i = 0, xpos = 40, ypos = 40; i < WBL_FAV_COUNT; i++)
 	{
 		Block[i].SetInit(xpos, ypos);
 		Block[i].SetEffect(fadeAnim, 50);
@@ -2153,7 +2268,7 @@ static int MenuTopSites()
 	}
 
 	HaltGui();
-	for (int i = 0; i < N; i++)
+	for (int i = 0; i < WBL_FAV_COUNT; i++)
 		mainWindow->Append(&Block[i]);
 	ResumeGui();
 
@@ -2175,7 +2290,7 @@ static int MenuTopSites()
 		if (App->btnSett->GetState() == STATE_CLICKED)
 		{
 			editing = !editing;
-			for (i = 0; i < N; i++)
+			for (i = 0; i < WBL_FAV_COUNT; i++)
 				Block[i].SetEditing(editing);
 
 			App->ChangeButtons(editing ? EDITING : FAVORITES);
@@ -2215,7 +2330,7 @@ static int MenuTopSites()
 			choice = MENU_FAVORITES;
 		}
 
-		for (i = 0; i < N; i++)
+		for (i = 0; i < WBL_FAV_COUNT; i++)
 		{
 			if (Block[i].Block->GetState() == STATE_SELECTED)
 				Block[i].Label->SetScroll(SCROLL_HORIZONTAL);
@@ -2240,7 +2355,7 @@ static int MenuTopSites()
 
 			if (editing && !Held(Block))
 			{
-				for (int j = 0; j < N; j++)
+				for (int j = 0; j < WBL_FAV_COUNT; j++)
 				{
 					if (j == i)
 						continue;
@@ -2259,19 +2374,19 @@ static int MenuTopSites()
 
 	if (editing)
 	{
-		for (i = 0; i < N; i++)
+		for (i = 0; i < WBL_FAV_COUNT; i++)
 			Block[i].Remove->SetEffect(EFFECT_FADE, -50);
-		while (Block[N - 1].Remove->GetEffect() > 0)
+		while (Block[WBL_FAV_COUNT - 1].Remove->GetEffect() > 0)
 			usleep(THREAD_SLEEP);
 	}
 
-	for (i = 0; i < N; i++)
+	for (i = 0; i < WBL_FAV_COUNT; i++)
 		Block[i].SetEffect(fadeAnim, 50);
-	while (Block[N - 1].GetEffect() > 0)
+	while (Block[WBL_FAV_COUNT - 1].GetEffect() > 0)
 		usleep(THREAD_SLEEP);
 
 	HaltGui();
-	for (i = 0; i < N; i++)
+	for (i = 0; i < WBL_FAV_COUNT; i++)
 		mainWindow->Remove(&Block[i]);
 	ResumeGui();
 
@@ -2310,7 +2425,7 @@ struct page GetPage(int page)
 	char *item;
 	int i, j;
 
-	for (i = 0, j = 0; i < N; j++)
+	for (i = 0, j = 0; i < WBL_FAV_COUNT; j++)
 	{
 		if (page)
 		{
@@ -2354,12 +2469,12 @@ static int MenuFavorites()
 	Right->Button->SetState(STATE_SELECTED);
 	Right->SetEffect(EFFECT_FADE, -50);
 
-	vector<GuiFavorite> Block(N, GuiFavorite(FAVORITE));
-	vector<GuiFavorite> Recent(N, GuiFavorite(FAVORITE));
+	vector<GuiFavorite> Block(WBL_FAV_COUNT, GuiFavorite(FAVORITE));
+	vector<GuiFavorite> Recent(WBL_FAV_COUNT, GuiFavorite(FAVORITE));
 	prevMenu = MENU_FAVORITES;
 
 	// favorites
-	for (i = 0; i < N; i++)
+	for (i = 0; i < WBL_FAV_COUNT; i++)
 	{
 		Block[i].SetEffect(EFFECT_FADE, 50);
 		Block[i].Block->SetUpdateCallback(DragCallback);
@@ -2433,7 +2548,7 @@ static int MenuFavorites()
 		mainWindow->Append(&Recent[i]);
 	ResumeGui();
 
-	GuiText bookTxt("", 28, (GXColor){0, 0, 0, 255})
+	GuiText bookTxt("", 28, (GXColor){0, 0, 0, 255});
 		bookTxt.SetAlignment(ALIGN_LEFT, ALIGN_TOP);
 	bookTxt.SetPosition(40, 40);
 	bookTxt.SetEffect(EFFECT_FADE, 30);
@@ -2443,7 +2558,7 @@ static int MenuFavorites()
 	else
 		bookTxt.SetText("Bookmarks");
 
-	GuiText histTxt("Recent History", 28, (GXColor){0, 0, 0, 255})
+	GuiText histTxt("Recent History", 28, (GXColor){0, 0, 0, 255});
 		histTxt.SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
 	histTxt.SetPosition(-40, 40);
 	histTxt.SetEffect(EFFECT_FADE, 30);
@@ -2516,7 +2631,7 @@ static int MenuFavorites()
 				mainWindow->Append(&Block[i]);
 			}
 
-			for (i = Page.n_url; i < N; i++)
+			for (i = Page.n_url; i < WBL_FAV_COUNT; i++)
 				mainWindow->Remove(&Block[i]);
 
 			mainWindow->Append(Left);

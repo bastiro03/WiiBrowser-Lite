@@ -1,0 +1,80 @@
+/* Representative MediaWiki/Wikipedia CSS patterns.
+ * Real wikipedia.org is blocked by the dev-env egress policy, so this
+ * fixture is synthesized from publicly-documented MediaWiki skin CSS
+ * (Vector, MinervaNeue) to cover the modern-CSS traps that x.com and
+ * google.com don't hit.
+ *
+ * Captured patterns:
+ *   - :not() pseudo-class                     — parens, illegal char
+ *   - ::before / ::after                      — double colon (CSS3)
+ *   - [href^="https:"] attribute selector     — brackets, ^, quotes
+ *   - @media screen and (min-width: ...)      — at-rule + parens
+ *   - CSS grid shorthand values
+ *   - linear-gradient(), rgba(), var()        — function-call values
+ *   - > + ~ sibling combinators               — illegal chars in selector
+ *   - :hover, :focus, :first-child            — pseudo-classes
+ */
+
+/* MediaWiki core */
+.mw-parser-output a.external { background-image: url('icon.svg'); }
+.mw-parser-output a.external:visited { color: #795cb2; }
+.mw-parser-output .infobox { border: 1px solid #a2a9b1; }
+
+/* Pseudo-elements (CSS3 double-colon syntax) */
+.mw-headline::before { content: ""; }
+.mw-headline::after  { content: attr(data-level); }
+
+/* Attribute selector with caret operator */
+a[href^="https:"]::after { content: url(lock.svg); }
+a[href$=".pdf"]           { background: url(pdf-icon.png); }
+a[href*="wikipedia.org"]  { color: #0645ad; }
+input[type="text"][aria-required="true"] { border-color: red; }
+
+/* :not() — modern pseudo-class */
+.content > p:not(.mw-empty-elt) { margin: 0.5em 0; }
+nav li:not(:last-child)         { border-right: 1px solid; }
+
+/* @media queries */
+@media screen and (max-width: 800px) {
+	.sidebar { display: none; }
+	.content { width: 100%; }
+}
+@media (prefers-color-scheme: dark) {
+	body { background: #111; color: #eee; }
+}
+
+/* CSS variables + var() */
+:root {
+	--link-color: #0645ad;
+	--visited-color: #795cb2;
+}
+a { color: var(--link-color); }
+a:visited { color: var(--visited-color); }
+
+/* linear-gradient, rgba */
+.hero-banner {
+	background: linear-gradient(to bottom, rgba(0,0,0,0.4), transparent);
+}
+
+/* Child + sibling combinators */
+ul > li + li { margin-top: 0.25em; }
+h2 ~ p      { text-indent: 1em; }
+
+/* CSS grid */
+.grid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 16px;
+}
+
+/* :hover / :focus chains */
+a:hover, a:focus { text-decoration: underline; }
+
+/* calc() */
+.column { width: calc(100% - 20px); padding: calc(1em + 4px); }
+
+/* :first-child, :last-child, :nth-child() */
+tr:nth-child(odd)  { background: #f9f9f9; }
+tr:nth-child(even) { background: #ffffff; }
+li:first-child     { border-top: none; }
+li:last-child      { border-bottom: none; }

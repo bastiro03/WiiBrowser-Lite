@@ -128,6 +128,12 @@ void TextPointer::PositionChanged(int chan, int x, int y)
 	if (!line)
 		return;
 
+	// Guard against uninitialized/out-of-range fontsize and an unallocated
+	// fontSystem[] slot. Either condition would previously cause a DSI
+	// crash via NULL FreeTypeGX::fontData access (r3 = 0xC = offsetof).
+	if (fontsize < 0 || fontsize > MAX_FONT_SIZE || !fontSystem[fontsize])
+		return;
+
 	int i = 0;
 	int w = -TextPtr->GetStartWidth();
 
@@ -186,6 +192,14 @@ void TextPointer::SetLetterPosition(int LetterPos)
 		LetterPos = lineLength;
 
 	Position_X = -TextPtr->GetStartWidth();
+
+	// Same guard as SetPositionValues - see that function for context.
+	if (fontsize < 0 || fontsize > MAX_FONT_SIZE || !fontSystem[fontsize])
+	{
+		LetterNumInLine = LetterPos;
+		Marking = false;
+		return;
+	}
 
 	for (int i = 0; i < LetterPos; ++i)
 		Position_X += fontSystem[fontsize]->getCharWidth(line[i], i > 0 ? line[i - 1] : 0);

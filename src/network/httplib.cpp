@@ -160,6 +160,7 @@ struct HeaderStruct
 	bool download;
 	bool in_redirect;   /* true while parsing a 3xx response's headers */
 	char filename[256];
+	char location[512]; /* captured Location header for x-safari-* rewrite */
 };
 
 struct MemoryStruct
@@ -548,9 +549,13 @@ int parseline(HeaderStruct *mem, size_t realsize)
 
 	else if (!strncmp(line, "location:", 9))
 	{
-		/* Log redirect target so we can diagnose "Unsupported URL scheme"
-		 * errors. x.com returns malformed Location headers that curl can't
-		 * parse — seeing the raw value helps identify the issue. */
+		/* Capture Location header for x-safari-* URL rewriting.
+		 * x.com returns "x-safari-https://redirect.x.com/..." when it
+		 * detects watchOS User-Agent — a non-standard Apple scheme for
+		 * app deep-linking. curl rejects it with CURLE_UNSUPPORTED_PROTOCOL.
+		 * We'll strip the x-safari- prefix later if curl bails. */
+		snprintf(mem->location, sizeof(mem->location), "%s", line);
+
 		fprintf(stderr, "[REDIRECT] Location header: %s", line);
 		if (realsize > 0 && line[realsize-1] != '\n')
 			fprintf(stderr, "\n");
@@ -770,6 +775,7 @@ struct block postrequest(CURL *curl_handle, const char *url, curl_mime *data)
 	head.download = false;						  /* not yet known at this point */
 	head.in_redirect = false;					  /* set on each 3xx status line */
 	head.filename[0] = 0;						  /* read by fillstruct() via strstr */
+	head.location[0] = 0;						  /* captured for x-safari-* rewrite */
 
 	setmainheaders(curl_handle, url);
 	setrequestheaders(curl_handle, POST);
@@ -858,6 +864,7 @@ struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
 	head.download = false;						  /* not yet known at this point */
 	head.in_redirect = false;					  /* set on each 3xx status line */
 	head.filename[0] = 0;						  /* read by fillstruct() via strstr */
+	head.location[0] = 0;						  /* captured for x-safari-* rewrite */
 
 	setmainheaders(curl_handle, url);
 	setrequestheaders(curl_handle, GET);
@@ -891,6 +898,43 @@ struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
 				fillstruct(curl_handle, &head, &h);
 				free(head.memory);
 				return h;
+			}
+
+			/* x.com returns "Location: x-safari-https://redirect.x.com/..."
+			 * when it detects watchOS User-Agent. This is Apple's non-standard
+			 * deep-link scheme; curl rejects it with CURLE_UNSUPPORTED_PROTOCOL.
+			 * Strip the x-safari- prefix and retry as plain https://. */
+			if (res == CURLE_UNSUPPORTED_PROTOCOL && head.location[0] != '\0')
+			{
+				/* Parse "location: x-safari-https://host/path" */
+				const char *loc_value = head.location + 9; /* skip "location:" */
+				while (*loc_value == ' ') loc_value++;     /* skip whitespace */
+
+				/* Detect x-safari-http[s]:// and extract the real URL. */
+				const char *real_url = nullptr;
+				if (strncmp(loc_value, "x-safari-https://", 17) == 0)
+					real_url = loc_value + 9; /* skip "x-safari-", keep "https://..." */
+				else if (strncmp(loc_value, "x-safari-http://", 16) == 0)
+					real_url = loc_value + 9; /* skip "x-safari-", keep "http://..." */
+
+				if (real_url)
+				{
+					fprintf(stderr, "[X-SAFARI-REWRITE] Stripping x-safari- prefix, retrying with: %s\n", real_url);
+					fflush(stderr);
+
+					/* Retry with the fixed URL. */
+					char fixed_url[512];
+					snprintf(fixed_url, sizeof(fixed_url), "%s", real_url);
+					/* Strip trailing whitespace/newlines. */
+					size_t len = strlen(fixed_url);
+					while (len > 0 && (fixed_url[len-1] == '\r' || fixed_url[len-1] == '\n' || fixed_url[len-1] == ' '))
+						fixed_url[--len] = '\0';
+
+					/* Re-call ourselves recursively (max depth limited by CURLOPT_MAXREDIRS). */
+					free(chunk.memory);
+					free(head.memory);
+					return getrequest(curl_handle, fixed_url, hfile);
+				}
 			}
 
 			Debug(curl_easy_strerror(static_cast<CURLcode>(res)));

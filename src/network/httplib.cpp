@@ -894,14 +894,17 @@ struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
 		head.filename[0] = 0;						  /* read by fillstruct() via strstr */
 		head.location[0] = 0;						  /* captured for redirect extraction */
 
+		/* Reset curl handle to completely clean state before each redirect hop.
+		 * This closes all connections, frees internal buffers, and resets all
+		 * options. Critical for preventing mbedTLS context corruption (-0x7100)
+		 * on platforms where curl's connection management interacts poorly with
+		 * the SSL backend. */
+		if (redirect_count > 0) {
+			curl_easy_reset(curl_handle);
+		}
+
 		setmainheaders(curl_handle, current_url);
 		setrequestheaders(curl_handle, GET);
-
-		/* Force fresh connection for this hop. FORBID_REUSE marks connections
-		 * for non-reuse but doesn't close them immediately. FRESH_CONNECT
-		 * forces curl to close any existing connection before opening a new
-		 * one, ensuring clean mbedTLS state. */
-		curl_easy_setopt(curl_handle, CURLOPT_FRESH_CONNECT, 1L);
 
 		if (!curl_handle)
 		{

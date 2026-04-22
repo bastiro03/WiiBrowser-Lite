@@ -860,6 +860,8 @@ bool postcomment(CURL *curl_handle, const char *name, const char *content)
 
 struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
 {
+	(void)curl_handle;  /* Unused - we manage our own handle to control lifecycle */
+
 	char *ct = nullptr;
 	struct block b, h;
 	int res;
@@ -869,6 +871,16 @@ struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
 	char visited_urls[10][512];  /* Track visited URLs to detect loops */
 	int visited_count = 0;
 	const int MAX_REDIRECTS = 10;
+
+	/* Create local curl handle for redirect loop. We manage cleanup + init
+	 * between hops to ensure connections close. curl_easy_reset() keeps
+	 * live connections (per curl docs), causing nfds=2 and mbedTLS -0x7100. */
+	CURL *local_handle = curl_easy_init();
+	if (!local_handle) {
+		fprintf(stderr, "[REDIRECT] curl_easy_init() failed\n");
+		fflush(stderr);
+		return emptyblock;
+	}
 
 	snprintf(current_url, sizeof(current_url), "%s", url);
 
@@ -884,7 +896,8 @@ struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
 			{
 				fprintf(stderr, "[REDIRECT] Loop detected: already visited %s (hop %d)\n", current_url, i + 1);
 				fflush(stderr);
-				record_dl_error(curl_handle, 0);
+				record_dl_error(local_handle, 0);
+				curl_easy_cleanup(local_handle);
 				return emptyblock;
 			}
 		}
@@ -909,40 +922,42 @@ struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
 		head.filename[0] = 0;						  /* read by fillstruct() via strstr */
 		head.location[0] = 0;						  /* captured for redirect extraction */
 
-		/* Reset curl handle to completely clean state before each redirect hop.
-		 * This closes all connections, frees internal buffers, and resets all
-		 * options. Critical for preventing mbedTLS context corruption (-0x7100)
-		 * on platforms where curl's connection management interacts poorly with
-		 * the SSL backend. */
+		/* Close previous connection and create fresh handle for next redirect hop.
+		 * curl_easy_reset() keeps live connections (per curl docs), causing
+		 * overlapping SSL contexts that trigger mbedTLS -0x7100 corruption.
+		 * cleanup + init ensures all connections close before opening new ones. */
 		if (redirect_count > 0) {
-			curl_easy_reset(curl_handle);
+			fprintf(stderr, "[REDIRECT] Closing connection from previous hop (cleanup + init)\n");
+			fflush(stderr);
+			curl_easy_cleanup(local_handle);
+			local_handle = curl_easy_init();
+			if (!local_handle) {
+				fprintf(stderr, "[REDIRECT] curl_easy_init() failed after cleanup\n");
+				fflush(stderr);
+				free(chunk.memory);
+				free(head.memory);
+				return emptyblock;
+			}
 		}
 
-		setmainheaders(curl_handle, current_url);
-		setrequestheaders(curl_handle, GET);
-
-		if (!curl_handle)
-		{
-			free(chunk.memory);
-			free(head.memory);
-			return emptyblock;
-		}
+		setmainheaders(local_handle, current_url);
+		setrequestheaders(local_handle, GET);
 
 		/* we pass our 'chunk' struct or 'hfile' to the callback function */
 		if (hfile)
 		{
 			/* send all data to this function */
-			curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, writedata);
-			curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, static_cast<void *>(hfile));
+			curl_easy_setopt(local_handle, CURLOPT_WRITEFUNCTION, writedata);
+			curl_easy_setopt(local_handle, CURLOPT_WRITEDATA, static_cast<void *>(hfile));
 		}
 		else
 		{
-			curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, parseheader);
-			curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, static_cast<void *>(&chunk));
-			curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, static_cast<void *>(&head));
+			curl_easy_setopt(local_handle, CURLOPT_HEADERFUNCTION, parseheader);
+			curl_easy_setopt(local_handle, CURLOPT_WRITEDATA, static_cast<void *>(&chunk));
+			curl_easy_setopt(local_handle, CURLOPT_WRITEHEADER, static_cast<void *>(&head));
 		}
 
-		res = curl_easy_perform(curl_handle);
+		res = curl_easy_perform(local_handle);
 
 		if (res != CURLE_OK)
 		{
@@ -950,15 +965,17 @@ struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
 			{
 				free(chunk.memory);
 				free(head.memory);
+				curl_easy_cleanup(local_handle);
 				h.size = DSTOPPED;
 				return h;
 			}
 
 			if (res == CURLE_WRITE_ERROR)
 			{
-				fillstruct(curl_handle, &head, &h);
+				fillstruct(local_handle, &head, &h);
 				free(chunk.memory);
 				free(head.memory);
+				curl_easy_cleanup(local_handle);
 				return h;
 			}
 
@@ -999,14 +1016,15 @@ struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
 			}
 
 			Debug(curl_easy_strerror(static_cast<CURLcode>(res)));
-			record_dl_error(curl_handle, res);
+			record_dl_error(local_handle, res);
 			free(chunk.memory);
 			free(head.memory);
+			curl_easy_cleanup(local_handle);
 			return emptyblock;
 		}
 
 		/* Get HTTP response code to check for redirects. */
-		curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &http_code);
+		curl_easy_getinfo(local_handle, CURLINFO_RESPONSE_CODE, &http_code);
 
 		/* Handle 3xx redirects manually. */
 		if (http_code >= 300 && http_code < 400)
@@ -1015,9 +1033,10 @@ struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
 			{
 				fprintf(stderr, "[REDIRECT] 3xx response (%ld) but no Location header\n", http_code);
 				fflush(stderr);
-				record_dl_error(curl_handle, 0);
+				record_dl_error(local_handle, 0);
 				free(chunk.memory);
 				free(head.memory);
+				curl_easy_cleanup(local_handle);
 				return emptyblock;
 			}
 
@@ -1057,11 +1076,12 @@ struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
 		}
 
 		/* Non-redirect response: success. Extract content type and return. */
-		if (CURLE_OK != curl_easy_getinfo(curl_handle, CURLINFO_CONTENT_TYPE, &ct) || !ct)
+		if (CURLE_OK != curl_easy_getinfo(local_handle, CURLINFO_CONTENT_TYPE, &ct) || !ct)
 		{
-			record_dl_error(curl_handle, 0);
+			record_dl_error(local_handle, 0);
 			free(chunk.memory);
 			free(head.memory);
+			curl_easy_cleanup(local_handle);
 			return emptyblock;
 		}
 
@@ -1071,6 +1091,7 @@ struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
 		findChr(ct, ';');
 		strcpy(b.type, ct);
 		free(head.memory);
+		curl_easy_cleanup(local_handle);
 
 		if (hfile)
 		{
@@ -1084,7 +1105,8 @@ struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
 	/* Too many redirects. */
 	fprintf(stderr, "[REDIRECT] Too many redirects (max=%d)\n", MAX_REDIRECTS);
 	fflush(stderr);
-	record_dl_error(curl_handle, 0);
+	record_dl_error(local_handle, 0);
+	curl_easy_cleanup(local_handle);
 	return emptyblock;
 }
 

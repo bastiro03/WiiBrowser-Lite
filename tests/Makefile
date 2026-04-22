@@ -533,3 +533,7 @@ clean:
 	-cd $(CURL_DIR) && git clean -fdx 2>/dev/null || true
 
 .PHONY: all clean lto_check
+
+curl_reset_test: curl_reset_test.c
+	$(CC) $(CFLAGS) $< -o $@
+	$(CC) $(CFLAGS) $< -o $@ -lcurl

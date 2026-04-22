@@ -40,3 +40,4 @@ coverage_out/
 *.gcda
 *.gcno
 *.gcov
+curl_reset_test

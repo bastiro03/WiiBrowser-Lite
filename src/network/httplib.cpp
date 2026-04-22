@@ -651,8 +651,18 @@ void setmainheaders(CURL *curl_handle, const char *url)
 	curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, 60L);
 
 	/* some servers don't like requests that are made without a user-agent
-	field, so we provide one */
-	curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, Agents[Settings.UserAgent]);
+	field, so we provide one.
+	 *
+	 * Special case: x.com returns x-safari-* redirects (Apple deep-link
+	 * scheme) when it sees watchOS User-Agent, creating an infinite loop.
+	 * Use Android Mobile Safari UA for x.com to avoid this. */
+	int ua_index = Settings.UserAgent;
+	if (url && strstr(url, "x.com")) {
+		ua_index = 5;  /* Android Mobile Safari - no x-safari-* triggers */
+		fprintf(stderr, "[UA] x.com detected, using Android UA (index %d)\n", ua_index);
+		fflush(stderr);
+	}
+	curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, Agents[ua_index]);
 
 	/* Accept any compression curl was built with (gzip via libz here).
 	 * Without this, CloudFlare-fronted sites like x.com send gzip

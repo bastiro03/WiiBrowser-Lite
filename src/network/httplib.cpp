@@ -632,9 +632,13 @@ void setmainheaders(CURL *curl_handle, const char *url)
 	if (validProxy())
 		curl_easy_setopt(curl_handle, CURLOPT_PROXY, Settings.Proxy);
 
-	/* follow redirects */
+	/* Disable automatic redirect following — we follow redirects manually
+	 * in getrequest() to ensure connections close between hops. With
+	 * FOLLOWLOCATION=1, curl keeps earlier connections alive in the pool
+	 * while opening new ones, causing mbedTLS context corruption (-0x7100).
+	 * Manual loop: perform → check 3xx → extract Location → loop. */
 	curl_easy_setopt(curl_handle, CURLOPT_AUTOREFERER, 1);
-	curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
+	curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 0);
 	curl_easy_setopt(curl_handle, CURLOPT_NOPROGRESS, 1);
 
 	/* Bounded time limits: without these, a stuck IOS socket (e.g.
@@ -656,23 +660,8 @@ void setmainheaders(CURL *curl_handle, const char *url)
 	 * encodings and auto-decompress before delivery to the write cb. */
 	curl_easy_setopt(curl_handle, CURLOPT_ACCEPT_ENCODING, "");
 
-	/* Cap redirects at a sane limit so a pathological server can't loop
-	 * us until CURLOPT_TIMEOUT. */
+	/* Cap redirects at a sane limit (enforced in getrequest() manual loop). */
 	curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10L);
-
-	/* Disable connection reuse to avoid mbedTLS state corruption.
-	 * When curl follows redirects with CURLOPT_FOLLOWLOCATION, it keeps
-	 * earlier connections "alive" in the pool while opening new ones
-	 * (e.g., wikipedia.org:443 stays at fd=0 while www.wikipedia.org:443
-	 * opens at fd=1). On Dolphin/Wii, this triggers mbedTLS to return
-	 * MBEDTLS_ERR_SSL_BAD_INPUT_DATA (-0x7100) during ssl_read on the
-	 * new connection — the ssl context pointer is NULL, suggesting our
-	 * IOS socket wrapper doesn't cleanly handle concurrent HTTPS
-	 * connections. CURLOPT_FORBID_REUSE forces curl to close+teardown
-	 * each connection immediately after use, so only one mbedTLS context
-	 * is active at a time. Cost: extra TLS handshakes on redirect chains.
-	 * Benefit: actually works. */
-	curl_easy_setopt(curl_handle, CURLOPT_FORBID_REUSE, 1L);
 
 	/* Disable TCP_NODELAY: Dolphin's IOS doesn't support IPPROTO_TCP
 	 * socket options (level=6), and curl closes the socket when
@@ -852,25 +841,41 @@ struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
 	char *ct = nullptr;
 	struct block b, h;
 	int res;
+	long http_code = 0;
+	int redirect_count = 0;
+	char current_url[512];
+	const int MAX_REDIRECTS = 10;
 
-	struct HeaderStruct head;
-	struct MemoryStruct chunk;
+	snprintf(current_url, sizeof(current_url), "%s", url);
 
-	chunk.memory = static_cast<char *>(malloc(1)); /* will be grown as needed by the realloc above */
-	chunk.size = 0;								   /* no data at this point */
-
-	head.memory = static_cast<char *>(malloc(1)); /* will be grown as needed by the realloc above */
-	head.size = 0;								  /* no data at this point */
-	head.download = false;						  /* not yet known at this point */
-	head.in_redirect = false;					  /* set on each 3xx status line */
-	head.filename[0] = 0;						  /* read by fillstruct() via strstr */
-	head.location[0] = 0;						  /* captured for x-safari-* rewrite */
-
-	setmainheaders(curl_handle, url);
-	setrequestheaders(curl_handle, GET);
-
-	if (curl_handle)
+	/* Manual redirect loop: With CURLOPT_FOLLOWLOCATION=0, we handle redirects
+	 * ourselves to ensure each connection closes before opening the next. This
+	 * prevents mbedTLS context corruption (-0x7100) from overlapping SSL contexts. */
+	while (redirect_count < MAX_REDIRECTS)
 	{
+		struct HeaderStruct head;
+		struct MemoryStruct chunk;
+
+		chunk.memory = static_cast<char *>(malloc(1)); /* will be grown as needed by the realloc above */
+		chunk.size = 0;								   /* no data at this point */
+
+		head.memory = static_cast<char *>(malloc(1)); /* will be grown as needed by the realloc above */
+		head.size = 0;								  /* no data at this point */
+		head.download = false;						  /* not yet known at this point */
+		head.in_redirect = false;					  /* set on each 3xx status line */
+		head.filename[0] = 0;						  /* read by fillstruct() via strstr */
+		head.location[0] = 0;						  /* captured for redirect extraction */
+
+		setmainheaders(curl_handle, current_url);
+		setrequestheaders(curl_handle, GET);
+
+		if (!curl_handle)
+		{
+			free(chunk.memory);
+			free(head.memory);
+			return emptyblock;
+		}
+
 		/* we pass our 'chunk' struct or 'hfile' to the callback function */
 		if (hfile)
 		{
@@ -885,10 +890,14 @@ struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
 			curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, static_cast<void *>(&head));
 		}
 
-		if ((res = curl_easy_perform(curl_handle)) != 0) /*error!*/
+		res = curl_easy_perform(curl_handle);
+
+		if (res != CURLE_OK)
 		{
 			if (res == CURLE_ABORTED_BY_CALLBACK)
 			{
+				free(chunk.memory);
+				free(head.memory);
 				h.size = DSTOPPED;
 				return h;
 			}
@@ -896,6 +905,7 @@ struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
 			if (res == CURLE_WRITE_ERROR)
 			{
 				fillstruct(curl_handle, &head, &h);
+				free(chunk.memory);
 				free(head.memory);
 				return h;
 			}
@@ -903,7 +913,7 @@ struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
 			/* x.com returns "Location: x-safari-https://redirect.x.com/..."
 			 * when it detects watchOS User-Agent. This is Apple's non-standard
 			 * deep-link scheme; curl rejects it with CURLE_UNSUPPORTED_PROTOCOL.
-			 * Strip the x-safari- prefix and retry as plain https://. */
+			 * Strip the x-safari- prefix and retry. */
 			if (res == CURLE_UNSUPPORTED_PROTOCOL && head.location[0] != '\0')
 			{
 				/* Parse "location: x-safari-https://host/path" */
@@ -922,49 +932,108 @@ struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
 					fprintf(stderr, "[X-SAFARI-REWRITE] Stripping x-safari- prefix, retrying with: %s\n", real_url);
 					fflush(stderr);
 
-					/* Retry with the fixed URL. */
-					char fixed_url[512];
-					snprintf(fixed_url, sizeof(fixed_url), "%s", real_url);
-					/* Strip trailing whitespace/newlines. */
-					size_t len = strlen(fixed_url);
-					while (len > 0 && (fixed_url[len-1] == '\r' || fixed_url[len-1] == '\n' || fixed_url[len-1] == ' '))
-						fixed_url[--len] = '\0';
+					/* Copy fixed URL and strip trailing whitespace. */
+					snprintf(current_url, sizeof(current_url), "%s", real_url);
+					size_t len = strlen(current_url);
+					while (len > 0 && (current_url[len-1] == '\r' || current_url[len-1] == '\n' || current_url[len-1] == ' '))
+						current_url[--len] = '\0';
 
-					/* Re-call ourselves recursively (max depth limited by CURLOPT_MAXREDIRS). */
+					/* Free this iteration's memory and retry in next loop. */
 					free(chunk.memory);
 					free(head.memory);
-					return getrequest(curl_handle, fixed_url, hfile);
+					redirect_count++;
+					continue;
 				}
 			}
 
 			Debug(curl_easy_strerror(static_cast<CURLcode>(res)));
 			record_dl_error(curl_handle, res);
+			free(chunk.memory);
+			free(head.memory);
 			return emptyblock;
 		}
 
+		/* Get HTTP response code to check for redirects. */
+		curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &http_code);
+
+		/* Handle 3xx redirects manually. */
+		if (http_code >= 300 && http_code < 400)
+		{
+			if (head.location[0] == '\0')
+			{
+				fprintf(stderr, "[REDIRECT] 3xx response (%ld) but no Location header\n", http_code);
+				fflush(stderr);
+				record_dl_error(curl_handle, 0);
+				free(chunk.memory);
+				free(head.memory);
+				return emptyblock;
+			}
+
+			/* Extract Location header value. */
+			const char *loc_value = head.location + 9; /* skip "location:" */
+			while (*loc_value == ' ') loc_value++;     /* skip whitespace */
+
+			/* Handle x-safari-* rewriting within redirect chain. */
+			const char *next_url = loc_value;
+			if (strncmp(loc_value, "x-safari-https://", 17) == 0)
+			{
+				next_url = loc_value + 9;
+				fprintf(stderr, "[REDIRECT] x-safari-* detected in Location, rewriting\n");
+				fflush(stderr);
+			}
+			else if (strncmp(loc_value, "x-safari-http://", 16) == 0)
+			{
+				next_url = loc_value + 9;
+				fprintf(stderr, "[REDIRECT] x-safari-* detected in Location, rewriting\n");
+				fflush(stderr);
+			}
+
+			fprintf(stderr, "[REDIRECT] %ld → %s (hop %d/%d)\n", http_code, next_url, redirect_count + 1, MAX_REDIRECTS);
+			fflush(stderr);
+
+			/* Copy next URL and strip trailing whitespace. */
+			snprintf(current_url, sizeof(current_url), "%s", next_url);
+			size_t len = strlen(current_url);
+			while (len > 0 && (current_url[len-1] == '\r' || current_url[len-1] == '\n' || current_url[len-1] == ' '))
+				current_url[--len] = '\0';
+
+			/* Free this iteration's memory and continue to next hop. */
+			free(chunk.memory);
+			free(head.memory);
+			redirect_count++;
+			continue;
+		}
+
+		/* Non-redirect response: success. Extract content type and return. */
 		if (CURLE_OK != curl_easy_getinfo(curl_handle, CURLINFO_CONTENT_TYPE, &ct) || !ct)
 		{
 			record_dl_error(curl_handle, 0);
+			free(chunk.memory);
+			free(head.memory);
 			return emptyblock;
 		}
+
+		b.data = chunk.memory;
+		b.size = chunk.size;
+
+		findChr(ct, ';');
+		strcpy(b.type, ct);
+		free(head.memory);
+
+		if (hfile)
+		{
+			h.size = DCOMPLETE;
+			fclose(hfile);
+			return h;
+		}
+		return b;
 	}
-	else
-		return emptyblock;
 
-	b.data = chunk.memory;
-	b.size = chunk.size;
-
-	findChr(ct, ';');
-	strcpy(b.type, ct);
-	free(head.memory);
-
-	if (hfile)
-	{
-		h.size = DCOMPLETE;
-		fclose(hfile);
-		return h;
-	}
-	return b;
+	/* Too many redirects. */
+	fprintf(stderr, "[REDIRECT] Too many redirects (max=%d)\n", MAX_REDIRECTS);
+	fflush(stderr);
+	record_dl_error(curl_handle, 0);
+	return emptyblock;
 }
 
 curl_mime *multipartform(CURL *curl_handle, const char *url)

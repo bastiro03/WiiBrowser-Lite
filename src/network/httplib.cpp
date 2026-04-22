@@ -844,6 +844,8 @@ struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
 	long http_code = 0;
 	int redirect_count = 0;
 	char current_url[512];
+	char visited_urls[10][512];  /* Track visited URLs to detect loops */
+	int visited_count = 0;
 	const int MAX_REDIRECTS = 10;
 
 	snprintf(current_url, sizeof(current_url), "%s", url);
@@ -853,6 +855,25 @@ struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
 	 * prevents mbedTLS context corruption (-0x7100) from overlapping SSL contexts. */
 	while (redirect_count < MAX_REDIRECTS)
 	{
+		/* Detect redirect loops (e.g., x.com ↔ redirect.x.com). */
+		for (int i = 0; i < visited_count; i++)
+		{
+			if (strcmp(visited_urls[i], current_url) == 0)
+			{
+				fprintf(stderr, "[REDIRECT] Loop detected: already visited %s (hop %d)\n", current_url, i + 1);
+				fflush(stderr);
+				record_dl_error(curl_handle, 0);
+				return emptyblock;
+			}
+		}
+
+		/* Record this URL as visited. */
+		if (visited_count < MAX_REDIRECTS)
+		{
+			snprintf(visited_urls[visited_count], sizeof(visited_urls[visited_count]), "%s", current_url);
+			visited_count++;
+		}
+
 		struct HeaderStruct head;
 		struct MemoryStruct chunk;
 

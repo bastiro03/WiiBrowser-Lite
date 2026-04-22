@@ -76,7 +76,12 @@ const char Agents[MAXAGENTS][256] =
 		"Mozilla/5.0 (Nintendo Wii; U; WiiBrowser rev37) like Gecko Firefox/4.0",
 		"Mozilla/5.0 (Windows NT 6.2; WOW64; rv:16.0.1) Gecko/20121011 Firefox/16.0.1",
 		"Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; Trident/6.0)",
-		"Mozilla/5.0 (Linux; U; Android 1.1; en-gb; dream) AppleWebKit/525.10+ (KHTML, like Gecko) Version/3.0.4 Mobile Safari/523.12.2",
+		/* Android 9 (Pie) with Chrome 92 — last Chrome version on Android 9.
+		 * Matches our approximate capabilities: modern TLS 1.3, HTTP/1.x,
+		 * CSS3, ES5 JavaScript. Avoids x-safari-* deep-link redirects that
+		 * watchOS triggers on x.com. Generic "Android 9" without device
+		 * model reduces fingerprinting. */
+		"Mozilla/5.0 (Linux; Android 9) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Mobile Safari/537.36",
 		/* watchOS 8.8.1 embedded WebKit on Apple Watch Series 3.
 		 *
 		 * watchOS identifies as iPhone in WebKit for site compatibility,

@@ -714,15 +714,8 @@ void setmainheaders(CURL *curl_handle, const char *url)
 	curl_easy_setopt(curl_handle, CURLOPT_OPENSOCKETFUNCTION, opensocket_callback);
 	curl_easy_setopt(curl_handle, CURLOPT_CLOSESOCKETFUNCTION, close_callback);
 
-	/* DNS resolution: In getrequest(), we manage the resolve list per-handle
-	 * to avoid use-after-free issues across cleanup+init cycles. For other
-	 * callers (postrequest), we use the global pre_resolve(). This is safe
-	 * because they don't do cleanup+init mid-request.
-	 *
-	 * NOTE: getrequest() explicitly builds and sets CURLOPT_RESOLVE before
-	 * calling setmainheaders(), so we don't call pre_resolve() here to avoid
-	 * conflicting with the per-handle resolve list. */
-	// pre_resolve(curl_handle, url);  /* Disabled - callers manage their own resolve lists */
+	/* bypass c-ares: resolve hostname via libogc and feed CURLOPT_RESOLVE */
+	pre_resolve(curl_handle, url);
 
 	curl_easy_setopt(curl_handle, CURLOPT_URL, url);
 }
@@ -794,9 +787,6 @@ struct block postrequest(CURL *curl_handle, const char *url, curl_mime *data)
 	head.in_redirect = false;					  /* set on each 3xx status line */
 	head.filename[0] = 0;						  /* read by fillstruct() via strstr */
 	head.location[0] = 0;						  /* captured for x-safari-* rewrite */
-
-	/* postrequest doesn't do cleanup+init, so use global pre_resolve() */
-	pre_resolve(curl_handle, url);
 
 	setmainheaders(curl_handle, url);
 	setrequestheaders(curl_handle, POST);
@@ -881,7 +871,6 @@ struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
 	char visited_urls[10][512];  /* Track visited URLs to detect loops */
 	int visited_count = 0;
 	const int MAX_REDIRECTS = 10;
-	struct curl_slist *resolve_list = NULL;  /* Per-handle DNS resolve list */
 
 	/* Create local curl handle for redirect loop. We manage cleanup + init
 	 * between hops to ensure connections close. curl_easy_reset() keeps
@@ -936,21 +925,10 @@ struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
 		/* Close previous connection and create fresh handle for next redirect hop.
 		 * curl_easy_reset() keeps live connections (per curl docs), causing
 		 * overlapping SSL contexts that trigger mbedTLS -0x7100 corruption.
-		 * cleanup + init ensures all connections close before opening new ones.
-		 *
-		 * CRITICAL: Free resolve list BEFORE cleanup to avoid use-after-free.
-		 * curl might access the resolve list during cleanup, so we must free
-		 * it after curl is done with it. */
+		 * cleanup + init ensures all connections close before opening new ones. */
 		if (redirect_count > 0) {
 			fprintf(stderr, "[REDIRECT] Closing connection from previous hop (cleanup + init)\n");
 			fflush(stderr);
-
-			/* Free old resolve list before cleaning up handle */
-			if (resolve_list) {
-				curl_slist_free_all(resolve_list);
-				resolve_list = NULL;
-			}
-
 			curl_easy_cleanup(local_handle);
 			local_handle = curl_easy_init();
 			if (!local_handle) {
@@ -960,16 +938,6 @@ struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
 				free(head.memory);
 				return emptyblock;
 			}
-		}
-
-		/* Build new resolve list for this hop (don't use global pre_resolve) */
-		if (resolve_list) {
-			curl_slist_free_all(resolve_list);
-			resolve_list = NULL;
-		}
-		resolve_list = wbl_build_resolve_list(current_url);
-		if (resolve_list) {
-			curl_easy_setopt(local_handle, CURLOPT_RESOLVE, resolve_list);
 		}
 
 		setmainheaders(local_handle, current_url);
@@ -997,7 +965,6 @@ struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
 			{
 				free(chunk.memory);
 				free(head.memory);
-				if (resolve_list) curl_slist_free_all(resolve_list);
 				curl_easy_cleanup(local_handle);
 				h.size = DSTOPPED;
 				return h;
@@ -1008,7 +975,6 @@ struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
 				fillstruct(local_handle, &head, &h);
 				free(chunk.memory);
 				free(head.memory);
-				if (resolve_list) curl_slist_free_all(resolve_list);
 				curl_easy_cleanup(local_handle);
 				return h;
 			}
@@ -1053,7 +1019,6 @@ struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
 			record_dl_error(local_handle, res);
 			free(chunk.memory);
 			free(head.memory);
-			if (resolve_list) curl_slist_free_all(resolve_list);
 			curl_easy_cleanup(local_handle);
 			return emptyblock;
 		}
@@ -1116,7 +1081,6 @@ struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
 			record_dl_error(local_handle, 0);
 			free(chunk.memory);
 			free(head.memory);
-			if (resolve_list) curl_slist_free_all(resolve_list);
 			curl_easy_cleanup(local_handle);
 			return emptyblock;
 		}
@@ -1127,7 +1091,6 @@ struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
 		findChr(ct, ';');
 		strcpy(b.type, ct);
 		free(head.memory);
-		if (resolve_list) curl_slist_free_all(resolve_list);
 		curl_easy_cleanup(local_handle);
 
 		if (hfile)

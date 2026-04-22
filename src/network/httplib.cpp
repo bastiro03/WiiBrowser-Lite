@@ -897,6 +897,12 @@ struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
 		setmainheaders(curl_handle, current_url);
 		setrequestheaders(curl_handle, GET);
 
+		/* Force fresh connection for this hop. FORBID_REUSE marks connections
+		 * for non-reuse but doesn't close them immediately. FRESH_CONNECT
+		 * forces curl to close any existing connection before opening a new
+		 * one, ensuring clean mbedTLS state. */
+		curl_easy_setopt(curl_handle, CURLOPT_FRESH_CONNECT, 1L);
+
 		if (!curl_handle)
 		{
 			free(chunk.memory);

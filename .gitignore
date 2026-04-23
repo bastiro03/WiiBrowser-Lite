@@ -1,3 +1,78 @@
-/.vscode
-/build
-/output
+# ----------------------------------------------------------------------
+# Build Directories & Output Files
+# ----------------------------------------------------------------------
+# Ignore the main application and forwarder build directories
+build/
+forwarder/build/
+
+# Wii specific executables
+*.dol
+*.elf
+
+# Compiler and Linker artifacts
+*.o
+*.d
+*.a
+*.map
+*.lst
+*.ii
+
+# Generated binary asset objects (bin2o)
+*.ttf.o
+*.lang.o
+*.png.o
+*.jpg.o
+*.gif.o
+*.ogg.o
+*.pcm.o
+
+# ----------------------------------------------------------------------
+# OS-Generated Files
+# ----------------------------------------------------------------------
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# Linux
+*~
+
+# ----------------------------------------------------------------------
+# IDEs & Text Editors
+# ----------------------------------------------------------------------
+# Visual Studio Code
+.vscode/
+
+# Cursor
+.cursor/
+
+# CLion / IntelliJ
+.idea/
+cmake-build-*/
+
+# Legacy Programmer's Notepad (which you are removing)
+*.pnproj
+*.pnps
+*.pnproj.bak
+
+# Vim / Emacs
+*.swp
+*.swo
+*~
+\#*\#
+
+# ----------------------------------------------------------------------
+# Third-party / External build artifacts
+# ----------------------------------------------------------------------
+# If you compile mplayer or other external libs in-tree, ignore their 
+# configuration and output files (if they aren't git submodules)
+external/mplayer/config.mak
+external/mplayer/config.h

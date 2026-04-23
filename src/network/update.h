@@ -11,11 +11,11 @@
 #ifndef _UPDATE_H_
 #define _UPDATE_H_
 
-using update = struct update
+typedef struct update
 {
-	int appversion;
-	char changelog[512];
-};
+    int appversion;
+    char changelog[512];
+} update;
 
 extern bool downloadUpdate(int appversion);
 extern struct update checkUpdate();

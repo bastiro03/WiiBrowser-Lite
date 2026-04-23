@@ -3,7 +3,7 @@
 #---------------------------------------------------------------------------------
 .SUFFIXES:
 #---------------------------------------------------------------------------------
-DEVKITPPC ?= $(DEVKITPRO)/devkitPPC
+export DEVKITPPC = $(DEVKITPRO)/devkitPPC
 
 ifeq ($(strip $(DEVKITPPC)),)
 $(error "Please set DEVKITPPC in your environment. export DEVKITPPC=<path to>devkitPPC")
@@ -11,121 +11,189 @@ endif
 
 include $(DEVKITPPC)/wii_rules
 
-# Project Name
-TARGET := wiibrowserlite
-
-# Directories
-BUILD := build
-SOURCES := $(shell find src -type d)
-DATA := images fonts sounds
-INCLUDES := include
-VPATH := $(SOURCES) $(DATA)
-
 #---------------------------------------------------------------------------------
-# devkitPPC toolchain setup
+# TARGET is the name of the output
+# BUILD is the directory where object files & intermediate files will be placed
+# SOURCES is a list of directories containing source code and asset data
+# INCLUDES is a list of directories containing extra header files
 #---------------------------------------------------------------------------------
-DEVKITPPC ?= $(DEVKITPRO)/devkitPPC
-PREFIX := $(DEVKITPPC)/bin/powerpc-eabi-
-CC := $(PREFIX)gcc
-CXX := $(PREFIX)g++
-AS := $(PREFIX)as
-AR := $(PREFIX)ar
-LD := $(PREFIX)ld
-OBJCOPY := $(PREFIX)objcopy
+MPLAYER		:=	$(CURDIR)/external/mplayer
+TARGET		:=	boot
+BUILD		:=	build
 
-#---------------------------------------------------------------------------------
-# Flags
-#---------------------------------------------------------------------------------
-CFLAGS := -g -O2 -Wall -mrvl -mcpu=750 -meabi -mhard-float \
-                $(foreach dir,$(INCLUDES),-I$(dir))
+# Application Source, External Dependencies, and Binary Assets
+SOURCES		:=	src/core src/ui src/media src/filesystem src/archive src/network \
+				src/html_parser src/text src/utils \
+				external/libwiigui external/litehtml \
+				assets/images assets/images/appbar assets/fonts assets/sounds assets/lang
 
-CXXFLAGS := $(CFLAGS) -fno-exceptions -fno-rtti
-LDFLAGS := -g -Wl,-Map,$(TARGET).map
-
-LIBS := -lmplayerwii -lavformat -lavcodec -lswscale -lavutil \
-				-lfribidi -ljpeg -liconv -ldi -lpng -lunrar -lzip -lsevenzip -lz \
-				-lcurl -lcyassl -lnetport -lasnd -lvorbisidec \
-				-lmxml -llua -lm -lfat -lwiiuse -lwiikeyboard -lbte -logc -lfreetype \
+# Include paths (adding all subdirectories so existing #includes don't break)
+INCLUDES	:=	src src/core src/ui src/media src/filesystem src/archive src/network \
+				src/html_parser src/text src/utils \
+				external/mplayer external/libwiigui external/litehtml
 
 #---------------------------------------------------------------------------------
-# Source Files
+# options for code generation
 #---------------------------------------------------------------------------------
-CFILES := $(foreach dir,$(SOURCE),$(notdir $(wildcard $(dir)/*.c)))
-CPPFILES := $(foreach dir,$(SOURCE),$(notdir $(wildcard $(dir)/*.cpp)))
-sFILES := $(foreach dir,$(SOURCE),$(notdir $(wildcard $(dir)/*.s)))
-SFILES := $(foreach dir,$(SOURCE),$(notdir $(wildcard $(dir)/*.S)))
-TTFFILES := $(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.ttf)))
-LANGFILES := $(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.lang)))
-PNGFILES := $(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.png)))
-JPGFILES := $(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.jpg)))
-GIFFILES := $(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.gif)))
-OGGFILES := $(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.ogg)))
-PCMFILES := $(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.pcm)))
-OFILES       := $(CFILES:.c=.o) $(CPPFILES:.cpp=.o) \
-				$(sFILES:.s=.o) $(SFILES:.S=.o) \
-				$(TTFFILES:.ttf=.ttf.o) $(LANGFILES:.lang=.lang.o) \
-				$(PNGFILES:.png=.png.o) \
-				$(OGGFILES:.ogg=.ogg.o) $(PCMFILES:.pcm=.pcm.o) \
-				$(JPGFILES:.jpg=.jpg.o) \
-				$(GIFFILES:.gif=.gif.o)
-OFILES := $(addprefix $(BUILD)/,$(OFILES))
+
+CFLAGS		=	-g -O3 -Wall $(MACHDEP) $(INCLUDE)
+CXXFLAGS	=	-std=gnu++0x $(CFLAGS)
+LDFLAGS		=	-g -ggdb $(MACHDEP) -Wl
+
+# ,-Map,$(notdir $@).map,--section-start,.init=0x80620000,-wrap,malloc,-wrap,free,-wrap,memalign,-wrap,calloc,-wrap,realloc,-wrap,malloc_usable_size
 
 #---------------------------------------------------------------------------------
-# Rules
+# any extra libraries we wish to link with the project
 #---------------------------------------------------------------------------------
-all: $(TARGET).dol
+# LIBS	:=	-lmplayerwii -lavformat -lavcodec -lswscale -lavutil \
 
+LIBS	:=	-lfribidi -ljpeg -liconv -ldi -lpng -lunrar -lzip -lsevenzip -lz \
+			-lcurl -lcyassl -lnetport -lasnd -lvorbisidec \
+			-lmxml -llua -lm -lfat -lwiiuse -lwiikeyboard -lbte -logc -lfreetype
+
+#---------------------------------------------------------------------------------
+# list of directories containing libraries, this must be the top level containing
+# include and lib
+#---------------------------------------------------------------------------------
+LIBDIRS	:= $(PORTLIBS)
+
+
+#---------------------------------------------------------------------------------
+# no real need to edit anything past this point unless you need to add additional
+# rules for different file extensions
+#---------------------------------------------------------------------------------
+ifneq ($(BUILD),$(notdir $(CURDIR)))
+#---------------------------------------------------------------------------------
+
+export OUTPUT	:=	$(CURDIR)/$(TARGETDIR)/$(TARGET)
+export VPATH	:=	$(foreach dir,$(SOURCES),$(CURDIR)/$(dir))
+export DEPSDIR	:=	$(CURDIR)/$(BUILD)
+
+#---------------------------------------------------------------------------------
+# automatically build a list of object files for our project
+#---------------------------------------------------------------------------------
+CFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
+CPPFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
+sFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
+SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.S)))
+TTFFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.ttf)))
+LANGFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.lang)))
+PNGFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.png)))
+JPGFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.jpg)))
+GIFFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.gif)))
+OGGFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.ogg)))
+PCMFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.pcm)))
+
+#---------------------------------------------------------------------------------
+# use CXX for linking C++ projects, CC for standard C
+#---------------------------------------------------------------------------------
+ifeq ($(strip $(CPPFILES)),)
+	export LD	:=	$(CC)
+else
+	export LD	:=	$(CXX)
+endif
+
+export OFILES	:=	$(CPPFILES:.cpp=.o) $(CFILES:.c=.o) \
+					$(sFILES:.s=.o) $(SFILES:.S=.o) \
+					$(TTFFILES:.ttf=.ttf.o) $(LANGFILES:.lang=.lang.o) \
+					$(PNGFILES:.png=.png.o) \
+					$(OGGFILES:.ogg=.ogg.o) $(PCMFILES:.pcm=.pcm.o) \
+					$(JPGFILES:.jpg=.jpg.o) \
+					$(GIFFILES:.gif=.gif.o)
+					
+#---------------------------------------------------------------------------------
+# build a list of include paths
+#---------------------------------------------------------------------------------
+export INCLUDE	:=	$(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir)) \
+					$(foreach dir,$(LIBDIRS),-I$(dir)/include) \
+					-I$(CURDIR)/$(BUILD) \
+					-I$(LIBOGC_INC) -I$(PORTLIBS)/include/freetype2
+
+#---------------------------------------------------------------------------------
+# build a list of library paths
+#---------------------------------------------------------------------------------
+ 
+export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib) \
+					-L$(LIBOGC_LIB) \
+				-L$(MPLAYER)/ \
+				-L$(MPLAYER)/ffmpeg/libavcodec \
+				-L$(MPLAYER)/ffmpeg/libavformat \
+				-L$(MPLAYER)/ffmpeg/libavutil \
+				-L$(MPLAYER)/ffmpeg/libswscale 
+
+export OUTPUT	:=	$(CURDIR)/$(TARGET)
+.PHONY: $(BUILD) clean
+
+#---------------------------------------------------------------------------------
 $(BUILD):
-	@mkdir -p $(BUILD)
+#	cd external/mplayer; $(MAKE) -f Makefile; cd ../..
+	@[ -d $@ ] || mkdir -p $@
+	@make --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
 
-# Compile C source
-$(BUILD)/%.o: $(SOURCE)/%.c | $(BUILD)
-	$(CC) $(CFLAGS) -c $< -o $@
+#---------------------------------------------------------------------------------
+test:
+	@make --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
 
-# Compile C++ source
-$(BUILD)/%.o: $(SOURCE)/%.cpp | $(BUILD)
-	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-# Binary data conversion
-$(BUILD)/%.ttf.o: %.ttf | $(BUILD)
-	@echo $(notdir $<)
-	$(bin2o) $< $@
-
-$(BUILD)/%.lang.o: %.lang | $(BUILD)
-	@echo $(notdir $<)
-	$(bin2o) $< $@
-
-$(BUILD)/%.png.o: %.png | $(BUILD)
-	@echo $(notdir $<)
-	$(bin2o) $< $@
-
-$(BUILD)/%.jpg.o: %.jpg | $(BUILD)
-	@echo $(notdir $<)
-	$(bin2o) $< $@
-
-$(BUILD)/%.gif.o: %.gif | $(BUILD)
-	@echo $(notdir $<)
-	$(bin2o) $< $@
-
-$(BUILD)/%.ogg.o: %.ogg | $(BUILD)
-	@echo $(notdir $<)
-	$(bin2o) $< $@
-
-$(BUILD)/%.pcm.o: %.pcm | $(BUILD)
-	@echo $(notdir $<)
-	$(bin2o) $< $@
-
-# Link ELF
-$(TARGET).elf: $(OFILES)
-	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
-
-# Convert ELF to DOL
-$(TARGET).dol: $(TARGET).elf
-	$(OBJCOPY) -O binary $< $@
-
-# Clean
 clean:
-	@echo "Cleaning..."
-	@rm -rf $(BUILD) $(TARGET).elf $(TARGET).dol $(TARGET).map
+	@echo clean ...
+	rm -f $(BUILD)/*.d $(BUILD)/*.h $(BUILD)/*.ii $(BUILD)/*.lst $(BUILD)/*.map \
+	$(BUILD)/*.o $(BUILD)/*.s
+	@rm -fr $(OUTPUT).elf $(OUTPUT).dol
+#	cd external/mplayer; $(MAKE) -f Makefile clean
 
-.PHONY: all clean
+#---------------------------------------------------------------------------------
+run:
+	wiiload $(OUTPUT).dol
+
+#---------------------------------------------------------------------------------
+reload:
+	wiiload -r $(OUTPUT).dol
+
+#---------------------------------------------------------------------------------
+else
+
+DEPENDS	:=	$(OFILES:.o=.d)
+
+#---------------------------------------------------------------------------------
+# main targets
+#---------------------------------------------------------------------------------
+$(OUTPUT).dol: $(OUTPUT).elf
+$(OUTPUT).elf: $(OFILES)
+
+#---------------------------------------------------------------------------------
+# This rule links in binary data with .ttf, .png, and .mp3 extensions
+#---------------------------------------------------------------------------------
+%.ttf.o : %.ttf
+	@echo $(notdir $<)
+	$(bin2o)
+
+%.lang.o : %.lang
+	@echo $(notdir $<)
+	$(bin2o)
+
+%.png.o : %.png
+	@echo $(notdir $<)
+	$(bin2o)
+
+%.jpg.o : %.jpg
+	@echo $(notdir $<)
+	$(bin2o)
+	
+%.gif.o : %.gif
+	@echo $(notdir $<)
+	$(bin2o)
+	
+%.ogg.o : %.ogg
+	@echo $(notdir $<)
+	$(bin2o)
+
+%.pcm.o : %.pcm
+	@echo $(notdir $<)
+	$(bin2o)
+
+-include $(DEPENDS)
+
+#---------------------------------------------------------------------------------
+endif
+#---------------------------------------------------------------------------------

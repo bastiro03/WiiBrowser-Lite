@@ -7,26 +7,26 @@
 #include "common.h"
 #include "menu.h"
 
-#define GUITH_STACK (16384)
-#define MAXD 5
+#define GUITH_STACK 	(16384)
+#define MAXD            5
 
-using file = struct file
+typedef struct file
 {
-	FILE *file;
-	char name[512];
-};
+    FILE *file;
+    char name[512];
+} file;
 
-using Private = struct data
+typedef struct data
 {
-	char *url;
-	int *bar;
-	file save;
-	int code;
-	double bytes;
-	bool keep;
-};
+    char *url;
+    int *bar;
+    file save;
+    int code;
+    double bytes;
+    bool keep;
+} Private;
 
-void *DownloadThread(void *arg);
+void *DownloadThread (void *arg);
 void StopDownload();
 
 Private *AddUpdate(CURLM *cm, char *url, FILE *file);

@@ -1,33 +1,41 @@
-name: Wii Homebrew Build
-
+name: Wii Build
 on:
   push:
-    branches: [ main ]
+    branches: ["main"]
   pull_request:
-
+    branches: ["main"]
+  workflow_dispatch:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container:
-      image: devkitpro/devkitppc:latest
+    container: devkitpro/devkitppc:latest
     steps:
       - name: Checkout
         uses: actions/checkout@v6.0.2
-
-      - name: Build
+      - name: Install DevkitPro Portlibs
+        run: |
+          dkp-pacman -Syyu --noconfirm
+          dkp-pacman -S --needed --noconfirm \
+            wii-freetype \
+            wii-libjpeg-turbo \
+            wii-libpng \
+            wii-zlib \
+            wii-curl \
+            wii-lua \
+            wii-mxml \
+            wii-libiconv
+      - name: Build Main Application
         run: |
           make
-
-      - name: Package Homebrew App Structure
+      - name: Build Forwarder Channel
         run: |
-          mkdir -p dist/apps/WiiBrowserLite
-          cp meta.xml dist/apps/WiiBrowserLite/meta.xml
-          cp icon.png dist/apps/WiiBrowserLite/icon.png
-          cp *.dol dist/apps/WiiBrowserLite/boot.dol
-          cd dist && zip -r WiiBrowserLite.zip apps
-
-      - name: Upload a Build Artifact
-        uses: actions/upload-artifact@v7.0.0
+          make -C forwarder
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v7.0.1
         with:
-          name: Wii-Homebrew-Build
-          path: dist/WiiBrowserLite.zip
+          name: WiiBrowser-Build
+          path: |
+            *.dol
+            *.elf
+            forwarder/*.dol
+            forwarder/*.elf

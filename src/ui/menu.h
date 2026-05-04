@@ -14,7 +14,7 @@
 #undef TIME
 #undef DEBUG
 
-#include <libwiigui/gui.h>
+#include "gui.h"
 #include <curl/multi.h>
 
 #include <ogcsys.h>

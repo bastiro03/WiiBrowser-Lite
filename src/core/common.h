@@ -5,7 +5,7 @@
 #include <iostream>
 #include <list>
 
-#include <libwiigui/gui.h>
+#include "gui.h"
 #define LEN 15
 
 using namespace std;

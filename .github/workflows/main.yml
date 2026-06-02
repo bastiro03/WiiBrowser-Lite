@@ -12,10 +12,27 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6.0.2
-      - name: Install DevkitPro Portlibs
+
+      - name: Cache pacman packages
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/pacman/pkg
+          key: ${{ runner.os }}-dkp-pkg-${{ hashFiles('.github/workflows/main.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-dkp-pkg-
+
+      - name: Update pacman and ensure base devkitPro
         run: |
+          set -euo pipefail
           dkp-pacman -Syyu --noconfirm
-          dkp-pacman -S --needed --noconfirm \
+          # Ensure devkitPPC and basics are present
+          dkp-pacman -S --needed --noconfirm devkitPPC libogc
+        
+      - name: Detect and install required Wii portlibs (if available)
+        run: |
+          set -euo pipefail
+          # Candidate packages based on repository Makefile; we only install those available in the repo
+          candidates=( \
             wii-freetype \
             wii-libjpeg-turbo \
             wii-libpng \
@@ -23,7 +40,39 @@ jobs:
             wii-curl \
             wii-lua \
             wii-mxml \
-            wii-libiconv
+            wii-libiconv \
+            wii-fribidi \
+            wii-libogg \
+            wii-libvorbis \
+            wii-libzip \
+            wii-unrar \
+            wii-7zip \
+            wii-cyassl \
+            wii-wolfssl \
+            wii-net \
+            wii-netport \
+            wii-asnd \
+            wii-wiiuse \
+            wii-wiikeyboard \
+            wii-bte \
+            wii-libfat \
+            wii-logc \
+            wii-libdi \
+          )
+          install_list=()
+          for p in "${candidates[@]}"; do
+            if dkp-pacman -Ss "^${p}\\b" >/dev/null 2>&1; then
+              install_list+=("$p")
+            else
+              echo "Package not found in repo: $p"
+            fi
+          done
+          if [ ${#install_list[@]} -gt 0 ]; then
+            echo "Installing available packages: ${install_list[*]}"
+            dkp-pacman -S --needed --noconfirm "${install_list[@]}"
+          else
+            echo "No candidate packages available for automatic install — verify package names or add required packages to the devkitPro repo."
+          fi
       - name: Build Main Application
         run: |
           make

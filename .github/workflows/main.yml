@@ -36,31 +36,31 @@ jobs:
           set -euo pipefail
           # Candidate packages based on repository Makefile; we only install those available in the repo
           candidates=( \
-            wii-freetype \
-            wii-libjpeg-turbo \
-            wii-libpng \
-            wii-zlib \
-            wii-curl \
-            wii-lua \
-            wii-mxml \
-            wii-libiconv \
-            wii-fribidi \
-            wii-libogg \
-            wii-libvorbis \
-            wii-libzip \
-            wii-unrar \
-            wii-7zip \
-            wii-cyassl \
-            wii-wolfssl \
-            wii-net \
-            wii-netport \
-            wii-asnd \
-            wii-wiiuse \
-            wii-wiikeyboard \
-            wii-bte \
-            wii-libfat \
-            wii-logc \
-            wii-libdi \
+            ppc-freetype \
+            ppc-libjpeg-turbo \
+            ppc-libpng \
+            ppc-zlib \
+            ppc-curl \
+            ppc-lua \
+            ppc-mxml \
+            ppc-libiconv \
+            ppc-fribidi \
+            ppc-libogg \
+            ppc-libvorbis \
+            ppc-libzip \
+            ppc-unrar \
+            ppc-7zip \
+            ppc-cyassl \
+            ppc-wolfssl \
+            ppc-net \
+            ppc-netport \
+            ppc-asnd \
+            ppc-wiiuse \
+            ppc-wiikeyboard \
+            ppc-bte \
+            ppc-libfat \
+            ppc-logc \
+            ppc-libdi \
           )
           install_list=()
           for p in "${candidates[@]}"; do

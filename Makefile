@@ -24,21 +24,22 @@ BUILD		:=	build
 # Application Source, External Dependencies, and Binary Assets
 SOURCES		:=	src/core src/ui src/media src/filesystem src/archive src/network \
 				src/html_parser src/text src/utils \
-				external/libwiigui external/litehtml \
+				external/libwiigui external/litehtml external/mplayerwii \
 				assets/images assets/images/appbar assets/fonts assets/sounds assets/lang
 
 # Include paths (adding all subdirectories so existing #includes don't break)
 INCLUDES	:=	src src/core src/ui src/media src/filesystem src/archive src/network \
 				src/html_parser src/text src/utils \
-				external/mplayer external/libwiigui external/litehtml
+				external external/mplayer external/libwiigui external/litehtml \
+				external/mplayerwii external/portlibs/include
 
 #---------------------------------------------------------------------------------
 # options for code generation
 #---------------------------------------------------------------------------------
 
-CFLAGS		=	-g -O3 -Wall $(MACHDEP) $(INCLUDE)
+CFLAGS		=	-g -O3 -Wall -D_DEFAULT_SOURCE $(MACHDEP) $(INCLUDE)
 CXXFLAGS	=	-std=gnu++0x $(CFLAGS)
-LDFLAGS		=	-g -ggdb $(MACHDEP) -Wl
+LDFLAGS		=	-g -ggdb $(MACHDEP)
 
 # ,-Map,$(notdir $@).map,--section-start,.init=0x80620000,-wrap,malloc,-wrap,free,-wrap,memalign,-wrap,calloc,-wrap,realloc,-wrap,malloc_usable_size
 
@@ -107,21 +108,23 @@ export OFILES	:=	$(CPPFILES:.cpp=.o) $(CFILES:.c=.o) \
 export INCLUDE	:=	$(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir)) \
 					$(foreach dir,$(LIBDIRS),-I$(dir)/include) \
 					-I$(CURDIR)/$(BUILD) \
-					-I$(LIBOGC_INC) -I$(PORTLIBS)/include/freetype2
+					-I$(LIBOGC_INC) -I$(CURDIR)/external/portlibs/include/freetype2
 
 #---------------------------------------------------------------------------------
 # build a list of library paths
 #---------------------------------------------------------------------------------
  
-export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib) \
+export LIBPATHS	:=	-L$(CURDIR)/external/portlibs/wii \
+					$(foreach dir,$(LIBDIRS),-L$(dir)/lib) \
 					-L$(LIBOGC_LIB) \
-				-L$(MPLAYER)/ \
-				-L$(MPLAYER)/ffmpeg/libavcodec \
-				-L$(MPLAYER)/ffmpeg/libavformat \
-				-L$(MPLAYER)/ffmpeg/libavutil \
-				-L$(MPLAYER)/ffmpeg/libswscale 
+					-L$(MPLAYER)/ \
+					-L$(MPLAYER)/ffmpeg/libavcodec \
+					-L$(MPLAYER)/ffmpeg/libavformat \
+					-L$(MPLAYER)/ffmpeg/libavutil \
+					-L$(MPLAYER)/ffmpeg/libswscale 
 
 export OUTPUT	:=	$(CURDIR)/$(TARGET)
+export EMBEDSCRIPT	:=	$(CURDIR)/scripts/embeddata.sh
 .PHONY: $(BUILD) clean
 
 #---------------------------------------------------------------------------------
@@ -166,31 +169,31 @@ $(OUTPUT).elf: $(OFILES)
 #---------------------------------------------------------------------------------
 %.ttf.o : %.ttf
 	@echo $(notdir $<)
-	$(bin2o)
+	$(SILENTCMD)$(SHELL) $(EMBEDSCRIPT) $< $@
 
 %.lang.o : %.lang
 	@echo $(notdir $<)
-	$(bin2o)
+	$(SILENTCMD)$(SHELL) $(EMBEDSCRIPT) $< $@
 
 %.png.o : %.png
 	@echo $(notdir $<)
-	$(bin2o)
+	$(SILENTCMD)$(SHELL) $(EMBEDSCRIPT) $< $@
 
 %.jpg.o : %.jpg
 	@echo $(notdir $<)
-	$(bin2o)
+	$(SILENTCMD)$(SHELL) $(EMBEDSCRIPT) $< $@
 	
 %.gif.o : %.gif
 	@echo $(notdir $<)
-	$(bin2o)
+	$(SILENTCMD)$(SHELL) $(EMBEDSCRIPT) $< $@
 	
 %.ogg.o : %.ogg
 	@echo $(notdir $<)
-	$(bin2o)
+	$(SILENTCMD)$(SHELL) $(EMBEDSCRIPT) $< $@
 
 %.pcm.o : %.pcm
 	@echo $(notdir $<)
-	$(bin2o)
+	$(SILENTCMD)$(SHELL) $(EMBEDSCRIPT) $< $@
 
 -include $(DEPENDS)
 

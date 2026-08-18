@@ -11,8 +11,8 @@
  ***************************************************************************/
 
 #include "gui.h"
-#include "../settings.h"
-#include "../main.h"
+#include "settings.h"
+#include "main.h"
 
 /**
  * Constructor for the GuiSound class.

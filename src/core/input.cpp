@@ -27,6 +27,7 @@
 
 #include "input.h"
 #include "osdep/gx_supp.h"
+#include "mplayerwii.h"
 
 int rumbleRequest[4] = {0,0,0,0};
 GuiTrigger userInput[4];

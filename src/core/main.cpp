@@ -191,7 +191,7 @@ void ExitApp()
 }
 
 u8 HWButton;
-void WiiResetPressed()
+void WiiResetPressed(u32 irq, void *ctx)
 {
     HWButton = SYS_RETURNTOMENU;
 }

@@ -1,10 +1,16 @@
 name: Wii Build
+
 on:
   push:
     branches: ["main"]
+    tags: ["v*"]
   pull_request:
     branches: ["main"]
   workflow_dispatch:
+
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -24,70 +30,66 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-dkp-pkg-
 
-      - name: Update pacman and ensure base devkitPro
+      - name: Update devkitPro and ensure devkitPPC + libogc
         run: |
           set -euo pipefail
-          dkp-pacman -Syyu --noconfirm
-          # Ensure devkitPPC and basics are present
+          dkp-pacman -Syu --noconfirm
           dkp-pacman -S --needed --noconfirm devkitPPC libogc
-        
-      - name: Detect and install required Wii portlibs (if available)
+
+      - name: Install portlibs required by the forwarder channel
         run: |
           set -euo pipefail
-          # Candidate packages based on repository Makefile; we only install those available in the repo
-          candidates=( \
-            ppc-freetype \
-            ppc-libjpeg-turbo \
-            ppc-libpng \
-            ppc-zlib \
-            ppc-curl \
-            ppc-lua \
-            ppc-mxml \
-            ppc-libiconv \
-            ppc-fribidi \
-            ppc-libogg \
-            ppc-libvorbis \
-            ppc-libzip \
-            ppc-unrar \
-            ppc-7zip \
-            ppc-cyassl \
-            ppc-wolfssl \
-            ppc-net \
-            ppc-netport \
-            ppc-asnd \
-            ppc-wiiuse \
-            ppc-wiikeyboard \
-            ppc-bte \
-            ppc-libfat \
-            ppc-logc \
-            ppc-libdi \
-          )
-          install_list=()
-          for p in "${candidates[@]}"; do
-            if dkp-pacman -Ss "^${p}\\b" >/dev/null 2>&1; then
-              install_list+=("$p")
-            else
-              echo "Package not found in repo: $p"
-            fi
-          done
-          if [ ${#install_list[@]} -gt 0 ]; then
-            echo "Installing available packages: ${install_list[*]}"
-            dkp-pacman -S --needed --noconfirm "${install_list[@]}"
-          else
-            echo "No candidate packages available for automatic install — verify package names or add required packages to the devkitPro repo."
-          fi
+          # The main application links against the vendored libraries in
+          # external/portlibs (headers + static libs, searched first) and
+          # libogc, so it needs no portlib packages.  The forwarder channel
+          # links -lntfs -lext2fs -lz, which are only available from the
+          # devkitPro repo.
+          dkp-pacman -S --needed --noconfirm ppc-zlib ppc-ntfs ppc-ext2fs ppc-libfat
+
       - name: Build Main Application
         run: |
+          set -euo pipefail
           make
+
+      - name: Verify Main Application Output
+        run: |
+          set -euo pipefail
+          test -f boot.dol && echo "boot.dol OK ($(stat -c%s boot.dol) bytes)"
+          test -f boot.elf && echo "boot.elf OK"
+
       - name: Build Forwarder Channel
         run: |
+          set -euo pipefail
           make -C forwarder
+
       - name: Upload Artifacts
         uses: actions/upload-artifact@v7.0.1
         with:
-          name: WiiBrowser-Build
+          name: WiiBrowser-Build-${{ github.sha }}
           path: |
-            *.dol
-            *.elf
-            forwarder/*.dol
-            forwarder/*.elf
+            boot.dol
+            boot.elf
+            forwarder/boot.dol
+            forwarder/boot.elf
+          if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: WiiBrowser-Build-${{ github.sha }}
+          path: release
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          ls -la release/
+          gh release create "${GITHUB_REF_NAME}" release/* \
+            --title "WiiBrowser-Lite ${GITHUB_REF_NAME}" \
+            --generate-notes

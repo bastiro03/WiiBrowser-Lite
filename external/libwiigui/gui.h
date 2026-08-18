@@ -1003,7 +1003,7 @@ typedef struct _keytype {
 	char ch, chShift;
 } Key;
 
-#include "textoperations/TextPointer.h"
+#include "text/TextPointer.h"
 
 //!On-screen keyboard
 class GuiKeyboard : public GuiWindow

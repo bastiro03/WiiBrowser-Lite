@@ -21,7 +21,7 @@
  * 3. This notice may not be removed or altered from any source
  * distribution.
  *
- * RarFile.cpp
+ * RarFile.h
  *
  * for WiiXplorer 2009
  ***************************************************************************/
@@ -31,9 +31,7 @@
 #include <vector>
 #include <string>
 
-#include <libunrar/rar.hpp>
 #include "7ZipFile.h"
-
 
 class RarFile
 {
@@ -52,16 +50,9 @@ class RarFile
         u32 GetItemCount();
 
     private:
-        bool LoadList();
         void ClearList();
-        bool CheckPassword();
-        bool SeekFile(int index);
-        void UnstoreFile(ComprDataIO &DataIO, int64 DestUnpSize);
-        int InternalExtractFile(const char * outpath, bool withpath);
-        Archive RarArc;
 
         std::vector<ArchiveFileStruct *> RarStructure;
-        std::string Password;
 };
 
 #endif

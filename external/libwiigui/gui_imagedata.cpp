@@ -10,10 +10,10 @@
  * GUI class definitions
  ***************************************************************************/
 
-#include "../utils/pngu.h"
-#include "../utils/jmemsrc.h"
-#include "../utils/easybmp.h"
-#include "../utils/giflib.h"
+#include "utils/pngu.h"
+#include "utils/jmemsrc.h"
+#include "utils/easybmp.h"
+#include "utils/giflib.h"
 // #include "../utils/mem2_manager.h"
 
 #include "gui.h"

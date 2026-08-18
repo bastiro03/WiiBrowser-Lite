@@ -70,7 +70,7 @@ void FileSeqInStream_CreateVTable(CFileSeqInStream *p);
 
 typedef struct
 {
-  ISeekInStream vt;
+  ISeekInStream s;
   CSzFile file;
   WRes wres;
 } CFileInStream;

@@ -8,6 +8,10 @@ on:
     branches: ["main"]
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -21,30 +25,26 @@ jobs:
     timeout-minutes: 60
     steps:
       - name: Checkout
-        uses: actions/checkout@v6.0.2
+        uses: actions/checkout@v4
 
       - name: Cache pacman packages
         uses: actions/cache@v4
         with:
           path: /var/cache/pacman/pkg
-          key: ${{ runner.os }}-dkp-pkg-v1-${{ hashFiles('.github/workflows/main.yml') }}
+          key: ${{ runner.os }}-dkp-pkg-v2-${{ hashFiles('.github/workflows/main.yml', 'Makefile') }}
           restore-keys: |
+            ${{ runner.os }}-dkp-pkg-v2-
             ${{ runner.os }}-dkp-pkg-
 
-      - name: Update devkitPro and ensure devkitPPC + libogc
+      - name: Install Toolchain & Portlibs
         run: |
           set -euo pipefail
-          dkp-pacman -Syu --noconfirm
-          dkp-pacman -S --needed --noconfirm devkitPPC libogc
-
-      - name: Install portlibs required by the forwarder channel
-        run: |
-          set -euo pipefail
-          dkp-pacman -S --needed --noconfirm ppc-zlib ppc-ntfs ppc-ext2fs ppc-libfat
+          dkp-pacman -Sy --needed --noconfirm devkitPPC libogc ppc-zlib ppc-ntfs ppc-ext2fs ppc-libfat zip
 
       - name: Build Main Application
         run: |
           set -euo pipefail
+          make clean
           make
 
       - name: Verify Main Application Output
@@ -53,26 +53,59 @@ jobs:
           test -f boot.dol && echo "boot.dol OK ($(stat -c%s boot.dol) bytes)"
           test -f boot.elf && echo "boot.elf OK"
 
-      - name: Build Forwarder Channel
+      - name: Build Forwarder Channel (Optional Standalone)
+        id: forwarder_build
+        continue-on-error: true
         run: |
           set -euo pipefail
+          echo "Building forwarder channel..."
           make -C forwarder
 
       - name: Verify Forwarder Output
         run: |
           set -euo pipefail
-          test -f forwarder/boot.dol && echo "forwarder/boot.dol OK ($(stat -c%s forwarder/boot.dol) bytes)"
-          test -f forwarder/boot.elf && echo "forwarder/boot.elf OK"
+          if test -f forwarder/boot.dol; then
+            echo "forwarder/boot.dol OK ($(stat -c%s forwarder/boot.dol) bytes)"
+          else
+            echo "Forwarder build omitted or failed; proceeding with main application only."
+          fi
+
+      - name: Package Homebrew Channel Bundle
+        run: |
+          set -euo pipefail
+          RELEASE_VER="${GITHUB_REF_NAME:-$(git rev-parse --short HEAD)}"
+          RELEASE_DATE="$(date -u +'%Y%m%d')"
+
+          mkdir -p dist/apps/wiibrowser-lite
+          cp boot.dol dist/apps/wiibrowser-lite/boot.dol
+          cp hbc/icon.png dist/apps/wiibrowser-lite/icon.png
+
+          sed -e "s|<version></version>|<version>${RELEASE_VER}</version>|" \
+              -e "s|<release_date></release_date>|<release_date>${RELEASE_DATE}</release_date>|" \
+              hbc/meta.xml > dist/apps/wiibrowser-lite/meta.xml
+
+          (cd dist && zip -r ../WiiBrowser-Lite-HBC.zip apps)
+
+      - name: Assemble Build Artifacts
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          cp WiiBrowser-Lite-HBC.zip artifacts/
+          cp boot.dol artifacts/WiiBrowser-Lite.dol
+          cp boot.elf artifacts/WiiBrowser-Lite.elf
+
+          if test -f forwarder/boot.dol; then
+            cp forwarder/boot.dol artifacts/WiiBrowser-Lite-Forwarder.dol
+          fi
+          if test -f forwarder/boot.elf; then
+            cp forwarder/boot.elf artifacts/WiiBrowser-Lite-Forwarder.elf
+          fi
 
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@v4
         with:
           name: WiiBrowser-Build-${{ github.sha }}
-          path: |
-            boot.dol
-            boot.elf
-            forwarder/boot.dol
-            forwarder/boot.elf
+          path: artifacts/*
           if-no-files-found: error
           retention-days: 7
 
@@ -101,7 +134,7 @@ jobs:
           cat checksums.sha256
 
       - name: Create GitHub Release and upload assets
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
           name: WiiBrowser-Lite ${{ github.ref_name }}

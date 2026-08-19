@@ -1,8 +1,5 @@
 # WiiBrowser Lite
-This project is being led by the community to bring back WiiBrowser, a homebrew version of the Wii's Internet Channel that was created by [gave92](https://github.com/gave92). Currently, the primary goal is to create a more modern foundation that will make things easier for other developers. I'm no longer able to actively work on it myself, but I'm open to accepting requests to contribute to the project.
-
-## Screenshots
-<p><img src="screenshots\advanced.png" width="100"> <img src="screenshots\bookmarks.png" width="100"> <img src="screenshots\download.png" width="100"> <img src="screenshots\file_browser.png" width="100"> <img src="screenshots\gmail.png" width="100"> <img src="screenshots\google.png" width="100"> <img src="screenshots\homescreen.png" width="100"> <img src="screenshots\settings.png" width="100"></p>
+The primary goal of this project is to lay the groundwork to make it easier for other developers to revive WiiBrowser, a homebrew version of the Wii's Internet Channel created by [gave92](https://github.com/gave92).
 
 ## Features
 
@@ -28,6 +25,9 @@ This project is being led by the community to bring back WiiBrowser, a homebrew 
 * JavaScript support
 * Full video support
 * Multiple tabs
+
+## Screenshots
+<p><img src="screenshots\advanced.png" width="320"> <img src="screenshots\bookmarks.png" width="320"> <img src="screenshots\download.png" width="320"> <img src="screenshots\file_browser.png" width="320"> <img src="screenshots\gmail.png" width="320"> <img src="screenshots\google.png" width="320"> <img src="screenshots\homescreen.png" width="320"> <img src="screenshots\settings.png" width="320"></p>
 
 ## Credits
 - [Dimok](https://github.com/dimok789) for [WiiXplorer](https://sourceforge.net/projects/wiixplorer/) which WiiBrowser was both inspired by and took code from for file management

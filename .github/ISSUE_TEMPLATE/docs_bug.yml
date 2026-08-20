@@ -1,0 +1,55 @@
+name: "📚 Documentation or README.md issue report"
+description: "Report an issue in the project's documentation or README.md file."
+title: "[Docs]: "
+labels: ["Documentation"]
+assignees:
+  - Bastiro03
+body:
+  - type: markdown
+    attributes:
+      value: |
+        To expedite issue processing, please search open and closed issues before submitting a new one.
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the bug
+      description: A clear and concise description of what the bug is.
+      placeholder: "The documentation is incorrect because..."
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: To Reproduce
+      description: "Steps to reproduce the error. (e.g.: 1. Navigate to the page, 2. Search for X, 3. See error)"
+      placeholder: |
+        1. Navigate to the page
+        2. Search for X
+        3. See error
+      render: bash
+    validations:
+      required: true
+  - type: textarea
+    id: media
+    attributes:
+      label: Media proof
+      description: If applicable, add screenshots or videos to help explain your problem.
+      placeholder: "Drag and drop screenshots or videos here..."
+    validations:
+      required: false
+  - type: textarea
+    id: solution
+    attributes:
+      label: Describe the solution you'd like
+      description: A clear and concise description of what you want to happen.
+      placeholder: "The documentation should state that..."
+    validations:
+      required: true
+  - type: textarea
+    id: additional_context
+    attributes:
+      label: Additional context
+      description: Add any other context or additional information about the problem here.
+      placeholder: "Any other relevant information..."
+    validations:
+      required: false

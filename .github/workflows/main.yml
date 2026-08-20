@@ -37,6 +37,7 @@ jobs:
             ${{ runner.os }}-dkp-pkg-
 
       - name: Install Toolchain & Portlibs
+        continue-on-error: true
         run: |
           set -euo pipefail
           dkp-pacman -Sy --needed --noconfirm devkitPPC libogc ppc-zlib ppc-ntfs ppc-ext2fs ppc-libfat zip

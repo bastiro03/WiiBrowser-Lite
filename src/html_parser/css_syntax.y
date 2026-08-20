@@ -23,6 +23,11 @@
 	int pseudo_element;
 }
 
+%{
+int yylex(YYSTYPE *lvalp);
+int yyerror(char *s);
+%}
+
 %token IMPORT_SYM
 %token IMPORTANT_SYM
 %token IDENT

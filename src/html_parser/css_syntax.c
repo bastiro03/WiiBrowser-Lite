@@ -63,6 +63,9 @@ typedef union {
 # define YYDEBUG 0
 #endif
 
+int yylex(YYSTYPE *lvalp);
+int yyerror(char *s);
+
 
 
 #define	YYFINAL		99

@@ -46,7 +46,8 @@ jobs:
         run: |
           set -euo pipefail
           make clean
-          make
+          make distclean  # Remove all generated files
+          make            # Regenerate parser/lexer files
 
       - name: Verify Main Application Output
         run: |

@@ -3,18 +3,12 @@ name: "⚠️ Security Report"
 about: "Report an issue to help the project improve."
 title: ""
 labels: "Type: Security"
-assignees: Josee9988
+assignees: Bastiro03
 
 ---
 
-<!--📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛
-
-Oh, hi there! 😄
-
+<!--
 To expedite issue processing, please search open and closed issues before submitting a new one.
-Please read our Rules of Conduct at this repository's `.github/CODE_OF_CONDUCT.md`
-
-FIRST OF ALL, read this project's SECURITY.md file. Located in `.github/SECURITY.md`.
 
 READ CAREFULLY IF YOUR ISSUE REPORT CONTAINS SENSIBLE OR PRIVATE DATA:
 (data that might be leaked or subtracted from our servers due to this
@@ -41,7 +35,7 @@ The data that must NOT be posted here:
 * Information about political or religious affiliations
 * Information about race, ethnicity, sexual orientation, gender, or other identifying information that could be used for discriminatory purposes
 
-📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛-->
+-->
 
 # **⚠️ Security Report**
 

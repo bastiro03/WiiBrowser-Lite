@@ -1,12 +1,8 @@
-<!--📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛
-
-Oh, hi there! 😄
-
+<!--
 To make our work more accessible, we recommend you to choose any of our available issue templates rather than using (this) a blank template.
 
 To expedite issue processing, please search open and closed issues before submitting a new one.
-
-📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛📛-->
+-->
 
 # **Blank Issue Report**
 

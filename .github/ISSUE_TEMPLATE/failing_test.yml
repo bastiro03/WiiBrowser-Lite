@@ -1,0 +1,43 @@
+name: "💉 Failing Test"
+description: "Report failing tests or CI jobs."
+title: "[Test]: "
+labels: ["Type: Test"]
+assignees:
+  - Bastiro03
+body:
+  - type: markdown
+    attributes:
+      value: |
+        To expedite issue processing, please search open and closed issues before submitting a new one.
+  - type: textarea
+    id: failing_jobs
+    attributes:
+      label: Which jobs/test(s) are failing
+      description: The CI jobs or tests that are failing.
+      placeholder: "e.g. unit-tests: test_parser"
+    validations:
+      required: true
+  - type: textarea
+    id: reason
+    attributes:
+      label: Reason for failure/description
+      description: Try to describe why the test is failing or what we are missing to make it pass.
+      placeholder: "The test fails because..."
+    validations:
+      required: true
+  - type: textarea
+    id: media
+    attributes:
+      label: Media proof
+      description: If applicable, add screenshots or videos to help explain your problem.
+      placeholder: "Drag and drop screenshots or videos here..."
+    validations:
+      required: false
+  - type: textarea
+    id: additional_context
+    attributes:
+      label: Additional context
+      description: Add any other context or additional information about the problem here.
+      placeholder: "Any other relevant information..."
+    validations:
+      required: false

@@ -1,0 +1,115 @@
+# ==========================================
+# Nintendo Wii Homebrew (.gitignore)
+# devkitPPC / libogc / GRRLIB / CMake / Make
+# ==========================================
+
+# --- Build Output Directories ---
+build/
+bin/
+out/
+dist/
+target/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile.old
+
+# --- Compiled Object & Dependency Files ---
+*.o
+*.obj
+*.d
+*.a
+*.so
+*.dylib
+*.dll
+
+# --- Wii Target Executables & Disk Images ---
+*.elf
+*.dol
+*.wad
+*.iso
+*.gcm
+*.bnr
+*.ciso
+*.wbfs
+
+# (Optional: Uncomment below if you want to commit a pre-built boot.dol for HBC)
+# !apps/**/boot.dol
+
+# --- Symbol, Map & Debug Files ---
+*.map
+*.sym
+*.lst
+*.gdb
+*.idb
+*.pdb
+
+# --- Generated Asset Intermediates (bin2s / raw2c / gxtexconv) ---
+*_bin.h
+*_bin.c
+*_bin.s
+*_raw.h
+*_raw.c
+*_tpl.h
+*_tpl.c
+
+# --- Dolphin Emulator Runtime / Dumps / Logs ---
+User/
+Sys/
+*.dps
+*.sav
+*.raw
+dolphin.log
+dolphin-emu.log
+
+# --- Release Archives & Packages ---
+*.zip
+*.7z
+*.tar.gz
+*.rar
+
+# --- IDEs and Text Editors ---
+# VS Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# CLion / IntelliJ
+.idea/
+*.iml
+
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Vim / Emacs / Generic editors
+*~
+*.swp
+*.swo
+.directory
+
+# --- Operating System Files ---
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+ehthumbs.db
+[Dd]esktop.ini
+$RECYCLE.BIN/
+
+# Linux
+.directory
+.fuse_hidden*
+.nfs*

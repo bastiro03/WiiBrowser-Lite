@@ -1,101 +1,40 @@
-# ==========================================
-# Nintendo Wii Homebrew (.gitignore)
-# devkitPPC / libogc / GRRLIB / CMake / Make
-# ==========================================
-
-# --- Build Output Directories ---
+# ----------------------------------------------------------------------
+# Build Directories & Output Files
+# ----------------------------------------------------------------------
+# Ignore the main application and forwarder build directories
 build/
-bin/
-out/
-dist/
-target/
-cmake-build-*/
-CMakeFiles/
-CMakeCache.txt
-cmake_install.cmake
-Makefile.old
+forwarder/build/
 
-# --- Compiled Object & Dependency Files ---
+# Wii specific executables
+*.dol
+*.elf
+
+# Compiler and Linker artifacts
 *.o
-*.obj
 *.d
 *.a
-*.so
-*.dylib
-*.dll
-
-# --- Wii Target Executables & Disk Images ---
-*.elf
-*.dol
-*.wad
-*.iso
-*.gcm
-*.bnr
-*.ciso
-*.wbfs
-
-# (Optional: Uncomment below if you want to commit a pre-built boot.dol for HBC)
-# !apps/**/boot.dol
-
-# --- Symbol, Map & Debug Files ---
 *.map
-*.sym
 *.lst
-*.gdb
-*.idb
-*.pdb
+*.ii
 
-# --- Generated Asset Intermediates (bin2s / raw2c / gxtexconv) ---
-*_bin.h
-*_bin.c
-*_bin.s
-*_raw.h
-*_raw.c
-*_tpl.h
-*_tpl.c
+# Generated binary asset objects (bin2o)
+*.ttf.o
+*.lang.o
+*.png.o
+*.jpg.o
+*.gif.o
+*.ogg.o
+*.pcm.o
 
-# --- Dolphin Emulator Runtime / Dumps / Logs ---
-User/
-Sys/
-*.dps
-*.sav
-*.raw
-dolphin.log
-dolphin-emu.log
+# ----------------------------------------------------------------------
+# OS-Generated Files
+# ----------------------------------------------------------------------
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
 
-# --- Release Archives & Packages ---
-*.zip
-*.7z
-*.tar.gz
-*.rar
-
-# --- IDEs and Text Editors ---
-# VS Code
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-*.code-workspace
-
-# CLion / IntelliJ
-.idea/
-*.iml
-
-# Visual Studio
-.vs/
-*.suo
-*.user
-*.userosscache
-*.sln.docstates
-
-# Vim / Emacs / Generic editors
-*~
-*.swp
-*.swo
-.directory
-
-# --- Operating System Files ---
 # macOS
 .DS_Store
 .DS_Store?
@@ -103,13 +42,57 @@ dolphin-emu.log
 .Spotlight-V100
 .Trashes
 
-# Windows
-Thumbs.db
-ehthumbs.db
-[Dd]esktop.ini
-$RECYCLE.BIN/
-
 # Linux
-.directory
-.fuse_hidden*
-.nfs*
+*~
+
+# ----------------------------------------------------------------------
+# IDEs & Text Editors
+# ----------------------------------------------------------------------
+# Visual Studio Code
+.vscode/
+
+# Cursor
+.cursor/
+
+# CLion / IntelliJ
+.idea/
+cmake-build-*/
+
+# Legacy Programmer's Notepad (which you are removing)
+*.pnproj
+*.pnps
+*.pnproj.bak
+
+# Vim / Emacs
+*.swp
+*.swo
+*~
+\#*\#
+
+# ----------------------------------------------------------------------
+# Third-party / External build artifacts
+# ----------------------------------------------------------------------
+# If you compile mplayer or other external libs in-tree, ignore their 
+# configuration and output files (if they aren't git submodules)
+external/mplayer/config.mak
+external/mplayer/config.h
+external/mplayer/ffmpeg/config.mak
+external/mplayer/ffmpeg/config.h
+
+# Generated CSS parser/lexer (regenerate via flex/bison)
+src/html_parser/css_lex.c
+src/html_parser/css_lex.h
+src/html_parser/css_syntax.c
+src/html_parser/css_syntax.h
+
+# Legacy libs/ vendored binaries (migrated to portlibs via dkp-pacman)
+libs/
+
+# Distribution / packaging
+dist/
+artifacts/
+*.zip
+*.7z
+
+# Forwarder packaging
+loadMii.zip

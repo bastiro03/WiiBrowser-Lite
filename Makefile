@@ -14,24 +14,32 @@ include $(DEVKITPPC)/wii_rules
 #---------------------------------------------------------------------------------
 # TARGET is the name of the output
 # BUILD is the directory where object files & intermediate files will be placed
-# SOURCES is a list of directories containing source code
+# SOURCES is a list of directories containing source code and asset data
 # INCLUDES is a list of directories containing extra header files
 #---------------------------------------------------------------------------------
-MPLAYER		:=	$(CURDIR)/source/mplayer
+MPLAYER		:=	$(CURDIR)/external/mplayer
 TARGET		:=	boot
 BUILD		:=	build
-SOURCES		:=	source source/html source/css source/libwiigui source/images source/fonts source/sounds \
-				source/lang source/utils source/images/appbar source/textoperations \
-				source/network source/archiveoperations
-INCLUDES	:=	source source/mplayer source/network
+
+# Application Source, External Dependencies, and Binary Assets
+SOURCES		:=	src/core src/ui src/media src/filesystem src/archive src/network \
+				src/html_parser src/text src/utils \
+				external/libwiigui external/litehtml external/mplayerwii \
+				assets/images assets/images/appbar assets/fonts assets/sounds assets/lang
+
+# Include paths (adding all subdirectories so existing #includes don't break)
+INCLUDES	:=	src src/core src/ui src/media src/filesystem src/archive src/network \
+				src/html_parser src/text src/utils \
+				external external/mplayer external/libwiigui external/litehtml \
+				external/mplayerwii
 
 #---------------------------------------------------------------------------------
 # options for code generation
 #---------------------------------------------------------------------------------
 
-CFLAGS		=	-g -O3 -Wall $(MACHDEP) $(INCLUDE)
-CXXFLAGS	=	-std=gnu++0x $(CFLAGS)
-LDFLAGS		=	-g -ggdb $(MACHDEP) -Wl
+CFLAGS		=	-g -O3 -Wall -Wextra -D_DEFAULT_SOURCE $(MACHDEP) $(INCLUDE) -MMD -MP
+CXXFLAGS	=	-std=gnu++17 $(CFLAGS)
+LDFLAGS		=	-g -ggdb $(MACHDEP)
 
 # ,-Map,$(notdir $@).map,--section-start,.init=0x80620000,-wrap,malloc,-wrap,free,-wrap,memalign,-wrap,calloc,-wrap,realloc,-wrap,malloc_usable_size
 
@@ -41,8 +49,8 @@ LDFLAGS		=	-g -ggdb $(MACHDEP) -Wl
 # LIBS	:=	-lmplayerwii -lavformat -lavcodec -lswscale -lavutil \
 
 LIBS	:=	-lfribidi -ljpeg -liconv -ldi -lpng -lunrar -lzip -lsevenzip -lz \
-				-lcurl -lcyassl -lnetport -lasnd -lvorbisidec \
-					 -lmxml -llua -lm -lfat -lwiiuse -lwiikeyboard -lbte -logc -lfreetype \
+			-lcurl -lcyassl -lnetport -lasnd -lvorbisidec \
+			-lmxml -llua -lm -lfat -lwiiuse -lwiikeyboard -lbte -logc -lfreetype
 
 #---------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level containing
@@ -108,32 +116,46 @@ export INCLUDE	:=	$(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir)) \
  
 export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib) \
 					-L$(LIBOGC_LIB) \
-				-L$(MPLAYER)/ \
-				-L$(MPLAYER)/ffmpeg/libavcodec \
-				-L$(MPLAYER)/ffmpeg/libavformat \
-				-L$(MPLAYER)/ffmpeg/libavutil \
-				-L$(MPLAYER)/ffmpeg/libswscale 
+					-L$(MPLAYER)/ \
+					-L$(MPLAYER)/ffmpeg/libavcodec \
+					-L$(MPLAYER)/ffmpeg/libavformat \
+					-L$(MPLAYER)/ffmpeg/libavutil \
+					-L$(MPLAYER)/ffmpeg/libswscale 
 
 export OUTPUT	:=	$(CURDIR)/$(TARGET)
-.PHONY: $(BUILD) clean
+export EMBEDSCRIPT	:=	$(CURDIR)/scripts/embeddata.sh
+.PHONY: $(BUILD) clean distclean forwarder
 
 #---------------------------------------------------------------------------------
 $(BUILD):
-#	cd source/mplayer; $(MAKE) -f Makefile; cd ../..
+#	cd external/mplayer; $(MAKE) -f Makefile; cd ../..
 	@[ -d $@ ] || mkdir -p $@
 	@make --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
 
 #---------------------------------------------------------------------------------
+# Host-side unit tests (native compiler, not devkitPPC) — see tests/
 test:
-	@make --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
+	@echo "Running host unit tests (if configured)..."
+	@if [ -f tests/Makefile ]; then $(MAKE) -C tests; else echo "No tests/Makefile — skipping (add doctest harness)"; fi
 
+# Forwarder channel (folded into main build, optional)
+forwarder:
+	@echo "Building forwarder channel..."
+	@$(MAKE) -C forwarder
+
+distclean: clean
+	@echo "Removing generated parser/lexer and build artifacts..."
+	rm -rf $(BUILD)
+	rm -f src/html_parser/css_lex.c src/html_parser/css_lex.h src/html_parser/css_syntax.c src/html_parser/css_syntax.h
+	rm -f $(OUTPUT).elf $(OUTPUT).dol
+	@if [ -d forwarder/build ]; then $(MAKE) -C forwarder clean; fi
 
 clean:
 	@echo clean ...
 	rm -f $(BUILD)/*.d $(BUILD)/*.h $(BUILD)/*.ii $(BUILD)/*.lst $(BUILD)/*.map \
 	$(BUILD)/*.o $(BUILD)/*.s
 	@rm -fr $(OUTPUT).elf $(OUTPUT).dol
-#	cd source/mplayer; $(MAKE) -f Makefile clean
+#	cd external/mplayer; $(MAKE) -f Makefile clean
 
 #---------------------------------------------------------------------------------
 run:
@@ -159,31 +181,31 @@ $(OUTPUT).elf: $(OFILES)
 #---------------------------------------------------------------------------------
 %.ttf.o : %.ttf
 	@echo $(notdir $<)
-	$(bin2o)
+	$(SILENTCMD)$(SHELL) $(EMBEDSCRIPT) $< $@
 
 %.lang.o : %.lang
 	@echo $(notdir $<)
-	$(bin2o)
+	$(SILENTCMD)$(SHELL) $(EMBEDSCRIPT) $< $@
 
 %.png.o : %.png
 	@echo $(notdir $<)
-	$(bin2o)
+	$(SILENTCMD)$(SHELL) $(EMBEDSCRIPT) $< $@
 
 %.jpg.o : %.jpg
 	@echo $(notdir $<)
-	$(bin2o)
+	$(SILENTCMD)$(SHELL) $(EMBEDSCRIPT) $< $@
 	
 %.gif.o : %.gif
 	@echo $(notdir $<)
-	$(bin2o)
+	$(SILENTCMD)$(SHELL) $(EMBEDSCRIPT) $< $@
 	
 %.ogg.o : %.ogg
 	@echo $(notdir $<)
-	$(bin2o)
+	$(SILENTCMD)$(SHELL) $(EMBEDSCRIPT) $< $@
 
 %.pcm.o : %.pcm
 	@echo $(notdir $<)
-	$(bin2o)
+	$(SILENTCMD)$(SHELL) $(EMBEDSCRIPT) $< $@
 
 -include $(DEPENDS)
 

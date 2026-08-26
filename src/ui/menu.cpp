@@ -28,6 +28,7 @@
 
 #include "TextEditor.h"
 #include "config.h"
+#include "url_helper.h"
 
 extern "C" {
 #include "url.h"
@@ -92,60 +93,8 @@ static int loadThreadHalt = 1;
 
 using namespace std;
 
-/****************************************************************************
- * Adjust urls
- ***************************************************************************/
-char *getHost(char *url)
-{
-    char *p=strchr (url, '/')+2;
-    char *c=strchr (p, '/');
-    if (c != NULL)
-        return strndup(url,(c+1)-url);
-    return url;
-}
-
-string getRoot(char *url)
-{
-    char *i=strchr (url, '/');
-    char *p=strrchr (i+2, '/');
-    string root(url);
-    if (p != NULL)
-        root.assign(url,(p+1)-url);
-    else root.append("/");
-    return root;
-}
-
-string adjustUrl(string link, const char* url)
-{
-    string result;
-    if (link.find("http://")==0 || link.find("https://")==0)
-        return link;
-    else if (link.at(0)=='/' && link.at(1)=='/')
-        result.assign("http:"); // https?
-    else if (link.at(0)=='/')
-    {
-        result=getHost((char*)url);
-        if (*result.rbegin()=='/')
-            link.erase(link.begin());
-    }
-    else result=getRoot((char*)url);
-    result.append(link);
-    return result;
-}
-
-string jumpUrl(string link, const char* url)
-{
-    string res(url, strlen(url));
-    res.append(link);
-    return res;
-}
-
-string parseUrl(string link, const char* url)
-{
-    if (link.at(0)=='#')
-        return jumpUrl(link, url);
-    return adjustUrl(link, url);
-}
+// Sprint 3.3: URL helpers extracted to src/utils/url_helper.*
+// (legacy getHost/adjustUrl wrappers now in url_helper.cpp)
 
 /****************************************************************************
  * Perform downloads

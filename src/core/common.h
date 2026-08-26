@@ -1,15 +1,28 @@
 #ifndef _COMMON_H_
 #define _COMMON_H_
 
-#include <httplib.h>
-#include <iostream>
+// Sprint 3.1: decoupled — httplib and libwiigui no longer transitively included.
+// Include only what is needed for the data structures; forward-declare GUI types.
+#include <string>
+#include <vector>
 #include <list>
+#include <gctypes.h>
 
-#include "gui.h"
 #define LEN 15
 
 using namespace std;
 typedef string TipoElemento;
+
+// Forward declarations for libwiigui (avoid pulling gui.h into every TU)
+class GuiText;
+class GuiImage;
+class GuiImageData;
+class GuiButton;
+class GuiTooltip;
+class GuiElement;
+class GuiWindow;
+class GuiToolbar;
+class GuiSwitch;
 
 enum {image,guitext,guibutton,null};
 

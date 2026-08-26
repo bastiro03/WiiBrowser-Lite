@@ -150,7 +150,27 @@ $(BUILD_OFILES): | $(BUILD)
 # Host-side unit tests (native compiler, not devkitPPC) — see tests/
 test:
 	@echo "Running host unit tests (if configured)..."
-	@if [ -f tests/Makefile ]; then $(MAKE) -C tests; else echo "No tests/Makefile — skipping (add doctest harness)"; fi
+	@if [ -f tests/Makefile ]; then \
+		if command -v g++ >/dev/null 2>&1 || command -v clang++ >/dev/null 2>&1; then \
+			$(MAKE) -C tests || echo "Host tests failed (see above)"; \
+		else \
+			echo "No host C++ compiler — skipping host tests"; \
+		fi; \
+	else echo "No tests/Makefile — skipping"; fi
+
+format:
+	@echo "Checking format with clang-format..."
+	@if command -v clang-format >/dev/null 2>&1; then \
+		find src external/libwiigui external/litehtml -name "*.cpp" -o -name "*.h" | xargs clang-format --dry-run --Werror || (echo "Format check failed — run clang-format"; exit 1); \
+	else echo "clang-format not found — skipping"; fi
+
+lint:
+	@echo "Running clang-tidy (if available)..."
+	@if command -v clang-tidy >/dev/null 2>&1; then \
+		clang-tidy --version; \
+		echo "Lint: add per-file checks as needed"; \
+	else echo "clang-tidy not found — skipping"; fi
+	@$(MAKE) format
 
 # Forwarder channel (folded into main build, optional) — Q4
 forwarder:

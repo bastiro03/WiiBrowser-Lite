@@ -82,14 +82,14 @@ void SSettings::SetDefault()
     IFrame = false;
     ExecLua = false;
 
-    sprintf(Homepage, DEFAULT_HOMEPAGE);
-    sprintf(DefaultFolder, DEFAULT_APP_PATH);
+    snprintf(Homepage, sizeof(Homepage), "%s", DEFAULT_HOMEPAGE);
+    snprintf(DefaultFolder, sizeof(DefaultFolder), "%s", DEFAULT_APP_PATH);
 
-    sprintf(AppPath, "%s%s", BootDevice, DEFAULT_APP_PATH);
-    sprintf(UserFolder, AppPath);
+    snprintf(AppPath, sizeof(AppPath), "%s%s", BootDevice, DEFAULT_APP_PATH);
+    snprintf(UserFolder, sizeof(UserFolder), "%s", AppPath);
 
-    sprintf(Uuid, "WIIB-00000000");
-    sprintf(Revision, "Rev000");
+    snprintf(Uuid, sizeof(Uuid), "%s", "WIIB-00000000");
+    snprintf(Revision, sizeof(Revision), "%s", "Rev000");
     sscanf(Revision, "Rev%d", &RevInt);
 
     for(int i = 0; i < N; i++)
@@ -122,7 +122,6 @@ bool SSettings::Save(bool clean)
     file = fopen(ConfigPath, "w");
     if(!file)
     {
-        fclose(file);
         return false;
     }
 
@@ -216,7 +215,7 @@ bool SSettings::FindConfig()
         }
     }
 
-    sprintf(AppPath, "%s%s", BootDevice, DEFAULT_APP_PATH);
+    snprintf(AppPath, sizeof(AppPath), "%s%s", BootDevice, DEFAULT_APP_PATH);
     return found;
 }
 
@@ -238,7 +237,6 @@ bool SSettings::Load()
 	file = fopen(filepath, "r");
 	if (!file)
 	{
-        fclose(file);
         return false;
 	}
 
@@ -419,10 +417,9 @@ void SSettings::TrimLine(char *dest, char *src, int size)
 
 bool SSettings::CheckFile(const char *path)
 {
-    bool found = false;
     FILE * file = fopen(path, "r");
-    found = (file != NULL);
-    fclose(file);
+    bool found = (file != NULL);
+    if (file) fclose(file);
     return found;
 }
 
@@ -430,7 +427,9 @@ bool SSettings::IsWritable(const char *path)
 {
     FILE * testFile = fopen(path, "wb");
     bool found = (testFile != NULL);
-    fclose(testFile);
+    if (testFile) fclose(testFile);
+    // clean up test file if we created it
+    if (found) remove(path);
     return found;
 }
 
@@ -441,13 +440,14 @@ bool SSettings::CheckIntegrity(const char *path)
     FILE * file = fopen(path, "r");
     if(file != NULL)
     {
-        fgets(line, sizeof(line), file);
-        if (!strncmp(line, "APPVERSION",10))
-            sscanf(line, "APPVERSION: R%d", &RevInt);
-        if (!strncmp(line, "# WiiBrowser Settingsfile",25))
-            found = true;
+        if (fgets(line, sizeof(line), file)) {
+            if (!strncmp(line, "APPVERSION",10))
+                sscanf(line, "APPVERSION: R%d", &RevInt);
+            if (!strncmp(line, "# WiiBrowser Settingsfile",25))
+                found = true;
+        }
+        fclose(file);
     }
-    fclose(file);
     return found;
 }
 
@@ -545,7 +545,7 @@ void SSettings::SetStartPage(char *page)
         }
     }
 
-    fclose(file);
+    if (file) fclose(file);
 }
 
 int SSettings::GetStartPage(char *dest)
@@ -732,7 +732,6 @@ void *LoadFile(char *filepath, off_t size)
     FILE *file = fopen(filepath, "rb");
     if(!file)
     {
-        fclose(file);
         return NULL;
     }
 
@@ -751,7 +750,6 @@ void WriteFile(char *filepath, int size, void *buffer)
     FILE *file = fopen(filepath, "wb");
     if(!file)
     {
-        fclose(file);
         return;
     }
 

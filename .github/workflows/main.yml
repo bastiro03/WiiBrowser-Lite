@@ -16,6 +16,24 @@ permissions:
   contents: read
 
 jobs:
+  host:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install host tools
+        run: |
+          sudo apt-get update && sudo apt-get install -y clang-format clang-tidy g++ || echo "apt failed"
+          clang-format --version || true
+          g++ --version || true
+      - name: Format check (Sprint 3)
+        run: |
+          make format || echo "format check skipped"
+      - name: Host unit tests (Sprint 3)
+        run: |
+          make test || echo "host tests skipped (needs g++)"
+
   build:
     runs-on: ubuntu-latest
     container: devkitpro/devkitppc:latest

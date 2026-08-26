@@ -39,6 +39,8 @@ make forwarder   # optional forwarder channel
 
 `external/mplayer` is a git submodule (disabled by default, see `external/mplayer/README.md`). Compressed assets from `assets/` are embedded via `scripts/embeddata.sh`.
 
+See also: [MIGRATION.md](MIGRATION.md) (from `source/`), [CHANGELOG.md](CHANGELOG.md), [SECURITY.md](SECURITY.md), [CONTRIBUTING.md](CONTRIBUTING.md), [docs/](docs/).
+
 ## Screenshots
 <p><img src="screenshots/advanced.png" width="320"> <img src="screenshots/bookmarks.png" width="320"> <img src="screenshots/download.png" width="320"> <img src="screenshots/file_browser.png" width="320"> <img src="screenshots/gmail.png" width="320"> <img src="screenshots/google.png" width="320"> <img src="screenshots/homescreen.png" width="320"> <img src="screenshots/settings.png" width="320"></p>
 

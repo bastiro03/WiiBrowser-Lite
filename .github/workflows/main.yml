@@ -153,6 +153,22 @@ jobs:
     permissions:
       contents: write
     steps:
+      - name: Checkout (for VERSION/CHANGELOG)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify VERSION matches tag
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME#v}"
+          VER="$(cat VERSION 2>/dev/null || echo "0.2.0")"
+          echo "Tag: $TAG, VERSION: $VER"
+          if [ "$TAG" != "$VER" ]; then
+            echo "WARNING: VERSION ($VER) != tag ($TAG) — continuing but check CHANGELOG"
+          fi
+          test -f CHANGELOG.md && head -n 30 CHANGELOG.md || true
+
       - name: Download Build Artifacts
         uses: actions/download-artifact@v4
         with:

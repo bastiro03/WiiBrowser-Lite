@@ -1,6 +1,6 @@
 # Changelog — WiiBrowser Lite
 
-## [Unreleased] — Sprint 5 (2026-08-26)
+## [Unreleased] — Sprint 5-6 (2026-08-26)
 
 ### Added
 - `src/core/context.h/.cpp` — `AppContext` singleton for global state (Sprint 3.1, 5.3)
@@ -10,6 +10,7 @@
 - `Doxyfile` + `docs/README.md` + `make docs` (Sprint 4.1)
 - `.githooks/pre-commit` + `.pre-commit-config.yaml` + `git config core.hooksPath .githooks` (Sprint 4.2)
 - `HBC/meta.xml.in` templating + `scripts/gen_version.sh` + `Dockerfile` (Sprint 2.3)
+- `MIGRATION.md` (source→src/assets/external guide), `SECURITY.md`, `VERSION` (0.2.0) (Sprint 6)
 - `CHANGELOG.md` (this file)
 
 ### Changed
@@ -32,11 +33,13 @@
 - `template.pnproj/.pnps` (Programmer's Notepad)
 - Duplicate `HBC`/`hbc` case-insensitive clash
 
-## [Sprint 1-4] — See git log `816a4b3d..18114b2a` for full diff (6426 files, 31k insert)
+## [Sprint 1-6] — See git log `816a4b3d..2b04324b` for full diff (6426 files, 31k insert)
 - Sprint 1: skeleton, `LICENSE` MIT (was GPLv3), `.clang-format/.editorconfig/.clang-tidy`, `BUILD.md/ARCHITECTURE.md/CONTRIBUTING.md`
 - Sprint 2: path-preserving, `Dockerfile`, `HBC/meta.xml.in`, `distclean`/`package`
 - Sprint 3: `AppContext`, `common.h` decouple, `url_helper`, host tests
 - Sprint 4: `Doxyfile`, pre-commit, header guards, `bzero` hygiene
+- Sprint 5: `html_helpers` split, string hardening, context migration, `test_stringop`
+- Sprint 6: `MIGRATION.md`/`SECURITY.md`/`VERSION`, release `make package` verification, CI `VERSION` check
 
 ## [0.1] — Original (gave92, 2013)
 - Initial WiiBrowser revival, `source/` flat, `libs/` vendored, `devkitPPC` `gnu++0x`

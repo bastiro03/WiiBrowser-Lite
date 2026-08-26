@@ -85,17 +85,25 @@ jobs:
           RELEASE_VER="${GITHUB_REF_NAME:-$(git rev-parse --short HEAD)}"
           RELEASE_DATE="$(date -u +'%Y%m%d')"
 
-          mkdir -p dist/apps/wiibrowser-lite
-          cp boot.dol dist/apps/wiibrowser-lite/boot.dol
-          # HBC is canonical (HBC/); also support hbc/ for case-insensitive
-          if [ -f HBC/icon.png ]; then cp HBC/icon.png dist/apps/wiibrowser-lite/icon.png; else cp hbc/icon.png dist/apps/wiibrowser-lite/icon.png; fi
-          if [ -f HBC/meta.xml ]; then META_SRC=HBC/meta.xml; else META_SRC=hbc/meta.xml; fi
+          # Prefer pre-generated package target (uses HBC/meta.xml.in templating)
+          if make -n package >/dev/null 2>&1; then
+            make package
+          else
+            mkdir -p dist/apps/wiibrowser-lite
+            cp boot.dol dist/apps/wiibrowser-lite/boot.dol
+            # HBC is canonical (HBC/); also support hbc/ for case-insensitive
+            if [ -f HBC/icon.png ]; then cp HBC/icon.png dist/apps/wiibrowser-lite/icon.png; else cp hbc/icon.png dist/apps/wiibrowser-lite/icon.png; fi
+            if [ -f HBC/meta.xml.in ]; then META_SRC=HBC/meta.xml.in; elif [ -f HBC/meta.xml ]; then META_SRC=HBC/meta.xml; else META_SRC=hbc/meta.xml; fi
 
-          sed -e "s|<version></version>|<version>${RELEASE_VER}</version>|" \
-              -e "s|<release_date></release_date>|<release_date>${RELEASE_DATE}</release_date>|" \
-              "$META_SRC" > dist/apps/wiibrowser-lite/meta.xml
+            sed -e "s|@VERSION@|${RELEASE_VER}|g" -e "s|@RELEASE_DATE@|${RELEASE_DATE}|g" \
+                -e "s|<version></version>|<version>${RELEASE_VER}</version>|" \
+                -e "s|<release_date></release_date>|<release_date>${RELEASE_DATE}</release_date>|" \
+                "$META_SRC" > dist/apps/wiibrowser-lite/meta.xml
 
-          (cd dist && zip -r ../WiiBrowser-Lite-HBC.zip apps)
+            (cd dist && zip -r ../WiiBrowser-Lite-HBC.zip apps)
+          fi
+          test -f WiiBrowser-Lite-HBC.zip && echo "HBC zip OK ($(stat -c%s WiiBrowser-Lite-HBC.zip) bytes)"
+          test -f dist/apps/wiibrowser-lite/meta.xml && cat dist/apps/wiibrowser-lite/meta.xml | head -n 12
 
       - name: Assemble Build Artifacts
         run: |

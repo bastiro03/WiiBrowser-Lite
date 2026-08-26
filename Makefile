@@ -62,28 +62,30 @@ LIBDIRS	:= $(PORTLIBS)
 #---------------------------------------------------------------------------------
 # no real need to edit anything past this point unless you need to add additional
 # rules for different file extensions
+# (single-phase path-preserving build — no ifneq/else)
 #---------------------------------------------------------------------------------
-ifneq ($(BUILD),$(notdir $(CURDIR)))
+# (VPATH not needed — sources referenced via path-preserving $(BUILD)/%.o: %.c)
+# (fixes notdir collision where same filename in two SOURCES overwrites)
 #---------------------------------------------------------------------------------
+CFILES		:=	$(foreach dir,$(SOURCES),$(wildcard $(dir)/*.c))
+CPPFILES	:=	$(foreach dir,$(SOURCES),$(wildcard $(dir)/*.cpp))
+sFILES		:=	$(foreach dir,$(SOURCES),$(wildcard $(dir)/*.s))
+SFILES		:=	$(foreach dir,$(SOURCES),$(wildcard $(dir)/*.S))
+TTFFILES	:=	$(foreach dir,$(SOURCES),$(wildcard $(dir)/*.ttf))
+LANGFILES	:=	$(foreach dir,$(SOURCES),$(wildcard $(dir)/*.lang))
+PNGFILES	:=	$(foreach dir,$(SOURCES),$(wildcard $(dir)/*.png))
+JPGFILES	:=	$(foreach dir,$(SOURCES),$(wildcard $(dir)/*.jpg))
+GIFFILES	:=	$(foreach dir,$(SOURCES),$(wildcard $(dir)/*.gif))
+OGGFILES	:=	$(foreach dir,$(SOURCES),$(wildcard $(dir)/*.ogg))
+PCMFILES	:=	$(foreach dir,$(SOURCES),$(wildcard $(dir)/*.pcm))
 
-export OUTPUT	:=	$(CURDIR)/$(TARGETDIR)/$(TARGET)
-export VPATH	:=	$(foreach dir,$(SOURCES),$(CURDIR)/$(dir))
-export DEPSDIR	:=	$(CURDIR)/$(BUILD)
-
-#---------------------------------------------------------------------------------
-# automatically build a list of object files for our project
-#---------------------------------------------------------------------------------
-CFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
-CPPFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
-sFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
-SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.S)))
-TTFFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.ttf)))
-LANGFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.lang)))
-PNGFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.png)))
-JPGFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.jpg)))
-GIFFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.gif)))
-OGGFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.ogg)))
-PCMFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.pcm)))
+# Collision check — warn if two SOURCES contain same basename
+_DUP_CHECK := $(strip $(shell \
+	basenames="$(notdir $(CFILES) $(CPPFILES))"; \
+	echo "$$basenames" | tr ' ' '\n' | sort | uniq -d | tr '\n' ' '))
+ifneq ($(_DUP_CHECK),)
+$(warning duplicate basenames across SOURCES (now path-preserved, safe): $(_DUP_CHECK))
+endif
 
 #---------------------------------------------------------------------------------
 # use CXX for linking C++ projects, CC for standard C
@@ -94,13 +96,14 @@ else
 	export LD	:=	$(CXX)
 endif
 
-export OFILES	:=	$(CPPFILES:.cpp=.o) $(CFILES:.c=.o) \
-					$(sFILES:.s=.o) $(SFILES:.S=.o) \
-					$(TTFFILES:.ttf=.ttf.o) $(LANGFILES:.lang=.lang.o) \
-					$(PNGFILES:.png=.png.o) \
-					$(OGGFILES:.ogg=.ogg.o) $(PCMFILES:.pcm=.pcm.o) \
-					$(JPGFILES:.jpg=.jpg.o) \
-					$(GIFFILES:.gif=.gif.o)
+# Path-preserving OFILES: src/core/foo.cpp -> src/core/foo.o; assets/.../x.png -> assets/.../x.png.o
+export OFILES	:=	$(CPPFILES:%.cpp=%.o) $(CFILES:%.c=%.o) \
+					$(sFILES:%.s=%.o) $(SFILES:%.S=%.o) \
+					$(TTFFILES:%=%.o) $(LANGFILES:%=%.o) \
+					$(PNGFILES:%=%.o) \
+					$(OGGFILES:%=%.o) $(PCMFILES:%=%.o) \
+					$(JPGFILES:%=%.o) \
+					$(GIFFILES:%=%.o)
 					
 #---------------------------------------------------------------------------------
 # build a list of include paths
@@ -124,21 +127,32 @@ export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib) \
 
 export OUTPUT	:=	$(CURDIR)/$(TARGET)
 export EMBEDSCRIPT	:=	$(CURDIR)/scripts/embeddata.sh
-.PHONY: $(BUILD) clean distclean forwarder
+export DEPSDIR	:=	$(CURDIR)/$(BUILD)
 
-#---------------------------------------------------------------------------------
+# Re-map OFILES to be prefixed with $(BUILD)/ for path-preserving single-phase build
+# (CFILES already contains like src/core/foo.c)
+BUILD_OFILES	:=	$(addprefix $(BUILD)/,$(OFILES))
+BUILD_DEPENDS	:=	$(BUILD_OFILES:.o=.d)
+
+.PHONY: all clean distclean forwarder test run reload
+
+# Default target
+all: $(BUILD) $(OUTPUT).dol
+
+# Ensure build subdirectories exist (path-preserving)
 $(BUILD):
-#	cd external/mplayer; $(MAKE) -f Makefile; cd ../..
-	@[ -d $@ ] || mkdir -p $@
-	@make --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
+	@mkdir -p $@
 
-#---------------------------------------------------------------------------------
+# Ensure each object’s directory exists before compiling/embed
+$(BUILD_OFILES): | $(BUILD)
+	@mkdir -p $(@D)
+
 # Host-side unit tests (native compiler, not devkitPPC) — see tests/
 test:
 	@echo "Running host unit tests (if configured)..."
 	@if [ -f tests/Makefile ]; then $(MAKE) -C tests; else echo "No tests/Makefile — skipping (add doctest harness)"; fi
 
-# Forwarder channel (folded into main build, optional)
+# Forwarder channel (folded into main build, optional) — Q4
 forwarder:
 	@echo "Building forwarder channel..."
 	@$(MAKE) -C forwarder
@@ -148,67 +162,114 @@ distclean: clean
 	rm -rf $(BUILD)
 	rm -f src/html_parser/css_lex.c src/html_parser/css_lex.h src/html_parser/css_syntax.c src/html_parser/css_syntax.h
 	rm -f $(OUTPUT).elf $(OUTPUT).dol
+	rm -rf dist artifacts
 	@if [ -d forwarder/build ]; then $(MAKE) -C forwarder clean; fi
 
 clean:
 	@echo clean ...
-	rm -f $(BUILD)/*.d $(BUILD)/*.h $(BUILD)/*.ii $(BUILD)/*.lst $(BUILD)/*.map \
-	$(BUILD)/*.o $(BUILD)/*.s
+	rm -rf $(BUILD)
 	@rm -fr $(OUTPUT).elf $(OUTPUT).dol
-#	cd external/mplayer; $(MAKE) -f Makefile clean
 
-#---------------------------------------------------------------------------------
+# HBC bundle packaging — mirrors CI Package step, uses gen_version.sh for templating
+package: $(OUTPUT).dol
+	@echo "Packaging HBC bundle..."
+	@mkdir -p dist/apps/wiibrowser-lite
+	@cp $(OUTPUT).dol dist/apps/wiibrowser-lite/boot.dol
+	@cp HBC/icon.png dist/apps/wiibrowser-lite/icon.png || cp hbc/icon.png dist/apps/wiibrowser-lite/icon.png
+	@if [ -f HBC/meta.xml.in ]; then \
+		VERSION=$${GITHUB_REF_NAME:-$$(git rev-parse --short HEAD 2>/dev/null || echo "dev")}; \
+		DATE=$$(date -u +%Y%m%d); \
+		sed -e "s|@VERSION@|$$VERSION|g" -e "s|@RELEASE_DATE@|$$DATE|g" HBC/meta.xml.in > dist/apps/wiibrowser-lite/meta.xml; \
+	else \
+		cp HBC/meta.xml dist/apps/wiibrowser-lite/meta.xml || cp hbc/meta.xml dist/apps/wiibrowser-lite/meta.xml; \
+	fi
+	@cp HBC/wiibrowser.cfg dist/apps/wiibrowser-lite/ 2>/dev/null || true
+	@(cd dist && zip -r ../WiiBrowser-Lite-HBC.zip apps >/dev/null && echo "  ZIP WiiBrowser-Lite-HBC.zip")
+
+dist: package
+
 run:
 	wiiload $(OUTPUT).dol
 
-#---------------------------------------------------------------------------------
 reload:
 	wiiload -r $(OUTPUT).dol
 
-#---------------------------------------------------------------------------------
-else
+# Version header generation (optional)
+version:
+	@$(SHELL) scripts/gen_version.sh
 
-DEPENDS	:=	$(OFILES:.o=.d)
-
 #---------------------------------------------------------------------------------
-# main targets
+# main targets — path-preserving
 #---------------------------------------------------------------------------------
 $(OUTPUT).dol: $(OUTPUT).elf
-$(OUTPUT).elf: $(OFILES)
+$(OUTPUT).elf: $(BUILD_OFILES)
 
 #---------------------------------------------------------------------------------
-# This rule links in binary data with .ttf, .png, and .mp3 extensions
+# Compile rules — path-preserving (ensure subdirs via | $(BUILD) + mkdir)
 #---------------------------------------------------------------------------------
-%.ttf.o : %.ttf
-	@echo $(notdir $<)
-	$(SILENTCMD)$(SHELL) $(EMBEDSCRIPT) $< $@
+$(BUILD)/%.o: %.c | $(BUILD)
+	@mkdir -p $(@D)
+	@echo "  CC  $<"
+	$(SILENTCMD)$(CC) $(CFLAGS) -c $< -o $@
 
-%.lang.o : %.lang
-	@echo $(notdir $<)
-	$(SILENTCMD)$(SHELL) $(EMBEDSCRIPT) $< $@
+$(BUILD)/%.o: %.cpp | $(BUILD)
+	@mkdir -p $(@D)
+	@echo "  CXX $<"
+	$(SILENTCMD)$(CXX) $(CXXFLAGS) -c $< -o $@
 
-%.png.o : %.png
-	@echo $(notdir $<)
-	$(SILENTCMD)$(SHELL) $(EMBEDSCRIPT) $< $@
+$(BUILD)/%.o: %.s | $(BUILD)
+	@mkdir -p $(@D)
+	$(SILENTCMD)$(CC) $(CFLAGS) -c $< -o $@
 
-%.jpg.o : %.jpg
-	@echo $(notdir $<)
-	$(SILENTCMD)$(SHELL) $(EMBEDSCRIPT) $< $@
-	
-%.gif.o : %.gif
-	@echo $(notdir $<)
-	$(SILENTCMD)$(SHELL) $(EMBEDSCRIPT) $< $@
-	
-%.ogg.o : %.ogg
-	@echo $(notdir $<)
-	$(SILENTCMD)$(SHELL) $(EMBEDSCRIPT) $< $@
-
-%.pcm.o : %.pcm
-	@echo $(notdir $<)
-	$(SILENTCMD)$(SHELL) $(EMBEDSCRIPT) $< $@
-
--include $(DEPENDS)
+$(BUILD)/%.o: %.S | $(BUILD)
+	@mkdir -p $(@D)
+	$(SILENTCMD)$(CC) $(CFLAGS) -c $< -o $@
 
 #---------------------------------------------------------------------------------
-endif
+# Asset embedding (replaces bin2o, adds _size symbol)
 #---------------------------------------------------------------------------------
+$(BUILD)/%.ttf.o: %.ttf | $(BUILD)
+	@mkdir -p $(@D)
+	@echo "  EMBED $<"
+	$(SILENTCMD)$(SHELL) $(EMBEDSCRIPT) $< $@
+
+$(BUILD)/%.lang.o: %.lang | $(BUILD)
+	@mkdir -p $(@D)
+	@echo "  EMBED $<"
+	$(SILENTCMD)$(SHELL) $(EMBEDSCRIPT) $< $@
+
+$(BUILD)/%.png.o: %.png | $(BUILD)
+	@mkdir -p $(@D)
+	@echo "  EMBED $<"
+	$(SILENTCMD)$(SHELL) $(EMBEDSCRIPT) $< $@
+
+$(BUILD)/%.jpg.o: %.jpg | $(BUILD)
+	@mkdir -p $(@D)
+	@echo "  EMBED $<"
+	$(SILENTCMD)$(SHELL) $(EMBEDSCRIPT) $< $@
+
+$(BUILD)/%.gif.o: %.gif | $(BUILD)
+	@mkdir -p $(@D)
+	@echo "  EMBED $<"
+	$(SILENTCMD)$(SHELL) $(EMBEDSCRIPT) $< $@
+
+$(BUILD)/%.ogg.o: %.ogg | $(BUILD)
+	@mkdir -p $(@D)
+	@echo "  EMBED $<"
+	$(SILENTCMD)$(SHELL) $(EMBEDSCRIPT) $< $@
+
+$(BUILD)/%.pcm.o: %.pcm | $(BUILD)
+	@mkdir -p $(@D)
+	@echo "  EMBED $<"
+	$(SILENTCMD)$(SHELL) $(EMBEDSCRIPT) $< $@
+
+# Generated CSS parser/lexer — flex/bison (optional, stubs committed)
+src/html_parser/css_lex.c src/html_parser/css_lex.h: src/html_parser/css_lex.l src/html_parser/css_syntax.h
+	@echo "  FLEX $<"
+	@flex -o src/html_parser/css_lex.c --header-file=src/html_parser/css_lex.h $< || echo "flex missing — using committed stub"
+
+src/html_parser/css_syntax.c src/html_parser/css_syntax.h: src/html_parser/css_syntax.y
+	@echo "  BISON $<"
+	@bison -d -o src/html_parser/css_syntax.c $< || echo "bison missing — using committed stub"
+
+-include $(BUILD_DEPENDS)

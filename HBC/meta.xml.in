@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<app version="1">
+	<name>WiiBrowser Lite</name>
+	<version>@VERSION@</version>
+	<release_date>@RELEASE_DATE@</release_date>
+	<coder>gave92, Bastiro03</coder>
+	<short_description>A Web Browser for Wii.</short_description>
+	<long_description>Features:
+* View your own web pages
+* Basic HTTP and HTTPS connection support
+* Links and web form support
+* Bookmarks
+* Import/Export of bookmarks
+* Basic rendering of HTML 4.01 and CSS2
+* Download support to an SD/SDHC card
+* Upload support
+* Address bar with on-screen keyboard
+* Keyboard auto-completion
+* Forward and back navigation
+* PNG/JPEG/GIF/BMP image support
+* ZIP/RAR/7Z extraction
+* Moving and resizing images
+* Auto-refresh
+
+Controls:
+*   Wiimote Aim: Move pointer
+*   Wiimote Button A: Click buttons
+*   Wiimote Button B (Hold): Free scroll
+*   Wiimote DPad: Navigate
+*   Wiimote Plus Button: Open app bar
+*   Wiimote Minus Button: Close app bar
+*   Wiimote Button 1: Take screenshot
+*   Wiimote Button 2: Restore default view
+*   Wiimote Home Button: Exit app
+*   Wiimote Power Button: Turn off Wii
+
+Shortcuts:
+*   B + Directional pad up: Refresh current page
+*   B + Directional pad down: Save page
+*   B + Directional pad left: Browse homepage
+*   B + Directional pad right: Enter new URL
+*   B + (-) key : Go back a page
+*   B + (+) Key: Go forward one page
+</long_description>
+</app>

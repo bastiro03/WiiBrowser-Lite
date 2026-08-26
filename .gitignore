@@ -96,3 +96,7 @@ artifacts/
 
 # Forwarder packaging
 loadMii.zip
+
+# Documentation
+docs/doxygen/
+docs/html/

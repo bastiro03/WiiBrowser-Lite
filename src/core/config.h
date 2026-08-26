@@ -1,9 +1,11 @@
-#ifndef _CONFIG_H_
-#define _CONFIG_H_
+#ifndef WIIBROWSER_CONFIG_H
+#define WIIBROWSER_CONFIG_H
 
+// Sprint 4.3: MPLAYER disabled by default (external/mplayer submodule placeholder).
+// Enable by defining MPLAYER in Makefile CFLAGS (-DMPLAYER) and populating external/mplayer.
 #undef  MPLAYER
 #define DOCWRITE
-#define	IFRAME
-#define	WIIFLOW
+#define IFRAME
+#define WIIFLOW
 
-#endif
+#endif // WIIBROWSER_CONFIG_H

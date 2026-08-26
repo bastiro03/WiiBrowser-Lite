@@ -134,7 +134,7 @@ export DEPSDIR	:=	$(CURDIR)/$(BUILD)
 BUILD_OFILES	:=	$(addprefix $(BUILD)/,$(OFILES))
 BUILD_DEPENDS	:=	$(BUILD_OFILES:.o=.d)
 
-.PHONY: all clean distclean forwarder test run reload
+.PHONY: all clean distclean forwarder test run reload docs format lint package dist version
 
 # Default target
 all: $(BUILD) $(OUTPUT).dol
@@ -217,6 +217,11 @@ reload:
 # Version header generation (optional)
 version:
 	@$(SHELL) scripts/gen_version.sh
+
+docs:
+	@if command -v doxygen >/dev/null 2>&1; then \
+		doxygen Doxyfile && echo "Docs at docs/doxygen/html/index.html"; \
+	else echo "doxygen not found — skipping docs"; fi
 
 #---------------------------------------------------------------------------------
 # main targets — path-preserving

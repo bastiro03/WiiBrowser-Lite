@@ -999,8 +999,8 @@ static int MenuBrowseDevice()
 
 	int menu = MENU_NONE;
 
-	sprintf(title, "Browse files");
-	bzero(path, sizeof(path));
+    snprintf(title, sizeof(title), "%s", "Browse files");
+    memset(path, 0, sizeof(path));
 
     GuiSound btnSoundOver(button_over_pcm, button_over_pcm_size, SOUND_PCM);
     GuiImageData Textbox(keyboard_textbox_png);
@@ -1845,7 +1845,7 @@ static int MenuBrowse()
     hfile.file = NULL;
 
     url = (char*) malloc (sizeof(new_page)+10);
-    bzero(url, sizeof(new_page)+10);
+    memset(url, 0, sizeof(new_page)+10);
     bool searchWord = true;
 
     if (strncmp(new_page,"http",4))
@@ -2029,7 +2029,7 @@ jump:
     string link;
     link = DisplayHTML(&HTML, mainWindow, &childWindow, url);
 
-    bzero(new_page, sizeof(new_page));
+    memset(new_page, 0, sizeof(new_page));
     free(HTML.data);
 
     HaltGui();

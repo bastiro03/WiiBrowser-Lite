@@ -35,12 +35,12 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, cons
     if(OpenDefaultFolder() <= 0)
     {
         BrowseDevice();
-        bzero(temp, sizeof(temp));
+        memset(temp, 0, sizeof(temp));
     }
-    else sprintf(temp, "%s/", Settings.UserFolder);
+    else snprintf(temp, sizeof(temp), "%s/", Settings.UserFolder);
 
-	sprintf(title, "Browse files");
-	bzero(path, sizeof(path));
+    snprintf(title, sizeof(title), "%s", "Browse files");
+    memset(path, 0, sizeof(path));
 
     GuiSound btnSoundOver(button_over_pcm, button_over_pcm_size, SOUND_PCM);
     GuiImageData Textbox(textbox_end_png);

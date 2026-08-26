@@ -140,7 +140,7 @@ int parseline(HeaderStruct *mem, size_t realsize)
 
     char *line = &mem->memory[mem->size - realsize];
     char buff[50];
-    bzero(buff, sizeof(buff));
+    memset(buff, 0, sizeof(buff));
 
     if(!strncmp(line, "content-type", 12))
     {
@@ -199,7 +199,7 @@ int showprogress(void *bar,
                     double ulnow)
 {
     char msg[20];
-    sprintf(msg, "Loading...%2.2f%%", done*100.0/total);
+    snprintf(msg, sizeof(msg), "Loading...%2.2f%%", (total > 0) ? done*100.0/total : 0);
     SetMessage(msg);
 
     if(CancelDownload())
@@ -480,6 +480,7 @@ void Debug(const char *msg)
 {
     #ifdef DEBUG_LEVEL
         FILE *f = fopen ("debug.txt", "a");
+        if (!f) return;
         fputs (msg ,f);
         fputs ("\r\n" ,f);
         fclose(f);
@@ -490,6 +491,7 @@ void DebugInt(u32 msg)
 {
     #ifdef DEBUG_LEVEL
         FILE *f = fopen ("debug.txt", "a");
+        if (!f) return;
         fprintf (f, "%d", msg);
         fputs ("\r\n" ,f);
         fclose(f);
@@ -499,10 +501,14 @@ void DebugInt(u32 msg)
 void save(struct block *b, FILE *hfile)
 {
     FILE *f = hfile;
-    if (!f)
+    bool needClose = false;
+    if (!f) {
         f = fopen ("page.wbr", "wb");
-    fwrite (b->data, b->size, 1, f);
-    fclose(f);
+        if (!f) return;
+        needClose = true;
+    }
+    if (b && b->data) fwrite (b->data, b->size, 1, f);
+    if (needClose) fclose(f);
 }
 
 // -----------------------------------------------------------

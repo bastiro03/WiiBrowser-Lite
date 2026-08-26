@@ -1,0 +1,4 @@
+[submodule "external/mplayer"]
+	path = external/mplayer
+	url = https://github.com/mplayerhq/mplayer.git
+	branch = master

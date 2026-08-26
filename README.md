@@ -26,8 +26,21 @@ The primary goal of this project is to lay the groundwork to make it easier for 
 * Full video support
 * Multiple tabs
 
+## Building
+
+See [BUILD.md](BUILD.md) and [ARCHITECTURE.md](ARCHITECTURE.md). Quick start (requires devkitPPC):
+
+```sh
+export DEVKITPRO=/opt/devkitpro
+export DEVKITPPC=$DEVKITPRO/devkitPPC
+make
+make forwarder   # optional forwarder channel
+```
+
+`external/mplayer` is a git submodule (disabled by default, see `external/mplayer/README.md`). Compressed assets from `assets/` are embedded via `scripts/embeddata.sh`.
+
 ## Screenshots
-<p><img src="screenshots\advanced.png" width="320"> <img src="screenshots\bookmarks.png" width="320"> <img src="screenshots\download.png" width="320"> <img src="screenshots\file_browser.png" width="320"> <img src="screenshots\gmail.png" width="320"> <img src="screenshots\google.png" width="320"> <img src="screenshots\homescreen.png" width="320"> <img src="screenshots\settings.png" width="320"></p>
+<p><img src="screenshots/advanced.png" width="320"> <img src="screenshots/bookmarks.png" width="320"> <img src="screenshots/download.png" width="320"> <img src="screenshots/file_browser.png" width="320"> <img src="screenshots/gmail.png" width="320"> <img src="screenshots/google.png" width="320"> <img src="screenshots/homescreen.png" width="320"> <img src="screenshots/settings.png" width="320"></p>
 
 ## Credits
 - [Dimok](https://github.com/dimok789) for [WiiXplorer](https://sourceforge.net/projects/wiixplorer/) which WiiBrowser was both inspired by and took code from for file management

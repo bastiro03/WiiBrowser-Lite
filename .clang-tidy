@@ -1,0 +1,11 @@
+---
+Checks: 'bugprone-*,performance-*,readability-*,modernize-*,clang-analyzer-*,portability-*, -modernize-use-trailing-return-type, -readability-magic-numbers'
+WarningsAsErrors: ''
+HeaderFilterRegex: '(src|external/libwiigui|external/litehtml)/.*'
+FormatStyle: file
+CheckOptions:
+  - key: readability-identifier-naming.ClassCase
+    value: CamelCase
+  - key: readability-identifier-naming.FunctionCase
+    value: camelBack
+...

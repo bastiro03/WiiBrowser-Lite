@@ -73,29 +73,15 @@ body:
   - type: input
     id: os
     attributes:
-      label: OS
-      placeholder: "e.g. Ubuntu 5.4.0-26-generic x86_64 / Windows 1904"
+      label: Wii System Version / Loader
+      placeholder: "e.g. 4.3E, HBC 1.1.4, Dolphin 5.0"
     validations:
       required: false
   - type: input
-    id: node_version
+    id: toolchain
     attributes:
-      label: Node version
-      placeholder: "e.g. 18.17.0"
-    validations:
-      required: false
-  - type: input
-    id: npm_version
-    attributes:
-      label: Npm version
-      placeholder: "e.g. 9.6.7"
-    validations:
-      required: false
-  - type: input
-    id: browser_version
-    attributes:
-      label: Browser name and version
-      placeholder: "e.g. Chrome 115.0"
+      label: Toolchain
+      placeholder: "e.g. devkitPPC r42, libogc 2.4.0"
     validations:
       required: false
   - type: textarea

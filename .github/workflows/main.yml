@@ -1,0 +1,154 @@
+name: Wii Build
+
+on:
+  push:
+    branches: ["main"]
+    tags: ["v*"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: devkitpro/devkitppc:latest
+    defaults:
+      run:
+        shell: bash -l {0}
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache pacman packages
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/pacman/pkg
+          key: ${{ runner.os }}-dkp-pkg-v2-${{ hashFiles('.github/workflows/main.yml', 'Makefile') }}
+          restore-keys: |
+            ${{ runner.os }}-dkp-pkg-v2-
+            ${{ runner.os }}-dkp-pkg-
+
+      - name: Init Submodules (mplayer)
+        run: |
+          set -euo pipefail
+          git submodule update --init --recursive || echo "No submodules or offline — continuing"
+
+      - name: Install Toolchain & Portlibs
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          dkp-pacman -Sy --needed --noconfirm devkitPPC libogc ppc-zlib ppc-libpng ppc-freetype ppc-libjpeg-turbo ppc-curl ppc-mxml ppc-libvorbisidec ppc-fribidi ppc-ntfs ppc-ext2fs ppc-libfat zip || \
+          dkp-pacman -Sy --needed --noconfirm devkitPPC libogc ppc-zlib ppc-libpng ppc-freetype ppc-libjpeg ppc-mxml ppc-ntfs ppc-ext2fs ppc-libfat zip
+          dkp-pacman -Q | grep ppc || true
+
+      - name: Build Main Application
+        run: |
+          set -euo pipefail
+          make clean
+          make distclean  # Remove all generated files
+          make            # Regenerate parser/lexer files
+
+      - name: Verify Main Application Output
+        run: |
+          set -euo pipefail
+          test -f boot.dol && echo "boot.dol OK ($(stat -c%s boot.dol) bytes)"
+          test -f boot.elf && echo "boot.elf OK"
+
+      - name: Build Forwarder Channel (Optional Standalone)
+        id: forwarder_build
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          echo "Building forwarder channel..."
+          make -C forwarder
+
+      - name: Verify Forwarder Output
+        run: |
+          set -euo pipefail
+          if test -f forwarder/boot.dol; then
+            echo "forwarder/boot.dol OK ($(stat -c%s forwarder/boot.dol) bytes)"
+          else
+            echo "Forwarder build omitted or failed; proceeding with main application only."
+          fi
+
+      - name: Package Homebrew Channel Bundle
+        run: |
+          set -euo pipefail
+          RELEASE_VER="${GITHUB_REF_NAME:-$(git rev-parse --short HEAD)}"
+          RELEASE_DATE="$(date -u +'%Y%m%d')"
+
+          mkdir -p dist/apps/wiibrowser-lite
+          cp boot.dol dist/apps/wiibrowser-lite/boot.dol
+          # HBC is canonical (HBC/); also support hbc/ for case-insensitive
+          if [ -f HBC/icon.png ]; then cp HBC/icon.png dist/apps/wiibrowser-lite/icon.png; else cp hbc/icon.png dist/apps/wiibrowser-lite/icon.png; fi
+          if [ -f HBC/meta.xml ]; then META_SRC=HBC/meta.xml; else META_SRC=hbc/meta.xml; fi
+
+          sed -e "s|<version></version>|<version>${RELEASE_VER}</version>|" \
+              -e "s|<release_date></release_date>|<release_date>${RELEASE_DATE}</release_date>|" \
+              "$META_SRC" > dist/apps/wiibrowser-lite/meta.xml
+
+          (cd dist && zip -r ../WiiBrowser-Lite-HBC.zip apps)
+
+      - name: Assemble Build Artifacts
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          cp WiiBrowser-Lite-HBC.zip artifacts/
+          cp boot.dol artifacts/WiiBrowser-Lite.dol
+          cp boot.elf artifacts/WiiBrowser-Lite.elf
+
+          if test -f forwarder/boot.dol; then
+            cp forwarder/boot.dol artifacts/WiiBrowser-Lite-Forwarder.dol
+          fi
+          if test -f forwarder/boot.elf; then
+            cp forwarder/boot.elf artifacts/WiiBrowser-Lite-Forwarder.elf
+          fi
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: WiiBrowser-Build-${{ github.sha }}
+          path: artifacts/*
+          if-no-files-found: error
+          retention-days: 7
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: WiiBrowser-Build-${{ github.sha }}
+          path: release
+
+      - name: List release files
+        run: |
+          ls -la release/
+
+      - name: Generate checksums
+        run: |
+          set -euo pipefail
+          cd release
+          sha256sum * > checksums.sha256
+          cat checksums.sha256
+
+      - name: Create GitHub Release and upload assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: WiiBrowser-Lite ${{ github.ref_name }}
+          files: release/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

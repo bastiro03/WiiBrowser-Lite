@@ -1,0 +1,25 @@
+# Doxyfile — WiiBrowser Lite (Sprint 4.1)
+PROJECT_NAME           = "WiiBrowser Lite"
+PROJECT_NUMBER         = "Sprint 4"
+PROJECT_BRIEF          = "WiiBrowser Internet Channel revival (gave92) — modernized"
+OUTPUT_DIRECTORY       = docs/doxygen
+INPUT                  = src docs README.md ARCHITECTURE.md BUILD.md
+FILE_PATTERNS          = *.h *.cpp *.c *.md
+RECURSIVE              = YES
+EXTRACT_ALL            = YES
+EXTRACT_STATIC         = YES
+GENERATE_HTML          = YES
+GENERATE_LATEX         = NO
+GENERATE_XML           = NO
+HAVE_DOT               = NO
+WARN_IF_UNDOCUMENTED   = NO
+QUIET                  = YES
+JAVADOC_AUTOBRIEF      = YES
+MARKDOWN_SUPPORT       = YES
+USE_MDFILE_AS_MAINPAGE = README.md
+EXCLUDE_PATTERNS       = */build/* */external/mplayer/* */external/litehtml/* external/portlibs/*
+ENABLE_PREPROCESSING   = YES
+MACRO_EXPANSION        = NO
+PREDEFINED             = GEKKO HW_RVL __cplusplus
+ALIASES                = "sprint4=\par Sprint 4 cleanup"
+HTML_EXTRA_STYLESHEET  =

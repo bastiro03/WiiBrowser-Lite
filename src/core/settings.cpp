@@ -484,7 +484,7 @@ void SSettings::Remove(int f, bool update)
         return;
 
     if(!update)
-        bzero(TopSites[f], 512);
+        memset(TopSites[f], 0, 512);
 
     char filepath[256];
     snprintf(filepath, sizeof(filepath), "%s/thumbnails/thumb_%d.gxt", AppPath, f);

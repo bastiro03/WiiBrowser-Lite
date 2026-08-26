@@ -1,5 +1,5 @@
-#ifndef _COMMON_H_
-#define _COMMON_H_
+#ifndef WIIBROWSER_COMMON_H
+#define WIIBROWSER_COMMON_H
 
 // Sprint 3.1: decoupled — httplib and libwiigui no longer transitively included.
 // Include only what is needed for the data structures; forward-declare GUI types.

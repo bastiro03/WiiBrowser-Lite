@@ -1,0 +1,31 @@
+#!/bin/sh
+# Pre-commit hook — Sprint 4.2
+# Runs clang-format dry-run and quick hygiene checks.
+# Install: git config core.hooksPath .githooks && chmod +x .githooks/pre-commit
+
+set -e
+
+echo "[pre-commit] clang-format check..."
+if command -v clang-format >/dev/null 2>&1; then
+  # Only check staged C/C++ files
+  STAGED=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(cpp|h|c)$' || true)
+  if [ -n "$STAGED" ]; then
+    echo "$STAGED" | xargs clang-format --dry-run --Werror 2>&1 || {
+      echo "[pre-commit] clang-format failed — run: clang-format -i <file> or make format"
+      exit 1
+    }
+  fi
+else
+  echo "[pre-commit] clang-format not found — skipping"
+fi
+
+echo "[pre-commit] bzero/sprintf hygiene (advisory)..."
+# Warn if new bzero/sprintf added (legacy unsafe)
+if git diff --cached --name-only | xargs grep -l "bzero(" 2>/dev/null | grep -q .; then
+  echo "[pre-commit] warning: bzero() is deprecated — use memset"
+fi
+if git diff --cached -U0 | grep -E '^\+\s*sprintf\s*\(' | grep -q .; then
+  echo "[pre-commit] warning: sprintf() without bounds — prefer snprintf"
+fi
+
+echo "[pre-commit] OK"

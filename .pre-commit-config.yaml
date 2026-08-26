@@ -1,0 +1,14 @@
+repos:
+  - repo: local
+    hooks:
+      - id: clang-format
+        name: clang-format
+        entry: clang-format --dry-run --Werror
+        language: system
+        types: [c++, c]
+        pass_filenames: true
+      - id: trailing-whitespace
+        name: trailing-whitespace
+        entry: bash -c "git diff --check"
+        language: system
+        pass_filenames: false

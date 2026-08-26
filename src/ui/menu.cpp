@@ -1129,13 +1129,13 @@ static int MenuAdvanced()
     bool changed = false;
 
     OptionList options;
-    sprintf(options.name[i++], "Render IFrames");
-    sprintf(options.name[i++], "Execute Lua scripts");
-    sprintf(options.name[i++], "Document.write");
-    sprintf(options.name[i++], "Proxy (url:port)");
+    snprintf(options.name[i++], sizeof(options.name[0]), "%s", "Render IFrames");
+    snprintf(options.name[i++], sizeof(options.name[0]), "%s", "Execute Lua scripts");
+    snprintf(options.name[i++], sizeof(options.name[0]), "%s", "Document.write");
+    snprintf(options.name[i++], sizeof(options.name[0]), "%s", "Proxy (url:port)");
     options.length = i;
 
-    sprintf(version, "WiiBrowser %s", Settings.Revision);
+    snprintf(version, sizeof(version), "WiiBrowser %s", Settings.Revision);
     GuiText titleTxt(version, 28, (GXColor)
     {
         0, 0, 0, 255
@@ -1315,16 +1315,16 @@ static int MenuSettings()
     bool changed = false;
 
     OptionList options;
-    sprintf(options.name[i++], "Homepage");
-    sprintf(options.name[i++], "Download Folder");
-    sprintf(options.name[i++], "Show Tooltips");
-    sprintf(options.name[i++], "Show Thumbnails");
-    sprintf(options.name[i++], "Autoupdate");
-    sprintf(options.name[i++], "Language");
-    sprintf(options.name[i++], "Restore Session");
-    sprintf(options.name[i++], "Unzip Files");
-    sprintf(options.name[i++], "Click Sound");
-    sprintf(options.name[i++], "User Agent");
+    snprintf(options.name[i++], sizeof(options.name[0]), "%s", "Homepage");
+    snprintf(options.name[i++], sizeof(options.name[0]), "%s", "Download Folder");
+    snprintf(options.name[i++], sizeof(options.name[0]), "%s", "Show Tooltips");
+    snprintf(options.name[i++], sizeof(options.name[0]), "%s", "Show Thumbnails");
+    snprintf(options.name[i++], sizeof(options.name[0]), "%s", "Autoupdate");
+    snprintf(options.name[i++], sizeof(options.name[0]), "%s", "Language");
+    snprintf(options.name[i++], sizeof(options.name[0]), "%s", "Restore Session");
+    snprintf(options.name[i++], sizeof(options.name[0]), "%s", "Unzip Files");
+    snprintf(options.name[i++], sizeof(options.name[0]), "%s", "Click Sound");
+    snprintf(options.name[i++], sizeof(options.name[0]), "%s", "User Agent");
     options.length = i;
 
     GuiText titleTxt("Settings", 28, (GXColor)
@@ -1455,27 +1455,27 @@ static int MenuSettings()
             snprintf (options.value[1], 256, "%s/", Settings.UserFolder);
             snprintf (options.value[9], 256, "%s", AgentName[Settings.UserAgent]);
 
-            if (Settings.ShowTooltip == 0) sprintf (options.value[2], "Hide");
-            else if (Settings.ShowTooltip == 1) sprintf (options.value[2], "Show");
-            if (Settings.ShowThumbs == 0) sprintf (options.value[3], "Hide");
-            else if (Settings.ShowThumbs == 1) sprintf (options.value[3], "Show");
+            if (Settings.ShowTooltip == 0) snprintf(options.value[2], sizeof(options.value[2]), "%s", "Hide");
+            else if (Settings.ShowTooltip == 1) snprintf(options.value[2], sizeof(options.value[2]), "%s", "Show");
+            if (Settings.ShowThumbs == 0) snprintf(options.value[3], sizeof(options.value[3]), "%s", "Hide");
+            else if (Settings.ShowThumbs == 1) snprintf(options.value[3], sizeof(options.value[3]), "%s", "Show");
 
-            if (Settings.Autoupdate == 0) sprintf (options.value[4], "Disabled");
-            else if (Settings.Autoupdate == 1) sprintf (options.value[4], "Stable");
-            else if (Settings.Autoupdate == 2) sprintf (options.value[4], "Nightly");
+            if (Settings.Autoupdate == 0) snprintf(options.value[4], sizeof(options.value[4]), "%s", "Disabled");
+            else if (Settings.Autoupdate == 1) snprintf(options.value[4], sizeof(options.value[4]), "%s", "Stable");
+            else if (Settings.Autoupdate == 2) snprintf(options.value[4], sizeof(options.value[4]), "%s", "Nightly");
 
-            if (Settings.Language == LANG_JAPANESE) sprintf (options.value[5], "Japanese");
-            else if (Settings.Language == LANG_ENGLISH) sprintf (options.value[5], "English");
-            else if (Settings.Language == LANG_GERMAN) sprintf (options.value[5], "German");
+            if (Settings.Language == LANG_JAPANESE) snprintf(options.value[5], sizeof(options.value[5]), "%s", "Japanese");
+            else if (Settings.Language == LANG_ENGLISH) snprintf(options.value[5], sizeof(options.value[5]), "%s", "English");
+            else if (Settings.Language == LANG_GERMAN) snprintf(options.value[5], sizeof(options.value[5]), "%s", "German");
 
-            if (Settings.Restore == 0) sprintf (options.value[6], "Start new");
-            else if (Settings.Restore == 1) sprintf (options.value[6], "Restore");
-            if (Settings.MuteSound == 0) sprintf (options.value[8], "On");
-            else if (Settings.MuteSound == 1) sprintf (options.value[8], "Off");
+            if (Settings.Restore == 0) snprintf(options.value[6], sizeof(options.value[6]), "%s", "Start new");
+            else if (Settings.Restore == 1) snprintf(options.value[6], sizeof(options.value[6]), "%s", "Restore");
+            if (Settings.MuteSound == 0) snprintf(options.value[8], sizeof(options.value[8]), "%s", "On");
+            else if (Settings.MuteSound == 1) snprintf(options.value[8], sizeof(options.value[8]), "%s", "Off");
 
-            if (Settings.ZipFile == 0) sprintf (options.value[7], "Never");
-            else if (Settings.ZipFile == 1) sprintf (options.value[7], "Always");
-            else if (Settings.ZipFile == 2) sprintf (options.value[7], "Ask each time");
+            if (Settings.ZipFile == 0) snprintf(options.value[7], sizeof(options.value[7]), "%s", "Never");
+            else if (Settings.ZipFile == 1) snprintf(options.value[7], sizeof(options.value[7]), "%s", "Always");
+            else if (Settings.ZipFile == 2) snprintf(options.value[7], sizeof(options.value[7]), "%s", "Ask each time");
 
             optionBrowser.TriggerUpdate();
         }
@@ -2577,7 +2577,7 @@ static int MenuFavorites()
 void LoadSession()
 {
     char cookies[256];
-    sprintf(cookies, "%s/appdata/cookie.csv", Settings.AppPath);
+    snprintf(cookies, sizeof(cookies), "%s/appdata/cookie.csv", Settings.AppPath);
     history = LoadList();
 
     /* setup cookies engine */
@@ -2590,9 +2590,9 @@ void DeleteSession()
     char path[256];
     history = InitHistory();
 
-    sprintf(path, "%s/appdata/cookie.csv", Settings.AppPath);
+    snprintf(path, sizeof(path), "%s/appdata/cookie.csv", Settings.AppPath);
     remove(path);
-    sprintf(path, "%s/appdata/history.txt", Settings.AppPath);
+    snprintf(path, sizeof(path), "%s/appdata/history.txt", Settings.AppPath);
     remove(path);
 
     /* setup cookies engine */
@@ -2664,8 +2664,8 @@ void Cleanup()
         delete pointerGrabData[i];
     }
 
-    char cookies[30];
-    sprintf(cookies, "%s/appdata/cookie.csv", Settings.AppPath);
+    char cookies[256];
+    snprintf(cookies, sizeof(cookies), "%s/appdata/cookie.csv", Settings.AppPath);
 
     /* setup cookies engine */
 #ifndef WIIFLOW

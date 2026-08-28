@@ -71,6 +71,7 @@ char *_mem2_strdup(const char *s, const int area, const char *file, int line);
 char *_mem2_strndup(const char *s, size_t n, const int area, const char *file, int line);
 
 u32 mem2_size(const int i);
+u32 mem2_total_size(const int i);
 
 void ShowAreaInfo(const int area); //if area == -1 print all areas info
 

@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "httplib.h"
 #include "main.h"
 #include "common.h"
 #include "transfer.h"
@@ -39,14 +40,14 @@ int readFile(FILE *hfile, struct update *result)
 
 bool downloadUpdate(int appversion) {
 	char updateFile[30];
-	sprintf(updateFile, "update.dol");
+	snprintf(updateFile, sizeof(updateFile), "update.dol");
 
     bool result = false;
-    char url[100];
+    char url[256];
 
 	if (Settings.Autoupdate == STABLE)
-        sprintf(url, "http://wiibrowser.altervista.org/mainsite/getfile.php?file=R%d.dol&update=1&uuid=%s&mode=U", appversion, Settings.Uuid);
-    else sprintf(url, "https://dl.dropbox.com/s/w39ycq91i3wwvn5/boot.dol?dl=1");
+        snprintf(url, sizeof(url), "http://wiibrowser.altervista.org/mainsite/getfile.php?file=R%d.dol&update=1&uuid=%s&mode=U", appversion, Settings.Uuid);
+    else snprintf(url, sizeof(url), "https://dl.dropbox.com/s/w39ycq91i3wwvn5/boot.dol?dl=1");
 
 	Private *data = NULL;
     FILE *hfile = fopen(updateFile, "wb");
@@ -54,18 +55,33 @@ bool downloadUpdate(int appversion) {
 	if (hfile)
 	{
 	    data = AddUpdate(curl_multi, url, hfile);
-        while(data->code < 0)
-            usleep(100);
+	    if(data) {
+            while(data->code < 0)
+                usleep(10000);
 
-		if(!data->code)
-		{
-		    remove("boot.dol");
-		    result = (rename(updateFile, "boot.dol")==0);
-		}
-		if(data->code || !result)
-		{
-            remove(updateFile); // delete update file
-		}
+		    if(data->code == CURLE_OK)
+		    {
+		        // M5: basic size sanity check before rename (future: SHA256)
+		        long fsize = 0;
+		        FILE* chk = fopen(updateFile, "rb");
+		        if(chk) { fseek(chk,0,SEEK_END); fsize = ftell(chk); fclose(chk); }
+		        if(fsize > 1024) {
+		            remove("boot.dol");
+		            result = (rename(updateFile, "boot.dol")==0);
+		        } else {
+		            result = false;
+		        }
+		    }
+		    if(data->code != CURLE_OK || !result)
+		    {
+                remove(updateFile); // delete update file
+		    }
+		    free(data->url);
+		    delete(data);
+	    } else {
+	        fclose(hfile);
+	        remove(updateFile);
+	    }
 	}
 	if (result)
 	{
@@ -73,23 +89,21 @@ bool downloadUpdate(int appversion) {
 	    Settings.Save(0);
 	}
 
-	free(data->url);
-	delete(data);
 	return result;
 }
 
 struct update checkUpdate() {
 	char updateFile[30];
-	sprintf(updateFile, "update.cfg");
-    char url[70];
+	snprintf(updateFile, sizeof(updateFile), "update.cfg");
+    char url[256];
 
     struct update result;
     struct block HTML;
     result.appversion = 0;
 
     if (Settings.Autoupdate == STABLE)
-        sprintf(url, "http://wiibrowser.altervista.org/downloads/wiibrowser.cfg");
-    else sprintf(url, "https://dl.dropbox.com/s/acpbajdid91d7it/nightly.cfg?dl=1");
+        snprintf(url, sizeof(url), "http://wiibrowser.altervista.org/downloads/wiibrowser.cfg");
+    else snprintf(url, sizeof(url), "https://dl.dropbox.com/s/acpbajdid91d7it/nightly.cfg?dl=1");
 
     CURL *curl_upd = curl_easy_init();
 	FILE *hfile = fopen(updateFile, "wb");

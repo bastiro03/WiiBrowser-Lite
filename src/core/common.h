@@ -149,4 +149,9 @@ extern "C" {
 }
 #endif
 
+// Compatibility: re-include heavy headers for code that expects block/Gui types via common.h
+// (Sprint 3.1 decoupling broke many TUs; re-adding here restores build without editing every file)
+#include "httplib.h"
+#include "gui.h"
+
 #endif

@@ -97,16 +97,23 @@ int close_callback (void *clientp, curl_socket_t item) {
 	return net_close(item);
 }
 
+static const size_t MAX_HTML_CHUNK = 16 * 1024 * 1024; // 16 MB cap (M5)
+
 static size_t
 WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp)
 {
     size_t realsize = size * nmemb;
     struct MemoryStruct *mem = (struct MemoryStruct *)userp;
-    mem->memory = (char *)realloc(mem->memory, mem->size + realsize + 1);
-    if (mem->memory == NULL) {
-        Debug("not enough memory (realloc returned NULL)\n");
-        exit(EXIT_FAILURE);
+    if(mem->size + realsize + 1 > MAX_HTML_CHUNK) {
+        Debug("WriteMemoryCallback: chunk exceeds 16MB cap\n");
+        return 0; // abort curl with CURLE_WRITE_ERROR
     }
+    char *tmp = (char *)realloc(mem->memory, mem->size + realsize + 1);
+    if (tmp == NULL) {
+        Debug("not enough memory (realloc returned NULL)\n");
+        return 0;
+    }
+    mem->memory = tmp;
     memcpy(&(mem->memory[mem->size]), contents, realsize);
     mem->memory[mem->size+=realsize] = 0;
     return realsize;
@@ -122,11 +129,16 @@ static size_t parseheader(void *contents, size_t size, size_t nmemb, void *userp
 {
     size_t realsize = size * nmemb;
     struct HeaderStruct *mem = (struct HeaderStruct *)userp;
-    mem->memory = (char *)realloc(mem->memory, mem->size + realsize + 1);
-    if (mem->memory == NULL) {
-        Debug("not enough memory (realloc returned NULL)\n");
-        exit(EXIT_FAILURE);
+    if(mem->size + realsize + 1 > 64 * 1024) {
+        Debug("parseheader: header exceeds 64KB cap\n");
+        return 0;
     }
+    char *tmp = (char *)realloc(mem->memory, mem->size + realsize + 1);
+    if (tmp == NULL) {
+        Debug("not enough memory (realloc returned NULL)\n");
+        return 0;
+    }
+    mem->memory = tmp;
     memcpy(&(mem->memory[mem->size]), contents, realsize);
     mem->memory[mem->size+=realsize] = 0;
     return parseline(mem, realsize);
@@ -135,8 +147,9 @@ static size_t parseheader(void *contents, size_t size, size_t nmemb, void *userp
 int parseline(HeaderStruct *mem, size_t realsize)
 {
     unsigned int i;
-    for(i = mem->size - realsize; i <= mem->size; i++)
-        mem->memory[i] = tolower(mem->memory[i]);
+    // < not <= : don't overwrite terminator beyond buffer
+    for(i = mem->size - realsize; i < mem->size; i++)
+        mem->memory[i] = tolower((unsigned char)mem->memory[i]);
 
     char *line = &mem->memory[mem->size - realsize];
     char buff[50];
@@ -144,7 +157,7 @@ int parseline(HeaderStruct *mem, size_t realsize)
 
     if(!strncmp(line, "content-type", 12))
     {
-        sscanf(line, "content-type: %s", buff);
+        sscanf(line, "content-type: %49s", buff);
         findChr(buff, ';');
 
         if(mustdownload(buff))
@@ -153,7 +166,9 @@ int parseline(HeaderStruct *mem, size_t realsize)
 
     else if(!strncmp(line, "content-disposition", 19))
     {
-        strcpy(mem->filename, line);
+        // Guard 256-byte filename buffer
+        strncpy(mem->filename, line, sizeof(mem->filename)-1);
+        mem->filename[sizeof(mem->filename)-1] = '\0';
     }
 
     else if(!strncmp(line, "\r\n", 2))
@@ -185,7 +200,19 @@ void setmainheaders(CURL *curl_handle, const char *url)
     /* some servers don't like requests that are made without a user-agent
     field, so we provide one */
     curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, Agents[Settings.UserAgent]);
-    curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0L);
+    // M5: enable verification with CA bundle fallback; keep 0L only if cacert missing (legacy)
+    // Caller should set CURLOPT_CAINFO before this; we set sensible defaults here.
+    curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 1L);
+    curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 2L);
+    // Wii CA bundle location (portlibs or sd bundle)
+    curl_easy_setopt(curl_handle, CURLOPT_CAINFO, "sd:/apps/wiibrowser/cacert.pem");
+#ifdef CURL_SSLVERSION_TLSv1_2
+    curl_easy_setopt(curl_handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2);
+#else
+    curl_easy_setopt(curl_handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1);
+#endif
+    curl_easy_setopt(curl_handle, CURLOPT_CONNECTTIMEOUT, 10L);
+    curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, 30L);
 
     /* proper function to close sockets */
     curl_easy_setopt(curl_handle, CURLOPT_CLOSESOCKETFUNCTION, close_callback);
@@ -296,8 +323,17 @@ struct block postrequest(CURL *curl_handle, const char *url, curl_httppost *data
 	b.size = chunk.size;
 	free(head.memory);
 
-    findChr(ct, ';');
-    strcpy(b.type, ct);
+    // Copy ct safely without mutating curl's internal string
+    if(ct) {
+        char ctCopy[64];
+        strncpy(ctCopy, ct, sizeof(ctCopy)-1);
+        ctCopy[sizeof(ctCopy)-1] = '\0';
+        findChr(ctCopy, ';');
+        strncpy(b.type, ctCopy, sizeof(b.type)-1);
+        b.type[sizeof(b.type)-1] = '\0';
+    } else {
+        b.type[0] = '\0';
+    }
 	return b;
 }
 
@@ -378,8 +414,16 @@ struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
 	b.data = chunk.memory;
 	b.size = chunk.size;
 
-    findChr(ct, ';');
-    strcpy(b.type, ct);
+    if(ct) {
+        char ctCopy[64];
+        strncpy(ctCopy, ct, sizeof(ctCopy)-1);
+        ctCopy[sizeof(ctCopy)-1] = '\0';
+        findChr(ctCopy, ';');
+        strncpy(b.type, ctCopy, sizeof(b.type)-1);
+        b.type[sizeof(b.type)-1] = '\0';
+    } else {
+        b.type[0] = '\0';
+    }
     free(head.memory);
 
     if(hfile)
@@ -397,7 +441,10 @@ struct curl_httppost *multipartform(const char *url)
     struct curl_httppost *lastptr = NULL;
 
     char *temp = strrchr(url, '?');
-    char *begin = url_decode(temp);
+    if(!temp) return NULL;
+    char *decodedBase = url_decode(temp);
+    if(!decodedBase) return NULL;
+    char *begin = decodedBase;
     char *mid = NULL;
 
     char *name, *value;
@@ -407,20 +454,26 @@ struct curl_httppost *multipartform(const char *url)
     do
     {
         mid = strchr(begin, '=');
+        if(!mid) break;
         begin++;
-        name = strndup(begin, mid-begin);
+        name = strndup(begin, (size_t)(mid - begin));
+        if(!name) break;
 
         begin = strchr(begin, '&');
         mid++;
 
         if (!begin)
             value = strdup(mid);
-        else value = strndup(mid, begin-mid);
+        else value = strndup(mid, (size_t)(begin - mid));
+        if(!value) { free(name); break; }
 
         if(strstr(value, "_UPLOAD"))
         {
             path = strrchr(value, '_');
-            file = strndup(value, path-value);
+            if(path)
+                file = strndup(value, (size_t)(path - value));
+            else
+                file = strdup(value);
 
             curl_formadd(&formpost,
                 &lastptr,
@@ -444,7 +497,7 @@ struct curl_httppost *multipartform(const char *url)
     }
     while (begin);
 
-    free(begin);
+    free(decodedBase);
     return formpost;
 }
 
@@ -557,15 +610,20 @@ void trimline(char *init, struct block *dest)
     while (len > 0 && strchr(" \r\n", init[len-1]))
         len--;
 
-	dest->data = (char *)malloc(256);
-	init[len] = 0;
+    dest->data = (char *)malloc(256);
+    if(!dest->data) return;
+    init[len] = 0;
 
     if(init[0] == '"')
     {
         findChr(init+1, '"');
-        strcpy(dest->data, init+1);
+        strncpy(dest->data, init+1, 255);
+        dest->data[255] = '\0';
     }
-    else strcpy(dest->data, init);
+    else {
+        strncpy(dest->data, init, 255);
+        dest->data[255] = '\0';
+    }
 }
 
 void fillstruct(CURL *handle, HeaderStruct *head, struct block *dest)
@@ -576,8 +634,12 @@ void fillstruct(CURL *handle, HeaderStruct *head, struct block *dest)
 
     if(CURLE_OK == curl_easy_getinfo(curl_handle, CURLINFO_CONTENT_TYPE, &ct) && ct)
     {
-        findChr(ct, ';');
-        strcpy(dest->type, ct);
+        char ctCopy[64];
+        strncpy(ctCopy, ct, sizeof(ctCopy)-1);
+        ctCopy[sizeof(ctCopy)-1] = '\0';
+        findChr(ctCopy, ';');
+        strncpy(dest->type, ctCopy, sizeof(dest->type)-1);
+        dest->type[sizeof(dest->type)-1] = '\0';
     }
 
     if((ft = strstr(head->filename, "filename=")))

@@ -18,7 +18,10 @@ char to_hex(char code) {
 /* Returns a url-encoded version of str */
 /* IMPORTANT: be sure to free() the returned string after use */
 char *url_encode_lite(char *str) {
-  char *pstr = str, *buf = malloc(strlen(str) * 3 + 1), *pbuf = buf;
+  if(!str) return NULL;
+  char *buf = (char*)malloc(strlen(str) * 3 + 1);
+  if(!buf) return NULL;
+  char *pstr = str, *pbuf = buf;
   while (*pstr) {
     if (*pstr == ' ')
       *pbuf++ = '+';
@@ -31,9 +34,12 @@ char *url_encode_lite(char *str) {
 }
 
 char *url_encode(char *str) {
-  char *pstr = str, *buf = malloc(strlen(str) * 3 + 1), *pbuf = buf;
+  if(!str) return NULL;
+  char *buf = (char*)malloc(strlen(str) * 3 + 1);
+  if(!buf) return NULL;
+  char *pstr = str, *pbuf = buf;
   while (*pstr) {
-    if (isalnum(*pstr) || *pstr == '-' || *pstr == '_' || *pstr == '.' || *pstr == '~')
+    if (isalnum((unsigned char)*pstr) || *pstr == '-' || *pstr == '_' || *pstr == '.' || *pstr == '~')
       *pbuf++ = *pstr;
     else if (*pstr == ' ')
       *pbuf++ = '+';
@@ -41,7 +47,7 @@ char *url_encode(char *str) {
       *pbuf++ = '%', *pbuf++ = to_hex(*pstr >> 4), *pbuf++ = to_hex(*pstr & 15);
     pstr++;
   }
-*pbuf = '\0';
+ *pbuf = '\0';
   return buf;
 }
 
@@ -90,12 +96,18 @@ void url_unescape_string(char *outbuf, const char *inbuf)
 /* Returns a url-decoded version of str */
 /* IMPORTANT: be sure to free() the returned string after use */
 char *url_decode(char *str) {
-  char *pstr = str, *buf = malloc(strlen(str) + 1), *pbuf = buf;
+  if(!str) return NULL;
+  char *buf = (char*)malloc(strlen(str) + 1);
+  if(!buf) return NULL;
+  char *pstr = str, *pbuf = buf;
   while (*pstr) {
     if (*pstr == '%') {
-      if (pstr[1] && pstr[2]) {
+      if (pstr[1] && pstr[2] && isxdigit((unsigned char)pstr[1]) && isxdigit((unsigned char)pstr[2])) {
         *pbuf++ = from_hex(pstr[1]) << 4 | from_hex(pstr[2]);
         pstr += 2;
+      } else {
+        // Invalid hex — keep literal '%'
+        *pbuf++ = *pstr;
       }
     } else if (*pstr == '+') {
       *pbuf++ = ' ';

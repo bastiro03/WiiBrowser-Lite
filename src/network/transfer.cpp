@@ -2,6 +2,7 @@
 #include "main.h"
 #include "fileop.h"
 #include "config.h"
+#include "httplib.h"
 
 #include "transfer.h"
 #include "networkop.h"
@@ -40,6 +41,7 @@ int showmultiprogress(void *bar,
                     double ulnow)
 {
     Private *data = (Private *)bar;
+    if(!manager || !data) return 0;
     manager->SetProgress(data, (done+data->bytes)*100.0/(total+data->bytes));
 
     if(manager->CancelDownload(data->bar))
@@ -109,7 +111,8 @@ void CompleteDownload(CURLMsg *msg)
     curl_easy_getinfo(msg->easy_handle, CURLINFO_RESPONSE_CODE, &http_response);
     curl_easy_cleanup(msg->easy_handle);
 
-    manager->RemoveBar(data->bar);
+    if(manager)
+        manager->RemoveBar(data->bar);
     data->code = msg->data.result;
     fclose(data->save.file);
 
@@ -217,6 +220,7 @@ void CompleteDownload(CURLMsg *msg)
 
 bool AddHandle(Private *data)
 {
+    if(!manager) return false;
     data->bar = manager->CreateBar();
     if(!data->bar)
         return false;
@@ -260,7 +264,15 @@ bool AddHandle(Private *data)
     /* some servers don't like requests that are made without a user-agent
     field, so we provide one */
     curl_easy_setopt(eh, CURLOPT_USERAGENT, "libcurl-agent/1.0");
-    curl_easy_setopt(eh, CURLOPT_SSL_VERIFYPEER, 0L);
+    curl_easy_setopt(eh, CURLOPT_SSL_VERIFYPEER, 1L);
+    curl_easy_setopt(eh, CURLOPT_SSL_VERIFYHOST, 2L);
+    curl_easy_setopt(eh, CURLOPT_CAINFO, "sd:/apps/wiibrowser/cacert.pem");
+#ifdef CURL_SSLVERSION_TLSv1_2
+    curl_easy_setopt(eh, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2);
+#else
+    curl_easy_setopt(eh, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1);
+#endif
+    curl_easy_setopt(eh, CURLOPT_CONNECTTIMEOUT, 10L);
 
     /* proper function to close sockets */
     curl_easy_setopt(eh, CURLOPT_CLOSESOCKETFUNCTION, netclose_callback);
@@ -276,7 +288,20 @@ void *DownloadThread (void *arg)
 
     LWP_SuspendThread(downloadthread);
     curl_multi = curl_multi_init();
-    manager = new GuiDownloadManager();
+    if(!curl_multi)
+    {
+        printf("DownloadThread: curl_multi_init failed\n");
+        return NULL;
+    }
+    manager = new (std::nothrow) GuiDownloadManager();
+    if(!manager)
+    {
+        printf("DownloadThread: GuiDownloadManager allocation failed (fontSystem may be invalid)\n");
+        // Allow thread to suspend and retry later; do not dereference null manager
+        curl_multi_cleanup(curl_multi);
+        curl_multi = nullptr;
+        return NULL;
+    }
 
     /* we can optionally limit the total amount of connections this multi handle
        uses */

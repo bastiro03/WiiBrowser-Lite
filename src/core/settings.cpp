@@ -179,16 +179,16 @@ bool SSettings::FindConfig()
 {
     bool found = false;
 
+    // M5: probe wiibrowser and wiibrowser-lite (HBC installs to -lite) case-insensitive
+    const char* probePaths[] = { "apps/WiiBrowser/", "apps/wiibrowser/", "apps/wiibrowser-lite/" };
     for(int i = SD; i <= USB; i++)
     {
-        if(!found)
-        {
+        for(size_t p=0; p < sizeof(probePaths)/sizeof(probePaths[0]) && !found; p++) {
             snprintf(BootDevice, sizeof(BootDevice), "%s:/", DeviceName[i]);
-            snprintf(ConfigPath, sizeof(ConfigPath), "%s:/apps/WiiBrowser/%s", DeviceName[i], CONFIGNAME);
+            snprintf(ConfigPath, sizeof(ConfigPath), "%s:/%s%s", DeviceName[i], probePaths[p], CONFIGNAME);
             found = CheckFile(ConfigPath);
         }
-        if(!found)
-        {
+        if(!found) {
             snprintf(BootDevice, sizeof(BootDevice), "%s:/", DeviceName[i]);
             snprintf(ConfigPath, sizeof(ConfigPath), "%s:/%s%s", DeviceName[i], CONFIGPATH, CONFIGNAME);
             found = CheckFile(ConfigPath);
@@ -200,10 +200,9 @@ bool SSettings::FindConfig()
         //! No existing config so try to find a place where we can write it too
         for(int i = SD; i <= USB; i++)
         {
-            if(!found)
-            {
+            for(size_t p=0; p < sizeof(probePaths)/sizeof(probePaths[0]) && !found; p++) {
                 snprintf(BootDevice, sizeof(BootDevice), "%s:/", DeviceName[i]);
-                snprintf(ConfigPath, sizeof(ConfigPath), "%s:/apps/WiiBrowser/%s", DeviceName[i], CONFIGNAME);
+                snprintf(ConfigPath, sizeof(ConfigPath), "%s:/%s%s", DeviceName[i], probePaths[p], CONFIGNAME);
                 found = IsWritable(ConfigPath);
             }
             if(!found)

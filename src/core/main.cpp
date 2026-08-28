@@ -29,6 +29,8 @@
 #include "FreeTypeGX.h"
 #include "config.h"
 #include "fileop.h"
+#include "crash.h"
+#include "devmount.h"
 
 #ifdef MPLAYER
 
@@ -42,7 +44,7 @@ extern char MPLAYER_CSSDIR[512];
 
 // MPlayer threads
 #define MPLAYER_STACKSIZE (512*1024)
-#define CACHE_STACKSIZE (16*1024)
+#define CACHE_STACKSIZE (32*1024)
 static lwp_t mthread = LWP_THREAD_NULL;
 static lwp_t cthread = LWP_THREAD_NULL;
 static u8 cachestack[CACHE_STACKSIZE] ATTRIBUTE_ALIGN (32);
@@ -113,8 +115,13 @@ bool InitMPlayer()
 
     // create mplayer thread
     mplayerstack=(u8*)(memalign(32,MPLAYER_STACKSIZE*sizeof(u8)));
+    if(!mplayerstack) return false;
     memset(mplayerstack,0,MPLAYER_STACKSIZE*sizeof(u8));
-    LWP_CreateThread (&mthread, mplayerthread, NULL, mplayerstack, MPLAYER_STACKSIZE, 68);
+    if(LWP_CreateThread (&mthread, mplayerthread, NULL, mplayerstack, MPLAYER_STACKSIZE, 68) != 0) {
+        free(mplayerstack);
+        mplayerstack = NULL;
+        return false;
+    }
 
     init = true;
     return true;
@@ -206,9 +213,11 @@ void WiimotePowerPressed(s32 chan)
 
 void WaitExit()
 {
+    // Graceful idle: suspend instead of 100% spin; allow reset/power callbacks to exit via ExitApp
     while(true)
     {
-
+        usleep(100000);
+        if(HWButton) ExitApp();
     }
 }
 
@@ -221,7 +230,7 @@ int main(int argc, char *argv[])
     InitVideo(); // Initialize video
     SetupPads(); // Initialize input
     InitAudio(); // Initialize audio
-    fatInitDefault(); // Initialize file system
+    if(!MountManager_Init()) fatInitDefault();
     InitGUIThreads(); // Initialize GUI
 
     #ifdef MPLAYER
@@ -250,7 +259,7 @@ int main(int argc, char *argv[])
         save_mem("CHDIR failed");
 
     LoadLanguage();
-    __exception_setreload(10);
+    Crash_Init();
 
     ResetVideo_Menu();
     MainMenu(MENU_SPLASH);

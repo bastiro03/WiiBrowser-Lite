@@ -1,5 +1,6 @@
 #include <string.h>
 #include <stdlib.h>
+#include "httplib.h"
 #include "common.h"
 #include "config.h"
 

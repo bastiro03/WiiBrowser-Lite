@@ -2,6 +2,7 @@ FROM devkitpro/devkitppc:latest
 
 # Install portlibs and tools needed for WiiBrowser Lite
 # Q3: migrated from vendored libs/ to dkp-pacman
+# M1: add ppc-wolfssl (replaces legacy ppc-libcyassl), ppc-mbedtls optional fallback
 RUN dkp-pacman -Sy --noconfirm && \
     dkp-pacman -S --noconfirm \
         devkitPPC \
@@ -14,6 +15,8 @@ RUN dkp-pacman -Sy --noconfirm && \
         ppc-mxml \
         ppc-libvorbisidec \
         ppc-fribidi \
+        ppc-wolfssl \
+        ppc-mbedtls \
         ppc-ntfs \
         ppc-ext2fs \
         ppc-libfat \

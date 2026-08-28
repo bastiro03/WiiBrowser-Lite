@@ -31,26 +31,28 @@ SOURCES		:=	src/core src/ui src/media src/filesystem src/archive src/network \
 INCLUDES	:=	src src/core src/ui src/media src/filesystem src/archive src/network \
 				src/html_parser src/text src/utils \
 				external external/mplayer external/libwiigui external/litehtml \
-				external/mplayerwii
+				external/mplayerwii libs/include
 
 #---------------------------------------------------------------------------------
 # options for code generation
 #---------------------------------------------------------------------------------
 
-CFLAGS		=	-g -O3 -Wall -Wextra -D_DEFAULT_SOURCE $(MACHDEP) $(INCLUDE) -MMD -MP
-CXXFLAGS	=	-std=gnu++17 $(CFLAGS)
-LDFLAGS		=	-g -ggdb $(MACHDEP)
+CFLAGS		=	-g -O2 -std=c17 -Wall -Wextra -Wpedantic -Werror=implicit-function-declaration -fdata-sections -ffunction-sections -D_DEFAULT_SOURCE $(MACHDEP) $(INCLUDE) -MMD -MP
+CXXFLAGS	=	-g -O2 -std=gnu++17 -D_GLIBCXX_USE_CXX11_ABI=0 -Wall -Wextra -Wpedantic -fdata-sections -ffunction-sections -D_DEFAULT_SOURCE $(MACHDEP) $(INCLUDE) -MMD -MP
+LDFLAGS		=	-g -ggdb $(MACHDEP) -Wl,--gc-sections -Wl,--print-memory-usage -Wl,-Map,$(notdir $(OUTPUT)).map
 
-# ,-Map,$(notdir $@).map,--section-start,.init=0x80620000,-wrap,malloc,-wrap,free,-wrap,memalign,-wrap,calloc,-wrap,realloc,-wrap,malloc_usable_size
+# Extra map options (uncomment to adjust .init base): -Wl,--section-start,.init=0x80620000
+# Heap wrappers (disabled by default; enable with -DDEBUG_MEM2_LEVEL): -Wl,-wrap,malloc,-wrap,free,-wrap,memalign,-wrap,calloc,-wrap,realloc,-wrap,malloc_usable_size
 
 #---------------------------------------------------------------------------------
 # any extra libraries we wish to link with the project
 #---------------------------------------------------------------------------------
 # LIBS	:=	-lmplayerwii -lavformat -lavcodec -lswscale -lavutil \
 
-LIBS	:=	-lfribidi -ljpeg -liconv -ldi -lpng -lunrar -lzip -lsevenzip -lz \
+LIBS	:=	-lfribidi -ljpeg -liconv -ldi -lunrar -lzip -lsevenzip \
 			-lcurl -lcyassl -lnetport -lasnd -lvorbisidec \
-			-lmxml -llua -lm -lfat -lwiiuse -lwiikeyboard -lbte -logc -lfreetype
+			-lmxml -llua -lm -lfat -lwiiuse -lwiikeyboard -lbte -logc -lfreetype \
+			-lpng -lz -lbz2 -lbrotlidec -lbrotlicommon -logg
 
 #---------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level containing
@@ -110,14 +112,16 @@ export OFILES	:=	$(CPPFILES:%.cpp=%.o) $(CFILES:%.c=%.o) \
 #---------------------------------------------------------------------------------
 export INCLUDE	:=	$(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir)) \
 					$(foreach dir,$(LIBDIRS),-I$(dir)/include) \
+					$(foreach dir,$(LIBDIRS),-I$(dir)/include/freetype2) \
 					-I$(CURDIR)/$(BUILD) \
-					-I$(LIBOGC_INC) -I$(PORTLIBS)/include/freetype2
+					-I$(LIBOGC_INC)
 
 #---------------------------------------------------------------------------------
 # build a list of library paths
 #---------------------------------------------------------------------------------
  
-export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib) \
+export LIBPATHS	:=	-L$(CURDIR)/libs/wii \
+					$(foreach dir,$(LIBDIRS),-L$(dir)/lib) \
 					-L$(LIBOGC_LIB) \
 					-L$(MPLAYER)/ \
 					-L$(MPLAYER)/ffmpeg/libavcodec \
@@ -143,9 +147,7 @@ all: $(BUILD) $(OUTPUT).dol
 $(BUILD):
 	@mkdir -p $@
 
-# Ensure each object’s directory exists before compiling/embed
-$(BUILD_OFILES): | $(BUILD)
-	@mkdir -p $(@D)
+# Ensure each object’s directory exists before compiling/embed (via order-only prereq in pattern rules)
 
 # Host-side unit tests (native compiler, not devkitPPC) — see tests/
 test:
@@ -191,20 +193,31 @@ clean:
 	@rm -fr $(OUTPUT).elf $(OUTPUT).dol
 
 # HBC bundle packaging — mirrors CI Package step, uses gen_version.sh for templating
+# M6: dual install to wiibrowser (canonical) + wiibrowser-lite (HBC compat) + version templating
 package: $(OUTPUT).dol
 	@echo "Packaging HBC bundle..."
-	@mkdir -p dist/apps/wiibrowser-lite
+	@mkdir -p dist/apps/wiibrowser dist/apps/wiibrowser-lite
+	@cp $(OUTPUT).dol dist/apps/wiibrowser/boot.dol
 	@cp $(OUTPUT).dol dist/apps/wiibrowser-lite/boot.dol
-	@cp HBC/icon.png dist/apps/wiibrowser-lite/icon.png || cp hbc/icon.png dist/apps/wiibrowser-lite/icon.png
+	@cp HBC/icon.png dist/apps/wiibrowser/icon.png 2>/dev/null || cp HBC/icon.png dist/apps/wiibrowser-lite/icon.png 2>/dev/null || cp hbc/icon.png dist/apps/wiibrowser/icon.png 2>/dev/null || true
+	@cp HBC/icon.png dist/apps/wiibrowser-lite/icon.png 2>/dev/null || cp hbc/icon.png dist/apps/wiibrowser-lite/icon.png 2>/dev/null || true
 	@if [ -f HBC/meta.xml.in ]; then \
 		VERSION=$${GITHUB_REF_NAME:-$$(git rev-parse --short HEAD 2>/dev/null || echo "dev")}; \
 		DATE=$$(date -u +%Y%m%d); \
+		sed -e "s|@VERSION@|$$VERSION|g" -e "s|@RELEASE_DATE@|$$DATE|g" HBC/meta.xml.in > dist/apps/wiibrowser/meta.xml; \
 		sed -e "s|@VERSION@|$$VERSION|g" -e "s|@RELEASE_DATE@|$$DATE|g" HBC/meta.xml.in > dist/apps/wiibrowser-lite/meta.xml; \
 	else \
-		cp HBC/meta.xml dist/apps/wiibrowser-lite/meta.xml || cp hbc/meta.xml dist/apps/wiibrowser-lite/meta.xml; \
+		cp HBC/meta.xml dist/apps/wiibrowser/meta.xml 2>/dev/null || cp hbc/meta.xml dist/apps/wiibrowser/meta.xml 2>/dev/null || true; \
+		cp HBC/meta.xml dist/apps/wiibrowser-lite/meta.xml 2>/dev/null || cp hbc/meta.xml dist/apps/wiibrowser-lite/meta.xml 2>/dev/null || true; \
 	fi
+	@cp HBC/wiibrowser.cfg dist/apps/wiibrowser/ 2>/dev/null || true
 	@cp HBC/wiibrowser.cfg dist/apps/wiibrowser-lite/ 2>/dev/null || true
-	@(cd dist && zip -r ../WiiBrowser-Lite-HBC.zip apps >/dev/null && echo "  ZIP WiiBrowser-Lite-HBC.zip")
+	@if command -v zip >/dev/null 2>&1; then \
+		(cd dist && zip -r ../WiiBrowser-Lite-HBC.zip apps >/dev/null && echo "  ZIP WiiBrowser-Lite-HBC.zip"); \
+	else \
+		echo "  ZIP (python fallback) WiiBrowser-Lite-HBC.zip"; \
+		python3 -c "import zipfile, pathlib; z=zipfile.ZipFile('WiiBrowser-Lite-HBC.zip','w',zipfile.ZIP_DEFLATED); [z.write(p, p.relative_to('dist')) for p in pathlib.Path('dist/apps').rglob('*') if p.is_file()]; z.close()"; \
+	fi
 
 dist: package
 
@@ -288,13 +301,16 @@ $(BUILD)/%.pcm.o: %.pcm | $(BUILD)
 	@echo "  EMBED $<"
 	$(SILENTCMD)$(SHELL) $(EMBEDSCRIPT) $< $@
 
+FLEX	?=	flex
+BISON	?=	bison
+
 # Generated CSS parser/lexer — flex/bison (optional, stubs committed)
 src/html_parser/css_lex.c src/html_parser/css_lex.h: src/html_parser/css_lex.l src/html_parser/css_syntax.h
 	@echo "  FLEX $<"
-	@flex -o src/html_parser/css_lex.c --header-file=src/html_parser/css_lex.h $< || echo "flex missing — using committed stub"
+	@$(FLEX) -o src/html_parser/css_lex.c --header-file=src/html_parser/css_lex.h $< || echo "flex missing — using committed stub"
 
 src/html_parser/css_syntax.c src/html_parser/css_syntax.h: src/html_parser/css_syntax.y
 	@echo "  BISON $<"
-	@bison -d -o src/html_parser/css_syntax.c $< || echo "bison missing — using committed stub"
+	@$(BISON) -d -o src/html_parser/css_syntax.c $< || echo "bison missing — using committed stub"
 
 -include $(BUILD_DEPENDS)

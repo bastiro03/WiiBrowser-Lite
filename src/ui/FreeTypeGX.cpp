@@ -22,15 +22,59 @@
 
 #include "FreeTypeGX.h"
 #include "filelist.h"
+#include <ogc/system.h>
+#include <stdio.h>
+#include <stdarg.h>
 
 #define ft_malloc(x) malloc(x)
 #define ft_free(x) free(x)
 #define ft_memalign(x,y) memalign(x,y)
 
+// Global font load failure state for non-blocking error screen (see menu.cpp)
+bool g_fontLoadFailed = false;
+static char g_fontErrorMsg[256] = {0};
+
+static void LogFontError(const char *fmt, ...)
+{
+    char buf[256];
+    va_list ap;
+    va_start(ap, fmt);
+    vsnprintf(buf, sizeof(buf), fmt, ap);
+    va_end(ap);
+
+    // Dolphin OSReport via SYS_Report (visible in Dolphin logs with OSReport uart)
+    SYS_Report("WiiBrowser-Lite Font: %s\n", buf);
+    // Console / stdout
+    printf("WiiBrowser-Lite Font: %s\n", buf);
+
+    // File logging for HW (sd:/wiibrowser.log) — best effort, ignore if FAT not ready
+    FILE *f = fopen("sd:/wiibrowser.log", "a");
+    if(!f) f = fopen("wiibrowser.log", "a");
+    if(f)
+    {
+        fprintf(f, "Font: %s\n", buf);
+        fclose(f);
+    }
+    // Remember first error for error screen
+    if(!g_fontLoadFailed || g_fontErrorMsg[0]==0)
+    {
+        strncpy(g_fontErrorMsg, buf, sizeof(g_fontErrorMsg)-1);
+    }
+}
+
+extern "C" bool IsFontLoadFailed() { return g_fontLoadFailed; }
+extern "C" const char* GetFontErrorMsg() { return g_fontErrorMsg; }
+
 FreeTypeGX *fontSystem[MAX_FONT_SIZE+1];
 
 static FT_Byte * MainFont = (FT_Byte *) font_regular_ttf;
 static u32 MainFontSize = font_regular_ttf_size;
+
+// Fallback fonts (bundled, used if regular fails)
+static FT_Byte * FallbackBoldFont = (FT_Byte *) font_bold_ttf;
+static u32 FallbackBoldSize = font_bold_ttf_size;
+static FT_Byte * FallbackItalicFont = (FT_Byte *) font_italic_ttf;
+static u32 FallbackItalicSize = font_italic_ttf_size;
 
 void InitFreeType()
 {
@@ -99,21 +143,106 @@ char* wideCharToChar(const wchar_t* strWChar, int len)
 
 /**
  * Default constructor for the FreeTypeGX class for WiiXplorer.
+ * Falls back to font_bold / font_italic if font_regular fails, logs via OSReport + sd:/wiibrowser.log,
+ * and sets g_fontLoadFailed for non-blocking error overlay in menu.cpp.
  */
 FreeTypeGX::FreeTypeGX(FT_UInt pixelSize, const uint8_t* fontBuffer, FT_Long bufferSize)
+    : ftLibrary(nullptr), ftFace(nullptr), ftSlot(nullptr), ftPointSize(pixelSize),
+      ftKerningEnabled(false), ftValid(false), vertexIndex(GX_VTXFMT1), compatibilityMode(0)
 {
-    FT_Init_FreeType(&ftLibrary);
+    FT_Error err = FT_Init_FreeType(&ftLibrary);
+    if(err)
+    {
+        LogFontError("FT_Init_FreeType failed: 0x%x size=%u", (unsigned)err, pixelSize);
+        g_fontLoadFailed = true;
+        ftLibrary = nullptr;
+        ftFace = nullptr;
+        ftSlot = nullptr;
+        ftValid = false;
+        return;
+    }
+
+    // Try primary buffer first, then fallbacks
+    struct Candidate { FT_Byte* data; u32 size; const char* name; };
+    Candidate candidates[4];
+    int candCount = 0;
 
     if(fontBuffer && bufferSize > 0)
-        FT_New_Memory_Face(ftLibrary, (FT_Byte *)fontBuffer, bufferSize, 0, &ftFace);
-    else FT_New_Memory_Face(ftLibrary, MainFont, MainFontSize, 0, &ftFace);
+    {
+        candidates[candCount++] = {(FT_Byte*)fontBuffer, (u32)bufferSize, "custom"};
+    }
+    else
+    {
+        candidates[candCount++] = {MainFont, MainFontSize, "font_regular"};
+        candidates[candCount++] = {FallbackBoldFont, FallbackBoldSize, "font_bold"};
+        candidates[candCount++] = {FallbackItalicFont, FallbackItalicSize, "font_italic"};
+    }
 
+    bool anyAttempt = false;
+    for(int i=0;i<candCount;i++)
+    {
+        FT_Byte* data = candidates[i].data;
+        u32 size = candidates[i].size;
+        const char* name = candidates[i].name;
+
+        if(!data || size==0)
+        {
+            LogFontError("FT_New_Memory_Face skip %s: null data or size 0", name);
+            continue;
+        }
+        // Basic TTF sanity: '00 01 00 00' or 'OTTO' or 'true' header
+        if(size < 12)
+        {
+            LogFontError("FT_New_Memory_Face skip %s: size %u too small", name, size);
+            continue;
+        }
+        err = FT_New_Memory_Face(ftLibrary, data, size, 0, &ftFace);
+        anyAttempt = true;
+        if(!err && ftFace)
+        {
+            if(i>0)
+            {
+                LogFontError("Fell back to %s (size %u) for pixelSize %u (primary failed)", name, size, pixelSize);
+                // Non-blocking: remember fallback used but do not block UI
+                // Keep g_fontLoadFailed true so overlay can inform user
+                if(strcmp(name,"font_regular")!=0)
+                    g_fontLoadFailed = true;
+            }
+            break;
+        }
+        else
+        {
+            LogFontError("FT_New_Memory_Face failed for %s size %u: err 0x%x", name, size, (unsigned)err);
+            ftFace = nullptr;
+            // Try next fallback
+            if(i < candCount-1)
+                continue;
+        }
+    }
+
+    if(err || !ftFace)
+    {
+        LogFontError("All font candidates failed for pixelSize %u (last err 0x%x)", pixelSize, (unsigned)err);
+        g_fontLoadFailed = true;
+        ftFace = nullptr;
+        ftSlot = nullptr;
+        ftValid = false;
+        return;
+    }
+
+    ftValid = true;
     ftSlot = ftFace->glyph;
     setVertexFormat(GX_VTXFMT1);
     setCompatibilityMode(FTGX_COMPATIBILITY_DEFAULT_TEVOP_GX_PASSCLR | FTGX_COMPATIBILITY_DEFAULT_VTXDESC_GX_NONE);
-    ftPointSize = pixelSize;
     ftKerningEnabled = FT_HAS_KERNING(ftFace);
-    ChangeFontSize(pixelSize);
+    FT_Error szErr = FT_Set_Pixel_Sizes(ftFace, 0, pixelSize);
+    if(szErr)
+    {
+        LogFontError("FT_Set_Pixel_Sizes failed for %u: 0x%x, trying fallback size", pixelSize, (unsigned)szErr);
+        // Keep valid but mark failed; ChangeFontSize will handle
+        g_fontLoadFailed = true;
+    }
+    ftPointSize = pixelSize;
 }
 
 /**
@@ -122,8 +251,14 @@ FreeTypeGX::FreeTypeGX(FT_UInt pixelSize, const uint8_t* fontBuffer, FT_Long buf
 FreeTypeGX::~FreeTypeGX()
 {
     unloadFont();
-    FT_Done_Face(ftFace);
-    FT_Done_FreeType(ftLibrary);
+    if(ftFace)
+        FT_Done_Face(ftFace);
+    if(ftLibrary)
+        FT_Done_FreeType(ftLibrary);
+    ftFace = nullptr;
+    ftSlot = nullptr;
+    ftLibrary = nullptr;
+    ftValid = false;
 }
 
 /**
@@ -232,7 +367,12 @@ void FreeTypeGX::unloadFont()
 */
 void FreeTypeGX::ChangeFontSize(FT_UInt pixelSize)
 {
-    FT_Set_Pixel_Sizes(ftFace, 0, pixelSize);
+    if(!ftValid || !ftFace)
+        return;
+    FT_Error err = FT_Set_Pixel_Sizes(ftFace, 0, pixelSize);
+    if(err)
+        return;
+    ftPointSize = pixelSize;
 }
 
 /**
@@ -246,6 +386,9 @@ void FreeTypeGX::ChangeFontSize(FT_UInt pixelSize)
  */
 ftgxCharData *FreeTypeGX::cacheGlyphData(wchar_t charCode)
 {
+    if(!ftValid || !ftFace || !ftSlot)
+        return NULL;
+
     FT_UInt gIndex;
     uint16_t textureWidth = 0, textureHeight = 0;
 
@@ -287,6 +430,8 @@ ftgxCharData *FreeTypeGX::cacheGlyphData(wchar_t charCode)
  */
 uint16_t FreeTypeGX::cacheGlyphDataComplete()
 {
+    if(!ftValid || !ftFace)
+        return 0;
     uint32_t i = 0;
     FT_UInt gIndex;
     FT_ULong charCode = FT_Get_First_Char( ftFace, &gIndex );
@@ -412,7 +557,7 @@ int16_t FreeTypeGX::getStyleOffsetHeight(ftgxDataOffset *offset, uint16_t format
  */
 uint16_t FreeTypeGX::drawText(int16_t x, int16_t y, const wchar_t *text, GXColor color, uint16_t textStyle, uint16_t textWidth, uint16_t widthLimit)
 {
-    if(!text)
+    if(!text || !ftValid || !ftFace)
         return 0;
 
     uint16_t fullTextWidth = textWidth > 0 ? textWidth : getWidth(text);
@@ -482,7 +627,7 @@ uint16_t FreeTypeGX::drawText(int16_t x, int16_t y, const wchar_t *text, GXColor
 uint16_t FreeTypeGX::drawLongText(int16_t x, int16_t y, const wchar_t *text, GXColor color,
 		uint16_t textStyle, uint16_t lineDistance, uint16_t maxLines, uint16_t startWidth, uint16_t maxWidth)
 {
-	if (!text) return 0;
+	if (!text || !ftValid || !ftFace) return 0;
 
 	bool bIsTab;
 	uint16_t cur_line = 0;
@@ -597,7 +742,7 @@ void FreeTypeGX::drawTextFeature(int16_t x, int16_t y, uint16_t width, ftgxDataO
  */
 uint16_t FreeTypeGX::getWidth(const wchar_t *text)
 {
-    if(!text)
+    if(!text || !ftValid || !ftFace)
         return 0;
 
     uint16_t strWidth = 0;
@@ -639,6 +784,8 @@ uint16_t FreeTypeGX::getWidth(const wchar_t *text)
 */
 uint16_t FreeTypeGX::getCharWidth(const wchar_t wChar, const wchar_t prevChar)
 {
+    if(!ftValid || !ftFace)
+        return 0;
     uint16_t strWidth = 0;
     ftgxCharData * glyphData = NULL;
 
@@ -677,6 +824,8 @@ uint16_t FreeTypeGX::getCharWidth(const wchar_t wChar, const wchar_t prevChar)
  */
 uint16_t FreeTypeGX::getHeight(const wchar_t *text)
 {
+    if(!ftValid || !ftFace)
+        return 0;
     ftgxDataOffset offset;
     this->getOffset(text, &offset);
     return offset.max - offset.min;
@@ -694,6 +843,15 @@ uint16_t FreeTypeGX::getHeight(const wchar_t *text)
  */
 void FreeTypeGX::getOffset(const wchar_t *text, ftgxDataOffset* offset, uint16_t widthLimit)
 {
+    if(!offset) return;
+    if(!text || !ftValid || !ftFace || !ftFace->size)
+    {
+        offset->ascender = 0;
+        offset->descender = 0;
+        offset->max = 0;
+        offset->min = 0;
+        return;
+    }
     int16_t strMax = 0, strMin = 9999;
     uint16_t currWidth = 0;
 
@@ -819,6 +977,16 @@ void *FreeTypeGX::operator new(size_t size)
 	return p;
 }
 
+void *FreeTypeGX::operator new(size_t size, const std::nothrow_t&) noexcept
+{
+	return ft_malloc(size);
+}
+
+void FreeTypeGX::operator delete(void *p, const std::nothrow_t&) noexcept
+{
+	ft_free(p);
+}
+
 // overloaded delete operator
 void FreeTypeGX::operator delete(void *p)
 {
@@ -836,6 +1004,16 @@ void *FreeTypeGX::operator new[](size_t size)
 		throw ba;
 	}
 	return p;
+}
+
+void *FreeTypeGX::operator new[](size_t size, const std::nothrow_t&) noexcept
+{
+	return ft_malloc(size);
+}
+
+void FreeTypeGX::operator delete[](void *p, const std::nothrow_t&) noexcept
+{
+	ft_free(p);
 }
 
 // overloaded delete operator for arrays

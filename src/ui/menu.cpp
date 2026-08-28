@@ -16,6 +16,7 @@
 #include <errno.h>
 #include <wiiuse/wpad.h>
 
+#include "httplib.h"
 #include "liste.h"
 #include "main.h"
 #include "input.h"
@@ -26,6 +27,7 @@
 #include "fileop.h"
 #include "filelist.h"
 
+#include "FreeTypeGX.h"
 #include "TextEditor.h"
 #include "config.h"
 #include "url_helper.h"
@@ -90,6 +92,72 @@ static bool toggleManager = false;
 
 static int updateThreadHalt = 0;
 static int loadThreadHalt = 1;
+static int s_haltDepth = 0;
+
+// Non-blocking font error overlay (Q1/Q2: explicit but non-blocking, uses fallback fonts)
+static bool fontErrorOverlayShown = false;
+static u32 fontErrorOverlayStart = 0;
+#define FONT_ERROR_OVERLAY_DURATION_MS 10000 // 10s auto-dismiss, but keeps logging
+
+extern bool g_fontLoadFailed;
+extern "C" const char* GetFontErrorMsg();
+extern "C" bool IsFontLoadFailed();
+
+static void DrawFontErrorOverlay()
+{
+    if(!IsFontLoadFailed()) return;
+
+    // First time: log via OSReport already done in FreeTypeGX ctor
+    if(!fontErrorOverlayShown)
+    {
+        fontErrorOverlayShown = true;
+        fontErrorOverlayStart = ticks_to_millisecs(gettime());
+        // Also ensure visible in console for Dolphin
+        printf("Font overlay: %s\n", GetFontErrorMsg());
+    }
+
+    // Auto-dismiss after duration but keep g_fontLoadFailed for logging
+    u32 now = ticks_to_millisecs(gettime());
+    if(now - fontErrorOverlayStart > FONT_ERROR_OVERLAY_DURATION_MS)
+        return;
+
+    // Draw semi-transparent banner at top (non-blocking, does not halt GUI)
+    // Use Menu_DrawRectangle which works without freetype
+    Menu_DrawRectangle(0, 0, screenwidth, 28, (GXColor){0xCC, 0x00, 0x00, 0xDD}, 1);
+    // Draw border
+    Menu_DrawRectangle(0, 28, screenwidth, 2, (GXColor){0xFF, 0xFF, 0xFF, 0xFF}, 1);
+
+    // Try to render text via fallback fontSystem (bold/italic) if available
+    // Do not use GuiText to avoid recursion; use raw FreeTypeGX draw if valid
+    FreeTypeGX* fallback = nullptr;
+    for(int sz=14; sz<=24; sz++)
+    {
+        extern FreeTypeGX *fontSystem[];
+        if(fontSystem[sz] && fontSystem[sz]->isValid()) { fallback = fontSystem[sz]; break; }
+    }
+    if(!fallback)
+    {
+        for(int i=0;i<=MAX_FONT_SIZE;i++)
+        {
+            extern FreeTypeGX *fontSystem[];
+            if(fontSystem[i] && fontSystem[i]->isValid()) { fallback = fontSystem[i]; break; }
+        }
+    }
+    if(fallback)
+    {
+        const char* msg = GetFontErrorMsg();
+        char display[220];
+        snprintf(display, sizeof(display), "Font issue: %s (using fallback)", msg);
+        wchar_t* wmsg = charToWideChar(display);
+        if(wmsg)
+        {
+            // Centered, white text, shadow via double draw not needed
+            fallback->drawText(10, 18, wmsg, (GXColor){0xFF,0xFF,0xFF,0xFF});
+            delete[] wmsg;
+        }
+    }
+    // else: rectangle alone indicates error even without freetype (all fonts failed)
+}
 
 using namespace std;
 
@@ -167,6 +235,14 @@ bool VideoImgVisible()
  ***************************************************************************/
 void ResumeGui()
 {
+    if (guithread == LWP_THREAD_NULL)
+        return;
+    if (s_haltDepth > 1)
+    {
+        s_haltDepth--;
+        return;
+    }
+    s_haltDepth = 0;
     guiHalt = false;
     LWP_ResumeThread (guithread);
 }
@@ -179,13 +255,41 @@ void ResumeGui()
  * This eliminates the possibility that the GUI is in the middle of accessing
  * an element that is being changed.
  ***************************************************************************/
+extern "C" bool HaltGuiEx(int timeoutMs)
+{
+    if (guithread == LWP_THREAD_NULL)
+        return true;
+    if (s_haltDepth > 0)
+    {
+        s_haltDepth++;
+        return true;
+    }
+    guiHalt = true;
+    int tries = 0;
+    int maxTries = (timeoutMs > 0 ? timeoutMs * 1000 / THREAD_SLEEP : 500);
+    if (maxTries < 50) maxTries = 50;
+    while (!LWP_ThreadIsSuspended(guithread) && tries < maxTries)
+    {
+        usleep(THREAD_SLEEP);
+        tries++;
+    }
+    if (tries >= maxTries)
+    {
+        printf("HaltGui: timeout waiting for GUI thread (%d ms)\n", timeoutMs);
+        return false;
+    }
+    s_haltDepth = 1;
+    return true;
+}
+
 extern "C" void HaltGui()
 {
-    guiHalt = true;
+    HaltGuiEx(200);
+}
 
-    // wait for thread to finish
-    while(!LWP_ThreadIsSuspended(guithread))
-        usleep(THREAD_SLEEP);
+static void ResumeGuiEx()
+{
+    ResumeGui();
 }
 
 extern "C" void DoMPlayerGuiDraw()
@@ -660,6 +764,7 @@ static void *UpdateGUI (void *arg)
             UpdatePads();
             mainWindow->Draw();
             mainWindow->DrawTooltip();
+            DrawFontErrorOverlay();
 
 #ifdef HW_RVL
             for(i=3; i >= 0; i--) // so that player 1's cursor appears on top!
@@ -836,7 +941,8 @@ int OnScreenKeyboard(GuiWindow *keyboardWindow, char *var, u16 maxlen)
     keyboard.Append(&cancelBtn);
     keyboard.SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_IN, 30);
 
-    HaltGui();
+    if (!HaltGuiEx(500))
+        printf("OnScreenKeyboard: HaltGui timeout (enter), proceeding cautiously\n");
     keyboardWindow->SetState(STATE_DISABLED);
     keyboardWindow->Append(&keyboard);
     keyboardWindow->ChangeFocus(&keyboard);
@@ -850,6 +956,25 @@ int OnScreenKeyboard(GuiWindow *keyboardWindow, char *var, u16 maxlen)
             save = 1;
         else if(cancelBtn.GetState() == STATE_CLICKED)
             save = 0;
+        else if(ExitRequested || HWButton)
+            save = 0;
+        else
+        {
+            // Allow B button / Home as cancel, and handle emulated IR edge: check both WPAD and GC
+            for(int i=0;i<4;i++)
+            {
+                if(userInput[i].wpad && (userInput[i].wpad->btns_d & (WPAD_BUTTON_B | WPAD_CLASSIC_BUTTON_B | WPAD_BUTTON_HOME | WPAD_CLASSIC_BUTTON_HOME)))
+                {
+                    save = 0;
+                    break;
+                }
+                if(PAD_ButtonsDown(i) & (PAD_BUTTON_B | PAD_BUTTON_MENU))
+                {
+                    save = 0;
+                    break;
+                }
+            }
+        }
     }
 
     if(save)
@@ -858,10 +983,16 @@ int OnScreenKeyboard(GuiWindow *keyboardWindow, char *var, u16 maxlen)
     }
 
     keyboard.SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_OUT, 50);
-    while(keyboard.GetEffect() > 0)
+    int effectTries = 0;
+    while(keyboard.GetEffect() > 0 && effectTries < 300) // ~30ms*50 = cap 1.5s to avoid infinite slide
+    {
         usleep(THREAD_SLEEP);
+        effectTries++;
+        if(ExitRequested || HWButton) break;
+    }
 
-    HaltGui();
+    if (!HaltGuiEx(500))
+        printf("OnScreenKeyboard: HaltGui timeout (exit), forcing cleanup\n");
     keyboardWindow->Remove(&keyboard);
     keyboardWindow->SetState(STATE_DEFAULT);
     ResumeGui();
@@ -966,6 +1097,28 @@ void SetupGui()
     videoWindow = new GuiWindow(screenwidth, screenheight);
     videoWindow->Append(App);
 
+    // Ensure critical font sizes are primed before any GuiText is created
+    // on the download/GUI threads (prevents ISI 0x4E800020 from corrupted FT_Face)
+    {
+        extern FreeTypeGX *fontSystem[];
+        const int criticalSizes[] = {10, 12, 14, 16, 18, 20, 24, 28};
+        for(size_t i = 0; i < sizeof(criticalSizes)/sizeof(criticalSizes[0]); ++i)
+        {
+            int sz = criticalSizes[i];
+            if(sz > MAX_FONT_SIZE) continue;
+            if(!fontSystem[sz] || !fontSystem[sz]->isValid())
+            {
+                if(fontSystem[sz]) { delete fontSystem[sz]; fontSystem[sz] = nullptr; }
+                fontSystem[sz] = new (std::nothrow) FreeTypeGX(sz);
+                if(!fontSystem[sz] || !fontSystem[sz]->isValid())
+                {
+                    printf("SetupGui: Failed to prime font size %d\n", sz);
+                    // Non-fatal: GuiText will gracefully fall back to width 0
+                }
+            }
+        }
+    }
+
     LWP_ResumeThread(downloadthread);
     ResumeGui();
 }
@@ -1061,9 +1214,11 @@ static int MenuBrowseDevice()
         if(InsertURL.GetState() == STATE_CLICKED)
         {
             URL.SetScroll(SCROLL_NONE);
+            InsertURL.ResetState();
             OnScreenKeyboard(mainWindow, path, 256);
             URL.SetText(path);
             URL.SetScroll(SCROLL_HORIZONTAL);
+            InsertURL.ResetState();
         }
 
 		// update file browser based on arrow buttons
@@ -1711,10 +1866,13 @@ static int MenuHome()
                 App->btnWWW->GetState() == STATE_CLICKED)
         {
             URL.SetScroll(SCROLL_NONE);
+            InsertURL.ResetState();
+            App->btnWWW->ResetState();
             OnScreenKeyboard(mainWindow, new_page, MAXLEN);
             strcpy(prev_page,new_page);
             URL.SetText(new_page);
             URL.SetScroll(SCROLL_HORIZONTAL);
+            InsertURL.ResetState();
             App->btnWWW->ResetState();
         }
 

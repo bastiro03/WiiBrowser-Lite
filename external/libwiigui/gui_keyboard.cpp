@@ -20,22 +20,39 @@
 static char tmptxt[MAX_KEYBOARD_DISPLAY];
 bool GuiKeyboard::bInitUSBKeyboard = true;
 
+static FreeTypeGX* GetKeyboardFont()
+{
+    if (fontSystem[20] && fontSystem[20]->isValid())
+        return fontSystem[20];
+    // Fallback: find any valid font size
+    for (int i = 0; i <= MAX_FONT_SIZE; ++i)
+    {
+        if (fontSystem[i] && fontSystem[i]->isValid())
+            return fontSystem[i];
+    }
+    return nullptr;
+}
+
 int CalcMaxLine(char * t)
 {
+    if (!t) return 0;
+    FreeTypeGX* kf = GetKeyboardFont();
+    if (!kf) return 0;
     int len = strlen(t);
     wchar_t *wt = charToWideChar(t);
+    if (!wt) return 0;
     int w, startPos = 0;
 
     for(int i = 0; i < len; i++)
     {
-        w = fontSystem[20]->getWidth(&wt[i]);
+        w = kf->getWidth(&wt[i]);
         if(w < MAX_KEYBOARD_DISPLAY)
             break;
 
         startPos++;
     }
 
-    delete wt;
+    delete[] wt;
     return startPos;
 }
 
@@ -395,7 +412,8 @@ void GuiKeyboard::AddChar(int pos, char Char)
     temp.insert(pos, 1, Char);
     strcpy(kbtextstr, temp.c_str());
 
-    int Width = fontSystem[20]->getCharWidth(Char, 0);
+    FreeTypeGX* kf = GetKeyboardFont();
+    int Width = kf ? kf->getCharWidth(Char, 0) : 0;
     autoCompleteText->SetPosition(autoCompleteText->GetXPosition() + Width, 10);
 
     MoveText(1);
@@ -408,7 +426,8 @@ void GuiKeyboard::RemoveChar(int pos)
 
     std::string temp(kbtextstr);
 
-    int Width = fontSystem[20]->getCharWidth(temp.at(pos), 0);
+    FreeTypeGX* kf = GetKeyboardFont();
+    int Width = kf ? kf->getCharWidth(temp.at(pos), 0) : 0;
     autoCompleteText->SetPosition(autoCompleteText->GetXPosition() - Width, 10);
 
     temp.erase(pos, 1);
@@ -426,9 +445,17 @@ void GuiKeyboard::MoveText(int n)
     kbText->SetText(GetDisplayText(kbtextstr));
     TextPointerBtn->UpdateWidth();
 
-    wchar_t *wstr = charToWideChar(kbtextstr);
-    int strlength = fontSystem[20]->getWidth(wstr);
-    delete(wstr);
+    FreeTypeGX* kf = GetKeyboardFont();
+    int strlength = 0;
+    if (kf)
+    {
+        wchar_t *wstr = charToWideChar(kbtextstr);
+        if (wstr)
+        {
+            strlength = kf->getWidth(wstr);
+            delete[] wstr;
+        }
+    }
 
     if(strlength > MAX_KEYBOARD_DISPLAY)
         TextPointerBtn->SetLetterPosition(TextPointerBtn->GetCurrentLetter());

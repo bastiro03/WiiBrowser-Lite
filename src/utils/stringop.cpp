@@ -3,6 +3,18 @@
 #include <limits.h>
 #include "stringop.h"
 
+static void safe_strcat(char *dst, const char *src, size_t dstSize) {
+    size_t dlen = strlen(dst);
+    size_t slen = src ? strlen(src) : 0;
+    if(dlen >= dstSize) return;
+    size_t avail = dstSize - dlen - 1;
+    if(slen > avail) slen = avail;
+    if(slen) {
+        memcpy(dst + dlen, src, slen);
+        dst[dlen + slen] = '\0';
+    }
+}
+
 void addname(struct block *html, char *url, char *path, const char *phold)
 {
     char *c = NULL;
@@ -11,17 +23,17 @@ void addname(struct block *html, char *url, char *path, const char *phold)
 
     /* content-disposition */
     if (html->data && strrchr(html->data, '.'))
-        strcat(path, html->data);
+        safe_strcat(path, html->data, 512);
 
     /* find in url */
     else if (c && strchr(c, '.'))
-        strcat(path, c+1);
+        safe_strcat(path, c+1, 512);
 
     /* content-type */
     else if ((c = (char *)mime2ext(html->type)))
     {
-        strcat(path, phold);
-        strcat(path, c);
+        safe_strcat(path, phold, 512);
+        safe_strcat(path, c, 512);
     }
 }
 
@@ -34,20 +46,21 @@ void addformat(struct block *html, char *url, char *path)
 
     /* content-disposition */
     if (html->data && (p = strrchr(html->data, '.')))
-        strcat(path, p);
+        safe_strcat(path, p, 512);
 
     /* find in url */
     else if (c && (c = strchr(c, '.')))
-        strcat(path, c);
+        safe_strcat(path, c, 512);
 
     /* content-type */
     else if ((c = (char *)mime2ext(html->type)))
-        strcat(path, c);
+        safe_strcat(path, c, 512);
 }
 
 void downloadPath(struct block *html, char *url, char *path)
 {
     char *c = strrchr(path, '/');
+    if(!c) return;
 
     if(c[1] == '\0')
         addname(html, url, path, "filename");
@@ -58,12 +71,17 @@ void downloadPath(struct block *html, char *url, char *path)
 void correctPath(char *path, char *arg, int which)
 {
     char *c = strrchr(path, '/');
+    if(!c) return;
     struct block html;
     char phold[20];
 
     html.data = NULL;
-    if(arg)
-        strcpy(html.type, arg);
+    if(arg) {
+        strncpy(html.type, arg, sizeof(html.type)-1);
+        html.type[sizeof(html.type)-1] = '\0';
+    } else {
+        html.type[0] = '\0';
+    }
 
     switch(which)
     {

@@ -268,11 +268,34 @@ void Draw_VIDEO()
 	VIDEO_Flush();
 }
 
+static bool g_forceProgressive = false;
+static bool g_deflicker = true;
+
+void Video_SetProgressive(bool enable) { g_forceProgressive = enable; }
+bool Video_GetProgressive(void) { return g_forceProgressive; }
+void Video_SetDeflicker(bool enable) { g_deflicker = enable; }
+bool Video_GetDeflicker(void) { return g_deflicker; }
+
+static GXRModeObj* ChooseVideoMode(void) {
+	GXRModeObj* mode = VIDEO_GetPreferredMode(NULL);
+	if(!mode) return mode;
+	// If user requested progressive and TV supports it, patch viTVMode
+	if(g_forceProgressive) {
+	    // Prefer progressive variant if available (NTSC 480p)
+	    if(mode == &TVNtsc480IntDf) mode = &TVNtsc480Prog;
+	    else if(mode == &TVEurgb60Hz480IntDf) mode = &TVEurgb60Hz480Prog;
+	    else if(mode == &TVPal576IntDfScale) mode = &TVPal576ProgScale;
+	    // Force progressive bit if underlying mode supports it
+	    // vmode->viTVMode already has VI_PROGRESSIVE flag in prog variants
+	}
+	return mode;
+}
+
 void
 InitVideo ()
 {
 	VIDEO_Init();
-	vmode = VIDEO_GetPreferredMode(NULL); // get default video mode
+	vmode = ChooseVideoMode();
 
 	bool pal = false;
 
@@ -311,9 +334,19 @@ InitVideo ()
 void
 InitVideo2 ()
 {
+	if(!vmode)
+	{
+	    printf("InitVideo2: vmode is NULL\n");
+	    return;
+	}
 	// Allocate framebuffers
 	xfb[0] = (u32 *) SYS_AllocateFramebuffer (vmode);
 	xfb[1] = (u32 *) SYS_AllocateFramebuffer (vmode);
+	if(!xfb[0] || !xfb[1])
+	{
+	    printf("InitVideo2: SYS_AllocateFramebuffer failed (%p, %p)\n", xfb[0], xfb[1]);
+	    return;
+	}
 	DCInvalidateRange(xfb[0], VIDEO_GetFrameBufferSize(vmode));
 	DCInvalidateRange(xfb[1], VIDEO_GetFrameBufferSize(vmode));
 	xfb[0] = (u32 *) MEM_K0_TO_K1 (xfb[0]);
@@ -336,7 +369,14 @@ InitVideo2 ()
 	// Initialize GX
 	GXColor background = { 0, 0, 0, 0xff };
 	gp_fifo=(unsigned char *)memalign(32,DEFAULT_FIFO_SIZE);
+	if(!gp_fifo)
+	{
+	    printf("InitVideo2: gp_fifo memalign failed (%d bytes)\n", DEFAULT_FIFO_SIZE);
+	    // Do not call GX_Init with NULL; leave GX uninitialized and return early
+	    return;
+	}
 	memset (gp_fifo, 0, DEFAULT_FIFO_SIZE);
+	DCFlushRange(gp_fifo, DEFAULT_FIFO_SIZE);
 	GX_Init (gp_fifo, DEFAULT_FIFO_SIZE);
 	GX_SetCopyClear (background, 0x00ffffff);
 	GX_SetDispCopyGamma (GX_GM_1_0);
@@ -349,13 +389,18 @@ InitVideo2 ()
 	GX_SetScissor(0,0,vmode->fbWidth,vmode->efbHeight);
 	GX_SetDispCopySrc(0,0,vmode->fbWidth,vmode->efbHeight);
 	GX_SetDispCopyDst(vmode->fbWidth,xfbHeight);
-	GX_SetCopyFilter(vmode->aa,vmode->sample_pattern,GX_TRUE,vmode->vfilter);
+	GX_SetCopyFilter(vmode->aa,vmode->sample_pattern,g_deflicker ? GX_TRUE : GX_FALSE,vmode->vfilter);
 	GX_SetFieldMode(vmode->field_rendering,((vmode->viHeight==2*vmode->xfbHeight)?GX_ENABLE:GX_DISABLE));
 
 	GX_SetDrawDoneCallback(Draw_VIDEO);
 	GX_Flush();
 
 	videoScreenshot = (u8 *)memalign(32, vmode->fbWidth * vmode->efbHeight * 4);
+	if(!videoScreenshot)
+	{
+	    printf("InitVideo2: videoScreenshot memalign failed (%d bytes)\n", vmode->fbWidth * vmode->efbHeight * 4);
+	    // Non-fatal: screenshot feature will be disabled, but GX remains valid
+	}
 }
 
 }

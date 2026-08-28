@@ -3,6 +3,7 @@
 #include "html.h"
 #include "html_helpers.h"
 #include "config.h"
+#include "httplib.h"
 
 #define minwidth MIN(width, screenwidth-80)
 #define LEN 15

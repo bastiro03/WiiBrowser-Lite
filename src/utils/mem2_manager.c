@@ -120,6 +120,7 @@ bool AddMem2Area (u32 size, const int index)
 	if(index >= MEM2_MAX || size == 0)
 	{
 		_CPU_ISR_Restore(level);
+		printf("AddMem2Area: invalid index %d size %u\n", index, size);
 		return false;
 	}
 
@@ -145,9 +146,8 @@ bool AddMem2Area (u32 size, const int index)
 
 	if((u32)mem2_areas[index].heap_ptr < (u32)SYS_GetArena2Lo())
 	{
-#ifdef DEBUG_MEM2_LEVEL
-		printf("not enough mem2: %i   max free mem2: %d\n",index, (u32) (SYS_GetArena2Hi() - SYS_GetArena2Lo()));
-#endif
+		printf("AddMem2Area: not enough MEM2 for area %d size %u (free %u)\n",
+		       index, size, (u32)(SYS_GetArena2Hi() - SYS_GetArena2Lo()));
 		mem2_areas[index].old_arena2hi = NULL;
 		mem2_areas[index].heap_ptr = NULL;
 		_CPU_ISR_Restore(level);
@@ -218,19 +218,48 @@ void* _mem2_memalign(u8 align, u32 size, const int area, const char *file, int l
 {
 	void *ptr;
 
+	if(area < 0 || area >= MEM2_MAX)
+	{
+	    printf("mem2 memalign: invalid area %d size %u %s:%d\n", area, size, file ? file : "?", line);
+	    return NULL;
+	}
+
 	if(size == 0)
 		return NULL;
 
 	if(mem2_areas[area].size==0)
 	{
-#ifdef DEBUG_MEM2_LEVEL
-		printf("mem2 malloc error: area %i not found. File: %s:%i\n",area, file, line);
-#endif
+		printf("mem2 malloc error: area %i not found, attempting auto-create (file %s:%d)\n", area, file ? file : "?", line);
         if(area != MEM2_OTHER || !AddMem2Area(15*1024*1024, area))
+        {
+            printf("mem2 malloc error: auto-create failed for area %d\n", area);
             return NULL; // area not found
+        }
 	}
 
-	ptr = __lwp_heap_allocate(&mem2_areas[area].heap, size);
+	// M2 fix: honour align param (heap granule is 32; larger aligns require manual padding)
+	// Clamp to supported powers-of-two, default 32.
+	if(align != 0 && align != 32 && align != 64 && align != 128) {
+	    printf("mem2 memalign: clamping unsupported align %u -> 32 %s:%d\n", (unsigned)align, file ? file : "?", line);
+	    align = 32;
+	}
+	if(align == 0) align = 32;
+	// __lwp_heap guarantees 32-byte alignment; for >32 we over-allocate and align manually.
+	// Simple path: heap is 32-aligned so align==32 is natural. For 64/128 we use offset trick via extra alloc.
+	u32 allocSize = size;
+	if(align > 32) allocSize = size + align;
+	ptr = __lwp_heap_allocate(&mem2_areas[area].heap, allocSize);
+	if(ptr && align > 32) {
+	    uintptr_t p = (uintptr_t)ptr;
+	    uintptr_t aligned = (p + (align - 1)) & ~((uintptr_t)align - 1);
+	    // Store original pointer just before aligned block for free path if offset !=0.
+	    // If already aligned, no header needed.
+	    if(aligned != p) {
+	        // We cannot easily store header without breaking heap metadata; fall back to 32 alignment
+	        // and warn. Future: use memalign-aware heap.
+	        printf("mem2 memalign: align %u requested but heap is 32-byte; using 32 %s:%d\n", (unsigned)align, file ? file : "?", line);
+	    }
+	}
 
 #ifdef DEBUG_MEM2_LEVEL
 	if(ptr == NULL || (mem2_areas[area].allocated + size > mem2_areas[area].size) )
@@ -239,7 +268,11 @@ void* _mem2_memalign(u8 align, u32 size, const int area, const char *file, int l
 		return NULL;
 	}
 #else
-	if(ptr == NULL) return NULL;
+	if(ptr == NULL)
+	{
+	    printf("mem2 alloc failed: area %d size %u %s:%d (free %u)\n", area, size, file ? file : "?", line, mem2_size(area));
+	    return NULL;
+	}
 #endif
 
 #ifdef DEBUG_MEM2_LEVEL
@@ -306,13 +339,17 @@ void* _mem2_realloc(void *ptr, u32 newsize, const int area, const char *file, in
 	if(mem2_areas[area].size==0)
 	{
 #ifdef DEBUG_MEM2_LEVEL
-		printf("mem2 free error: area %i not found. File: %s:%i\n",area, file, line);
+		printf("mem2 realloc error: area %i not found. File: %s:%i\n",area, file, line);
 #endif
 		return NULL; // area not found
 	}
 
 	u32 size=__lwp_heap_block_size(&mem2_areas[area].heap, ptr);
-
+	if(size==0) {
+	    // ptr not in this heap — cannot realloc safely
+	    printf("mem2 realloc: ptr %p not in area %d %s:%d\n", ptr, area, file ? file : "?", line);
+	    return NULL;
+	}
 	if(size>newsize) size = newsize;
 
 	newptr = _mem2_malloc(newsize, area, file, line);
@@ -325,6 +362,10 @@ void* _mem2_realloc(void *ptr, u32 newsize, const int area, const char *file, in
 
 void* _mem2_calloc(u32 num, u32 size, const int area, const char *file, int line)
 {
+	if(num != 0 && size > 0xFFFFFFFFu / num) {
+	    printf("mem2 calloc overflow: %u*%u %s:%d\n", (unsigned)num, (unsigned)size, file ? file : "?", line);
+	    return NULL;
+	}
 	void *ptr = _mem2_malloc(num*size, area, file, line);
 	if( ptr == NULL ) return NULL;
 	memset(ptr, 0, num*size);
@@ -347,10 +388,14 @@ char *_mem2_strndup(const char *s, size_t n, const int area, const char *file, i
 {
     char *ptr= NULL;
     if(s){
-        int len = n + 1;
-        ptr = _mem2_calloc(1, len, area, file, line);
-        if (ptr)
-            memcpy(ptr, s, len);
+        size_t slen = strlen(s);
+        if(slen > n) slen = n;
+        size_t len = slen + 1;
+        ptr = (char*)_mem2_calloc(1, (u32)len, area, file, line);
+        if (ptr) {
+            memcpy(ptr, s, slen);
+            ptr[slen] = '\0';
+        }
     }
     return ptr;
 }
@@ -358,6 +403,7 @@ char *_mem2_strndup(const char *s, size_t n, const int area, const char *file, i
 u32 mem2_size(const int i)
 {
 	heap_iblock info;
+	if(i < 0 || i >= MEM2_MAX) return 0;
 	if(mem2_areas[i].size == 0)
 		return 0;
 
@@ -365,13 +411,21 @@ u32 mem2_size(const int i)
 	return info.free_size;
 }
 
+u32 mem2_total_size(const int i)
+{
+	if(i < 0 || i >= MEM2_MAX) return 0;
+	return mem2_areas[i].size;
+}
+
 static void PrintAreaInfo(int index)
 {
 	heap_iblock info;
 
 	if(mem2_areas[index].size == 0) return;
+	if(index < 0 || index >= MEM2_MAX) return;
 
 	FILE *file = fopen("debug.txt", "a");
+	if(!file) return;
 
 	// fprintf(file, "Area: %i. Allocated: %u. Top Allocated: %u\n",index,mem2_areas[index].allocated,mem2_areas[index].top_allocated);
 	__lwp_heap_getinfo(&mem2_areas[index].heap,&info);

@@ -250,6 +250,10 @@ char* wideCharToChar(const wchar_t* p, int len);
 
 void InitFreeType();
 void ClearFontData();
+// Non-blocking font error state (set when FT init or face creation fails; allows UI to show banner via fallback)
+extern bool g_fontLoadFailed;
+extern "C" bool IsFontLoadFailed();
+extern "C" const char* GetFontErrorMsg();
 
 /*! \class FreeTypeGX
  * \brief Wrapper class for the libFreeType library with GX rendering.
@@ -268,6 +272,7 @@ class FreeTypeGX {
         FT_GlyphSlot ftSlot;    /**< FreeType reusable FT_GlyphSlot glyph container object. */
 		FT_UInt ftPointSize;	/**< Requested size of the rendered font. */
 		bool ftKerningEnabled;	/**< Flag indicating the availability of font kerning data. */
+		bool ftValid;           /**< True if FT_Face was successfully created. */
 		uint8_t vertexIndex;	/**< Vertex format descriptor index. */
 		uint32_t compatibilityMode;	/**< Compatibility mode for default tev operations and vertex descriptors. */
 		std::map<wchar_t, ftgxCharData> fontData; /**< Map which holds the glyph data structures for the corresponding characters. */
@@ -292,13 +297,18 @@ class FreeTypeGX {
 
 		//!Operator overload: new, delete, new[] and delete[]
 		void *operator new(size_t size);
+		void *operator new(size_t size, const std::nothrow_t&) noexcept;
 		void operator delete(void *p);
+		void operator delete(void *p, const std::nothrow_t&) noexcept;
 		void *operator new[](size_t size);
+		void *operator new[](size_t size, const std::nothrow_t&) noexcept;
 		void operator delete[](void *p);
+		void operator delete[](void *p, const std::nothrow_t&) noexcept;
 
         void ChangeFontSize(FT_UInt pixelSize);
 		void setVertexFormat(uint8_t vertexIndex);
 		void setCompatibilityMode(uint32_t compatibilityMode);
+		bool isValid() const { return ftValid && ftFace; }
 
 		uint16_t drawText(int16_t x, int16_t y, const wchar_t *text, GXColor color = ftgxWhite, uint16_t textStyling = FTGX_NULL, uint16_t textWidth = 0, uint16_t widthLimit = 0);
 		uint16_t drawLongText(int16_t x, int16_t y, const wchar_t *text, GXColor color, uint16_t textStyle, uint16_t lineDistance, uint16_t maxLines, uint16_t startWidth, uint16_t maxWidth);

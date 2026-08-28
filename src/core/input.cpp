@@ -31,7 +31,43 @@
 
 int rumbleRequest[4] = {0,0,0,0};
 GuiTrigger userInput[4];
+InputState g_inputState[4] = {};
 static int rumbleCount[4] = {0,0,0,0};
+
+bool Input_IsHeld(int chan, InputButton btn) {
+    if(chan < 0 || chan >=4) return false;
+    return (g_inputState[chan].held & (1u << btn)) != 0;
+}
+bool Input_IsDown(int chan, InputButton btn) {
+    if(chan < 0 || chan >=4) return false;
+    return (g_inputState[chan].down & (1u << btn)) != 0;
+}
+
+static u16 mapButtonsToInput(u32 wpadHeld, u32 wpadDown, u32 padHeld, u32 padDown) {
+    u16 held=0, down=0;
+    if((wpadHeld & WPAD_BUTTON_A) || (wpadHeld & WPAD_CLASSIC_BUTTON_A) || (padHeld & PAD_BUTTON_A)) held |= 1u<<INPUT_BTN_A;
+    if((wpadDown & WPAD_BUTTON_A) || (wpadDown & WPAD_CLASSIC_BUTTON_A) || (padDown & PAD_BUTTON_A)) down |= 1u<<INPUT_BTN_A;
+    if((wpadHeld & WPAD_BUTTON_B) || (wpadHeld & WPAD_CLASSIC_BUTTON_B) || (padHeld & PAD_BUTTON_B)) held |= 1u<<INPUT_BTN_B;
+    if((wpadDown & WPAD_BUTTON_B) || (wpadDown & WPAD_CLASSIC_BUTTON_B) || (padDown & PAD_BUTTON_B)) down |= 1u<<INPUT_BTN_B;
+    if((wpadHeld & WPAD_BUTTON_PLUS) || (wpadHeld & WPAD_CLASSIC_BUTTON_PLUS)) held |= 1u<<INPUT_BTN_PLUS;
+    if((wpadDown & WPAD_BUTTON_PLUS) || (wpadDown & WPAD_CLASSIC_BUTTON_PLUS)) down |= 1u<<INPUT_BTN_PLUS;
+    if((wpadHeld & WPAD_BUTTON_MINUS) || (wpadHeld & WPAD_CLASSIC_BUTTON_MINUS)) held |= 1u<<INPUT_BTN_MINUS;
+    if((wpadDown & WPAD_BUTTON_MINUS) || (wpadDown & WPAD_CLASSIC_BUTTON_MINUS)) down |= 1u<<INPUT_BTN_MINUS;
+    if((wpadHeld & WPAD_BUTTON_HOME) || (wpadHeld & WPAD_CLASSIC_BUTTON_HOME) || (padHeld & PAD_BUTTON_MENU)) held |= 1u<<INPUT_BTN_HOME;
+    if((wpadDown & WPAD_BUTTON_HOME) || (wpadDown & WPAD_CLASSIC_BUTTON_HOME) || (padDown & PAD_BUTTON_MENU)) down |= 1u<<INPUT_BTN_HOME;
+    // D-pad mapping (WPAD + Classic + PAD)
+    if((wpadHeld & WPAD_BUTTON_UP) || (wpadHeld & WPAD_CLASSIC_BUTTON_UP) || (padHeld & PAD_BUTTON_UP)) held |= 1u<<INPUT_BTN_UP;
+    if((wpadDown & WPAD_BUTTON_UP) || (wpadDown & WPAD_CLASSIC_BUTTON_UP) || (padDown & PAD_BUTTON_UP)) down |= 1u<<INPUT_BTN_UP;
+    if((wpadHeld & WPAD_BUTTON_DOWN) || (wpadHeld & WPAD_CLASSIC_BUTTON_DOWN) || (padHeld & PAD_BUTTON_DOWN)) held |= 1u<<INPUT_BTN_DOWN;
+    if((wpadDown & WPAD_BUTTON_DOWN) || (wpadDown & WPAD_CLASSIC_BUTTON_DOWN) || (padDown & PAD_BUTTON_DOWN)) down |= 1u<<INPUT_BTN_DOWN;
+    if((wpadHeld & WPAD_BUTTON_LEFT) || (wpadHeld & WPAD_CLASSIC_BUTTON_LEFT) || (padHeld & PAD_BUTTON_LEFT)) held |= 1u<<INPUT_BTN_LEFT;
+    if((wpadDown & WPAD_BUTTON_LEFT) || (wpadDown & WPAD_CLASSIC_BUTTON_LEFT) || (padDown & PAD_BUTTON_LEFT)) down |= 1u<<INPUT_BTN_LEFT;
+    if((wpadHeld & WPAD_BUTTON_RIGHT) || (wpadHeld & WPAD_CLASSIC_BUTTON_RIGHT) || (padHeld & PAD_BUTTON_RIGHT)) held |= 1u<<INPUT_BTN_RIGHT;
+    if((wpadDown & WPAD_BUTTON_RIGHT) || (wpadDown & WPAD_CLASSIC_BUTTON_RIGHT) || (padDown & PAD_BUTTON_RIGHT)) down |= 1u<<INPUT_BTN_RIGHT;
+    // Merge into state's held/down for caller (we return held part; caller handles down separately)
+    (void)down;
+    return held;
+}
 
 static int osdLevel = 0;
 static int volprev = 0, volnow = 0;
@@ -64,7 +100,39 @@ void UpdatePads()
 		userInput[i].pad.substickY = PAD_SubStickY(i);
 		userInput[i].pad.triggerL = PAD_TriggerL(i);
 		userInput[i].pad.triggerR = PAD_TriggerR(i);
+
+		// M4: populate unified InputState (includes WPAD Classic + GC + future Wii U Pro via libwiidrc)
+		u32 wpadHeld=0, wpadDown=0;
+		if(userInput[i].wpad) {
+		    wpadHeld = userInput[i].wpad->btns_h;
+		    wpadDown = userInput[i].wpad->btns_d;
+		    // Classic extension buttons are in expansion: WPAD_Exp* classic->btns_h etc handled via WPAD Buttons already (libogc merges)
+		}
+		u32 padHeld = PAD_ButtonsHeld(i);
+		u32 padDown = PAD_ButtonsDown(i);
+		// Stick threshold -> D-pad emulation
+		if(PAD_StickX(i) < -PADCAL) padHeld |= PAD_BUTTON_LEFT;
+		if(PAD_StickX(i) > PADCAL)  padHeld |= PAD_BUTTON_RIGHT;
+		if(PAD_StickY(i) < -PADCAL) padHeld |= PAD_BUTTON_DOWN;
+		if(PAD_StickY(i) > PADCAL)  padHeld |= PAD_BUTTON_UP;
+		g_inputState[i].held = mapButtonsToInput(wpadHeld, wpadDown, padHeld, padDown);
+		// Down mask stored separately for Input_IsDown queries
+		{
+		    u16 downMask=0;
+		    if((wpadDown & WPAD_BUTTON_A) || (wpadDown & WPAD_CLASSIC_BUTTON_A) || (padDown & PAD_BUTTON_A)) downMask |= 1u<<INPUT_BTN_A;
+		    if((wpadDown & WPAD_BUTTON_B) || (wpadDown & WPAD_CLASSIC_BUTTON_B) || (padDown & PAD_BUTTON_B)) downMask |= 1u<<INPUT_BTN_B;
+		    g_inputState[i].down = downMask;
+		    g_inputState[i].up = 0; // TODO: PAD_ButtonsUp mapping
+		}
+		g_inputState[i].stickX = PAD_StickX(i);
+		g_inputState[i].stickY = PAD_StickY(i);
+		// If Wii U Pro via libwiidrc is present, it appears as classic; future: if WUPC detected, merge here
 	}
+
+	// M4: handle Wii U Pro Controller via optional libwiidrc (if linked)
+	// Probe slot 4-7 for WUPC — handled gracefully if lib not present (weak symbol)
+	extern void WUPC_Update(void) __attribute__((weak));
+	if(WUPC_Update) WUPC_Update();
 }
 
 /****************************************************************************

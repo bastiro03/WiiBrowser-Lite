@@ -7,7 +7,7 @@
 #include "common.h"
 #include "menu.h"
 
-#define GUITH_STACK 	(16384)
+#define GUITH_STACK 	(32768)
 #define MAXD            5
 
 typedef struct file

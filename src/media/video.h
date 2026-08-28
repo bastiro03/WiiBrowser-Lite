@@ -26,6 +26,10 @@ extern "C" {
 void InitVideo();
 void InitVideo2();
 void StopGX();
+void Video_SetProgressive(bool enable);
+bool Video_GetProgressive(void);
+void Video_SetDeflicker(bool enable);
+bool Video_GetDeflicker(void);
 void ResetVideo_Menu();
 void Menu_Render();
 void Menu_DrawImg(f32 xpos, f32 ypos, u16 width, u16 height, u8 data[], f32 degrees, f32 scaleX, f32 scaleY, u8 alphaF, u8 format);

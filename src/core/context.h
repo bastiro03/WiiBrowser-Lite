@@ -10,12 +10,16 @@ struct _mxml_node_s;
 typedef struct _mxml_node_s mxml_node_t;
 class GuiToolbar;
 class GuiWindow;
-struct _gxrmodeobj;
-typedef struct _gxrmodeobj GXRModeObj;
-struct _CURL;
-typedef struct _CURL CURL;
-struct _CURLM;
-typedef struct _CURLM CURLM;
+// GXRModeObj is defined in libogc as struct _gx_rmodeobj; forward-declare compatibly
+struct _gx_rmodeobj;
+typedef struct _gx_rmodeobj GXRModeObj;
+// CURL types are typedef void in curl/curl.h; avoid conflicting struct forward declares
+#ifndef CURL
+typedef void CURL;
+#endif
+#ifndef CURLM
+typedef void CURLM;
+#endif
 
 /**
  * AppContext — single source of truth for global state (Sprint 3.1).

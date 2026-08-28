@@ -27,8 +27,10 @@ ${BASE}:
     .incbin "${IN}"
     .global ${BASE}_end
 ${BASE}_end:
+    .align 2
     .global ${BASE}_size
-    .set ${BASE}_size, ${BASE}_end - ${BASE}
+${BASE}_size:
+    .long ${BASE}_end - ${BASE}
 EOF
 
 "${CC:-powerpc-eabi-gcc}" -x assembler-with-cpp -c "$TMP" -o "$OUT"

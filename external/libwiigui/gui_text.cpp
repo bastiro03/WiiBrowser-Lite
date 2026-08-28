@@ -58,11 +58,17 @@ GuiText::GuiText(const char * t, int s, GXColor c)
         if(currentSize > MAX_FONT_SIZE)
             currentSize = MAX_FONT_SIZE;
 
-        if(!fontSystem[currentSize])
+        FreeTypeGX *fs = fontSystem[currentSize];
+        if(!fs || !fs->isValid())
         {
-            fontSystem[currentSize] = new FreeTypeGX(currentSize);
+            if(fs) { delete fs; fontSystem[currentSize] = nullptr; }
+            fontSystem[currentSize] = new (std::nothrow) FreeTypeGX(currentSize);
+            fs = fontSystem[currentSize];
         }
-		textWidth = fontSystem[currentSize]->getWidth(text);
+        if(fs && fs->isValid() && text)
+            textWidth = fs->getWidth(text);
+        else
+            textWidth = 0;
 	}
 
 	for(int i=0; i < MAX_LINES; i++)
@@ -106,11 +112,17 @@ GuiText::GuiText(const wchar_t * t, int s, GXColor c)
         if(currentSize > MAX_FONT_SIZE)
             currentSize = MAX_FONT_SIZE;
 
-        if(!fontSystem[currentSize])
+        FreeTypeGX *fs = fontSystem[currentSize];
+        if(!fs || !fs->isValid())
         {
-            fontSystem[currentSize] = new FreeTypeGX(currentSize);
+            if(fs) { delete fs; fontSystem[currentSize] = nullptr; }
+            fontSystem[currentSize] = new (std::nothrow) FreeTypeGX(currentSize);
+            fs = fontSystem[currentSize];
         }
-		textWidth = fontSystem[currentSize]->getWidth(text);
+        if(fs && fs->isValid() && text)
+            textWidth = fs->getWidth(text);
+        else
+            textWidth = 0;
 	}
 
     for(int i=0; i < MAX_LINES; i++)
@@ -156,11 +168,17 @@ GuiText::GuiText(const char * t)
         if(currentSize > MAX_FONT_SIZE)
             currentSize = MAX_FONT_SIZE;
 
-        if(!fontSystem[currentSize])
+        FreeTypeGX *fs = fontSystem[currentSize];
+        if(!fs || !fs->isValid())
         {
-            fontSystem[currentSize] = new FreeTypeGX(currentSize);
+            if(fs) { delete fs; fontSystem[currentSize] = nullptr; }
+            fontSystem[currentSize] = new (std::nothrow) FreeTypeGX(currentSize);
+            fs = fontSystem[currentSize];
         }
-		textWidth = fontSystem[currentSize]->getWidth(text);
+        if(fs && fs->isValid() && text)
+            textWidth = fs->getWidth(text);
+        else
+            textWidth = 0;
 	}
 
 	for(int i=0; i < MAX_LINES; i++)
@@ -219,10 +237,17 @@ void GuiText::SetText(const char * t)
 		if(!text)
 		    return;
 
-		if(!fontSystem[currentSize])
-            fontSystem[currentSize] = new FreeTypeGX(currentSize);
-
-		textWidth = fontSystem[currentSize]->getWidth(text);
+		FreeTypeGX *fs = fontSystem[currentSize];
+		if(!fs || !fs->isValid())
+		{
+		    if(fs) { delete fs; fontSystem[currentSize] = nullptr; }
+		    fontSystem[currentSize] = new (std::nothrow) FreeTypeGX(currentSize);
+		    fs = fontSystem[currentSize];
+		}
+		if(fs && fs->isValid() && text)
+		    textWidth = fs->getWidth(text);
+		else
+		    textWidth = 0;
 	}
 }
 
@@ -244,10 +269,17 @@ void GuiText::SetWText(wchar_t * t)
 	{
 		text = wcsdup(t);
 
-		if(!fontSystem[currentSize])
-            fontSystem[currentSize] = new FreeTypeGX(currentSize);
-
-		textWidth = fontSystem[currentSize]->getWidth(text);
+		FreeTypeGX *fs = fontSystem[currentSize];
+		if(!fs || !fs->isValid())
+		{
+		    if(fs) { delete fs; fontSystem[currentSize] = nullptr; }
+		    fontSystem[currentSize] = new (std::nothrow) FreeTypeGX(currentSize);
+		    fs = fontSystem[currentSize];
+		}
+		if(fs && fs->isValid() && text)
+		    textWidth = fs->getWidth(text);
+		else
+		    textWidth = 0;
 	}
 }
 
@@ -300,8 +332,10 @@ int GuiText::GetTextWidth()
 {
 	if(!text)
 		return 0;
-
-	return (font ? font : fontSystem[currentSize])->getWidth(text);
+	FreeTypeGX *f = font ? font : fontSystem[currentSize];
+	if(!f || !f->isValid())
+		return 0;
+	return f->getWidth(text);
 }
 
 void GuiText::SetWrap(bool w, int width)
@@ -382,8 +416,17 @@ bool GuiText::SetFont(const u8 *fontbuffer, const u32 filesize)
         delete font;
         font = NULL;
     }
-	font = new FreeTypeGX(currentSize, fontbuffer, filesize);
-	textWidth = font->getWidth(text);
+	FreeTypeGX *nf = new (std::nothrow) FreeTypeGX(currentSize, fontbuffer, filesize);
+	if(!nf || !nf->isValid())
+	{
+	    delete nf;
+	    return false;
+	}
+	font = nf;
+	if(text)
+	    textWidth = font->getWidth(text);
+	else
+	    textWidth = 0;
 
 	return true;
 }
@@ -475,27 +518,46 @@ void GuiText::Draw()
 	if(newSize > MAX_FONT_SIZE)
 		newSize = MAX_FONT_SIZE;
 
-    if(!fontSystem[newSize])
+    FreeTypeGX *curFS = fontSystem[newSize];
+    if(!curFS || !curFS->isValid())
     {
-        fontSystem[newSize] = new FreeTypeGX(newSize);
-        if(text)
-            textWidth = (font ? font : fontSystem[newSize])->getWidth(text);
+        if(curFS) { delete curFS; fontSystem[newSize] = nullptr; }
+        fontSystem[newSize] = new (std::nothrow) FreeTypeGX(newSize);
+        curFS = fontSystem[newSize];
+        if(curFS && curFS->isValid() && text)
+            textWidth = (font && font->isValid() ? font : curFS)->getWidth(text);
+        else if(text)
+            textWidth = 0;
+    }
+    else if(!fontSystem[newSize]->isValid())
+    {
+        textWidth = 0;
     }
 
 	if(newSize != currentSize)
 	{
-	    if(font)
+	    if(font && font->isValid())
 	    {
 	        font->ChangeFontSize(newSize);
 	    }
         if(text)
-            textWidth = (font ? font : fontSystem[newSize])->getWidth(text);
+        {
+            FreeTypeGX *f = (font && font->isValid()) ? font : fontSystem[newSize];
+            if(f && f->isValid())
+                textWidth = f->getWidth(text);
+            else
+                textWidth = 0;
+        }
 		currentSize = newSize;
 	}
 
 	if(maxWidth == 0)
 	{
-        (font ? font : fontSystem[currentSize])->drawText(this->GetLeft(), this->GetTop(), text, c, style, textWidth);
+	    FreeTypeGX *useFont = (font && font->isValid()) ? font : fontSystem[currentSize];
+	    if(useFont && useFont->isValid())
+	    {
+	        useFont->drawText(this->GetLeft(), this->GetTop(), text, c, style, textWidth);
+	    }
 		this->UpdateEffects();
 		return;
 	}
@@ -521,7 +583,10 @@ void GuiText::Draw()
 				textDyn[linenum][n+1] = 0;
 
 				// currentWidth += (font ? font : fontSystem[currentSize])->getCharWidth(text[ch]);
-				currentWidth = (font ? font : fontSystem[currentSize])->getWidth(textDyn[linenum]);
+				{
+				    FreeTypeGX *useFont = (font && font->isValid()) ? font : fontSystem[currentSize];
+				    currentWidth = (useFont && useFont->isValid()) ? useFont->getWidth(textDyn[linenum]) : 0;
+				}
 
                 if(currentWidth > ((linenum == 0 || (style & FTGX_JUSTIFY_MASK) != FTGX_JUSTIFY_LEFT) ? maxWidth : screenwidth-80))
                 {
@@ -561,9 +626,11 @@ void GuiText::Draw()
 		int top  = this->GetTop() + voffset;
 
 		for(int i=0; i < textDynNum; ++i) {
+		    FreeTypeGX *useFont = (font && font->isValid()) ? font : fontSystem[currentSize];
+		    if(!useFont || !useFont->isValid()) continue;
 		    if (i == 0)
-                (font ? font : fontSystem[currentSize])->drawText(left, top+i*lineheight, textDyn[i], c, style);
-			else (font ? font : fontSystem[currentSize])->drawText(leftPoint, top+i*lineheight, textDyn[i], c, style);
+                useFont->drawText(left, top+i*lineheight, textDyn[i], c, style);
+			else useFont->drawText(leftPoint, top+i*lineheight, textDyn[i], c, style);
 		}
 	}
 	else
@@ -573,9 +640,12 @@ void GuiText::Draw()
             textDynNum = 1;
             textDyn[0] = wcsdup(text);
             int len = wcslen(textDyn[0]);
-
-            while((font ? font : fontSystem[currentSize])->getWidth(textDyn[0]) > maxWidth)
-                textDyn[0][--len] = 0;
+            FreeTypeGX *useFont = (font && font->isValid()) ? font : fontSystem[currentSize];
+            if(useFont && useFont->isValid())
+            {
+                while(useFont->getWidth(textDyn[0]) > maxWidth && len > 0)
+                    textDyn[0][--len] = 0;
+            }
 		}
 
 		if(textScroll == SCROLL_DOTTED)
@@ -588,7 +658,8 @@ void GuiText::Draw()
 
 		if(textScroll == SCROLL_HORIZONTAL)
 		{
-			if((font ? font : fontSystem[currentSize])->getWidth(text) > maxWidth && (FrameTimer % textScrollDelay == 0))
+			FreeTypeGX *useFontH = (font && font->isValid()) ? font : fontSystem[currentSize];
+			if(useFontH && useFontH->isValid() && useFontH->getWidth(text) > maxWidth && (FrameTimer % textScrollDelay == 0))
 			{
 				if(textScrollInitialDelay)
 				{
@@ -614,28 +685,36 @@ void GuiText::Draw()
                         dynlen += 2;
                     }
 
-                    if((font ? font : fontSystem[currentSize])->getWidth(textDyn[0]) > maxWidth)
+                    FreeTypeGX *useFont2 = (font && font->isValid()) ? font : fontSystem[currentSize];
+                    if(useFont2 && useFont2->isValid())
                     {
-                        while((font ? font : fontSystem[currentSize])->getWidth(textDyn[0]) > maxWidth)
-                            textDyn[0][--dynlen] = 0;
-                    }
-                    else
-                    {
-                        int i = 0;
-                        while((font ? font : fontSystem[currentSize])->getWidth(textDyn[0]) < maxWidth && dynlen+1 < textlen)
+                        if(useFont2->getWidth(textDyn[0]) > maxWidth)
                         {
-                            textDyn[0][dynlen] = text[i++];
-                            textDyn[0][++dynlen] = 0;
+                            while(useFont2->getWidth(textDyn[0]) > maxWidth && dynlen > 0)
+                                textDyn[0][--dynlen] = 0;
                         }
+                        else
+                        {
+                            int i = 0;
+                            while(useFont2->getWidth(textDyn[0]) < maxWidth && dynlen+1 < textlen)
+                            {
+                                textDyn[0][dynlen] = text[i++];
+                                textDyn[0][++dynlen] = 0;
+                            }
 
-                        if((font ? font : fontSystem[currentSize])->getWidth(textDyn[0]) > maxWidth)
-                            textDyn[0][dynlen-2] = 0;
-                        else textDyn[0][dynlen-1] = 0;
+                            if(useFont2->getWidth(textDyn[0]) > maxWidth && dynlen >= 2)
+                                textDyn[0][dynlen-2] = 0;
+                            else if(dynlen >= 1) textDyn[0][dynlen-1] = 0;
+                        }
                     }
                 }
 			}
 		}
-		(font ? font : fontSystem[currentSize])->drawText(this->GetLeft(), this->GetTop(), textDyn[0], c, style);
+		{
+		    FreeTypeGX *useFont = (font && font->isValid()) ? font : fontSystem[currentSize];
+		    if(useFont && useFont->isValid())
+		        useFont->drawText(this->GetLeft(), this->GetTop(), textDyn[0], c, style);
+		}
 	}
 	this->UpdateEffects();
 }

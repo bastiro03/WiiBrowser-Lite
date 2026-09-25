@@ -11,6 +11,6 @@ bool CheckConnection();
 extern lwp_t networkthread;
 extern u8 networkstack[GUITH_STACK];
 
-extern bool networkinit;
+extern volatile bool networkinit;
 
 #endif

@@ -93,10 +93,10 @@ SzFile::~SzFile()
 
 bool SzFile::Is7ZipFile (const char *buffer)
 {
-	unsigned int *check;
-	check = (unsigned int *) buffer;
+	if(!buffer)
+		return false;
 
-	// 7z signature
+	// 7z signature (byte-wise; the old word-cast was dead code)
 	int i;
 	for(i = 0; i < 6; i++)
 		if(buffer[i] != k7zSignature[i])

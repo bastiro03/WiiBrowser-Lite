@@ -11,6 +11,8 @@
  ***************************************************************************/
 
 #include "gui.h"
+#include <stdint.h>
+#include <stddef.h>
 
 /**
  * Constructor for the GuiImage class.
@@ -63,7 +65,32 @@ GuiImage::GuiImage(u8 * img, int w, int h)
 
 GuiImage::GuiImage(int w, int h, GXColor c)
 {
-	image = (u8 *)memalign (32, w * h << 2);
+	if(w <= 0 || h <= 0 || (u32)w > 1024 || (u32)h > 1024)
+	{
+		image = NULL;
+		width = height = 0;
+		imageangle = 0;
+		tile = -1;
+		tileVertical = -1;
+		stripe = 0;
+		imgType = IMAGE_COLOR;
+		format = GX_TF_RGBA8;
+		return;
+	}
+	size_t pixels = (size_t)w * (size_t)h;
+	if(pixels > (SIZE_MAX >> 2))
+	{
+		image = NULL;
+		width = height = 0;
+		imageangle = 0;
+		tile = -1;
+		tileVertical = -1;
+		stripe = 0;
+		imgType = IMAGE_COLOR;
+		format = GX_TF_RGBA8;
+		return;
+	}
+	image = (u8 *)memalign (32, pixels << 2);
 	width = w;
 	height = h;
 	imageangle = 0;
@@ -190,6 +217,9 @@ void GuiImage::ColorStripe(int shift)
 	int thisHeight =  this->GetHeight();
 	int thisWidth =  this->GetWidth();
 
+	if(!image || thisWidth <= 0 || thisHeight <= 0)
+		return;
+
 	for(; y < thisHeight; ++y)
 	{
 		if(y % 3 == 0)
@@ -241,6 +271,13 @@ void GuiImage::ColorStripe(int shift)
 				SetPixel(x, y, color);
 			}
 		}
+	}
+
+	// CPU wrote texels directly: flush once so GX sees them.
+	{
+		size_t len = (size_t)thisWidth * (size_t)thisHeight << 2;
+		len = (len + 31) & ~(size_t)31;
+		DCFlushRange(image, (u32)len);
 	}
 }
 

@@ -34,11 +34,11 @@ typedef void CURLM;
  * Existing globals remain as aliases for incremental migration.
  */
 struct AppContext {
-    // Core settings & lifecycle
+    // Core settings & lifecycle (volatile: set in IRQ/power callbacks)
     SSettings* settings = nullptr;
-    int* exitRequested = nullptr;
-    int* exitAccepted = nullptr;
-    unsigned char* hwButton = nullptr;
+    volatile int* exitRequested = nullptr;
+    volatile int* exitAccepted = nullptr;
+    volatile unsigned char* hwButton = nullptr;
 
     // Navigation history
     History* history = nullptr;

@@ -284,14 +284,21 @@ namespace sigslot {
 	//!making mutex static because libogc only supports up to 64 mutex - Dimok
 	static mutex_t g_mutex = LWP_MUTEX_NULL;
 	static mutex_t m_mutex = LWP_MUTEX_NULL;
+	//!spinlock guarding lazy init of g_mutex/m_mutex (see below)
+	static volatile int sigslot_initLock = 0;
 
 	class multi_threaded_global
 	{
 	public:
 		multi_threaded_global()
 		{
+		    // Guard check-then-init against concurrent first use from two
+		    // threads (GCC spinlock; safe on single-core Broadway, no
+		    // libogc internals required).
+		    while(__sync_lock_test_and_set(&sigslot_initLock, 1)) { }
 		    if(g_mutex == LWP_MUTEX_NULL)
                 LWP_MutexInit(&g_mutex, NULL);
+		    __sync_lock_release(&sigslot_initLock);
 		}
 
 		multi_threaded_global(const multi_threaded_global&)
@@ -320,14 +327,18 @@ namespace sigslot {
 	public:
 		multi_threaded_local()
 		{
+		    while(__sync_lock_test_and_set(&sigslot_initLock, 1)) { }
 		    if(m_mutex == LWP_MUTEX_NULL)
                 LWP_MutexInit(&m_mutex, NULL);
+		    __sync_lock_release(&sigslot_initLock);
 		}
 
 		multi_threaded_local(const multi_threaded_local&)
 		{
+		    while(__sync_lock_test_and_set(&sigslot_initLock, 1)) { }
 		    if(m_mutex == LWP_MUTEX_NULL)
                 LWP_MutexInit(&m_mutex, NULL);
+		    __sync_lock_release(&sigslot_initLock);
 		}
 
 		virtual ~multi_threaded_local()

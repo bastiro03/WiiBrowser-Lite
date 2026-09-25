@@ -45,24 +45,14 @@ extern "C" void Crash_Dump(const char* reason, u32 srr0, u32 srr1, u32 lr) {
     show_crash_screen(reason, srr0);
 }
 
-// libogc exception callback signature
-static void exception_handler(u8 type, void* addr) {
-    // Extract SRR0/LR from context if available (addr points to frame)
-    u32 srr0 = (u32)(uintptr_t)addr;
-    Crash_Dump("DSI/ISI exception", srr0, type, 0);
-    // Wait 5s then reset
-    for(int i=0;i<500;i++) usleep(10000);
-    SYS_ResetSystem(SYS_RETURNTOMENU, 0, 0);
-}
-
+// libogc installs default DSI/ISI/ALI handlers at startup which dump
+// registers and honor __exception_setreload(). There is no public per-type
+// hook in the bundled libogc, so Crash_Init keeps the default handlers and
+// only arms the reload watchdog. Use Crash_Dump() for manual diagnostics.
 void Crash_Init(void) {
     if(crash_inited) return;
     crash_inited = true;
-    // Register handlers for DSI/ISI/ALI
-    // Use libogc's __exception_setreload as fallback for reload after dump
-    // Our handler will dump then delay
     // Note: SYS_SetResetCallback etc already set in main; keep them.
-    // We hook the low-level exception via exception callbacks if available.
-    // Fallback: at least set reload timeout 10s so we don't hang black.
+    // At least set reload timeout 10s so we don't hang black.
     __exception_setreload(10);
 }

@@ -4,9 +4,9 @@
 
 // Legacy globals — declared in their original TUs, referenced here
 extern SSettings Settings;
-extern int ExitRequested;
-extern int ExitAccepted;
-extern u8 HWButton;
+extern volatile int ExitRequested;
+extern volatile int ExitAccepted;
+extern volatile u8 HWButton;
 extern History history;
 extern char new_page[];
 // prev_page is static in menu.cpp — not extern, will be handled via accessor

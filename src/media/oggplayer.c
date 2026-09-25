@@ -263,12 +263,20 @@ typedef struct
 	int volume;
 	int seek_time;
 
-	/* OGG buffer control */
-	short pcmout[2][READ_SAMPLES + MAX_PCMOUT * 2]; /* take 4k out of the data segment, not the stack */
+	/* OGG buffer control.
+	 * ASND DMAs directly from these buffers, so they must be 32-byte
+	 * aligned and flushed (DCFlushRange) before every ASND_AddVoice /
+	 * ASND_SetVoice call. See ogg_flush_pcm() below. */
+	short pcmout[2][READ_SAMPLES + MAX_PCMOUT * 2] ATTRIBUTE_ALIGN(32); /* take 4k out of the data segment, not the stack */
 	int pcmout_pos;
 	int pcm_indx;
 
 } private_data_ogg;
+
+static inline void ogg_flush_pcm(const void *buf, u32 bytes) {
+	u32 len = (bytes + 31) & ~31u;
+	if(len) DCFlushRange((void *)buf, len);
+}
 
 static private_data_ogg private_ogg;
 
@@ -276,10 +284,10 @@ static private_data_ogg private_ogg;
 
 #define STACKSIZE		8192
 
-static u8 oggplayer_stack[STACKSIZE];
+static u8 oggplayer_stack[STACKSIZE] ATTRIBUTE_ALIGN(32);
 static lwpq_t oggplayer_queue = LWP_TQUEUE_NULL;
 static lwp_t h_oggplayer = LWP_THREAD_NULL;
-static int ogg_thread_running = 0;
+static volatile int ogg_thread_running = 0;
 
 static void ogg_add_callback(int voice)
 {
@@ -294,6 +302,8 @@ static void ogg_add_callback(int voice)
 
 	if (private_ogg.pcm_indx >= READ_SAMPLES)
 	{
+		ogg_flush_pcm(private_ogg.pcmout[private_ogg.pcmout_pos],
+				(u32)private_ogg.pcm_indx << 1);
 		if (ASND_AddVoice(0,
 				(void *) private_ogg.pcmout[private_ogg.pcmout_pos],
 				private_ogg.pcm_indx << 1) == 0)
@@ -400,6 +410,8 @@ static void * ogg_player_thread(private_data_ogg * priv)
 				first_time = 0;
 				if (priv[0].vi->channels == 2)
 				{
+					ogg_flush_pcm(priv[0].pcmout[priv[0].pcmout_pos],
+							(u32)priv[0].pcm_indx << 1);
 					ASND_SetVoice(0, VOICE_STEREO_16BIT, priv[0].vi->rate, 0,
 							(void *) priv[0].pcmout[priv[0].pcmout_pos],
 							priv[0].pcm_indx << 1, priv[0].volume,
@@ -410,6 +422,8 @@ static void * ogg_player_thread(private_data_ogg * priv)
 				}
 				else
 				{
+					ogg_flush_pcm(priv[0].pcmout[priv[0].pcmout_pos],
+							(u32)priv[0].pcm_indx << 1);
 					ASND_SetVoice(0, VOICE_MONO_16BIT, priv[0].vi->rate, 0,
 							(void *) priv[0].pcmout[priv[0].pcmout_pos],
 							priv[0].pcm_indx << 1, priv[0].volume,

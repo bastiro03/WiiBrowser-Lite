@@ -4,8 +4,8 @@
 u8 networkstack[GUITH_STACK] ATTRIBUTE_ALIGN (32);
 lwp_t networkthread = LWP_THREAD_NULL;
 
-int networkThreadHalt = 0;
-bool networkinit = 1;
+volatile int networkThreadHalt = 0;
+volatile bool networkinit = 1;
 
 /****************************************************************************
  * NetworkThread
@@ -82,7 +82,10 @@ void InitNetwork()
     networkinit = 0;
 
 	if(networkthread == LWP_THREAD_NULL)
-		LWP_CreateThread(&networkthread, NetworkThread, NULL, networkstack, GUITH_STACK, 30);
+	{
+		if(LWP_CreateThread(&networkthread, NetworkThread, NULL, networkstack, GUITH_STACK, 30) != 0)
+			networkthread = LWP_THREAD_NULL;
+	}
     else LWP_ResumeThread(networkthread);
 }
 
@@ -96,6 +99,7 @@ void StopNetwork()
 
     LWP_JoinThread(networkthread, NULL);
     networkthread = LWP_THREAD_NULL;
+    net_deinit();
 }
 
 bool CheckConnection()

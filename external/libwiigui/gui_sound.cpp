@@ -51,8 +51,14 @@ void GuiSound::Play()
 		vol = 255*(volume/100.0);
 		voice = ASND_GetFirstUnusedVoice();
 		if(voice >= 0)
+		{
+			// ASND DMAs from this buffer: flush CPU cache first. The
+			// buffer may be .rodata (button PCM) or MEM1; round up to 32B.
+			if(sound && length > 0)
+				DCFlushRange((void *)sound, ((u32)length + 31) & ~31u);
 			ASND_SetVoice(voice, VOICE_STEREO_16BIT, 48000, 0,
 				(u8 *)sound, length, vol, vol, NULL);
+		}
 		break;
 
 		case SOUND_OGG:

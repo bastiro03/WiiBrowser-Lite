@@ -6,7 +6,11 @@
 
 /* Converts a hex character to its integer value */
 char from_hex(char ch) {
-  return isdigit(ch) ? ch - '0' : tolower(ch) - 'a' + 10;
+  unsigned char c = (unsigned char)ch;
+  if(isdigit(c)) return (char)(c - '0');
+  c = (unsigned char)tolower(c);
+  if(c >= 'a' && c <= 'f') return (char)(c - 'a' + 10);
+  return 0;
 }
 
 /* Converts an integer value to its hex character*/
@@ -44,11 +48,11 @@ char *url_encode(char *str) {
     else if (*pstr == ' ')
       *pbuf++ = '+';
     else
-      *pbuf++ = '%', *pbuf++ = to_hex(*pstr >> 4), *pbuf++ = to_hex(*pstr & 15);
+      *pbuf++ = '%', *pbuf++ = to_hex((char)((unsigned char)*pstr >> 4)), *pbuf++ = to_hex(*pstr & 15);
     pstr++;
   }
  *pbuf = '\0';
-  return buf;
+   return buf;
 }
 
 void url_escape_string(char *outbuf, const char *inbuf)
@@ -58,7 +62,7 @@ void url_escape_string(char *outbuf, const char *inbuf)
 			*outbuf++ = *inbuf;
 		else {
 			*outbuf++ = '%';
-			*outbuf++ = to_hex(*inbuf >> 4);
+			*outbuf++ = to_hex((char)((unsigned char)*inbuf >> 4));
 			*outbuf++ = to_hex(*inbuf & 15);
 		}
 		inbuf++;

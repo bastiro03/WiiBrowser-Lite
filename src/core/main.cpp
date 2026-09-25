@@ -31,6 +31,7 @@
 #include "fileop.h"
 #include "crash.h"
 #include "devmount.h"
+#include "networkop.h"
 
 #ifdef MPLAYER
 
@@ -103,7 +104,7 @@ bool InitMPlayer()
 
     if(!dir && mkdir(MPLAYER_CSSDIR, 0777) != 0)
         sprintf(MPLAYER_CSSDIR, "off");
-    else
+    else if(dir)
         closedir(dir);
 
     setenv("HOME", MPLAYER_DATADIR, 1);
@@ -176,8 +177,8 @@ extern "C" {
 #endif
 
 SSettings Settings;
-int ExitRequested = 0;
-int ExitAccepted = 0;
+volatile int ExitRequested = 0;
+volatile int ExitAccepted = 0;
 
 void ExitApp()
 {
@@ -192,12 +193,21 @@ void ExitApp()
     ClearFontData();
     StopGUIThreads();
     Cleanup();
-    if (HWButton)
-        SYS_ResetSystem(HWButton, 0, 0);
+    // Flush + unmount FAT before power-off/return-to-menu so an interrupted
+    // write cannot corrupt SD/USB.
+    fflush(NULL);
+    MountManager_Deinit();
+    // Stop network last (sockets must close before IOS reload).
+    StopNetwork();
+    WPAD_Shutdown();
+    u8 resetType = HWButton;
+    HWButton = 0;
+    if (resetType)
+        SYS_ResetSystem(resetType, 0, 0);
     exit(0);
 }
 
-u8 HWButton;
+volatile u8 HWButton;
 void WiiResetPressed(u32 irq, void *ctx)
 {
     HWButton = SYS_RETURNTOMENU;

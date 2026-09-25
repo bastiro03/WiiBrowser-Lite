@@ -20,8 +20,8 @@ void ExitApp();
 extern FreeTypeGX *fontSystem[];
 extern SSettings Settings;
 
-extern int ExitRequested;
-extern int ExitAccepted;
+extern volatile int ExitRequested;
+extern volatile int ExitAccepted;
 
 extern "C" {
     extern int controlledbygui;

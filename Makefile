@@ -28,17 +28,19 @@ SOURCES		:=	src/core src/ui src/media src/filesystem src/archive src/network \
 				assets/images assets/images/appbar assets/fonts assets/sounds assets/lang
 
 # Include paths (adding all subdirectories so existing #includes don't break)
+# NOTE: libs/include intentionally excluded here — it holds 2012-era vendored
+# headers (curl 7.28.1) and is appended after portlibs below as fallback.
 INCLUDES	:=	src src/core src/ui src/media src/filesystem src/archive src/network \
 				src/html_parser src/text src/utils \
 				external external/mplayer external/libwiigui external/litehtml \
-				external/mplayerwii libs/include
+				external/mplayerwii
 
 #---------------------------------------------------------------------------------
 # options for code generation
 #---------------------------------------------------------------------------------
 
-CFLAGS		=	-g -O2 -std=c17 -Wall -Wextra -Wpedantic -Werror=implicit-function-declaration -fdata-sections -ffunction-sections -D_DEFAULT_SOURCE $(MACHDEP) $(INCLUDE) -MMD -MP
-CXXFLAGS	=	-g -O2 -std=gnu++17 -D_GLIBCXX_USE_CXX11_ABI=0 -Wall -Wextra -Wpedantic -fdata-sections -ffunction-sections -D_DEFAULT_SOURCE $(MACHDEP) $(INCLUDE) -MMD -MP
+CFLAGS		=	-g -O2 -std=c17 -Wall -Wextra -Wpedantic -Werror=implicit-function-declaration -Werror=return-type -Wnull-dereference -fdata-sections -ffunction-sections -D_DEFAULT_SOURCE $(MACHDEP) $(INCLUDE) -MMD -MP
+CXXFLAGS	=	-g -O2 -std=gnu++17 -D_GLIBCXX_USE_CXX11_ABI=0 -Wall -Wextra -Wpedantic -Werror=return-type -Wnull-dereference -fdata-sections -ffunction-sections -D_DEFAULT_SOURCE $(MACHDEP) $(INCLUDE) -MMD -MP
 LDFLAGS		=	-g -ggdb $(MACHDEP) -Wl,--gc-sections -Wl,--print-memory-usage -Wl,-Map,$(notdir $(OUTPUT)).map
 
 # Extra map options (uncomment to adjust .init base): -Wl,--section-start,.init=0x80620000
@@ -49,8 +51,21 @@ LDFLAGS		=	-g -ggdb $(MACHDEP) -Wl,--gc-sections -Wl,--print-memory-usage -Wl,-M
 #---------------------------------------------------------------------------------
 # LIBS	:=	-lmplayerwii -lavformat -lavcodec -lswscale -lavutil \
 
-LIBS	:=	-lfribidi -ljpeg -liconv -ldi -lunrar -lzip -lsevenzip \
-			-lcurl -lcyassl -lnetport -lasnd -lvorbisidec \
+# wolfSSL replaced legacy CyaSSL upstream (Dockerfile installs ppc-wolfssl).
+# Prefer -lwolfssl when portlibs ships it, else fall back to -lcyassl for
+# older toolchains that still carry ppc-libcyassl.
+# NOTE: PORTLIBS holds two dirs, so foreach is required (plain $(PORTLIBS)/... would
+# test the bare first dir, which always exists, and wrongly select -lwolfssl).
+WOLFSSL_LIB	:=	$(if $(strip $(foreach dir,$(PORTLIBS),$(wildcard $(dir)/lib/libwolfssl.a))),-lwolfssl,-lcyassl)
+
+# NOTE: minizip (unzOpen/zipClose API used by src/archive/ZipFile.cpp) is vendored
+# as libs/wii/libzip.a. Modern ppc-libzip (zip_open API) is ABI-incompatible,
+# so link the vendored archive explicitly instead of -lzip (which would pick
+# portlibs first via LIBPATHS and fail with undefined unz*/zip* refs).
+MINIZIP_LIB	:=	$(CURDIR)/libs/wii/libzip.a
+
+LIBS	:=	-lfribidi -ljpeg -liconv -ldi -lunrar $(MINIZIP_LIB) -lsevenzip \
+			-lcurl $(WOLFSSL_LIB) -lnetport -lasnd -lvorbisidec \
 			-lmxml -llua -lm -lfat -lwiiuse -lwiikeyboard -lbte -logc -lfreetype \
 			-lpng -lz -lbz2 -lbrotlidec -lbrotlicommon -logg
 
@@ -110,24 +125,27 @@ export OFILES	:=	$(CPPFILES:%.cpp=%.o) $(CFILES:%.c=%.o) \
 #---------------------------------------------------------------------------------
 # build a list of include paths
 #---------------------------------------------------------------------------------
+# NOTE: vendored libs/include + libs/wii hold 2012-era headers (curl 7.28.1).
+# They stay last as an offline fallback; modern dkp-pacman portlibs first.
 export INCLUDE	:=	$(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir)) \
 					$(foreach dir,$(LIBDIRS),-I$(dir)/include) \
 					$(foreach dir,$(LIBDIRS),-I$(dir)/include/freetype2) \
 					-I$(CURDIR)/$(BUILD) \
-					-I$(LIBOGC_INC)
+					-I$(LIBOGC_INC) \
+					-I$(CURDIR)/libs/include
 
 #---------------------------------------------------------------------------------
 # build a list of library paths
 #---------------------------------------------------------------------------------
  
-export LIBPATHS	:=	-L$(CURDIR)/libs/wii \
-					$(foreach dir,$(LIBDIRS),-L$(dir)/lib) \
+export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib) \
 					-L$(LIBOGC_LIB) \
 					-L$(MPLAYER)/ \
 					-L$(MPLAYER)/ffmpeg/libavcodec \
 					-L$(MPLAYER)/ffmpeg/libavformat \
 					-L$(MPLAYER)/ffmpeg/libavutil \
-					-L$(MPLAYER)/ffmpeg/libswscale 
+					-L$(MPLAYER)/ffmpeg/libswscale \
+					-L$(CURDIR)/libs/wii
 
 export OUTPUT	:=	$(CURDIR)/$(TARGET)
 export EMBEDSCRIPT	:=	$(CURDIR)/scripts/embeddata.sh

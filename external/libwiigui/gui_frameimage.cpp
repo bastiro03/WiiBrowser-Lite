@@ -34,6 +34,17 @@ GuiFrameImage::GuiFrameImage(int w, int h)
 
 	DrawListSize = 1152;
 	DrawList = (u8 *) memalign(32, DrawListSize+64);
+	if(!DrawList)
+	{
+		DrawListSize = 0;
+		oldWidth = GetWidth();
+		oldHeight = GetHeight();
+		oldX = GetLeft();
+		oldY = GetTop();
+		oldZ = 0;
+		oldAlpha = GetAlpha();
+		return;
+	}
 	CreateDrawList();
 }
 
@@ -44,6 +55,8 @@ GuiFrameImage::~GuiFrameImage()
 
 void GuiFrameImage::CreateDrawList()
 {
+	if(!DrawList)
+		return;
 	GX_BeginDispList(DrawList, DrawListSize+64);
 
 	GX_SetTevOp (GX_TEVSTAGE0, GX_PASSCLR);
@@ -280,7 +293,15 @@ void GuiFrameImage::CreateDrawList()
 
 	GX_SetTevOp (GX_TEVSTAGE0, GX_MODULATE);
 
-	DrawListSize = GX_EndDispList();
+	u32 listSize = GX_EndDispList();
+	if(listSize == 0 || listSize > (u32)(DrawListSize+64))
+	{
+		// Display list overflow: keep previous valid list (or empty).
+		// GX_EndDispList returns 0 on overflow; calling with 0 hangs GX.
+		return;
+	}
+	DrawListSize = (int)listSize;
+	DCFlushRange(DrawList, (DrawListSize + 31) & ~31);
 }
 
 void GuiFrameImage::Draw()
@@ -298,5 +319,7 @@ void GuiFrameImage::Draw()
 		CreateDrawList();
 	}
 
+	if(!DrawList || DrawListSize == 0)
+		return;
 	GX_CallDispList(DrawList, DrawListSize);
 }

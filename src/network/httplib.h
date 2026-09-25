@@ -46,8 +46,11 @@ bool postcomment(CURL *curl_handle, char *name, char *content);
 void save(struct block *b, FILE *hfile);
 bool validProxy();
 
-char *findChr (const char *str, char chr);
-char *findRchr (const char *str, char chr);
+// NOTE: these truncate the (mutable) input in place at the found char.
+// Callers must pass a writable buffer (e.g. local copy), never a
+// string literal or other const storage.
+char *findChr (char *str, char chr);
+char *findRchr (char *str, char chr);
 
 void DebugInt(u32 msg);
 void Debug(const char *msg);

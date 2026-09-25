@@ -27,10 +27,15 @@ u32 load_dol_image(const void *dolstart, struct __argv *argv)
 
 	if (dolstart)
 	{
+		// Basic sanity: header fields are big-endian on Wii (BE-on-BE cast
+		// is correct here), but offsets/sizes must still be bounded so a
+		// corrupt DOL cannot scribble over the loader itself.
 		dolfile = (dolheader *) dolstart;
 		for (i = 0; i < 7; i++)
 		{
 			if ((!dolfile->text_size[i]) || (dolfile->text_start[i] < 0x100))
+				continue;
+			if (dolfile->text_size[i] > 0x300000) // 3 MiB sanity cap
 				continue;
 
             VIDEO_WaitVSync();
@@ -42,6 +47,8 @@ u32 load_dol_image(const void *dolstart, struct __argv *argv)
 		for (i = 0; i < 11; i++)
 		{
 			if ((!dolfile->data_size[i]) || (dolfile->data_start[i] < 0x100))
+				continue;
+			if (dolfile->data_size[i] > 0x300000) // 3 MiB sanity cap
 				continue;
 
             VIDEO_WaitVSync();

@@ -10,8 +10,8 @@
 %option noyywrap
 
 unicode		\\[0-9a-f]{1,4}
-latin1		[¡-ÿ]
-escape		{unicode}|\\[ -~¡-ÿ]
+latin1		[ï¿½-ï¿½]
+escape		{unicode}|\\[ -~ï¿½-ï¿½]
 stringchar	{escape}|{latin1}|[ !#$%&(-~]
 nmstrt		[a-z]|{latin1}|{escape}
 nmchar		[-a-z0-9]|{latin1}|{escape}
@@ -152,8 +152,10 @@ rgb\({w}{num}%?{w}\,{w}{num}%?{w}\,{w}{num}%?{w}\)	{
 
 int init_yylex(const char *buffer, int buf_len) {
 	yy_scan_bytes(buffer, buf_len);
+	return 0;
 }
 
 int end_yylex() {
 	yy_delete_buffer(YY_CURRENT_BUFFER);
+	return 0;
 }

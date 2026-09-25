@@ -162,16 +162,34 @@
 #endif
 
 #ifndef htons
+#if defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+// Host (unit-test) build is little-endian: byteswap to network order.
+#define htons(x) (__builtin_bswap16((u16)(x)))
+#else
+// Wii Broadway is big-endian: network order == host order.
 #define htons(x) (x)
 #endif
+#endif
 #ifndef ntohs
+#if defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+#define ntohs(x) (__builtin_bswap16((u16)(x)))
+#else
 #define ntohs(x) (x)
 #endif
+#endif
 #ifndef htonl
+#if defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+#define htonl(x) (__builtin_bswap32((u32)(x)))
+#else
 #define htonl(x) (x)
 #endif
+#endif
 #ifndef ntohl
+#if defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+#define ntohl(x) (__builtin_bswap32((u32)(x)))
+#else
 #define ntohl(x) (x)
+#endif
 #endif
 
 #ifndef h_addr

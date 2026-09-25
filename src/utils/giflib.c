@@ -1018,18 +1018,23 @@ static u8* DGifDecodeTo4x4RGB8(GifFileType *gifFile, GifRowType *rowType, short 
 
 	unsigned char *p = (unsigned char*) dst;
 
-	for (vert = 0; vert < newHeight; vert += 4)
+	for (vert = 0; vert < (unsigned int)newHeight; vert += 4)
 	{
-		for (hor = 0; hor < newWidth; hor += 4)
+		for (hor = 0; hor < (unsigned int)newWidth; hor += 4)
 		{
 			for (row = 0; row < 4; row++)
 			{
-				GifRowType gifRow = rowType[vert + row];
+				// Malformed GIFs can declare Image.Height > SHeight;
+				// rowType only has SHeight entries — emit transparent.
+				GifRowType gifRow = NULL;
+				if ((int)(vert + row) < gifFile->SHeight)
+					gifRow = rowType[vert + row];
 				unsigned char *gb = (unsigned char *) (p + 32);
 				for (col = 0; col < 4; col++)
 				{
-					if (vert + row >= gifFile->Image.Height || // Transparent cell
-							hor + col >= gifFile->Image.Width)
+					if (!gifRow || vert + row >= (unsigned int)gifFile->Image.Height || // Transparent cell
+							hor + col >= (unsigned int)gifFile->Image.Width ||
+							(int)(hor + col) >= gifFile->SWidth)
 					{
 						*p++ = 0;
 						*p++ = 255;
@@ -1038,7 +1043,9 @@ static u8* DGifDecodeTo4x4RGB8(GifFileType *gifFile, GifRowType *rowType, short 
 					}
 					else
 					{
-						int color = *(char*) (gifRow + hor + col);
+						int color = ((unsigned char*)gifRow)[hor + col];
+						if (color < 0 || color >= colorMap->ColorCount)
+							color = 0;
 						GifColorType *colorMapEntry = &colorMap->Colors[color];
 						*p++ = color == transparentColor ? 0 : 255;
 						*p++ = colorMapEntry->Red;
@@ -1193,6 +1200,17 @@ u8 * DecodeGIF(const u8 *src, u32 srclen, int *width, int *height, u8 *dstPtr)
 
 	if (gifFile == NULL)
 		return NULL;
+
+	// Bound MEM1/GX pressure: refuse absurd frames before tiling (PNG/JPEG/
+	// BMP downscale to MAX_TEX; GIF has no resampler, so fail cleanly and
+	// let the caller show a placeholder instead of OOMing MEM1).
+	// 1024x1024 RGBA8 tiled ~= 4 MiB; EFB-scale content never needs more.
+	if (gifFile->Image.Width <= 0 || gifFile->Image.Height <= 0 ||
+	    gifFile->Image.Width > 1024 || gifFile->Image.Height > 1024)
+	{
+		DGifCloseMem(gifFile);
+		return NULL;
+	}
 
 	short transparentColor;
 

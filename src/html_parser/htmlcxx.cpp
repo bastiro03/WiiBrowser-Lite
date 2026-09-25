@@ -537,7 +537,9 @@ Lista getTag(char * buffer, char * url)
     catch (exception &e)
     {
         cerr << "Exception " << e.what() << " caught" << endl;
-        exit(1);
+        // Never exit() from a library parser: it would bypass StopGX/
+        // ShutdownAudio/fatUnmount teardown and risk FS corruption.
+        // Return whatever was parsed so far.
     }
     catch (...)
     {

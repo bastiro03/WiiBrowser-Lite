@@ -21,10 +21,11 @@ bool MountManager_Init(void) {
     }
     if(fatMountSimple("sd", &__io_wiisd)) {
         sd_mounted = true;
-    } else {
-        // fallback fatInitDefault style
-        fatInitDefault();
+    } else if(fatInitDefault()) {
+        // fatInitDefault returns bool: only claim success when it succeeds.
         sd_mounted = true;
+    } else {
+        sd_mounted = false;
     }
     // USB mount attempted best-effort (optional)
     if(__io_usbstorage.isInserted()) {
@@ -50,5 +51,24 @@ void MountManager_Poll(void) {
     if(sd_mounted && !__io_wiisd.isInserted()) {
         fatUnmount("sd:/");
         sd_mounted = false;
+    }
+    // USB hot-plug symmetry (previously only SD was tracked)
+    if(!usb_mounted && __io_usbstorage.isInserted()) {
+        if(fatMountSimple("usb", &__io_usbstorage)) usb_mounted = true;
+    }
+    if(usb_mounted && !__io_usbstorage.isInserted()) {
+        fatUnmount("usb:/");
+        usb_mounted = false;
+    }
+}
+
+void MountManager_Deinit(void) {
+    if(sd_mounted) {
+        fatUnmount("sd:/");
+        sd_mounted = false;
+    }
+    if(usb_mounted) {
+        fatUnmount("usb:/");
+        usb_mounted = false;
     }
 }

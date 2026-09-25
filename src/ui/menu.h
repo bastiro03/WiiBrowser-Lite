@@ -34,7 +34,7 @@ void EnableVideoImg();
 bool VideoImgVisible();
 bool LoadYouTubeFile(char *newurl, char *data);
 
-extern u8 HWButton;
+extern volatile u8 HWButton;
 extern char new_page[];
 
 extern CURL *curl_handle;

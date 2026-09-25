@@ -87,11 +87,11 @@ static lwp_t guithread = LWP_THREAD_NULL;
 static lwp_t updatethread = LWP_THREAD_NULL;
 static lwp_t loadthread = LWP_THREAD_NULL;
 
-static bool guiHalt = true;
+static volatile bool guiHalt = true;
 static bool toggleManager = false;
 
-static int updateThreadHalt = 0;
-static int loadThreadHalt = 1;
+static volatile int updateThreadHalt = 0;
+static volatile int loadThreadHalt = 1;
 static int s_haltDepth = 0;
 
 // Non-blocking font error overlay (Q1/Q2: explicit but non-blocking, uses fallback fonts)
@@ -303,7 +303,7 @@ extern "C" void DoMPlayerGuiDraw()
 
 void UpdatePointer()
 {
-    if(userInput[0].wpad->ir.valid)
+    if(userInput[0].wpad && userInput[0].wpad->ir.valid)
         Menu_DrawImg(userInput[0].wpad->ir.x-48, userInput[0].wpad->ir.y-48,
                      96, 96, pointer[0]->GetImage(), userInput[0].wpad->ir.angle, 1, 1, 255, GX_TF_RGBA8);
 }
@@ -769,7 +769,7 @@ static void *UpdateGUI (void *arg)
 #ifdef HW_RVL
             for(i=3; i >= 0; i--) // so that player 1's cursor appears on top!
             {
-                if(userInput[i].wpad->ir.valid)
+                if(userInput[i].wpad && userInput[i].wpad->ir.valid)
                     Menu_DrawImg(userInput[i].wpad->ir.x-48, userInput[i].wpad->ir.y-48,
                                  96, 96, pointer[i]->GetImage(), userInput[i].wpad->ir.angle, 1, 1, 255, GX_TF_RGBA8);
                 DoRumble(i);
@@ -779,7 +779,7 @@ static void *UpdateGUI (void *arg)
             for(i=0; i < 4; i++)
             {
                 mainWindow->Update(&userInput[i]);
-                if(userInput[i].wpad->btns_d & (WPAD_BUTTON_HOME | WPAD_CLASSIC_BUTTON_HOME))
+                if(userInput[i].wpad && (userInput[i].wpad->btns_d & (WPAD_BUTTON_HOME | WPAD_CLASSIC_BUTTON_HOME)))
                     ExitRequested = true; // exit program
             }
 
@@ -818,10 +818,14 @@ static void *UpdateGUI (void *arg)
 void
 InitGUIThreads()
 {
-    LWP_CreateThread (&guithread, UpdateGUI, NULL, guistack, GUITH_STACK, 70);
-    LWP_CreateThread (&updatethread, UpdateThread, NULL, updatestack, GUITH_STACK, 70);
-    LWP_CreateThread (&loadthread, LoadingThread, NULL, loadstack, GUITH_STACK, 70);
-    LWP_CreateThread (&downloadthread, DownloadThread, NULL, downloadstack, GUITH_STACK, 70);
+    if(LWP_CreateThread(&guithread, UpdateGUI, NULL, guistack, GUITH_STACK, 70) != 0)
+        guithread = LWP_THREAD_NULL;
+    if(LWP_CreateThread(&updatethread, UpdateThread, NULL, updatestack, GUITH_STACK, 70) != 0)
+        updatethread = LWP_THREAD_NULL;
+    if(LWP_CreateThread(&loadthread, LoadingThread, NULL, loadstack, GUITH_STACK, 70) != 0)
+        loadthread = LWP_THREAD_NULL;
+    if(LWP_CreateThread(&downloadthread, DownloadThread, NULL, downloadstack, GUITH_STACK, 70) != 0)
+        downloadthread = LWP_THREAD_NULL;
 }
 
 void
@@ -855,7 +859,7 @@ StopGUIThreads()
         guithread = LWP_THREAD_NULL;
     }
 
-    // StopNetwork();
+    StopNetwork();
 }
 
 void ToggleButtons(GuiToolbar *toolbar, bool checkState)
@@ -2827,11 +2831,20 @@ void Cleanup()
 
     /* setup cookies engine */
 #ifndef WIIFLOW
-    curl_easy_setopt(curl_handle, CURLOPT_COOKIEJAR, cookies);
+    if(curl_handle)
+        curl_easy_setopt(curl_handle, CURLOPT_COOKIEJAR, cookies);
 #endif
-    curl_easy_cleanup(curl_handle);
+    if(curl_handle)
+    {
+        curl_easy_cleanup(curl_handle);
+        curl_handle = NULL;
+    }
 
-    curl_share_cleanup(curl_share);
+    if(curl_share)
+    {
+        curl_share_cleanup(curl_share);
+        curl_share = NULL;
+    }
     curl_global_cleanup();
 
     LWP_MutexDestroy(m_mutex);

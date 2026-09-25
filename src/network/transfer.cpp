@@ -15,7 +15,7 @@ u8 downloadstack[GUITH_STACK] ATTRIBUTE_ALIGN (32);
 lwp_t downloadthread = LWP_THREAD_NULL;
 GuiDownloadManager *manager = NULL;
 
-static int downloadThreadHalt = 0;
+static volatile int downloadThreadHalt = 0;
 static list<Private *> queue;
 
 bool AddHandle(Private *data);
@@ -347,6 +347,9 @@ void *DownloadThread (void *arg)
     }
 
     curl_multi_cleanup(curl_multi);
+    curl_multi = nullptr;
+    delete manager;
+    manager = nullptr;
     return NULL;
 }
 

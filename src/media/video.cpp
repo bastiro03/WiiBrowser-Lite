@@ -51,7 +51,7 @@ u8* TakeScreenshot(bool global)
         video = (u8 *)memalign(32, vmode->fbWidth * vmode->efbHeight * 4);
 
     if(!video)
-        exit(0);
+        return NULL;
 
 	GX_SetTexCopySrc(0, 0, vmode->fbWidth, vmode->efbHeight);
 	GX_SetTexCopyDst(vmode->fbWidth, vmode->efbHeight, GX_TF_RGBA8, GX_FALSE);
@@ -80,6 +80,9 @@ void SaveScreenshot(char *path)
 void ResetVideo_Menu()
 {
 	Mtx44 p;
+
+	if(!vmode)
+		return;
 
 	GX_SetNumChans(1);
 	GX_SetNumTevStages(1);
@@ -110,6 +113,17 @@ void ResetVideo_Menu()
 
 	guOrtho(p,0,screenheight-1,0,screenwidth-1,0,300);
 	GX_LoadProjectionMtx(p, GX_ORTHOGRAPHIC);
+
+	// Re-apply viewport/scissor/copy pipeline: ResetVideo_Menu() is called
+	// after mode-affecting changes and must not leave stale state.
+	GX_SetViewport(0,0,vmode->fbWidth,vmode->efbHeight,0,1);
+	GX_SetScissor(0,0,vmode->fbWidth,vmode->efbHeight);
+	GX_SetDispCopySrc(0,0,vmode->fbWidth,vmode->efbHeight);
+	{
+		f32 yscale = GX_GetYScaleFactor(vmode->efbHeight,vmode->xfbHeight);
+		u32 xfbHeight = GX_SetDispCopyYScale(yscale);
+		GX_SetDispCopyDst(vmode->fbWidth,xfbHeight);
+	}
 }
 
 /****************************************************************************
@@ -294,12 +308,22 @@ static GXRModeObj* ChooseVideoMode(void) {
 void
 InitVideo ()
 {
+static GXRModeObj vmodeStorage;
+
 	VIDEO_Init();
-	vmode = ChooseVideoMode();
+	GXRModeObj *preferred = ChooseVideoMode();
+	if(!preferred)
+	{
+	    // VIDEO_GetPreferredMode should never fail, but never deref NULL (DSI guard).
+	    preferred = &TVNtsc480IntDf;
+	}
+	// Work on a private copy: never mutate libogc's shared TV* tables.
+	vmodeStorage = *preferred;
+	vmode = &vmodeStorage;
 
 	bool pal = false;
 
-	if (vmode == &TVPal576IntDfScale || vmode == &TVPal576ProgScale)
+	if (vmode->viTVMode == VI_PAL || vmode->viTVMode == (VI_PAL | VI_PROGRESSIVE))
 		pal = true;
 
 	if (CONF_GetAspectRatio() == CONF_ASPECT_16_9)

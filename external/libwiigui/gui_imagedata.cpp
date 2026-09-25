@@ -54,6 +54,11 @@ GuiImageData::GuiImageData(const u8 * i, int s, u8 f)
 
 /**
  * Destructor for the GuiImageData class.
+ *
+ * INVARIANT: all decoders (PNG/JPEG/BMP/GIF) return MEM1 buffers allocated
+ * with memalign(), so free() is the correct pairing. If any decoder is ever
+ * switched to mem2_memalign(), this destructor must route MEM2 pointers
+ * (0x90000000+) to mem2_free() with the matching area instead.
  */
 GuiImageData::~GuiImageData()
 {

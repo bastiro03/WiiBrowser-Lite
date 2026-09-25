@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "audio.h"
 #include "html.h"
 #include "html_helpers.h"
@@ -42,6 +44,12 @@ static void *DownloadImage (void *arg)
     isRunning=true;
     CURL *curl_img=curl_easy_init();
 
+    // Take ownership of heap base-URL copy (strdup'd by creator).
+    // Copy to std::string up-front so worker never touches caller stack.
+    char *baseUrl = (char *)arg;
+    std::string base = baseUrl ? baseUrl : "";
+    free(baseUrl);
+
     int width, height;
 
     while(threadState!=THREAD_EXIT)
@@ -58,7 +66,7 @@ static void *DownloadImage (void *arg)
                 if (threadState==THREAD_EXIT || threadState==THREAD_SUSPEND) break;
                 if (!lista->fetched && !lista->img->GetImage() && lista->tag)
                 {
-                    string tmp=adjustUrl(lista->tag->attribute, *(char**)arg);
+                    string tmp=adjustUrl(lista->tag->attribute, (char*)base.c_str());
                     struct block THREAD = downloadfile(curl_img, tmp.c_str(), NULL);
                     if(THREAD.size>0 && strstr(THREAD.type, "image"))
                     {
@@ -232,7 +240,21 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
     {
         l1=getTag((char*)HTML->data, url);
         lista=l1.begin();
-        LWP_CreateThread (&thread, DownloadImage, (void*)&url, NULL, 0, 70);
+        // Pass a heap copy of the base URL: never hand the worker the
+        // address of this function's stack slot (&url).
+        char *baseCopy = strdup(url ? url : "");
+        if(baseCopy)
+        {
+            if(thread != LWP_THREAD_NULL)
+            {
+                // Previous page's worker already exited (THREAD_EXIT joins
+                // via isRunning below); reap handle before overwriting.
+                LWP_JoinThread(thread, NULL);
+                thread = LWP_THREAD_NULL;
+            }
+            if(LWP_CreateThread(&thread, DownloadImage, (void*)baseCopy, NULL, 0, 70) != 0)
+                free(baseCopy);
+        }
 
         unsigned int i;
         while (!choice)
@@ -451,8 +473,8 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                 ResumeGui();
 
                 int t = 0;
-                if ((t = Settings.FindUrl(new_page)) >= 0
-                        || (t = Settings.FindUrl(url)) >= 0)
+                if(video && ((t = Settings.FindUrl(new_page)) >= 0
+                        || (t = Settings.FindUrl(url)) >= 0))
                 {
                     Settings.Remove(t, 1);
                     Settings.Thumbnails[t] = video;
@@ -590,6 +612,11 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
     threadState=THREAD_EXIT;
     while (isRunning)
         usleep(100);
+    if(thread != LWP_THREAD_NULL)
+    {
+        LWP_JoinThread(thread, NULL);
+        thread = LWP_THREAD_NULL;
+    }
 
     HaltGui();
     renderWindow->Remove(scrollWindow);

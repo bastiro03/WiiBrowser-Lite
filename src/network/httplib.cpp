@@ -30,6 +30,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "config.h"
 #include "httplib.h"
@@ -267,7 +268,6 @@ void setrequestheaders(CURL *curl_handle, int request)
 struct block postrequest(CURL *curl_handle, const char *url, curl_httppost *data)
 {
     char *ct = NULL;
-    char *post = findRchr(url, '?');
     struct block b, h;
     int res;
 
@@ -281,6 +281,11 @@ struct block postrequest(CURL *curl_handle, const char *url, curl_httppost *data
     head.size = 0; /* no data at this point */
     head.download = 0; /* not yet known at this point */
 
+    // Never mutate the caller's URL (it may be a string literal in .rodata).
+    // Work on a private copy to split off the '?query' part.
+    char *urlCopy = url ? strdup(url) : NULL;
+    char *post = urlCopy ? strrchr(urlCopy, '?') : NULL;
+
     setmainheaders(curl_handle, url);
     setrequestheaders(curl_handle, POST);
 
@@ -291,7 +296,7 @@ struct block postrequest(CURL *curl_handle, const char *url, curl_httppost *data
         curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, (void *)&head);
 
         if (data == NULL)
-            curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, post+1);
+            curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, post ? post+1 : "");
         else curl_easy_setopt(curl_handle, CURLOPT_HTTPPOST, data);
 
         if ((res = curl_easy_perform(curl_handle)) != 0)      /*error!*/
@@ -303,10 +308,15 @@ struct block postrequest(CURL *curl_handle, const char *url, curl_httppost *data
             {
                 fillstruct(curl_handle, &head, &h);
                 free(head.memory);
+                free(chunk.memory);
+                free(urlCopy);
                 return h;
             }
 
             Debug(curl_easy_strerror((CURLcode)res));
+            free(chunk.memory);
+            free(head.memory);
+            free(urlCopy);
             return emptyblock;
         }
 
@@ -314,14 +324,25 @@ struct block postrequest(CURL *curl_handle, const char *url, curl_httppost *data
             curl_formfree(data);
 
         if(CURLE_OK != curl_easy_getinfo(curl_handle, CURLINFO_CONTENT_TYPE, &ct) || !ct)
+        {
+            free(chunk.memory);
+            free(head.memory);
+            free(urlCopy);
             return emptyblock;
+        }
     }
     else
+    {
+        free(chunk.memory);
+        free(head.memory);
+        free(urlCopy);
         return emptyblock;
+    }
 
 	b.data = chunk.memory;
 	b.size = chunk.size;
 	free(head.memory);
+	free(urlCopy);
 
     // Copy ct safely without mutating curl's internal string
     if(ct) {
@@ -355,7 +376,7 @@ bool postcomment(CURL *curl_handle, char *name, char *content)
 struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
 {
     char *ct = NULL;
-    struct block b, h;
+    struct block b = emptyblock, h = emptyblock;
     int res;
 
     struct HeaderStruct head;
@@ -391,6 +412,8 @@ struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
             if (res == CURLE_ABORTED_BY_CALLBACK)
             {
                 h.size = DSTOPPED;
+                free(chunk.memory);
+                free(head.memory);
                 return h;
             }
 
@@ -398,18 +421,29 @@ struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
             {
                 fillstruct(curl_handle, &head, &h);
                 free(head.memory);
+                free(chunk.memory);
                 return h;
             }
 
             Debug(curl_easy_strerror((CURLcode)res));
+            free(chunk.memory);
+            free(head.memory);
             return emptyblock;
         }
 
         if(CURLE_OK != curl_easy_getinfo(curl_handle, CURLINFO_CONTENT_TYPE, &ct) || !ct)
+        {
+            free(chunk.memory);
+            free(head.memory);
             return emptyblock;
+        }
     }
     else
+    {
+        free(chunk.memory);
+        free(head.memory);
         return emptyblock;
+    }
 
 	b.data = chunk.memory;
 	b.size = chunk.size;
@@ -428,8 +462,11 @@ struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
 
     if(hfile)
     {
+        // Caller owns hfile: flush here, close in the caller. (Closing here
+        // caused double-fclose when callers also closed on all paths.)
+        fflush(hfile);
         h.size = DCOMPLETE;
-        fclose(hfile);
+        free(chunk.memory);
         return h;
     }
 	return b;
@@ -503,26 +540,41 @@ struct curl_httppost *multipartform(const char *url)
 
 struct block downloadfile(CURL *curl_handle, const char *url, FILE *hfile)
 {
-    const char *mode = strrchr(url, '\\');
-    findRchr(url, '\\');
+    if(!url)
+        return emptyblock;
+
+    // Work on a private mutable copy: the '\\post' / '\\multipart' suffix
+    // split must never write into the caller's (possibly .rodata) string.
+    char *urlCopy = strdup(url);
+    if(!urlCopy)
+        return emptyblock;
+
+    char *mode = strrchr(urlCopy, '\\');
+    // Strip the "\post" / "\multipart" directive suffix before dispatch,
+    // mirroring the old in-place findRchr(url,'\\') truncation — but on our
+    // private copy, never on the caller's string.
+    if(mode)
+        *mode = '\0';
 
     if (firstRun)
         firstRun = false;
     else curl_easy_reset(curl_handle);
 
+    struct block res;
     if (!mode)
-        return getrequest(curl_handle, url, hfile);
-
-    if (strcasestr(mode + 1, "post"))
-        return postrequest(curl_handle, url, NULL);
-
+        res = getrequest(curl_handle, urlCopy, hfile);
+    else if (strcasestr(mode + 1, "post"))
+        res = postrequest(curl_handle, urlCopy, NULL);
     else if (strcasestr(mode + 1, "multipart"))
     {
-        curl_httppost *data = multipartform(url);
-        return postrequest(curl_handle, url, data);
+        curl_httppost *data = multipartform(urlCopy);
+        res = postrequest(curl_handle, urlCopy, data);
     }
+    else
+        res = getrequest(curl_handle, urlCopy, hfile);
 
-    return getrequest(curl_handle, url, hfile);
+    free(urlCopy);
+    return res;
 }
 
 // -----------------------------------------------------------
@@ -580,20 +632,20 @@ bool mustdownload(char content[])
     return true;
 }
 
-char *findChr (const char *str, char chr)
+char *findChr (char *str, char chr)
 {
     char *c = strchr(str, chr);
     if (c != NULL)
         *c = '\0';
-    return (char*)c;
+    return c;
 }
 
-char *findRchr (const char *str, char chr)
+char *findRchr (char *str, char chr)
 {
     char *c = strrchr(str, chr);
     if (c != NULL)
         *c = '\0';
-    return (char*)c;
+    return c;
 }
 
 bool validProxy()

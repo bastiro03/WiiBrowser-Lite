@@ -144,14 +144,13 @@ int ArchiveHandle::ExtractAll(const char * destpath)
 
 bool ArchiveHandle::IsZipFile (const char *buffer)
 {
-	unsigned int *check;
+	if(!buffer)
+		return false;
 
-	check = (unsigned int *) buffer;
-
-	if (check[0] == 0x504b0304)
-		return true;
-
-	return false;
+	// Compare magic bytes directly: no unaligned word load, no
+	// strict-aliasing violation, no endianness assumption.
+	static const char zipMagic[4] = {'P', 'K', 0x03, 0x04};
+	return memcmp(buffer, zipMagic, 4) == 0;
 }
 
 bool ArchiveHandle::Is7ZipFile(const char *buffer)

@@ -108,20 +108,28 @@ struct update checkUpdate() {
     CURL *curl_upd = curl_easy_init();
 	FILE *hfile = fopen(updateFile, "wb");
 
-	if (hfile)
+ 	if (hfile)
 	{
 	    HTML = downloadfile(curl_upd, url, hfile);
+	    // downloadfile/getrequest no longer closes hfile (caller-owned):
+	    // close the write handle before any re-open for reading.
+	    fclose(hfile);
+	    hfile = NULL;
 		if(HTML.size)
 		{
             int old_v, new_v;
             hfile = fopen(updateFile, "r");
-            old_v = Settings.RevInt;
-            new_v = readFile(hfile, &result);
+            if(hfile)
+            {
+                old_v = Settings.RevInt;
+                new_v = readFile(hfile, &result);
 
-            if (new_v>old_v)
-                result.appversion = new_v;
+                if (new_v>old_v)
+                    result.appversion = new_v;
+                fclose(hfile);
+                hfile = NULL;
+            }
 		}
-        fclose(hfile);
         remove(updateFile); // delete update file
 	}
 

@@ -2344,8 +2344,10 @@ int main()
 
 int init_yylex(const char *buffer, int buf_len) {
 	yy_scan_bytes(buffer, buf_len);
+	return 0;
 }
 
 int end_yylex() {
 	yy_delete_buffer(YY_CURRENT_BUFFER);
+	return 0;
 }

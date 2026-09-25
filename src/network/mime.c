@@ -220,16 +220,35 @@ static const char *named_mime[][2] =
 	{ "x-x509-ca-cert", ".cer" }
 };
 
-static int cmp(const void *key, const void *element)
-{
-	return strncmp((const char *)key, *(const char **)element,
-		strlen(*(const char **)element));
-}
-
 const char *mime2ext(const char *name)
 {
-	const char **entity = (const char**)bsearch(name, named_mime,
-		sizeof(named_mime) / sizeof(*named_mime),
-		sizeof(*named_mime), cmp);
-	return entity ? entity[1] : NULL;
+	size_t i, count = sizeof(named_mime) / sizeof(*named_mime);
+	if(!name || !*name)
+		return NULL;
+	// Exact match first (the old prefix-bsearch violated strict-weak
+	// ordering, e.g. "image/jpeg2000" vs "image/jpeg", and required a
+	// sorted table which this list is not).
+	for(i = 0; i < count; i++)
+	{
+		if(strcmp(name, named_mime[i][0]) == 0)
+			return named_mime[i][1];
+	}
+	// Compatibility fallback: strip "; charset=..." parameters that HTTP
+	// Content-Type headers often carry, then retry exact match.
+	{
+		const char *semi = strchr(name, ';');
+		if(semi)
+		{
+			size_t len = (size_t)(semi - name);
+			while(len > 0 && (name[len-1] == ' ' || name[len-1] == '\t'))
+				len--;
+			for(i = 0; i < count; i++)
+			{
+				if(strlen(named_mime[i][0]) == len &&
+				   strncmp(name, named_mime[i][0], len) == 0)
+					return named_mime[i][1];
+			}
+		}
+	}
+	return NULL;
 }

@@ -160,7 +160,8 @@ bool SSettings::Save(bool clean)
 
     if(!dir && mkdir(filedest, 0777) != 0)
         return false;
-    else closedir(dir);
+    if(dir)
+        closedir(dir);
 
     for (int i = 0; i < N; i++)
     {
@@ -588,7 +589,11 @@ bool SSettings::LoadFavorites()
             node = mxmlFindElement(node, xml, "a", "href", NULL, MXML_DESCEND))
     {
         const char * tmp = mxmlElementGetAttr(node, "href");
-        const char * name = node->child->value.opaque;
+        // mxml v3+ hides struct internals (opaque); use accessors (works with vendored mxml 2.7 too)
+        mxml_node_t *child = mxmlGetFirstChild(node);
+        const char * name = child ? mxmlGetOpaque(child) : NULL;
+        if (!name && child)
+            name = mxmlGetText(child, NULL);
 
 		if(tmp)
 		{
@@ -666,7 +671,8 @@ bool SSettings::SaveFavorites()
 
     if(!dir && mkdir(filedest, 0777) != 0)
         return false;
-    else closedir(dir);
+    if(dir)
+        closedir(dir);
 
     snprintf(filedest, sizeof(filedest), "%s/appdata/bookmarks.html", AppPath);
     FILE *file = fopen(filedest, "w");

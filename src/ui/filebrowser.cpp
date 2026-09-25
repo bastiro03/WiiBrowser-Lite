@@ -167,9 +167,10 @@ ParseDirectory()
 
 		if(!newBrowserList) // failed to allocate required memory
 		{
+			closedir(dir);
 			ResetBrowser();
-			entryNum = -1;
-			break;
+			browser.numEntries = 0;
+			return -1;
 		}
 		else
 		{
@@ -198,8 +199,9 @@ ParseDirectory()
 	// close directory
 	closedir(dir);
 
-	// Sort the file list
-	qsort(browserList, entryNum, sizeof(BROWSERENTRY), FileSortCallback);
+	// Sort the file list (entryNum >= 0 here; alloc failure returns early)
+	if(entryNum > 0 && browserList)
+		qsort(browserList, (size_t)entryNum, sizeof(BROWSERENTRY), FileSortCallback);
 
 	browser.numEntries = entryNum;
 	return entryNum;

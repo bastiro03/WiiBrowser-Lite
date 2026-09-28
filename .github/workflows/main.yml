@@ -41,6 +41,8 @@ jobs:
             ppc-ntfs \
             ppc-ext2fs \
             ppc-libfat \
+            flex \
+            bison \
             zip
       - name: Build project
         run: |

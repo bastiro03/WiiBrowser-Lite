@@ -322,13 +322,13 @@ $(BUILD)/%.pcm.o: %.pcm | $(BUILD)
 FLEX	?=	flex
 BISON	?=	bison
 
-# Generated CSS parser/lexer — flex/bison (optional, stubs committed)
+# Generated CSS parser/lexer — flex/bison (required; outputs are gitignored)
 src/html_parser/css_lex.c src/html_parser/css_lex.h: src/html_parser/css_lex.l src/html_parser/css_syntax.h
 	@echo "  FLEX $<"
-	@$(FLEX) -o src/html_parser/css_lex.c --header-file=src/html_parser/css_lex.h $< || echo "flex missing — using committed stub"
+	@$(FLEX) -o src/html_parser/css_lex.c --header-file=src/html_parser/css_lex.h $< || echo "flex missing — install flex/bison (CI/Docker include them)"
 
 src/html_parser/css_syntax.c src/html_parser/css_syntax.h: src/html_parser/css_syntax.y
 	@echo "  BISON $<"
-	@$(BISON) -d -o src/html_parser/css_syntax.c $< || echo "bison missing — using committed stub"
+	@$(BISON) -d -o src/html_parser/css_syntax.c $< || echo "bison missing — install flex/bison (CI/Docker include them)"
 
 -include $(BUILD_DEPENDS)

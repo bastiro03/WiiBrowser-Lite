@@ -5,6 +5,17 @@ labels: ["Type: Feature"]
 assignees:
   - Bastiro03
 body:
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Request type
+      description: What kind of request is this?
+      options:
+        - New feature
+        - Enhancement of an existing feature
+        - Question / support
+    validations:
+      required: true
   - type: markdown
     attributes:
       value: |

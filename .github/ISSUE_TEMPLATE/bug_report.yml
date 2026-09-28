@@ -5,6 +5,17 @@ labels: ["Type: Bug"]
 assignees:
   - Bastiro03
 body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Issue area
+      description: What does this issue concern?
+      options:
+        - Browser code (Wii app)
+        - Documentation (README, BUILD, wiki)
+        - Failing test or CI job
+    validations:
+      required: true
   - type: markdown
     attributes:
       value: |

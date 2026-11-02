@@ -1,4 +1,10 @@
+static bool historyWritable = false;
+#include <sys/stat.h>
+#include <cerrno>
+#include <sstream>
 #include "liste.h"
+#include "file_io.h"
+#include "safety.h"
 #include "settings.h"
 #include "main.h"
 
@@ -165,6 +171,7 @@ int NoUrls( History lista ) {
 }
 
 History InsUrl( History lista, char *url ) {
+    if (!url || !wbl::httpUrl(url)) return lista;
 	History punt=new Url;
 	punt->url=url;
     if (!NoUrls(lista)) {
@@ -173,22 +180,24 @@ History InsUrl( History lista, char *url ) {
     }
     punt->prox = NULL;
     punt->prec = lista;
-	return punt;
+    History oldest = RewindHistory(punt);
+    size_t count = 0;
+    for (History entry = oldest; entry; entry = entry->prox) ++count;
+    while (count-- > 128 && oldest != punt) {
+        History next = oldest->prox;
+        next->prec = NULL;
+        delete oldest;
+        oldest = next;
+    }
+    return punt;
 }
 
 void DistruggiHistory( History lista, int prox ) {
-    if (NoUrls(lista)) return;
-    if (prox)
-        DistruggiHistory(lista->prox, prox);
-    else
-        DistruggiHistory(lista->prec, prox);
-    delete (lista);
+    while (lista) { History next = prox ? lista->prox : lista->prec; delete lista; lista = next; }
 }
 
 void FreeHistory( History lista ) {
-    if (lista)
-        DistruggiHistory(lista->prox,1);
-    DistruggiHistory(lista,0);
+    DistruggiHistory(RewindHistory(lista), 1);
 }
 
 void DumpList ( History lista, const char * file ) {
@@ -208,19 +217,24 @@ void DumpList ( History lista, const char * file ) {
 }
 
 History LoadList ( const char * file ) {
-    char path[512];
-    snprintf(path, 512, "%s/appdata/history.txt", Settings.AppPath);
-    FILE * fp=fopen(path, "r");
-    if (!fp)
+    (void)file;
+    std::string data;
+    const std::string path = std::string(Settings.AppPath) + "appdata/history.txt";
+    if (!wbl::readBounded(path.c_str(), data, 128 * (wbl::MaxUrl + 1))) {
+        struct stat status;
+        historyWritable = stat(path.c_str(), &status) != 0 && errno == ENOENT;
         return NULL;
-
-    History lista = NULL;
-    while (!feof(fp)) {
-        fscanf(fp, "%s", path);
-        if (strchr(path, '#'))
-            break;
-        lista=InsUrl(lista, path);
     }
-    fclose(fp);
+    std::istringstream input(data);
+    std::string line;
+    History lista = NULL;
+    bool valid = true, sentinel = false;
+    while (std::getline(input, line)) {
+        if (!line.empty() && line.back() == '\r') line.pop_back();
+        if (line == "# End List") { sentinel = true; break; }
+        if (wbl::httpUrl(line)) lista = InsUrl(lista, &line[0]);
+        else valid = false;
+    }
+    historyWritable = valid && sentinel;
     return lista;
 }

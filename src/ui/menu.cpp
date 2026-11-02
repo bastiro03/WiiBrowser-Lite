@@ -9,6 +9,7 @@
  ***************************************************************************/
 
 #include <gccore.h>
+#include "gui_lock.h"
 #include "safety.h"
 #include <ogcsys.h>
 #include <stdio.h>
@@ -53,8 +54,8 @@ CURLSH *curl_share;
 mutex_t m_mutex;
 History history;
 
-char new_page[MAXLEN];
-static char prev_page[MAXLEN];
+char new_page[wbl::MaxUrl + 1];
+static char prev_page[wbl::MaxUrl + 1];
 static char Message[MAXLEN];
 
 static int fadeAnim;
@@ -1914,7 +1915,7 @@ static int MenuHome()
             if (history->prec)
             {
                 history=history->prec;
-                strncpy(new_page,history->url.c_str(),512);
+                snprintf(new_page, sizeof(new_page), "%s", history->url.c_str());
                 strcpy(prev_page,new_page);
                 URL.SetText(new_page);
             }
@@ -1926,7 +1927,7 @@ static int MenuHome()
             if (history->prox)
             {
                 history=history->prox;
-                strncpy(new_page,history->url.c_str(),512);
+                snprintf(new_page, sizeof(new_page), "%s", history->url.c_str());
                 strcpy(prev_page,new_page);
                 URL.SetText(new_page);
             }
@@ -1996,12 +1997,12 @@ bool CancelDownload()
 
 char *omniBox()
 {
-    char *url = (char*) malloc (sizeof(new_page)+100);
     char *encode = url_encode(new_page);
-
-    sprintf(url, "http://www.google.com/search?hl=en&source=hp&biw=&bih=&q=%s&btnG=Google+Search&gbv=1", encode);
+    if (!encode) return NULL;
+    std::string search = "https://www.google.com/search?gbv=1&q=";
+    search += encode;
     free(encode);
-    return url;
+    return search.size() <= wbl::MaxUrl ? strdup(search.c_str()) : NULL;
 }
 
 static int MenuBrowse()
@@ -2013,6 +2014,7 @@ static int MenuBrowse()
     hfile.file = NULL;
 
     url = (char*) malloc (sizeof(new_page)+10);
+    if (!url) return MENU_HOME;
     memset(url, 0, sizeof(new_page)+10);
     bool searchWord = true;
 
@@ -2054,7 +2056,11 @@ static int MenuBrowse()
         0, 0, 0, 255
     });
 
-    actionButton = new GuiButton(btnOutline.GetWidth(), btnOutline.GetHeight());
+    GuiButton cancelButton(btnOutline.GetWidth(), btnOutline.GetHeight());
+    actionButton = &cancelButton;
+    struct ActionBinding {
+        ~ActionBinding() { GuiScopedLock lock; actionButton = NULL; }
+    } actionBinding;
     actionButton->SetAlignment(ALIGN_CENTRE, ALIGN_BOTTOM);
     actionButton->SetPosition(0, -25);
 
@@ -2067,12 +2073,15 @@ static int MenuBrowse()
 
     promptWindow.Append(&dialogBoxImg);
     promptWindow.Append(&title);
+    promptWindow.Append(actionButton);
 
     GuiWindow childWindow(screenwidth, screenheight);
     childWindow.SetAlignment(ALIGN_CENTRE, ALIGN_MIDDLE);
     childWindow.SetPosition(0,0);
 
 jump:
+    if (!url || App_Exiting()) { free(url); return MENU_HOME; }
+    cancelButton.ResetState();
     decode_html_entities_utf8(url, NULL);
     save_mem(url);
     promptWindow.SetEffect(EFFECT_SLIDE_TOP | EFFECT_SLIDE_IN, 50);
@@ -2092,35 +2101,22 @@ jump:
     if(!CheckConnection())
         InitNetwork();
 
-    while(!networkinit)
+    int networkWait = 0;
+    while(!networkinit && !App_Exiting() && networkWait++ < 11000)
     {
         staticTxt.SetText("Resuming connection...");
 
-        if(LWP_ThreadIsSuspended(networkthread))
-            InitNetwork();
         usleep(1000);
     }
 
     staticTxt.SetText("Loading...please wait");
     struct block HTML;
-    HTML = downloadfile(curl_handle, url, NULL);
+    std::string postBody;
+    const bool isPost = TakeNavigationPost(url, postBody);
+    HTML = networkinit && !App_Exiting() ? (isPost ? downloadpost(curl_handle, url, postBody.c_str()) : downloadfile(curl_handle, url, NULL)) : emptyblock;
+    const bool requestCancelled = CancelDownload();
 
-#ifndef DEBUG
-    FILE *pFile = fopen ("sd:/page.html", "rb");
-    if(pFile)
-    {
-        fseek (pFile, 0, SEEK_END);
-        int size = ftell(pFile);
-        rewind (pFile);
-
-        HTML.data = (char*) malloc (sizeof(char)*size);
-        fread (HTML.data, 1, size, pFile);
-
-        HTML.size = size;
-        strcpy(HTML.type, "text/html");
-        fclose(pFile);
-    }
-#endif
+    // Release browsing never substitutes an unrelated sd:/page.html file.
 
 #ifdef TIME
     do
@@ -2133,7 +2129,7 @@ jump:
 
     usleep(500*1000);
     promptWindow.SetEffect(EFFECT_SLIDE_TOP | EFFECT_SLIDE_OUT, 50);
-    while(promptWindow.GetEffect() > 0)
+    while(!App_Exiting() && promptWindow.GetEffect() > 0)
         usleep(THREAD_SLEEP);
 
     HaltGui();
@@ -2141,14 +2137,14 @@ jump:
     mainWindow->SetState(STATE_DEFAULT);
     ResumeGui();
 
-    delete(actionButton);
-    actionButton = NULL;
+    if (requestCancelled || App_Exiting()) { free(url); free(HTML.data); return MENU_HOME; }
 
     if(HTML.size == -1)
     {
         if(performDownload(&hfile, url, &HTML))
         {
-            AddDownload(curl_multi, url, &hfile);
+            if (!AddDownload(curl_multi, url, &hfile))
+                WindowPrompt("Download unavailable", "The queue is full or the destination is invalid.", "OK", NULL);
 #ifdef WIIFLOW
             toggleManager = true;
 #else
@@ -2160,17 +2156,20 @@ jump:
         return MENU_HOME;
     }
 
-    if (CURLE_OK == curl_easy_getinfo(curl_handle, CURLINFO_EFFECTIVE_URL, &nurl))
+    if (CURLE_OK == curl_easy_getinfo(curl_handle, CURLINFO_EFFECTIVE_URL, &nurl) && nurl && wbl::httpUrl(nurl))
     {
-        url = (char*) realloc (url,strlen(nurl)+1);
+        char *replacement = static_cast<char *>(realloc(url, strlen(nurl) + 1));
+        if (!replacement) { free(url); free(HTML.data); return MENU_HOME; }
+        url = replacement;
         strcpy(url, nurl);
     }
 
     if (!HTML.size)
     {
+        free(HTML.data);
         free(url);
 
-        if (!searchWord)
+        if (!searchWord || App_Exiting())
         {
             WindowPrompt("WiiBrowser", "Failed", "Ok", NULL);
             return MENU_HOME;
@@ -2208,10 +2207,14 @@ jump:
     if (link.length()>0)
     {
         link = parseUrl(link, url);
-        url = (char*) realloc (url,strlen(link.c_str())+1);
+        if (!wbl::httpUrl(link)) { free(url); return MENU_HOME; }
+        char *replacement = static_cast<char *>(realloc(url, link.size() + 1));
+        if (!replacement) { free(url); return MENU_HOME; }
+        url = replacement;
         strcpy(url,(char*)link.c_str());
         goto jump;
     }
+    free(url);
     return MENU_HOME;
 }
 

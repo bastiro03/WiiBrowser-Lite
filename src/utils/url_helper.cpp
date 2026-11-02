@@ -1,97 +1,84 @@
 #include "url_helper.h"
+#include "safety.h"
 #include <cstring>
 #include <cstdlib>
+#include <vector>
 
-// Safe getHost — returns std::string, never derefs null
-std::string urlGetHost(const char *url) {
-    if (!url || !url[0]) return "";
-    const char *p = strchr(url, '/');
-    if (!p) return std::string(url); // no slash at all
-    // Expect "http://host/..." — need "://"
-    const char *proto = strstr(url, "://");
-    if (!proto) {
-        // No protocol, treat first '/' as host end
-        const char *c = strchr(url, '/');
-        if (!c) return std::string(url);
-        return std::string(url, (c + 1) - url);
+std::string urlGetHost(const char *url)
+{
+    if (!url || !wbl::httpUrl(url)) return "";
+    const std::string base(url);
+    const size_t authority = base.find("://") + 3;
+    const size_t end = base.find_first_of("/?#", authority);
+    return base.substr(0, end) + "/";
+}
+char *getHost(char *url) { const std::string value = urlGetHost(url); return strdup(value.c_str()); }
+
+std::string urlGetRoot(const char *url)
+{
+    if (!url || !wbl::httpUrl(url)) return "";
+    std::string base(url);
+    const size_t suffix = base.find_first_of("?#");
+    if (suffix != std::string::npos) base.erase(suffix);
+    const size_t authority = base.find("://") + 3;
+    const size_t slash = base.rfind('/');
+    return slash < authority ? base + "/" : base.substr(0, slash + 1);
+}
+std::string getRoot(char *url) { return urlGetRoot(url); }
+
+static std::string normalize(const std::string &url)
+{
+    if (!wbl::httpUrl(url)) return "";
+    const size_t authority = url.find("://") + 3;
+    const size_t pathStart = url.find_first_of("/?#", authority);
+    if (pathStart == std::string::npos || url[pathStart] != '/') return url;
+    const size_t suffix = url.find_first_of("?#", pathStart);
+    const std::string path = url.substr(pathStart, suffix - pathStart);
+    std::vector<std::string> components;
+    size_t position = 1;
+    while (position < path.size()) {
+        const size_t end = path.find('/', position);
+        const std::string part = path.substr(position, end - position);
+        if (part == "..") { if (!components.empty()) components.pop_back(); }
+        else if (!part.empty() && part != ".") components.push_back(part);
+        if (end == std::string::npos) break;
+        position = end + 1;
     }
-    p = proto + 3; // skip "://"
-    const char *c = strchr(p, '/');
-    if (c) {
-        // include trailing '/'
-        return std::string(url, (c + 1) - url);
+    std::string result = url.substr(0, pathStart) + "/";
+    for (size_t i = 0; i < components.size(); ++i) {
+        if (i) result += '/';
+        result += components[i];
     }
-    return std::string(url);
+    if (!components.empty() && (path.back() == '/' ||
+        (path.size() >= 2 && path.compare(path.size() - 2, 2, "/.") == 0) ||
+        (path.size() >= 3 && path.compare(path.size() - 3, 3, "/..") == 0))) result += '/';
+    if (suffix != std::string::npos) result += url.substr(suffix);
+    return result;
 }
 
-// Legacy wrapper — retains strndup semantics for old callers (must free)
-char *getHost(char *url) {
-    std::string s = urlGetHost(url);
-    // If original logic would have returned `url` directly (no alloc), we mimic by strndup as well
-    // to give caller ownership consistently. Caller must free.
-    return strndup(s.c_str(), s.size());
-}
-
-std::string urlGetRoot(const char *url) {
-    if (!url || !url[0]) return "/";
-    const char *firstSlash = strchr(url, '/');
-    if (!firstSlash) return std::string(url) + "/";
-    const char *proto = strstr(url, "://");
-    const char *start = proto ? proto + 3 : url;
-    // Find last '/' after start
-    const char *last = strrchr(start, '/');
-    if (last) {
-        return std::string(url, (last + 1) - url);
-    }
-    // No slash after host — return url + "/"
-    std::string r(url);
-    if (!r.empty() && r.back() != '/') r += "/";
-    return r;
-}
-std::string getRoot(char *url) {
-    return urlGetRoot(url);
-}
-
-std::string urlAdjust(const std::string& link, const char *url) {
-    if (link.empty()) return url ? std::string(url) : "";
-    if (link.rfind("http://", 0) == 0 || link.rfind("https://", 0) == 0)
-        return link;
-    if (link.size() >= 2 && link[0] == '/' && link[1] == '/') {
-        return std::string("http:") + link; // TODO: preserve https if base is https
-    }
+std::string urlAdjust(const std::string &link, const char *url)
+{
+    if (link.empty()) return url ? normalize(url) : "";
+    if (wbl::httpUrl(link)) return normalize(link);
+    if (!url || !wbl::httpUrl(url)) return "";
+    const std::string base(url);
+    if (link.compare(0, 2, "//") == 0) return normalize(std::string("http:") + link);
+    // Unknown schemes, control characters and command-like backslashes are not
+    // relative URLs. In particular, never turn file:/ or javascript: into HTTP.
+    const size_t colon = link.find(':');
+    const size_t separator = link.find_first_of("/?#");
+    if (colon != std::string::npos && (separator == std::string::npos || colon < separator)) return "";
+    if (link[0] == '#') return normalize(base.substr(0, base.find('#')) + link);
+    if (link[0] == '?') return normalize(base.substr(0, base.find_first_of("?#")) + link);
     if (link[0] == '/') {
-        std::string host = urlGetHost(url);
-        std::string l = link;
-        if (!host.empty() && host.back() == '/')
-            l.erase(l.begin()); // avoid "//"
-        return host + l;
+        const std::string origin = urlGetHost(url);
+        return normalize(origin.substr(0, origin.size() - 1) + link);
     }
-    // relative
-    std::string root = urlGetRoot(url);
-    return root + link;
+    return normalize(urlGetRoot(url) + link);
 }
 
-// Compat wrappers
-std::string adjustUrl(std::string link, const char* url) {
-    return urlAdjust(link, url);
-}
-
-std::string urlJump(const std::string& link, const char *url) {
-    if (!url) return link;
-    std::string r(url);
-    r += link;
-    return r;
-}
-std::string jumpUrl(std::string link, const char* url) {
-    return urlJump(link, url);
-}
-
-std::string urlParse(const std::string& link, const char *url) {
-    if (link.empty()) return url ? std::string(url) : "";
-    if (link[0] == '#')
-        return urlJump(link, url);
-    return urlAdjust(link, url);
-}
-std::string parseUrl(std::string link, const char* url) {
-    return urlParse(link, url);
-}
+std::string adjustUrl(std::string link, const char *url) { return urlAdjust(link, url); }
+std::string urlJump(const std::string &link, const char *url) { return urlAdjust(link, url); }
+std::string jumpUrl(std::string link, const char *url) { return urlJump(link, url); }
+std::string urlParse(const std::string &link, const char *url) { return urlAdjust(link, url); }
+std::string parseUrl(std::string link, const char *url) { return urlParse(link, url); }

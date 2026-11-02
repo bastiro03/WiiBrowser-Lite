@@ -68,6 +68,7 @@ extern "C" bool IsFontLoadFailed() { return g_fontLoadFailed; }
 extern "C" const char* GetFontErrorMsg() { return g_fontErrorMsg; }
 
 FreeTypeGX *fontSystem[MAX_FONT_SIZE+1];
+static size_t glyphTextureBytes = 0;
 
 static FT_Byte * MainFont = (FT_Byte *) font_regular_ttf;
 static u32 MainFontSize = font_regular_ttf_size;
@@ -107,41 +108,56 @@ void ClearFontData()
 
 wchar_t* charToWideChar(const char* strChar)
 {
-    wchar_t *strWChar = new (std::nothrow) wchar_t[strlen(strChar) + 1];
-    if(!strWChar)
-        return NULL;
-
-    int bt = mbstowcs(strWChar, strChar, strlen(strChar));
-    if (bt > 0)
-    {
-        strWChar[bt] = (wchar_t)'\0';
-        return strWChar;
+    if (!strChar) strChar = "";
+    const size_t length = strnlen(strChar, wbl::MaxDocument);
+    if (length == wbl::MaxDocument) return NULL;
+    wchar_t *wide = new (std::nothrow) wchar_t[length + 1];
+    if (!wide) return NULL;
+    size_t input = 0, output = 0;
+    const unsigned char *bytes = reinterpret_cast<const unsigned char *>(strChar);
+    while (input < length) {
+        unsigned value = bytes[input];
+        size_t count = value < 0x80 ? 1 : value >= 0xc2 && value <= 0xdf ? 2 :
+                       value >= 0xe0 && value <= 0xef ? 3 : value >= 0xf0 && value <= 0xf4 ? 4 : 0;
+        bool valid = count && count <= length - input;
+        if (valid && count > 1) {
+            value &= (1u << (7 - count)) - 1;
+            for (size_t i = 1; i < count; ++i) {
+                if ((bytes[input + i] & 0xc0) != 0x80) { valid = false; break; }
+                value = (value << 6) | (bytes[input + i] & 0x3f);
+            }
+            const unsigned minimum[] = {0, 0, 0x80, 0x800, 0x10000};
+            if (value < minimum[count] || value > 0x10ffff || (value >= 0xd800 && value <= 0xdfff)) valid = false;
+        }
+        wide[output++] = static_cast<wchar_t>(valid ? value : 0xfffd);
+        input += valid ? count : 1;
     }
-
-    wchar_t *tempDest = strWChar;
-    while((*tempDest++ = *strChar++));
-
-    return strWChar;
+    wide[output] = 0;
+    return wide;
 }
 
 char* wideCharToChar(const wchar_t* strWChar, int len)
 {
-    int size = (len > 0) ? len : wcslen(strWChar) + 1;
-    char *strChar = new (std::nothrow) char[size];
-    if(!strChar)
-        return NULL;
-
-    int bt = wcstombs(strChar, strWChar, wcslen(strWChar));
-    if (bt > 0)
-    {
-        strChar[bt] = (char)'\0';
-        return strChar;
+    if (!strWChar) return NULL;
+    const size_t count = wcslen(strWChar);
+    if (count > wbl::MaxDocument / 4) return NULL;
+    const size_t capacity = len > 0 ? static_cast<size_t>(len) : count * 4 + 1;
+    char *bytes = new (std::nothrow) char[capacity];
+    if (!bytes) return NULL;
+    size_t used = 0;
+    for (size_t i = 0; i < count; ++i) {
+        unsigned value = static_cast<unsigned>(strWChar[i]);
+        if (value > 0x10ffff || (value >= 0xd800 && value <= 0xdfff)) value = 0xfffd;
+        const size_t n = value < 0x80 ? 1 : value < 0x800 ? 2 : value < 0x10000 ? 3 : 4;
+        if (n >= capacity - used) break;
+        if (n == 1) bytes[used++] = static_cast<char>(value);
+        else {
+            bytes[used++] = static_cast<char>((n == 2 ? 0xc0 : n == 3 ? 0xe0 : 0xf0) | (value >> (6 * (n - 1))));
+            for (size_t j = n - 1; j > 0; --j) bytes[used++] = static_cast<char>(0x80 | ((value >> (6 * (j - 1))) & 0x3f));
+        }
     }
-
-    char *tempDest = strChar;
-    while((*tempDest++ = *strWChar++));
-
-    return strChar;
+    bytes[used] = 0;
+    return bytes;
 }
 
 /**
@@ -364,6 +380,7 @@ void FreeTypeGX::unloadFont()
 
     for(itr = fontData.begin(); itr != fontData.end(); itr++)
         if (itr->second.glyphDataTexture) {
+            glyphTextureBytes -= static_cast<size_t>(itr->second.textureWidth) * itr->second.textureHeight * 4;
             free(itr->second.glyphDataTexture);
         }
 
@@ -397,6 +414,7 @@ void FreeTypeGX::ChangeFontSize(FT_UInt pixelSize)
 ftgxCharData *FreeTypeGX::cacheGlyphData(wchar_t charCode)
 {
     GuiScopedLock lock;
+    if (fontData.size() >= 512) return NULL;
     if(!ftValid || !ftFace || !ftSlot)
         return NULL;
 
@@ -470,6 +488,7 @@ uint16_t FreeTypeGX::cacheGlyphDataComplete()
 void FreeTypeGX::loadGlyphData(FT_Bitmap *bmp, ftgxCharData *charData)
 {
     int length = charData->textureWidth * charData->textureHeight * 4;
+    if (length <= 0 || static_cast<size_t>(length) > 2 * 1024 * 1024 - glyphTextureBytes) return;
 
     uint8_t * glyphData = (uint8_t *) memalign(32, length);
     if(!glyphData)
@@ -495,6 +514,7 @@ void FreeTypeGX::loadGlyphData(FT_Bitmap *bmp, ftgxCharData *charData)
     DCFlushRange(glyphData, length);
 
     charData->glyphDataTexture = (uint32_t *) glyphData;
+    glyphTextureBytes += length;
 }
 
 /**

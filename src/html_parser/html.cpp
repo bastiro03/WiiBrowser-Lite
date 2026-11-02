@@ -53,6 +53,7 @@ static void *DownloadImage (void *arg)
     free(baseUrl);
 
     if (!curl_img) return NULL;
+    size_t textureBytes = 0;
     while (threadState != THREAD_EXIT && !App_Exiting()) {
         Image *item = NULL;
         std::string source;
@@ -72,7 +73,9 @@ static void *DownloadImage (void *arg)
         if (response.size > 0 && strstr(response.type, "image")) {
             GuiImageData *decoded = new (std::nothrow) GuiImageData(reinterpret_cast<u8 *>(response.data), response.size);
             GuiScopedLock lock;
-            if (threadState != THREAD_EXIT && decoded && decoded->GetImage()) {
+            const size_t length = decoded ? static_cast<size_t>(decoded->GetWidth()) * decoded->GetHeight() * 4 : 0;
+            if (threadState != THREAD_EXIT && decoded && decoded->GetImage() && length <= wbl::MaxImageBytes - textureBytes) {
+                textureBytes += length;
                 item->imgdata = decoded;
                 item->img->SetImage(decoded);
                 const int width = MIN(imageSize(item->tag, item->img).width, screenwidth - 80);
@@ -114,7 +117,8 @@ void AddButton(Lista::iterator lista, int type, GuiImage *image, void *arg)
             SetFont(btn->label, lista->value[*(int*)arg].mode);
 
             btn->label->SetPosition(0,0);
-            btn->tooltip=new GuiTooltip(lista->attribute.c_str());
+            const std::string caption = lista->attribute.substr(0, 256);
+            btn->tooltip=new GuiTooltip(caption.c_str());
             btn->btn=new GuiButton(btn->label->GetTextWidth(), 20);
             btn->btn->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
             btn->btn->SetLabel(btn->label);
@@ -176,6 +180,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
     bool done = false;
     u64 refreshAt = 0;
     std::string refreshUrl;
+    size_t widgets = 0;
 
     GuiWindow *scrollWindow = new GuiWindow(50, screenheight-80);
     scrollWindow->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
@@ -307,7 +312,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
 
                 else if (lista->name=="a")
                 {
-                    for(i=0; i<lista->value.size(); i++)
+                    for(i=0; i<lista->value.size() && widgets++ < 256; i++)
                     {
                         AddButton(lista, ANCHOR, NULL, &i);
                         btn->label->SetOffset(&offset);
@@ -434,7 +439,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
 
                 else
                 {
-                    for(i=0; i<lista->value.size(); i++)
+                    for(i=0; i<lista->value.size() && widgets++ < 256; i++)
                     {
                         text=InsText(text);
                         text->txt = new GuiText((char*)lista->value[i].text.c_str(), 20, (GXColor)

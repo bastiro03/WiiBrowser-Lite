@@ -10,7 +10,7 @@ namespace htmlcxx {
 		class Node {
 
 			public:
-				Node() {}
+				Node() : mOffset(0), mLength(0), mIsHtmlTag(false), mIsHtmlClose(true), mComment(false) {}
 				//Node(const Node &rhs); //uses default
 				~Node() {}
 

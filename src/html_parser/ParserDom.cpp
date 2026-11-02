@@ -3,6 +3,8 @@
 
 #include <iostream>
 #include <vector>
+#include <cctype>
+#include "safety.h"
 
 //#define DEBUG
 #include "debug.h"
@@ -57,7 +59,11 @@ void ParserDom::foundTag(Node node, bool isEnd)
 		//append to current tree node
 		tree<HTML::Node>::iterator next_state;
 		next_state = mHtmlTree.append_child(mCurrentState, node);
-		mCurrentState = next_state;
+        std::string name = node.tagName();
+        for (char &c : name) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+        const std::string &markup = node.text();
+        const bool selfClosing = markup.size() >= 2 && markup.compare(markup.size() - 2, 2, "/>") == 0;
+        if (!wbl::voidElement(name) && !selfClosing) mCurrentState = next_state;
 	}
 	else
 	{

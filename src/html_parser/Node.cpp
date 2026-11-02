@@ -25,7 +25,7 @@ void Node::parseAttributes()
 
 	// Skip tagname
 	if (!isalpha(*ptr)) return;
-	while (!isspace(*ptr)) ++ptr;
+	while (*ptr && *ptr != '>' && *ptr != '/' && !isspace(static_cast<unsigned char>(*ptr))) ++ptr;
 
 	// Skip blankspace after tagname
 	while (isspace(*ptr)) ++ptr;

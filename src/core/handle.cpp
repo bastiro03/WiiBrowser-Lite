@@ -1,6 +1,6 @@
 #include "menu.h"
-#include "safety.h"
 #include "handle.h"
+#include "safety.h"
 
 GuiToolbar *Toolbar = NULL;
 
@@ -702,7 +702,8 @@ void HandleMenuBar(string *link, char* url, char* orig, char *title, int *choice
             if (!Toolbar->checked)
             {
                 if (WindowPrompt("Add Favorite", "Add this site to favorites?", "Yes", "No"))
-                    Settings.AddFavorite(url, title);
+                    if (!Settings.AddFavorite(url, title))
+                        WindowPrompt("Bookmark not saved", "The bookmark is too long, storage is unavailable, or recovery is required.", "OK", NULL);
             }
             else
             {
@@ -759,7 +760,6 @@ int HandleMeta(Lista::iterator lista, string *link, struct block *html)
     int choice = 0;
     if (lista->value[0].text=="refresh")
     {
-        sleep(getTime(lista->attribute));
         link->assign(getUrl(&choice, lista->attribute));
     }
     return choice;
@@ -767,10 +767,9 @@ int HandleMeta(Lista::iterator lista, string *link, struct block *html)
 
 int getTime(string url)
 {
-    int found, t=0;
-    if ((found=url.find_first_of(";", 0))!=string::npos)
-        t=atoi(url.substr(0,found).c_str());
-    return t>0 ? t:1;
+    const size_t end = url.find(';');
+    int seconds = 0;
+    return wbl::parseInteger(url.substr(0, end).c_str(), 0, 3600, seconds) ? seconds : -1;
 }
 
 string getUrl(int *choice, string url)

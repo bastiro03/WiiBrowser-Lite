@@ -1,8 +1,8 @@
 #include "html_helpers.h"
-#include "main.h"
 #include "html.h"
 #include "common.h"
 #include "context.h"
+#include "main.h"
 #include <climits>
 
 int knownType(char type[]) {
@@ -105,7 +105,7 @@ void FreeMem(GuiWindow* mainWindow, ListaDiTesto text, ListaDiBottoni btn, Lista
             if(temp->content!=null) effect=temp;
         }
     }
-    if (effect) while (effect->elem->GetEffect()>0) usleep(100);
+    if (effect) while (!App_Exiting() && effect->elem->GetEffect()>0) usleep(100);
 
     HaltGui();
     for (temp=Index; !NoIndex(temp); temp=temp->prox)

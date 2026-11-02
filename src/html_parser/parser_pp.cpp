@@ -195,6 +195,7 @@ bool Parser::parse(const string& css)
 
 bool Parser::parse(const char *buf, int buf_len) 
 {
+    if (!buf || buf_len < 0 || buf_len > 4096) return false;
 
 	struct selector_list_t *css, *pos;
 

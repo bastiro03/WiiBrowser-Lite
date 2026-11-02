@@ -63,12 +63,13 @@ void htmlcxx::HTML::ParserSax::parse(_Iterator &begin, _Iterator &end, std::forw
 
 				iterator end_text(c);
 				++c;
+				if (c == end) { this->parseContent(begin, c); goto DONE; }
 
 				if (*c == '/')
 				{
 					++c;
 					const char *l = mpLiteral;
-					while (*l && ::tolower(*c) == *l)
+					while (c != end && *l && ::tolower(static_cast<unsigned char>(*c)) == *l)
 					{
 						++c;
 						++l;
@@ -79,9 +80,9 @@ void htmlcxx::HTML::ParserSax::parse(_Iterator &begin, _Iterator &end, std::forw
 					if (!*l && strcmp(mpLiteral, "plaintext"))
 					{
 						// matched all and is not tag plaintext
-						while (isspace(*c)) ++c;
+						while (c != end && isspace(static_cast<unsigned char>(*c))) ++c;
 
-						if (*c == '>')
+						if (c != end && *c == '>')
 						{
 							++c;
 							if (begin != end_text)

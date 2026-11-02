@@ -7,10 +7,13 @@
 #include <fstream>
 #include <stdexcept>
 #include <cstdio>
+#include <algorithm>
+#include <new>
 
 #include "liste.h"
 #include "main.h"
 #include "ruleset.h"
+#include "safety.h"
 
 #define VERSION "0.6"
 
@@ -25,18 +28,12 @@ enum {title,a,form,text,all};
 
 void save_mem(string str)
 {
-    ofstream file;
-    file.open ("debug.txt", ios::out | ios::app);
-    file << str << "\r\n\r\n";
-    file.close();
+    (void)str; // URLs and form-derived data must not be written to debug logs.
 }
 
 void save_mem_int(float str)
 {
-    ofstream file;
-    file.open ("debug.txt", ios::out | ios::app);
-    file << str << "\r\n\r\n";
-    file.close();
+    (void)str;
 }
 
 bool equal(string s1, string s2)
@@ -46,7 +43,11 @@ bool equal(string s1, string s2)
 
 void merge(Tag *tag, vector<Value> out)
 {
-    tag->value.insert(tag->value.end(), out.begin(), out.end());
+    if (!tag) return;
+    for (const Value &value : out) {
+        if (tag->value.size() >= 32) break;
+        tag->value.push_back(value);
+    }
 }
 
 int checkparent(vector<string> tag, int start)
@@ -148,33 +149,21 @@ string createLink(tree<HTML::Node>::iterator it)
 
 string stripEntities(string input)
 {
-    string text = input;
-    int begin = 0;
-    int start, end = 0;
-
-    while((start = text.find('&', begin)) != string::npos)
-    {
-        end = text.find(';', start);
-        if(end++ != (int)string::npos)
-            text.erase(start, end-start);
-
-        if(end - 1 == (int)string::npos)
-            begin = start + 1;
-        else begin = end;
-    }
-
-    return text;
+    if (input.empty()) return input;
+    decode_html_entities_utf8(&input[0], NULL);
+    input.resize(strlen(input.c_str()));
+    return input;
 }
 
 vector<Value> splitText(string text, vector<string> parent, int chars, int rows)
 {
     vector<Value> data;
-    int maxLen = chars * rows;
+    int maxLen = std::max(1, std::min(256, chars * rows));
 
     Value value;
     value.mode = parent;
 
-    for (unsigned int index = 0; index < text.length(); index += maxLen)
+    for (unsigned int index = 0; index < text.length() && data.size() < 32; index += maxLen)
     {
         value.text = text.substr(index, MIN(maxLen, text.length() - index));
         data.push_back(value);
@@ -196,9 +185,11 @@ string findText(tree<HTML::Node>::iterator it)
         if (!begin->isTag() && !begin->isClosing() && !begin->isComment())
         {
             char *decode=(char*)malloc(begin->text().length()+1);
+            if (!decode) throw std::bad_alloc();
             decode_html_entities_utf8(strcpy(decode, begin->text().c_str()),NULL);
             text.append(decode);
             free(decode);
+            if (text.size() >= 512) { text.resize(512); break; }
         }
     }
     return text;
@@ -206,6 +197,7 @@ string findText(tree<HTML::Node>::iterator it)
 
 string search(string id, tree<HTML::Node>::iterator it)
 {
+    if (id.empty()) return "noLabel";
     tree<HTML::Node>::iterator begin, ends;
     begin = it;
     ends = it;
@@ -250,10 +242,15 @@ Lista getTag(char * buffer, char * url)
     string css_code;
     tree<HTML::Node> dom;
     Lista l1;
+    if (!buffer || strnlen(buffer, wbl::MaxDocument) == wbl::MaxDocument) return l1;
+    size_t tokens = 0;
+    for (const char *p = buffer; *p; ++p)
+        if (*p == '<' && ++tokens > wbl::MaxPageItems) return l1;
 
     try
     {
         string html(buffer);
+        if (!wbl::markupBudget(html)) return l1;
         apply_ruleset(&html, url);
 
         HTML::ParserDom parser;
@@ -273,6 +270,7 @@ Lista getTag(char * buffer, char * url)
         if(it==end)
         {
             decode=(char*)malloc(html.length()+1);
+            if (!decode) throw std::bad_alloc();
             decode_html_entities_utf8(strcpy(decode, html.c_str()),NULL);
             string item(decode);
             free(decode);
@@ -294,6 +292,7 @@ Lista getTag(char * buffer, char * url)
 
         for (; it!=end; ++it)
         {
+            if (l1.size() >= 256 || dom.depth(it) > 64) break;
             if (equal(it->tagName(), "script"))
             {
                 it.skip_children();
@@ -305,6 +304,7 @@ Lista getTag(char * buffer, char * url)
                 if (!parent.empty() && checkparent(parent,TITLE))
                 {
                     decode=(char*)malloc(it->text().length()+1);
+                    if (!decode) throw std::bad_alloc();
                     decode_html_entities_utf8(strcpy(decode, it->text().c_str()),NULL);
                     string item(decode);
                     free(decode);
@@ -410,6 +410,10 @@ Lista getTag(char * buffer, char * url)
                     if (skip && !open[form].open)
                     {
                         it.skip_children();
+                        auto following = it;
+                        ++following;
+                        if (following != end && following->isClosing() &&
+                            equal(following->tagName(), it->tagName())) it = following;
                         continue;
                     }
                 }
@@ -435,7 +439,8 @@ Lista getTag(char * buffer, char * url)
                 else if (equal(it->tagName(), "a"))
                 {
                     l1.push_back( {"a"});
-                    l1.rbegin()->attribute.append (createLink(it));
+                    const std::string target = createLink(it);
+                    if (target.size() <= wbl::MaxUrl) l1.rbegin()->attribute = target;
 
                     open[a].open=true;
                     open[a].p=&(*l1.rbegin());
@@ -452,6 +457,7 @@ Lista getTag(char * buffer, char * url)
 
                     l1.push_back( {"img"});
                     l1.rbegin()->attribute.append (it->attribute("src").second);
+                    if (l1.rbegin()->attribute.size() > wbl::MaxUrl) l1.rbegin()->attribute.clear();
 
                     l1.rbegin()->value.push_back ( {it->attribute("width").second});
                     l1.rbegin()->value.push_back ( {it->attribute("height").second});
@@ -463,19 +469,28 @@ Lista getTag(char * buffer, char * url)
                     l1.rbegin()->form.action.append (it->attribute("action").second);
                     l1.rbegin()->form.method.append (it->attribute("method").second);
                     l1.rbegin()->form.enctype.append (it->attribute("enctype").second);
+                    if (l1.rbegin()->form.action.size() > wbl::MaxUrl)
+                        l1.rbegin()->form.method = "disabled";
                     open[form].open=true;
                     open[form].p=&(*l1.rbegin());
                 }
                 else if (equal(it->tagName(), "input"))
                 {
-                    if (open[form].open)
+                    if (open[form].open && open[form].p->form.method != "disabled")
                     {
+                        size_t fields = 0;
+                        for (Input *field = open[form].p->form.input; field; field = field->prox) ++fields;
+                        if (fields >= 128 || it->attribute("name").second.size() > 128 ||
+                            it->attribute("value").second.size() > 512) {
+                            open[form].p->form.method = "disabled";
+                            continue;
+                        }
                         tree<HTML::Node>::iterator k = it;
-                        while (!equal(it->tagName(), "form") && k != dom.begin())
+                        while (!equal(k->tagName(), "form") && k != dom.begin())
                             k = dom.parent(k);
                         string label=search(it->attribute("id").second, k);
                         open[form].p->form.input=InsInFondo(open[form].p->form.input, it->attribute("name").second, it->attribute("type").second, stripEntities(it->attribute("value").second), label);
-                        SetOption(open[form].p->form.input, it->attribute("checked").second);
+                        SetOption(open[form].p->form.input, it->attribute("checked").first ? "checked" : "");
 
                         if(it->attribute("type").second == "button")
                         {
@@ -487,10 +502,10 @@ Lista getTag(char * buffer, char * url)
                 }
                 else if (equal(it->tagName(), "textarea"))
                 {
-                    if (open[form].open)
+                    if (open[form].open && open[form].p->form.method != "disabled")
                     {
                         tree<HTML::Node>::iterator k = it;
-                        while (!equal(it->tagName(), "form") && k != dom.begin())
+                        while (!equal(k->tagName(), "form") && k != dom.begin())
                             k = dom.parent(k);
                         string label=search(it->attribute("id").second, k);
                         open[form].p->form.input=InsInFondo(open[form].p->form.input, it->attribute("name").second, it->tagName(), "", label);
@@ -552,14 +567,22 @@ string ParseList(char *buffer)
 {
     tree<HTML::Node> dom;
     string res, html(buffer);
+    if (!wbl::markupBudget(html)) return "";
     HTML::ParserDom parser;
-
-    res.append("<!DOCTYPE NETSCAPE-Bookmark-file-1>");
-    res.append("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
-
-    res.append("<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"></meta>");
-    res.append("<title>Bookmarks</title>");
-    res.append("<dl>");
+    res = "<?xml version=\"1.0\" encoding=\"utf-8\"?><dl>";
+    auto escape = [](const std::string &text) {
+        std::string result;
+        for (char c : text) {
+            switch (c) {
+                case '&': result += "&amp;"; break;
+                case '<': result += "&lt;"; break;
+                case '>': result += "&gt;"; break;
+                case '"': result += "&quot;"; break;
+                default: result += c; break;
+            }
+        }
+        return result;
+    };
 
     //Dump all links of the document
     dom = parser.parseTree(html);
@@ -571,12 +594,13 @@ string ParseList(char *buffer)
         if (equal(it->tagName(), "a"))
         {
             it->parseAttributes();
-            string attr = it->attribute("href").second;
-            string content = it->content(html);
+            string attr = stripEntities(it->attribute("href").second);
+            string content = findText(it);
 
             if(attr.length() > 0)
             {
-                res.append("<dt>" + content + "</dt>");
+                if (!wbl::httpUrl(attr) || attr.size() >= 512 || content.size() >= 512) return "";
+                res.append("<dt><a href=\"" + escape(attr) + "\">" + escape(content) + "</a></dt>");
             }
         }
     }

@@ -1,11 +1,11 @@
 #include <stdio.h>
-#include "gui_lock.h"
-#include "safety.h"
 #include <stdlib.h>
 
 #include "fileop.h"
 #include "filebrowser.h"
 #include "config.h"
+#include "safety.h"
+#include "gui_lock.h"
 
 bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, size_t capacity, const char *label)
 {
@@ -305,12 +305,14 @@ int makedir (char *newdir)
 
 void show_mem()
 {
+#ifdef WBL_DEBUG_DIAGNOSTICS
     FILE *file = fopen("debug.txt", "a");
     if (!file) return;
     fprintf(file, "m1(%.4f) m2(%.4f)\r\n",
             ((float)((char*)SYS_GetArena1Hi()-(char*)SYS_GetArena1Lo()))/0x100000,
             ((float)((char*)SYS_GetArena2Hi()-(char*)SYS_GetArena2Lo()))/0x100000);
     fclose(file);
+#endif
 }
 
 /****************************************************************************

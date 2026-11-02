@@ -1,12 +1,12 @@
-static bool historyWritable = false;
-#include <sys/stat.h>
-#include <cerrno>
-#include <sstream>
 #include "liste.h"
-#include "file_io.h"
-#include "safety.h"
 #include "settings.h"
 #include "main.h"
+#include "safety.h"
+#include "file_io.h"
+#include <sstream>
+#include <cerrno>
+#include <sys/stat.h>
+static bool historyWritable = false;
 
 /*************************************************************
                      IMPLEMENTAZIONE
@@ -23,16 +23,13 @@ int NoText( ListaDiTesto lista ) {
 
 ListaDiTesto InsText( ListaDiTesto lista ) {
 	ListaDiTesto punt;
-    punt=new Text;
+    punt=new Text{};
     punt->prox=lista;
 	return  punt;
 }
 
 void DistruggiText( ListaDiTesto lista ) {
-    if (NoText(lista)) return;
-    DistruggiText(lista->prox);
-    delete (lista->txt);
-    delete (lista);
+    while (lista) { Text *next = lista->prox; delete lista->txt; delete lista; lista = next; }
 }
 
 //Button
@@ -55,10 +52,16 @@ ListaDiBottoni InsButton( ListaDiBottoni lista, int outline ) {
 }
 
 void DistruggiButton( ListaDiBottoni lista ) {
-    if (NoButton(lista)) return;
-    DistruggiButton(lista->prox);
-    delete (lista->btn);
-    delete (lista);
+    while (lista) {
+        Button *next = lista->prox;
+        delete lista->btn;
+        delete lista->label;
+        delete lista->tooltip;
+        delete lista->ownedImage;
+        delete lista->extraLabel;
+        delete lista;
+        lista = next;
+    }
 }
 
 //Input
@@ -71,17 +74,13 @@ int NoInput( ListaDiInput lista ) {
 }
 
 ListaDiInput InsInFondo( ListaDiInput lista, TipoElemento name, TipoElemento type, TipoElemento value, TipoElemento label ) {
-    ListaDiInput punt;
-    if( NoInput(lista) ) {
-        punt=new Input;
-        punt->name=name;
-        punt->type=type;
-        punt->value=value;
-        punt->label=label;
-        punt->prox=NULL;
-        return punt;
-    }
-    lista->prox=InsInFondo(lista->prox, name, type, value, label);
+    Input *punt = new Input{name, type, value, "", label, NULL};
+    if (!lista) return punt;
+    Input *last = lista;
+    size_t count = 1;
+    while (last->prox && count++ < 128) last = last->prox;
+    if (count >= 128) { delete punt; return lista; }
+    last->prox = punt;
     return lista;
 }
 
@@ -97,9 +96,7 @@ void SetOption( ListaDiInput element, TipoElemento value )
 }
 
 void DistruggiInput( ListaDiInput lista ) {
-    if (NoInput(lista)) return;
-    DistruggiInput(lista->prox);
-    delete (lista);
+    while (lista) { Input *next = lista->prox; delete lista; lista = next; }
 }
 
 //Image
@@ -113,7 +110,7 @@ int NoImg( ListaDiImg lista ) {
 
 ListaDiImg InsImg( ListaDiImg lista ) {
 	ListaDiImg punt;
-    punt=new Image;
+    punt=new Image{};
     punt->tag = NULL;
     punt->imgdata = NULL;
     punt->fetched = false;
@@ -122,11 +119,7 @@ ListaDiImg InsImg( ListaDiImg lista ) {
 }
 
 void DistruggiImg( ListaDiImg lista ) {
-    if (NoImg(lista)) return;
-    DistruggiImg(lista->prox);
-    delete (lista->img);
-    delete (lista->imgdata);
-    delete (lista);
+    while (lista) { Image *next = lista->prox; delete lista->img; delete lista->imgdata; delete lista; lista = next; }
 }
 
 //Index
@@ -139,7 +132,7 @@ int NoIndex( Indice lista ) {
 }
 
 Indice InsIndex( Indice lista ) {
-	Indice punt=new Index;
+	Indice punt=new Index{};
     if (!NoIndex(lista))
         lista->prec = punt;
     punt->prec = NULL;
@@ -148,9 +141,7 @@ Indice InsIndex( Indice lista ) {
 }
 
 void DistruggiIndex( Indice lista ) {
-    if (NoIndex(lista)) return;
-    DistruggiIndex(lista->prox);
-    delete (lista);
+    while (lista) { Index *next = lista->prox; delete lista; lista = next; }
 }
 
 //History

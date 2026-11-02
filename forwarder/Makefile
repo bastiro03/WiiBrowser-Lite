@@ -1,3 +1,4 @@
+$(error Forwarder quarantined: use the main HBC app; loader and USB safety/provenance are not cleared)
 #---------------------------------------------------------------------------------
 # Clear the implicit built in rules
 #---------------------------------------------------------------------------------

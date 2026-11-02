@@ -194,8 +194,8 @@ lint:
 
 # Forwarder channel (folded into main build, optional) — Q4
 forwarder:
-	@echo "Building forwarder channel..."
-	@$(MAKE) -C forwarder
+	@echo "Forwarder quarantined: use the main HBC app." >&2
+	@exit 1
 
 distclean: clean
 	@echo "Removing generated parser/lexer and build artifacts..."

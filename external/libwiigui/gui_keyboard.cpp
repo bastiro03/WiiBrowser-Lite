@@ -84,9 +84,9 @@ char * GuiKeyboard::GetDisplayText(char * t)
 GuiKeyboard::GuiKeyboard(char * t, u32 max, int autofill)
 {
     if(bInitUSBKeyboard) {
-		bInitUSBKeyboard = false;
-        KEYBOARD_Init(0);
+        if (KEYBOARD_Init(0) == 0) bInitUSBKeyboard = false;
     }
+    if (!bInitUSBKeyboard) KEYBOARD_FlushEvents();
 	memset(&keyboardEvent, 0, sizeof(keyboardEvent));
 	DeleteDelay = 0;
 	BackDelay = 0;
@@ -348,6 +348,10 @@ GuiKeyboard::GuiKeyboard(char * t, u32 max, int autofill)
  */
 GuiKeyboard::~GuiKeyboard()
 {
+    if (!bInitUSBKeyboard) {
+        KEYBOARD_Deinit();
+        bInitUSBKeyboard = true;
+    }
 	delete kbText;
 	delete TextPointerBtn;
 	delete GoRight;
@@ -525,7 +529,7 @@ void GuiKeyboard::Update(GuiTrigger * t)
 
     if(t->chan == 0) {
         // Update only once every frame (50-60 times per second)
-        bool bKeyChangeEvent = (KEYBOARD_GetEvent(&keyboardEvent) == 1);
+        bool bKeyChangeEvent = !bInitUSBKeyboard && (KEYBOARD_GetEvent(&keyboardEvent) == 1);
 		if(bKeyChangeEvent) {
 			if(keyboardEvent.type == KEYBOARD_PRESSED) {
 				keyHeldDelay.reset();

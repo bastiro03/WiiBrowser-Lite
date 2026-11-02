@@ -1,123 +1,56 @@
 #include "networkop.h"
-#define host "www.google.com"
+#include <atomic>
+#include "main.h"
 
-u8 networkstack[GUITH_STACK] ATTRIBUTE_ALIGN (32);
+u8 networkstack[GUITH_STACK] ATTRIBUTE_ALIGN(32);
 lwp_t networkthread = LWP_THREAD_NULL;
-
-volatile int networkThreadHalt = 0;
-volatile bool networkinit = 1;
-
-/****************************************************************************
- * NetworkThread
- *
- * Thread to handle connection.
- ***************************************************************************/
-void *NetworkThread (void *arg)
+volatile bool networkinit = false;
+namespace {
+std::atomic<bool> stop(false);
+std::atomic<bool> requested(false);
+void *networkWorker(void *)
 {
-    s32 res = -1;
-	int retry;
-	int wait;
-	static bool prevInit = false;
-
-	while(!networkThreadHalt)
-	{
-		retry = 5;
-
-		while (retry > 0 && !networkThreadHalt)
-		{
-			net_deinit();
-
-			if(prevInit)
-			{
-				prevInit = false; // only call net_wc24cleanup once
-				net_wc24cleanup(); // kill wc24
-				usleep(10000);
-			}
-
-			res = net_init_async(NULL, NULL);
-
-			if(res != 0)
-			{
-				sleep(1);
-				retry--;
-				continue;
-			}
-
-			res = net_get_status();
-			wait = 500; // only wait 10 sec
-
-			while (res == -EBUSY && wait > 0 && !networkThreadHalt)
-			{
-				usleep(20*1000);
-				res = net_get_status();
-				wait--;
-			}
-
-			if (res == 0)
-			{
-				// struct in_addr hostip;
-				// hostip.s_addr = net_gethostip();
-
-				if (CheckConnection())
-				{
-					networkinit = true;
-					prevInit = true;
-					break;
-				}
-			}
-
-			retry--;
-			usleep(2000);
-		}
-
-		if(!networkThreadHalt)
-            LWP_SuspendThread(networkthread);
-	}
-	return NULL;
+    while (!stop) {
+        if (requested.exchange(false)) {
+            networkinit = false;
+            const s32 result = net_init_async(NULL, NULL);
+            if (result >= 0 || result == -EAGAIN || result == -EBUSY) {
+                for (int wait = 0; wait < 500 && !stop && !App_Exiting(); ++wait) {
+                    const s32 status = net_get_status();
+                    if (status == 0 && net_gethostip() != 0) {
+                        // Registers libogc's POSIX socket devoptab as well as
+                        // querying the already-established IOS configuration.
+                        networkinit = if_config(NULL, NULL, NULL, true, 1) == 0;
+                        break;
+                    }
+                    if (status < 0 && status != -EBUSY && status != -EAGAIN) break;
+                    usleep(20000);
+                }
+            }
+        }
+        usleep(20000);
+    }
+    return NULL;
+}
 }
 
+bool CheckConnection() { return networkinit && net_gethostip() != 0; }
 void InitNetwork()
 {
-    networkThreadHalt = 0;
-    networkinit = 0;
-
-	if(networkthread == LWP_THREAD_NULL)
-	{
-		if(LWP_CreateThread(&networkthread, NetworkThread, NULL, networkstack, GUITH_STACK, 30) != 0)
-			networkthread = LWP_THREAD_NULL;
-	}
-    else LWP_ResumeThread(networkthread);
+    if (CheckConnection() || App_Exiting()) return;
+    stop = false;
+    requested = true;
+    if (networkthread == LWP_THREAD_NULL &&
+        LWP_CreateThread(&networkthread, networkWorker, NULL, networkstack, GUITH_STACK, 30) != 0)
+        requested = false;
 }
-
 void StopNetwork()
 {
-    if(networkthread == LWP_THREAD_NULL)
-        return;
-
-    networkThreadHalt = 1;
-    LWP_ResumeThread(networkthread);
-
-    LWP_JoinThread(networkthread, NULL);
-    networkthread = LWP_THREAD_NULL;
-    net_deinit();
-}
-
-bool CheckConnection()
-{
-    s32 s = net_socket (AF_INET, SOCK_STREAM, IPPROTO_IP);
-    struct sockaddr_in sa;
-
-    if(s < 0)
-        return false;
-
-    memset (&sa, 0, sizeof (struct sockaddr_in));
-    sa.sin_family = AF_INET;
-    sa.sin_len = sizeof (struct sockaddr_in);
-    sa.sin_port = htons(80);
-    inet_aton("8.8.8.8", &sa.sin_addr); // store IP in sa
-
-    int res = net_connect (s, (struct sockaddr *) &sa, sizeof (struct sockaddr_in));
-    net_close (s);
-
-    return (res >= 0);
+    stop = true;
+    if (networkthread != LWP_THREAD_NULL) {
+        LWP_JoinThread(networkthread, NULL);
+        networkthread = LWP_THREAD_NULL;
+        net_deinit();
+    }
+    networkinit = false;
 }

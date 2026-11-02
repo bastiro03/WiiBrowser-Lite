@@ -1685,29 +1685,14 @@ static int MenuSplash()
     s32 ip;
     Init.SetEffect(EFFECT_ROTATE, 100, 90);
 
-#ifndef DEBUG
-    while ((ip = net_init()) == -EAGAIN)
-    {
-        usleep(100 * 1000); // 100ms
-    }
-    if(ip < 0)
-    {
-        menu = MENU_EXIT;
-        conn = NET_ERR;
-    }
-    if (if_config(myIP, NULL, NULL, true) < 0)
-    {
-        menu = MENU_EXIT;
-        conn = IP_ERR;
-    }
-
-#else
-    usleep(2000*1000);
-#endif
+    InitNetwork();
+    for (int wait = 0; !networkinit && !App_Exiting() && wait < 550; ++wait)
+        usleep(20000);
+    if (!networkinit) { menu = MENU_HOME; conn = NET_ERR; }
     Init.StopEffect(EFFECT_ROTATE);
 
     Init.SetEffect(EFFECT_FADE, -50);
-    while(Init.GetEffect() > 0) usleep(THREAD_SLEEP);
+    while(!App_Exiting() && Init.GetEffect() > 0) usleep(THREAD_SLEEP);
     usleep(200*1000);
 
     HaltGui();
@@ -1715,7 +1700,7 @@ static int MenuSplash()
     ResumeGui();
 
     if (conn == NET_ERR)
-        WindowPrompt("Connection failure", "Please check network settings, exiting...", "Ok", NULL);
+        WindowPrompt("Network unavailable", "Menus remain available. Check Wii network settings before browsing.", "OK", NULL);
     if (conn == IP_ERR)
         WindowPrompt("Error reading IP address", "Application exiting. Please check connection settings", "Ok", NULL);
 

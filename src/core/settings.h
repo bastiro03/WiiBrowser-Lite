@@ -97,6 +97,9 @@ class SSettings
 		bool Load();
         //!Find the config file in the default paths
         bool FindConfig();
+        bool SetAppPath(const char *executable);
+        bool CanSave() const { return configWritable; }
+        bool CanSaveBookmarks() const { return bookmarksWritable; }
         //!Return favorite
         struct favorite *GetFav(int f);
         //!Return top site
@@ -108,7 +111,7 @@ class SSettings
         //!Check if url is in favorites
         int IsBookmarked(char *url);
         //!Add favorite
-        void AddFavorite(char *url, char *title);
+        bool AddFavorite(char *url, char *title);
         //!Remove favorite
         void DelFavorite(char *url);
         //!Save Settings
@@ -162,9 +165,9 @@ class SSettings
         bool CleanExit;
 
         char *TopSites[N];
-        u8 *Thumbnails[N];
+        u8 *Thumbnails[N] = {};
 
-        struct favorite *Favorites;
+        struct favorite *Favorites = NULL;
     protected:
         //!Find value
         void ParseLine(char *line);
@@ -185,6 +188,10 @@ class SSettings
         //!Variables
         FILE * file;
         int num_fav;
+        char topSiteStorage[N][512];
+        bool appPathChosen = false;
+        bool configWritable = false;
+        bool bookmarksWritable = false;
 };
 
 enum

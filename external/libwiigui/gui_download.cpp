@@ -155,11 +155,11 @@ GuiDownloadManager::~GuiDownloadManager()
 
     for(int i = 0; i<MAX_DOWNLOADS; i++)
     {
-        delete(progressEmptyImg);
-        delete(progressLeftImg);
-        delete(progressMidImg);
-        delete(progressLineImg);
-        delete(progressRightImg);
+        delete(progressEmptyImg[i]);
+        delete(progressLeftImg[i]);
+        delete(progressMidImg[i]);
+        delete(progressLineImg[i]);
+        delete(progressRightImg[i]);
 
         delete(downloads[i]);
         delete(progress[i]);
@@ -220,6 +220,7 @@ bool GuiDownloadManager::CancelDownload(int *d)
 int* GuiDownloadManager::CreateBar()
 {
     int *ret = (int *)malloc(sizeof(int));
+    if (!ret) return NULL;
 
     for (*ret = 0; *ret<MAXB; (*ret)++)
     {
@@ -274,7 +275,6 @@ void GuiDownloadManager::RemoveBar(int *i)
     progressRightImg[*i]->SetVisible(false);
 
     int to_d, to_b, to_p;
-    int wait = -1;
 
     for (int j = 0; j<MAXB; j++)
     {
@@ -283,7 +283,6 @@ void GuiDownloadManager::RemoveBar(int *i)
             to_d = downloads[j]->GetYPosition()-OFF;
             to_b = cancelBtn[j]->GetYPosition()-OFF;
             to_p = progressEmptyImg[j]->GetYPosition()-OFF;
-            wait = j;
 
             downloads[j]->SetEffect(EFFECT_SLIDE_TO, 1, to_d);
             progress[j]->SetEffect(EFFECT_SLIDE_TO, 1, to_d);
@@ -297,11 +296,8 @@ void GuiDownloadManager::RemoveBar(int *i)
         }
     }
 
-    if(wait >= 0)
-    {
-        while (progressRightImg[wait]->GetEffect() > 0)
-            usleep(100);
-    }
+    // Effects advance during GUI drawing. Never wait here while the caller
+    // owns the GUI mutex; the next frames perform the animation.
     free(i);
 }
 

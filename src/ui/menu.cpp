@@ -198,9 +198,13 @@ bool performDownload(file *hfile, char *url, struct block *html)
 
     if (select)
     {
-        downloadPath(html, url, path, sizeof(path));
-        hfile->file = fopen(path, "wb");
-        strcpy(hfile->name, path);
+        select = downloadPath(html, url, path, sizeof(path));
+        hfile->file = NULL;
+        hfile->overwrite = select && CheckFile(path);
+        if (hfile->overwrite)
+            select = WindowPrompt("Replace file?", path, "Replace", "Cancel") != 0;
+        if (select) select = wbl::copyString(hfile->name, sizeof(hfile->name), path);
+        if (!select) WindowPrompt("Download cancelled", "Invalid or oversized destination; no file was changed.", "OK", NULL);
     }
 
     free(html->data);
@@ -1115,6 +1119,7 @@ void SetupGui()
         }
     }
 
+    if (!InitTransfers()) { ExitAccepted = true; return; }
     LWP_ResumeThread(downloadthread);
     guiReady = true;
     ResumeGui();

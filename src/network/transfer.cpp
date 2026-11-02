@@ -1,361 +1,231 @@
+#include <algorithm>
+#include <atomic>
 #include <list>
+#include <map>
+#include <new>
+#include <sys/stat.h>
 #include "main.h"
 #include "fileop.h"
-#include "config.h"
-#include "httplib.h"
-
 #include "transfer.h"
 #include "networkop.h"
+#include "safety.h"
+#include "gui_lock.h"
 
-using namespace std;
-extern GuiToolbar * App;
-off_t GetFileSize(const char *filename);
-
-u8 downloadstack[GUITH_STACK] ATTRIBUTE_ALIGN (32);
+u8 downloadstack[GUITH_STACK] ATTRIBUTE_ALIGN(32);
 lwp_t downloadthread = LWP_THREAD_NULL;
 GuiDownloadManager *manager = NULL;
+extern GuiToolbar *App;
 
-static volatile int downloadThreadHalt = 0;
-static list<Private *> queue;
+namespace {
+std::atomic<bool> stop(false);
+std::atomic<bool> ready(false);
+mutex_t queueMutex;
+std::list<Private *> queue;
+std::map<CURL *, Private *> active;
 
-bool AddHandle(Private *data);
-void PopQueue();
-
-enum
+void releaseJob(Private *job)
 {
-    FAILED,
-    PARTIAL,
-    COMPLETE,
-    CANCELLED
-} download_status;
-
-/****************************************************************************
- * DownloadThread
- *
- * Thread to handle file downloads.
- ***************************************************************************/
-int showmultiprogress(void *bar,
-                    double total, /* dltotal */
-                    double done, /* dlnow */
-                    double ultotal,
-                    double ulnow)
-{
-    Private *data = (Private *)bar;
-    if(!manager || !data) return 0;
-    manager->SetProgress(data, (done+data->bytes)*100.0/(total+data->bytes));
-
-    if(manager->CancelDownload(data->bar))
-        return 1;
-    return 0;
+    if (job->save.file) fclose(job->save.file);
+    job->save.file = NULL;
+    free(job->url);
+    delete job;
 }
 
-int netclose_callback (void *clientp, curl_socket_t item) {
-	return net_close(item);
-}
-
-static size_t writedata(void *ptr, size_t size, size_t nmemb, void *stream)
+size_t receiveFile(void *bytes, size_t size, size_t count, void *opaque)
 {
-    int written = fwrite(ptr, size, nmemb, (FILE *)stream);
+    Private *job = static_cast<Private *>(opaque);
+    const size_t limit = 1024u * 1024u * 1024u;
+    if (!job || !job->save.file || (size && count > limit / size)) return 0;
+    const size_t length = size * count;
+    if (job->bytes > limit || length > limit - static_cast<size_t>(job->bytes)) return 0;
+    const size_t written = WriteHttpFile(bytes, 1, length, job->save.file);
+    job->bytes += written;
     return written;
 }
 
-Private *PushQueue(CURLM *cm, char *url, file *file, bool keep)
+int progress(void *opaque, double total, double done, double, double)
 {
-    if(!file || !cm)
-        return NULL;
-
-    Private *data = new Private;
-    data->bar = NULL;
-    data->url = strdup(url);
-    data->keep = keep;
-
-    data->bytes = 0;
-    data->code = -1;
-
-    data->save.file = file->file;
-    strcpy(data->save.name, file->name);
-
-    queue.push_back(data);
-    LWP_ResumeThread(downloadthread);
-    return data;
+    if (stop || ExitAccepted || HWButton) return 1;
+    Private *job = static_cast<Private *>(opaque);
+    GuiScopedLock lock;
+    if (!manager || !job->bar) return 1;
+    manager->SetProgress(job, total > 0 ? std::max(0.0, std::min(100.0, done * 100.0 / total)) : 0);
+    return manager->CancelDownload(job->bar) ? 1 : 0;
 }
 
-void PopQueue()
+bool commit(Private *job)
 {
-    queue.pop_front();
+    struct stat status;
+    const std::string backup = std::string(job->save.name) + ".download.bak";
+    if (stat(job->save.name, &status) == 0) {
+        if (!job->save.overwrite || !S_ISREG(status.st_mode)) return false;
+        // Never overwrite an earlier backup or an unrelated file at that name.
+        if (stat(backup.c_str(), &status) == 0 || errno != ENOENT) return false;
+        if (rename(job->save.name, backup.c_str()) != 0) return false;
+    } else if (errno != ENOENT) return false;
+    return rename(job->partial, job->save.name) == 0;
 }
 
-void UpdateQueue()
+void complete(CURL *handle, CURLcode result)
 {
-    while(!queue.empty())
-    {
-        if(AddHandle(queue.front()))
-            PopQueue();
-        else break;
+    const auto found = active.find(handle);
+    if (found == active.end()) return;
+    Private *job = found->second;
+    long response = 0;
+    curl_easy_getinfo(handle, CURLINFO_RESPONSE_CODE, &response);
+    curl_multi_remove_handle(curl_multi, handle);
+    curl_easy_cleanup(handle);
+    active.erase(found);
+    bool written = job->save.file != NULL;
+    if (job->save.file) {
+        if (fflush(job->save.file) != 0 || ferror(job->save.file)) written = false;
+        if (fclose(job->save.file) != 0) written = false;
+        job->save.file = NULL;
     }
+    const bool success = result == CURLE_OK && response >= 200 && response < 300 && written && commit(job);
+    {
+        GuiScopedLock lock;
+        if (manager && job->bar) manager->RemoveBar(job->bar);
+        job->bar = NULL;
+        if (App && !stop && !ExitAccepted)
+            App->SaveTooltip->SetTimeout(success ? "Download saved" : "Download failed; partial retained", 3);
+    }
+    // No implicit extraction, source deletion, automatic resume, stack reset,
+    // or application exit. Failed transfers retain their .part file.
+    job->code = success ? CURLE_OK : CURLE_WRITE_ERROR;
+    releaseJob(job);
 }
 
-void CompleteDownload(CURLMsg *msg)
+bool start(Private *job)
 {
-    char *name;
-    char message[256];
-    long http_response;
-
-    double dl_bytes_total;
-    int retval = -1;
-
-    Private *data;
-    curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &data);
-    curl_easy_getinfo(msg->easy_handle, CURLINFO_SIZE_DOWNLOAD , &(data->bytes));
-    curl_easy_getinfo(msg->easy_handle, CURLINFO_CONTENT_LENGTH_DOWNLOAD, &dl_bytes_total);
-    curl_easy_getinfo(msg->easy_handle, CURLINFO_RESPONSE_CODE, &http_response);
-    curl_easy_cleanup(msg->easy_handle);
-
-    if(manager)
-        manager->RemoveBar(data->bar);
-    data->code = msg->data.result;
-    fclose(data->save.file);
-
-    switch(data->code)
-    {
-        case CURLE_OK:
-            name = strrchr(data->save.name, '.');
-            retval = COMPLETE;
-
-            // Extraction and automatic source deletion are quarantined.
-
-        break;
-
-        case CURLE_ABORTED_BY_CALLBACK:
-            retval = CANCELLED;
-            remove(data->save.name);
-        break;
-
-        case CURLE_PARTIAL_FILE:
-        case CURLE_OPERATION_TIMEDOUT:
-            switch(http_response)
-            {
-                case 0:     // eg connection down from kick-off: suggest retrying till some max limit
-                case 200:   // yay we at least got to our url
-                case 206:   // Partial Content
-                    data->save.file = NULL;
-                    queue.push_back(data);
-                    InitNetwork();
-                    LWP_ResumeThread(downloadthread);
-                    retval = PARTIAL;
-                break;
-
-                case 416:
-                    // cannot d/l range: either cos no server support
-                    // or cos we're asking for an invalid range (ie: we already d/ld the file)
-                    if(GetFileSize(data->save.name) < dl_bytes_total)
-                        retval = FAILED;
-                    else retval = COMPLETE;
-                break;
-
-                default: // suggest quitting on an unhandled error
-                    retval = FAILED;
-                break;
-            };
-        break;
-
-        default:
-            retval = FAILED;
-        break;
-    }
-
-    if(retval == FAILED)
-    {
-        save_mem(curl_easy_strerror((CURLcode)data->code));
-        name = strrchr(data->save.name, '/');
-
-        if(name)
-            sprintf(message, "The download of %s failed. Try again?", name+1);
-        else sprintf(message, "The download of %s failed. Try again?", data->save.name);
-
-        if(WindowPrompt("Download failed", message, "Yes", "No"))
-        {
-            data->save.file = fopen(data->save.name, "wb");
-            queue.push_back(data);
-            InitNetwork();
-            LWP_ResumeThread(downloadthread);
-            retval = PARTIAL;
-        }
-        else remove(data->save.name);
-    }
-
-#ifdef WIIFLOW
-    else if (retval == COMPLETE)
-    {
-        WindowPrompt("Download complete", "The app will now exit...", "Ok", NULL);
-        ExitRequested = true;
-    }
-#endif
-
-    if(retval != PARTIAL)
-    {
-        if(!data->keep)
-        {
-            free(data->url);
-            delete(data);
-        }
-    }
-}
-
-bool AddHandle(Private *data)
-{
-    if(!manager) return false;
-    data->bar = manager->CreateBar();
-    if(!data->bar)
+    CURL *handle = curl_easy_init();
+    if (!handle) return false;
+    const int fd = open(job->partial, O_WRONLY | O_CREAT | O_EXCL, 0666);
+    if (fd < 0) { curl_easy_cleanup(handle); return false; }
+    job->save.file = fdopen(fd, "wb");
+    if (!job->save.file) {
+        close(fd);
+        remove(job->partial); // Only the file just created by this call.
+        curl_easy_cleanup(handle);
         return false;
-
-    CURL *eh = curl_easy_init();
-    if(!eh)
-        return false;
-
-    /* get the new filesize & sanity check for file */
-    if(!data->save.file)
-    {
-        curl_easy_setopt(eh, CURLOPT_RESUME_FROM, GetFileSize(data->save.name));
-        data->save.file = fopen(data->save.name, "ab");
     }
+    setvbuf(job->save.file, NULL, _IONBF, 0);
+    {
+        GuiScopedLock lock;
+        job->bar = manager ? manager->CreateBar() : NULL;
+    }
+    if (!job->bar) { fclose(job->save.file); job->save.file = NULL; curl_easy_cleanup(handle); return false; }
+    ConfigureHttp(handle, job->url);
+    curl_easy_setopt(handle, CURLOPT_TIMEOUT, 0L); // Low-speed and connect deadlines remain active.
+    curl_easy_setopt(handle, CURLOPT_MAXFILESIZE_LARGE, static_cast<curl_off_t>(1024) * 1024 * 1024);
+    curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, receiveFile);
+    curl_easy_setopt(handle, CURLOPT_WRITEDATA, job);
+    curl_easy_setopt(handle, CURLOPT_NOPROGRESS, 0L);
+    curl_easy_setopt(handle, CURLOPT_PROGRESSFUNCTION, progress);
+    curl_easy_setopt(handle, CURLOPT_PROGRESSDATA, job);
+    if (curl_multi_add_handle(curl_multi, handle) != CURLM_OK) {
+        GuiScopedLock lock;
+        manager->RemoveBar(job->bar);
+        job->bar = NULL;
+        curl_easy_cleanup(handle);
+        return false;
+    }
+    active[handle] = job;
+    return true;
+}
+}
 
-    curl_easy_setopt(eh, CURLOPT_WRITEFUNCTION, writedata);
-    curl_easy_setopt(eh, CURLOPT_WRITEDATA, (void *)data->save.file);
-    curl_easy_setopt(eh, CURLOPT_URL, data->url);
-
-    /* set proxy if specified */
-    if(validProxy())
-        curl_easy_setopt(eh, CURLOPT_PROXY, Settings.Proxy);
-
-    /* the follwoing sets up min download speed threshold & time endured before aborting */
-    curl_easy_setopt(eh, CURLOPT_LOW_SPEED_LIMIT, 10); // bytes/sec
-    curl_easy_setopt(eh, CURLOPT_LOW_SPEED_TIME, 10); // seconds while below low speed limit before aborting
-
-    /* follow redirects */
-    curl_easy_setopt(eh, CURLOPT_AUTOREFERER, 1);
-    curl_easy_setopt(eh, CURLOPT_FOLLOWLOCATION, 1);
-    curl_easy_setopt(eh, CURLOPT_NOPROGRESS, 0);
-
-    /* setup cookies engine */
-    curl_easy_setopt(eh, CURLOPT_COOKIEFILE, "");
-    curl_easy_setopt(eh, CURLOPT_SHARE, curl_share);
-
-    curl_easy_setopt(eh, CURLOPT_PROGRESSFUNCTION, showmultiprogress);
-    curl_easy_setopt(eh, CURLOPT_PROGRESSDATA, data);
-    curl_easy_setopt(eh, CURLOPT_PRIVATE, data);
-
-    /* some servers don't like requests that are made without a user-agent
-    field, so we provide one */
-    curl_easy_setopt(eh, CURLOPT_USERAGENT, "libcurl-agent/1.0");
-    curl_easy_setopt(eh, CURLOPT_SSL_VERIFYPEER, 1L);
-    curl_easy_setopt(eh, CURLOPT_SSL_VERIFYHOST, 2L);
-    curl_easy_setopt(eh, CURLOPT_CAINFO, "sd:/apps/wiibrowser/cacert.pem");
-#ifdef CURL_SSLVERSION_TLSv1_2
-    curl_easy_setopt(eh, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2);
-#else
-    curl_easy_setopt(eh, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1);
-#endif
-    curl_easy_setopt(eh, CURLOPT_CONNECTTIMEOUT, 10L);
-
-    /* proper function to close sockets */
-    curl_easy_setopt(eh, CURLOPT_CLOSESOCKETFUNCTION, netclose_callback);
-
-    curl_multi_add_handle(curl_multi, eh);
+bool InitTransfers()
+{
+    if (ready) return true;
+    if (LWP_MutexInit(&queueMutex, false) != 0) return false;
+    curl_multi = curl_multi_init();
+    if (!curl_multi) { LWP_MutexDestroy(queueMutex); return false; }
+    manager = new (std::nothrow) GuiDownloadManager;
+    if (!manager) {
+        curl_multi_cleanup(curl_multi);
+        curl_multi = NULL;
+        LWP_MutexDestroy(queueMutex);
+        return false;
+    }
+    stop = false;
+    ready = true;
     return true;
 }
 
-void *DownloadThread (void *arg)
+Private *AddDownload(CURLM *, char *url, file *destination)
 {
-    CURLMsg *msg;
-    int Q, U = 0;
-
-    LWP_SuspendThread(downloadthread);
-    curl_multi = curl_multi_init();
-    if(!curl_multi)
-    {
-        printf("DownloadThread: curl_multi_init failed\n");
+    if (!ready || stop || !destination || !url || !wbl::httpUrl(url) ||
+        !wbl::storagePath(destination->name)) return NULL;
+    Private *job = new (std::nothrow) Private{};
+    if (!job) return NULL;
+    job->url = strdup(url);
+    job->save = *destination;
+    job->save.file = NULL;
+    job->code = -1;
+    const int length = snprintf(job->partial, sizeof(job->partial), "%s.part", destination->name);
+    if (!job->url || length < 0 || static_cast<size_t>(length) >= sizeof(job->partial)) {
+        releaseJob(job);
         return NULL;
     }
-    manager = new (std::nothrow) GuiDownloadManager();
-    if(!manager)
-    {
-        printf("DownloadThread: GuiDownloadManager allocation failed (fontSystem may be invalid)\n");
-        // Allow thread to suspend and retry later; do not dereference null manager
-        curl_multi_cleanup(curl_multi);
-        curl_multi = nullptr;
+    LWP_MutexLock(queueMutex);
+    if (queue.size() >= 16) {
+        LWP_MutexUnlock(queueMutex);
+        releaseJob(job);
         return NULL;
     }
+    queue.push_back(job);
+    LWP_MutexUnlock(queueMutex);
+    return job; // Ownership transferred. Caller must not retain/use this pointer.
+}
 
-    /* we can optionally limit the total amount of connections this multi handle
-       uses */
-    curl_multi_setopt(curl_multi, CURLMOPT_MAXCONNECTS, (long)MAXD);
+Private *AddUpdate(CURLM *, char *, FILE *) { return NULL; }
 
-    while(1)
-    {
-        if (!U && networkinit)
-            LWP_SuspendThread(downloadthread);
-        if (downloadThreadHalt)
-            break;
-
-        while(!networkinit)
-        {
-            // manager->status->SetText("network down");
-            if(LWP_ThreadIsSuspended(networkthread))
-                InitNetwork();
-            usleep(1000);
-        }
-
-        if (ExitRequested)
-        {
-            ExitRequested = false;
-
-            if (U && !WindowPrompt("Exiting app", "Some downloads are still in progress. Exit anyway?", "Yes", "No"))
-                App->SaveTooltip->SetTimeout("Click here", 2);
-            else ExitAccepted = true;
-        }
-
-        UpdateQueue();
-        while(curl_multi_perform(curl_multi, &U) == CURLM_CALL_MULTI_PERFORM);
-		usleep(100);
-
-        while ((msg = curl_multi_info_read(curl_multi, &Q)))
-        {
-            if (msg->msg == CURLMSG_DONE)
-            {
-                CURL *e = msg->easy_handle;
-                curl_multi_remove_handle(curl_multi, e);
-                CompleteDownload(msg);
+void *DownloadThread(void *)
+{
+    while (!ready && !stop) usleep(1000);
+    if (!ready) return NULL;
+    while (!stop) {
+        while (active.size() < MAXD) {
+            LWP_MutexLock(queueMutex);
+            Private *job = queue.empty() ? NULL : queue.front();
+            if (job) queue.pop_front();
+            LWP_MutexUnlock(queueMutex);
+            if (!job) break;
+            if (!start(job)) {
+                GuiScopedLock lock;
+                if (App) App->SaveTooltip->SetTimeout("Cannot create partial file; choose another name", 3);
+                releaseJob(job);
             }
         }
+        int running = 0;
+        CURLMcode code;
+        do { code = curl_multi_perform(curl_multi, &running); } while (code == CURLM_CALL_MULTI_PERFORM && !stop);
+        if (code != CURLM_OK && code != CURLM_CALL_MULTI_PERFORM) {
+            while (!active.empty()) complete(active.begin()->first, CURLE_RECV_ERROR);
+        }
+        int pending = 0;
+        while (CURLMsg *message = curl_multi_info_read(curl_multi, &pending)) {
+            if (message->msg == CURLMSG_DONE) {
+                // Copy BEFORE either remove-handle or easy-cleanup invalidates it.
+                CURL *handle = message->easy_handle;
+                const CURLcode result = message->data.result;
+                complete(handle, result);
+            }
+        }
+        usleep(active.empty() ? 20000 : 10000);
     }
-
+    while (!active.empty()) complete(active.begin()->first, CURLE_ABORTED_BY_CALLBACK);
+    LWP_MutexLock(queueMutex);
+    for (Private *job : queue) releaseJob(job);
+    queue.clear();
+    LWP_MutexUnlock(queueMutex);
     curl_multi_cleanup(curl_multi);
-    curl_multi = nullptr;
-    delete manager;
-    manager = nullptr;
+    curl_multi = NULL;
+    { GuiScopedLock lock; delete manager; manager = NULL; }
+    ready = false;
+    LWP_MutexDestroy(queueMutex);
     return NULL;
 }
 
-void StopDownload()
-{
-    if(downloadthread == LWP_THREAD_NULL)
-        return;
-
-    downloadThreadHalt = 1;
-    LWP_ResumeThread(downloadthread);
-}
-
-Private *AddDownload(CURLM *cm, char *url, file *file)
-{
-    return PushQueue(cm, url, file, 0);
-}
-
-Private *AddUpdate(CURLM *cm, char *url, FILE *file)
-{
-    struct file temp;
-    temp.file = file;
-    strcpy(temp.name, "update.dol");
-
-    return PushQueue(cm, url, &temp, 1);
-}
+void StopDownload() { stop = true; }

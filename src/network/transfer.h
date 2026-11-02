@@ -14,6 +14,7 @@ typedef struct file
 {
     FILE *file;
     char name[512];
+    bool overwrite;
 } file;
 
 typedef struct data
@@ -24,10 +25,12 @@ typedef struct data
     int code;
     double bytes;
     bool keep;
+    char partial[520];
 } Private;
 
 void *DownloadThread (void *arg);
 void StopDownload();
+bool InitTransfers();
 
 Private *AddUpdate(CURLM *cm, char *url, FILE *file);
 Private *AddDownload(CURLM *cm, char *url, file *file);

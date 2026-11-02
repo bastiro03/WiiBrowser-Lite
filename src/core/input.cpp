@@ -117,7 +117,10 @@ void UpdatePads()
 		else
 		{
 		    // Pad disconnected: drop cached state, stop rumble safely.
-		    userInput[i].wpad = NULL;
+            static WPADData disconnected[4] = {};
+            memset(&disconnected[i], 0, sizeof(disconnected[i]));
+            disconnected[i].err = WPAD_ERR_NO_CONTROLLER;
+            userInput[i].wpad = &disconnected[i];
 		    rumbleCount[i] = 0;
 		    rumbleRequest[i] = 0;
 		}

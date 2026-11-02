@@ -278,13 +278,14 @@ bool UnzipArchive(char *origfile)
 
 bool isValidPath(char *name)
 {
+    if (!name || !wbl::storagePath(name)) return false;
     bool ret = false;
     char *l, *path;
     if (!(l = strrchr(name, '/')))
         return ret;
 
     path = strndup(name, l+1-name);
-    if(makedir(path)) // attempt to make dir
+    if(path && makedir(path)) // attempt to make dir
         ret = true;
     free(path);
     return ret;
@@ -299,45 +300,7 @@ int mymkdir(const char* dirname)
 
 int makedir (char *newdir)
 {
-    char *buffer ;
-    char *p;
-    int  len = (int)strlen(newdir);
-
-    if (len <= 0)
-        return 0;
-
-    buffer = (char*)malloc(len+1);
-    strcpy(buffer,newdir);
-
-    if (buffer[len-1] == '/') {
-        buffer[len-1] = '\0';
-    }
-    if (mymkdir(buffer) == 0)
-    {
-        free(buffer);
-        return 1;
-    }
-
-    p = buffer+1;
-    while (1)
-    {
-        char hold;
-
-        while(*p && *p != '\\' && *p != '/')
-            p++;
-        hold = *p;
-        *p = 0;
-        if ((mymkdir(buffer) == -1) && (errno == ENOENT))
-        {
-            free(buffer);
-            return 0;
-        }
-        if (hold == 0)
-            break;
-        *p++ = hold;
-    }
-    free(buffer);
-    return 1;
+    return CreateSubfolder(newdir) ? 1 : 0;
 }
 
 void show_mem()
@@ -371,7 +334,7 @@ bool CheckFile(const char * filepath)
 
     strcpy(dirnoslash, filepath);
 
-    while(dirnoslash[length-1] == '/')
+    while(length > 1 && dirnoslash[length-1] == '/')
     {
         dirnoslash[length-1] = '\0';
         --length;
@@ -395,32 +358,22 @@ bool CheckFile(const char * filepath)
  ***************************************************************************/
 bool CreateSubfolder(const char * fullpath)
 {
-    if(!fullpath)
-        return false;
-
-    if(CheckFile(fullpath))
-        return true;
-
-    string dirpath(fullpath);
-
-    int length = dirpath.size()-1;
-    while(dirpath[length] == '/')
-    {
-        dirpath.erase(length);
-        --length;
+    if (!fullpath || !wbl::storagePath(fullpath)) return false;
+    const std::string path(fullpath);
+    const size_t rootLength = path.compare(0, 4, "sd:/") == 0 ? 4 : 5;
+    struct stat status;
+    if (stat(path.substr(0, rootLength).c_str(), &status) != 0 || !S_ISDIR(status.st_mode)) return false;
+    size_t position = rootLength;
+    while (position < path.size()) {
+        const size_t end = path.find('/', position);
+        const std::string component = path.substr(0, end);
+        if (stat(component.c_str(), &status) != 0) {
+            if (errno != ENOENT || (mkdir(component.c_str(), 0777) != 0 && errno != EEXIST)) return false;
+            if (stat(component.c_str(), &status) != 0) return false;
+        }
+        if (!S_ISDIR(status.st_mode)) return false;
+        if (end == std::string::npos) break;
+        position = end + 1;
     }
-
-    string subpath(dirpath);
-    size_t pos = subpath.rfind('/');
-    if(pos == string::npos)
-        return false;
-
-    if(subpath.size()-1 > pos)
-        subpath.erase(pos+1);
-
-    bool result = CreateSubfolder(subpath.c_str());
-    if(!result)
-        return false;
-
-    return (mkdir(dirpath.c_str(), 0777) != -1);
+    return true;
 }

@@ -8,8 +8,6 @@
  ***************************************************************************/
 
 #include <gccore.h>
-#include "gui_lock.h"
-#include "safety.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -21,6 +19,8 @@
 #include "filebrowser.h"
 #include "main.h"
 #include "menu.h"
+#include "gui_lock.h"
+#include "safety.h"
 
 BROWSERINFO browser;
 BROWSERENTRY * browserList = NULL; // list of files/folders in browser
@@ -117,6 +117,8 @@ int UpdateDirName()
  ***************************************************************************/
 int FileSortCallback(const void *f1, const void *f2)
 {
+    if (f1 == f2 || !strcmp(static_cast<const BROWSERENTRY *>(f1)->filename,
+                            static_cast<const BROWSERENTRY *>(f2)->filename)) return 0;
 	/* Special case for implicit directories */
 	if(((BROWSERENTRY *)f1)->filename[0] == '.' || ((BROWSERENTRY *)f2)->filename[0] == '.')
 	{
@@ -223,12 +225,11 @@ ParseDirectory()
  ***************************************************************************/
 int BrowserChangeFolder()
 {
-	if(!UpdateDirName())
+    GuiScopedLock lock;
+    if(UpdateDirName() <= 0)
 		return -1;
 
-	ParseDirectory();
-
-	return browser.numEntries;
+	return ParseDirectory();
 }
 
 /****************************************************************************
@@ -237,10 +238,11 @@ int BrowserChangeFolder()
  ***************************************************************************/
 int BrowseDevice(int dev)
 {
+    GuiScopedLock lock;
+    if (dev < SD || dev > USB) return -1;
 	sprintf(browser.dir, "/");
 	sprintf(rootdir, "%s:/", DeviceName[dev]);
-	ParseDirectory(); // Parse root directory
-	return browser.numEntries;
+	return ParseDirectory();
 }
 
 /****************************************************************************
@@ -249,8 +251,11 @@ int BrowseDevice(int dev)
  ***************************************************************************/
 int OpenDefaultFolder()
 {
+    GuiScopedLock lock;
+    if (!wbl::storagePath(Settings.UserFolder)) return -1;
+    snprintf(rootdir, sizeof(rootdir), "%s", !strncmp(Settings.UserFolder, "usb:/", 5) ? "usb:/" : "sd:/");
     char *path = strchr(Settings.UserFolder, '/');
-	sprintf(browser.dir, path);
+    if (!path || !wbl::copyString(browser.dir, sizeof(browser.dir), path)) return -1;
 	ParseDirectory(); // Parse default directory
 	return browser.numEntries;
 }

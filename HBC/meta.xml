@@ -1,45 +1,14 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <app version="1">
-	<name>WiiBrowser Lite</name>
-	<version></version>
-	<release_date></release_date>
-	<coder>gave92, Bastiro03</coder>
-	<short_description>A Web Browser for Wii.</short_description>
-	<long_description>Features:
-* View your own web pages
-* Basic HTTP and HTTPS connection support
-* Links and web form support
-* Bookmarks
-* Import/Export of bookmarks
-* Basic rendering of HTML 4.01 and CSS2
-* Download support to an SD/SDHC card
-* Upload support
-* Address bar with on-screen keyboard
-* Keyboard auto-completion
-* Forward and back navigation
-* PNG/JPEG/GIF/BMP image support
-* ZIP/RAR/7Z extraction
-* Moving and resizing images
-* Auto-refresh
-
-Controls:
-*   Wiimote Aim: Move pointer
-*   Wiimote Button A: Click buttons
-*   Wiimote Button B (Hold): Free scroll
-*   Wiimote DPad: Navigate
-*   Wiimote Plus Button: Open app bar
-*   Wiimote Minus Button: Close app bar
-*   Wiimote Button 1: Take screenshot
-*   Wiimote Button 2: Restore default view
-*   Wiimote Home Button: Exit app
-*   Wiimote Power Button: Turn off Wii
-
-Shortcuts:
-*   B + Directional pad up: Refresh current page
-*   B + Directional pad down: Save page
-*   B + Directional pad left: Browse homepage
-*   B + Directional pad right: Enter new URL
-*   B + (-) key : Go back a page
-*   B + (+) Key: Go forward one page
-</long_description>
+  <name>WiiBrowser Lite (development)</name>
+  <coder>gave92, Bastiro03 and contributors</coder>
+  <version>0.1.0-dev</version>
+  <release_date>20261102000000</release_date>
+  <short_description>Experimental web browser for Wii.</short_description>
+  <long_description>Development snapshot, not release-cleared. Basic HTML/CSS,
+HTTP/HTTPS, links, URL-encoded forms, bookmarks and SD/USB downloads. Keep the
+included cacert.pem beside boot.dol. Wii Remote: point/A, D-pad, B+IR scrolling,
+Plus/Minus toolbar, HOME exit. Console RESET returns to Wii Menu; POWER shuts down.
+PNG/JPEG only. No JavaScript, uploads, extraction, updater, forwarder or video.
+See README for limitations, verification status and .part/.new/.bak recovery.</long_description>
 </app>

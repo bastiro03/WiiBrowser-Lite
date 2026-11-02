@@ -1,45 +1,20 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <app version="1">
-	<name>WiiBrowser Lite</name>
-	<version>@VERSION@</version>
-	<release_date>@RELEASE_DATE@</release_date>
-	<coder>gave92, Bastiro03</coder>
-	<short_description>A Web Browser for Wii.</short_description>
-	<long_description>Features:
-* View your own web pages
-* Basic HTTP and HTTPS connection support
-* Links and web form support
-* Bookmarks
-* Import/Export of bookmarks
-* Basic rendering of HTML 4.01 and CSS2
-* Download support to an SD/SDHC card
-* Upload support
-* Address bar with on-screen keyboard
-* Keyboard auto-completion
-* Forward and back navigation
-* PNG/JPEG/GIF/BMP image support
-* ZIP/RAR/7Z extraction
-* Moving and resizing images
-* Auto-refresh
+  <name>WiiBrowser Lite (development)</name>
+  <coder>gave92, Bastiro03 and contributors</coder>
+  <version>@VERSION@</version>
+  <release_date>@RELEASE_DATE@</release_date>
+  <short_description>Experimental web browser for Wii.</short_description>
+  <long_description>Development build, not release-cleared. Basic HTML/CSS rendering,
+HTTP/HTTPS, links, URL-encoded forms, bookmarks and SD/USB downloads. HTTPS requires
+the included cacert.pem beside boot.dol and a correct console clock.
 
-Controls:
-*   Wiimote Aim: Move pointer
-*   Wiimote Button A: Click buttons
-*   Wiimote Button B (Hold): Free scroll
-*   Wiimote DPad: Navigate
-*   Wiimote Plus Button: Open app bar
-*   Wiimote Minus Button: Close app bar
-*   Wiimote Button 1: Take screenshot
-*   Wiimote Button 2: Restore default view
-*   Wiimote Home Button: Exit app
-*   Wiimote Power Button: Turn off Wii
+Wii Remote: point and A to select, D-pad to scroll, B+IR to drag-scroll,
+Plus/Minus to open/close the page toolbar, HOME to exit. Console RESET returns to
+Wii Menu; POWER shuts down. Classic/GC input needs hardware verification.
 
-Shortcuts:
-*   B + Directional pad up: Refresh current page
-*   B + Directional pad down: Save page
-*   B + Directional pad left: Browse homepage
-*   B + Directional pad right: Enter new URL
-*   B + (-) key : Go back a page
-*   B + (+) Key: Go forward one page
-</long_description>
+PNG/JPEG images only. No JavaScript, file uploads, archive extraction, self-update,
+forwarder or video playback. Downloads use .part files; failed transfers retain
+them. Existing files are replaced only after confirmation and backup. See README
+for recovery of .new/.bak files and known limitations.</long_description>
 </app>

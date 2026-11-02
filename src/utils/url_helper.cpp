@@ -62,7 +62,7 @@ std::string urlAdjust(const std::string &link, const char *url)
     if (wbl::httpUrl(link)) return normalize(link);
     if (!url || !wbl::httpUrl(url)) return "";
     const std::string base(url);
-    if (link.compare(0, 2, "//") == 0) return normalize(std::string("http:") + link);
+    if (link.compare(0, 2, "//") == 0) return normalize(base.substr(0, base.find(':') + 1) + link);
     // Unknown schemes, control characters and command-like backslashes are not
     // relative URLs. In particular, never turn file:/ or javascript: into HTTP.
     const size_t colon = link.find(':');

@@ -179,26 +179,30 @@ extern "C" {
 SSettings Settings;
 volatile int ExitRequested = 0;
 volatile int ExitAccepted = 0;
+bool SessionInitialized = false;
+static bool settingsLoaded = false;
 
 void ExitApp()
 {
-#ifndef WIIFLOW
-    Settings.Save(1);
-    DumpList(history);
-    FreeHistory(history);
-#endif
-    ShutoffRumble();
-    StopGX();
-    ShutdownAudio();
-    ClearFontData();
+    ExitAccepted = true;
     StopGUIThreads();
+    if (settingsLoaded && MountManager_IsInserted(Settings.BootDevice)) {
+        Settings.Save(1);
+        if (SessionInitialized) DumpList(history);
+    }
+    FreeHistory(history);
+    history = NULL;
+    ShutoffRumble();
+    ShutdownAudio();
     Cleanup();
+    ClearFontData();
+    StopGX();
+    StopNetwork();
     // Flush + unmount FAT before power-off/return-to-menu so an interrupted
     // write cannot corrupt SD/USB.
     fflush(NULL);
     MountManager_Deinit();
     // Stop network last (sockets must close before IOS reload).
-    StopNetwork();
     WPAD_Shutdown();
     u8 resetType = HWButton;
     HWButton = 0;
@@ -240,8 +244,7 @@ int main(int argc, char *argv[])
     InitVideo(); // Initialize video
     SetupPads(); // Initialize input
     InitAudio(); // Initialize audio
-    if(!MountManager_Init()) fatInitDefault();
-    InitGUIThreads(); // Initialize GUI
+    MountManager_Init();
 
     #ifdef MPLAYER
     u32 size = ( (1024*MAX_HEIGHT)+((MAX_WIDTH-1024)*MAX_HEIGHT) + (1024*(MAX_HEIGHT/2)*2) ) + // textures
@@ -249,8 +252,15 @@ int main(int argc, char *argv[])
                (32*1024); // padding
     #endif
 
-    InitVideo2();
+    if (!InitVideo2()) {
+        ShutdownAudio();
+        MountManager_Deinit();
+        WPAD_Shutdown();
+        return 1;
+    }
     InitFreeType(); // Initialize font system
+    InitGUIThreads();
+    if (ExitAccepted) { ExitApp(); return 1; }
 
     #ifdef MPLAYER
     // mplayer cache thread
@@ -261,7 +271,9 @@ int main(int argc, char *argv[])
     usleep(200);
     #endif
 
+    if (argc > 0) Settings.SetAppPath(argv[0]);
     Settings.Load();
+    settingsLoaded = true;
     if(argc > 1)
         Settings.SetStartPage(argv[1]);
 
@@ -273,5 +285,6 @@ int main(int argc, char *argv[])
 
     ResetVideo_Menu();
     MainMenu(MENU_SPLASH);
-    WaitExit();
+    ExitApp();
+    return 0;
 }

@@ -9,9 +9,6 @@
  ***************************************************************************/
 
 #include <gccore.h>
-#include "devmount.h"
-#include "gui_lock.h"
-#include "safety.h"
 #include <ogcsys.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -35,6 +32,10 @@
 #include "TextEditor.h"
 #include "config.h"
 #include "url_helper.h"
+#include "safety.h"
+#include "file_io.h"
+#include "gui_lock.h"
+#include "devmount.h"
 
 extern "C" {
 #include "url.h"
@@ -103,7 +104,6 @@ static unsigned guiDepth = 0;
 static std::atomic<bool> guiReady(false);
 static std::atomic<bool> guiStop(false);
 static bool curlReady = false;
-
 
 // Non-blocking font error overlay (Q1/Q2: explicit but non-blocking, uses fallback fonts)
 static bool fontErrorOverlayShown = false;
@@ -502,7 +502,7 @@ static void *LoadingThread (void *arg)
 
 void ShowAction (const char *msg)
 {
-    snprintf(Message, sizeof(Message), msg);
+    snprintf(Message, sizeof(Message), "%s", msg ? msg : "");
 
     loadThreadHalt = 0;
     LWP_ResumeThread (loadthread);
@@ -513,13 +513,14 @@ void SetMessage (const char *msg)
     if (!msgTxt)
         return;
 
-    snprintf(Message, sizeof(Message), msg);
+    snprintf(Message, sizeof(Message), "%s", msg ? msg : "");
 
     msgTxt->SetText(msg);
 }
 
 void CancelAction()
 {
+    if (loadthread == LWP_THREAD_NULL) return;
     loadThreadHalt = 1;
 
     // wait for thread to finish
@@ -659,16 +660,15 @@ WindowPrompt(const char *title, const char *msg, const char *btn1Label, const ch
         else if(btn2.GetState() == STATE_CLICKED)
             choice = 0;
 
-        if(ExitRequested)
+        if(App_Exiting())
             choice = 0;
     }
 
     promptWindow.SetEffect(EFFECT_SLIDE_TOP | EFFECT_SLIDE_OUT, 50);
-    while(!ExitRequested && promptWindow.GetEffect() > 0)
+    while(!App_Exiting() && promptWindow.GetEffect() > 0)
         usleep(THREAD_SLEEP);
 
-    if(!ExitRequested)
-        HaltGui();
+    HaltGui();
 
     mainWindow->Remove(&promptWindow);
     mainWindow->SetState(STATE_DEFAULT);
@@ -700,7 +700,7 @@ static void *UpdateThread (void *arg)
     if(strlen(upd.changelog) > 0)
     {
         sprintf(caption, "Changelog rev%d", upd.appversion);
-        sprintf(message, upd.changelog);
+        snprintf(message, sizeof(message), "%s", upd.changelog);
         longText = message;
     }
     else sprintf(caption, "An update is available!");
@@ -848,12 +848,11 @@ StopGUIThreads()
 
     if(guithread != LWP_THREAD_NULL)
     {
-        ResumeGui();
-        LWP_JoinThread(guithread, NULL);
+        guiStop = true;
+        if (LWP_GetSelf() != guithread) LWP_JoinThread(guithread, NULL);
         guithread = LWP_THREAD_NULL;
     }
 
-    StopNetwork();
 }
 
 void ToggleButtons(GuiToolbar *toolbar, bool checkState)
@@ -939,8 +938,7 @@ int OnScreenKeyboard(GuiWindow *keyboardWindow, char *var, u16 maxlen)
     keyboard.Append(&cancelBtn);
     keyboard.SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_IN, 30);
 
-    if (!HaltGuiEx(500))
-        printf("OnScreenKeyboard: HaltGui timeout (enter), proceeding cautiously\n");
+    HaltGui();
     keyboardWindow->SetState(STATE_DISABLED);
     keyboardWindow->Append(&keyboard);
     keyboardWindow->ChangeFocus(&keyboard);
@@ -977,6 +975,7 @@ int OnScreenKeyboard(GuiWindow *keyboardWindow, char *var, u16 maxlen)
 
     if(save)
     {
+        GuiScopedLock snapshot;
         snprintf(var, maxlen, "%s", keyboard.kbtextstr);
     }
 
@@ -989,8 +988,7 @@ int OnScreenKeyboard(GuiWindow *keyboardWindow, char *var, u16 maxlen)
         if(ExitRequested || HWButton) break;
     }
 
-    if (!HaltGuiEx(500))
-        printf("OnScreenKeyboard: HaltGui timeout (exit), forcing cleanup\n");
+    HaltGui();
     keyboardWindow->Remove(&keyboard);
     keyboardWindow->SetState(STATE_DEFAULT);
     ResumeGui();
@@ -1118,6 +1116,7 @@ void SetupGui()
     }
 
     LWP_ResumeThread(downloadthread);
+    guiReady = true;
     ResumeGui();
 }
 
@@ -1205,7 +1204,7 @@ static int MenuBrowseDevice()
 	mainWindow->Append(&InsertURL);
 	ResumeGui();
 
-	while(menu == MENU_NONE)
+	while(menu == MENU_NONE && !App_Exiting())
 	{
 		usleep(THREAD_SLEEP);
 
@@ -1236,7 +1235,7 @@ static int MenuBrowseDevice()
 						fileBrowser.TriggerUpdate();
 
 						sprintf(fullpath, "%s%s", rootdir, browser.dir+1); // print current path
-						sprintf(path, fullpath);
+                        snprintf(path, sizeof(path), "%s", fullpath);
 						URL.SetText(fullpath);
 					}
 					else
@@ -1250,7 +1249,7 @@ static int MenuBrowseDevice()
 					ShutoffRumble();
 					// load file
 					sprintf(fullpath, "%s%s/%s", rootdir, browser.dir+1, browserList[browser.selIndex].filename); // print current path
-					sprintf(path, fullpath);
+                    snprintf(path, sizeof(path), "%s", fullpath);
 					URL.SetText(fullpath);
 				}
 			}
@@ -1282,9 +1281,9 @@ static int MenuAdvanced()
     bool changed = false;
 
     OptionList options;
-    snprintf(options.name[i++], sizeof(options.name[0]), "%s", "Render IFrames");
-    snprintf(options.name[i++], sizeof(options.name[0]), "%s", "Execute Lua scripts");
-    snprintf(options.name[i++], sizeof(options.name[0]), "%s", "Document.write");
+    snprintf(options.name[i++], sizeof(options.name[0]), "%s", "IFrames (unavailable)");
+    snprintf(options.name[i++], sizeof(options.name[0]), "%s", "Lua (unavailable)");
+    snprintf(options.name[i++], sizeof(options.name[0]), "%s", "Script rewriting (unavailable)");
     snprintf(options.name[i++], sizeof(options.name[0]), "%s", "Proxy (url:port)");
     options.length = i;
 
@@ -1382,7 +1381,7 @@ static int MenuAdvanced()
     char dataToSend[2048];
     memset(dataToSend, 0, sizeof(dataToSend));
 
-    while(menu == MENU_NONE)
+    while(menu == MENU_NONE && !App_Exiting())
     {
         usleep(THREAD_SLEEP);
         ret = optionBrowser.GetClickedOption();
@@ -1392,13 +1391,13 @@ static int MenuAdvanced()
         switch (ret)
         {
         case 0:
-            Settings.IFrame = !Settings.IFrame;
+            Settings.IFrame = false;
             break;
         case 1:
-            Settings.ExecLua = !Settings.ExecLua;
+            Settings.ExecLua = false;
             break;
         case 2:
-            Settings.DocWrite = !Settings.DocWrite;
+            Settings.DocWrite = false;
             break;
         case 3:
             OnScreenKeyboard(mainWindow, Settings.Proxy, 256);
@@ -1424,8 +1423,7 @@ static int MenuAdvanced()
         {
             if(strlen(dataToSend) > 0)
             {
-                postcomment(curl_handle, "Anonymous", dataToSend);
-                WindowPrompt("Send report", "Thanks, your comment was posted at: http://wiibrowser.altervista.org/", "Ok", NULL);
+                WindowPrompt("Report an issue", "Use the GitHub issue link in README. No report was transmitted.", "OK", NULL);
             }
 
             memset(dataToSend, 0, sizeof(dataToSend));
@@ -1435,7 +1433,7 @@ static int MenuAdvanced()
 
         if(postComment.GetState() == STATE_CLICKED)
         {
-            snprintf(dataToSend, 1024, Content.GetText());
+            snprintf(dataToSend, sizeof(dataToSend), "%s", Content.GetText());
             OnScreenKeyboard(mainWindow, dataToSend, 1024);
             Content.SetText(dataToSend);
             postComment.ResetState();
@@ -1443,15 +1441,15 @@ static int MenuAdvanced()
 
         if(backBtn.GetState() == STATE_CLICKED)
         {
-            if(changed)
-                Settings.Save(0);
+            if(changed && !Settings.Save(0))
+                WindowPrompt("Settings not saved", "Check storage and preserved .new/.bak recovery files.", "OK", NULL);
             menu = MENU_HOME;
         }
     }
 
     prevMenu = MENU_DEVELOPER;
     w.SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_OUT, 30);
-    while(w.GetEffect() > 0)
+    while(!App_Exiting() && w.GetEffect() > 0)
         usleep(THREAD_SLEEP);
 
     HaltGui();
@@ -1539,7 +1537,7 @@ static int MenuSettings()
     mainWindow->Append(&w);
     ResumeGui();
 
-    while(menu == MENU_NONE)
+    while(menu == MENU_NONE && !App_Exiting())
     {
         usleep(THREAD_SLEEP);
         ret = optionBrowser.GetClickedOption();
@@ -1566,9 +1564,7 @@ static int MenuSettings()
             break;
 
         case 4:
-            Settings.Autoupdate++;
-             if (Settings.Autoupdate >= NIGHTLY)
-                Settings.Autoupdate = 0;
+            Settings.Autoupdate = DISABLED;
             break;
 
         case 5:
@@ -1582,9 +1578,7 @@ static int MenuSettings()
             break;
 
         case 7:
-            Settings.ZipFile++;
-             if (Settings.ZipFile > ASK)
-                Settings.ZipFile = 0;
+            Settings.ZipFile = NEVER;
             break;
 
         case 8:
@@ -1643,15 +1637,15 @@ static int MenuSettings()
         }
     }
 
-    if(changed)
-        Settings.Save(0);
+    if(changed && !Settings.Save(0))
+        WindowPrompt("Settings not saved", "Check storage and preserved .new/.bak recovery files.", "OK", NULL);
 
     if(menu == MENU_HOME)
         w.SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_OUT, 50);
     else w.SetEffect(EFFECT_SLIDE_TOP | EFFECT_SLIDE_OUT, 50);
 
     prevMenu = MENU_SETTINGS;
-    while(w.GetEffect() > 0)
+    while(!App_Exiting() && w.GetEffect() > 0)
         usleep(THREAD_SLEEP);
 
     HaltGui();
@@ -1736,7 +1730,7 @@ void ShowDownloads()
 
     int x, y;
 
-    while(1)
+    while(!App_Exiting())
     {
         if (userInput[0].wpad->ir.valid)
         {
@@ -1754,7 +1748,7 @@ void ShowDownloads()
     }
 
     manager->SetEffect(EFFECT_SLIDE_TOP | EFFECT_SLIDE_OUT, 50);
-    while(manager->GetEffect() > 0)
+    while(!App_Exiting() && manager->GetEffect() > 0)
         usleep(100);
 
     HaltGui();
@@ -1848,7 +1842,7 @@ static int MenuHome()
     int choice = 0;
     prevMenu = MENU_HOME;
 
-    while(!choice)
+    while(!choice && !App_Exiting())
     {
         if (btnGo.GetState() != STATE_SELECTED)
         {
@@ -1947,7 +1941,7 @@ static int MenuHome()
     btnExit.SetEffect(fadeAnim, -50);
     Splash->SetEffect(fadeAnim, -50);
     InsertURL.SetEffect(fadeAnim, -50);
-    while(InsertURL.GetEffect() > 0) usleep(THREAD_SLEEP);
+    while(!App_Exiting() && InsertURL.GetEffect() > 0) usleep(THREAD_SLEEP);
 
     HaltGui();
     mainWindow->Remove(Splash);
@@ -1960,7 +1954,7 @@ static int MenuHome()
     {
         App->SetEffect(EFFECT_SLIDE_OUT | EFFECT_SLIDE_BOTTOM, 50);
         Right->SetEffect(EFFECT_FADE, -50);
-        while(App->GetEffect() > 0) usleep(THREAD_SLEEP);
+        while(!App_Exiting() && App->GetEffect() > 0) usleep(THREAD_SLEEP);
 
         HaltGui();
         mainWindow->Remove(App);
@@ -1976,6 +1970,7 @@ static int MenuHome()
  ***************************************************************************/
 bool CancelDownload()
 {
+    GuiScopedLock lock;
     if (!actionButton)
         return false;
 
@@ -2277,7 +2272,7 @@ static int MenuTopSites()
 
         if(Settings.ShowThumbs && Settings.Thumbnails[i])
         {
-            Block[i].Thumb->SetImage(Settings.Thumbnails[i], vmode->fbWidth, vmode->viHeight);
+            Block[i].Thumb->SetImage(Settings.Thumbnails[i], vmode->fbWidth, vmode->efbHeight);
             Block[i].Block->SetIcon(Block[i].Thumb);
             Block[i].Block->SetLabelOver(Block[i].Label);
         }
@@ -2307,7 +2302,7 @@ static int MenuTopSites()
     ResumeGui();
 
     int i, choice = 0;
-    while(!choice)
+    while(!choice && !App_Exiting())
     {
         usleep(THREAD_SLEEP);
 
@@ -2399,12 +2394,12 @@ static int MenuTopSites()
     {
         for (i = 0; i < N; i++)
             Block[i].Remove->SetEffect(EFFECT_FADE, -50);
-        while(Block[N-1].Remove->GetEffect() > 0) usleep(THREAD_SLEEP);
+        while(!App_Exiting() && Block[N-1].Remove->GetEffect() > 0) usleep(THREAD_SLEEP);
     }
 
     for (i = 0; i < N; i++)
         Block[i].SetEffect(fadeAnim, 50);
-    while(Block[N-1].GetEffect() > 0) usleep(THREAD_SLEEP);
+    while(!App_Exiting() && Block[N-1].GetEffect() > 0) usleep(THREAD_SLEEP);
 
     HaltGui();
     for (i = 0; i < N; i++)
@@ -2415,7 +2410,7 @@ static int MenuTopSites()
     {
         App->SetEffect(EFFECT_SLIDE_OUT | EFFECT_SLIDE_BOTTOM, 50);
         Left->SetEffect(EFFECT_FADE, -50);
-        while(App->GetEffect() > 0) usleep(THREAD_SLEEP);
+        while(!App_Exiting() && App->GetEffect() > 0) usleep(THREAD_SLEEP);
 
         HaltGui();
         mainWindow->Remove(App);
@@ -2591,7 +2586,7 @@ static int MenuFavorites()
     mainWindow->Append(&btnNext);
     ResumeGui();
 
-    while(btnNext.GetEffect() > 0)
+    while(!App_Exiting() && btnNext.GetEffect() > 0)
         usleep(THREAD_SLEEP);
 
     Left->SetEffect(EFFECT_FADE, 50);
@@ -2602,7 +2597,7 @@ static int MenuFavorites()
     mainWindow->Remove(Right);
     ResumeGui();
 
-    while(!choice)
+    while(!choice && !App_Exiting())
     {
         usleep(THREAD_SLEEP);
 
@@ -2700,7 +2695,7 @@ static int MenuFavorites()
     bookTxt.SetEffect(EFFECT_FADE, -30);
     histTxt.SetEffect(EFFECT_FADE, -30);
 
-    while(Page.n_url && Block[Page.n_url-1].GetEffect() > 0)
+    while(!App_Exiting() && Page.n_url && Block[Page.n_url-1].GetEffect() > 0)
         usleep(THREAD_SLEEP);
 
     HaltGui();
@@ -2717,7 +2712,7 @@ static int MenuFavorites()
     if(choice != MENU_HOME)
     {
         Left->SetEffect(EFFECT_FADE, -50);
-        while(Left->GetEffect() > 0)
+        while(!App_Exiting() && Left->GetEffect() > 0)
             usleep(THREAD_SLEEP);
 
         HaltGui();
@@ -2734,27 +2729,20 @@ static int MenuFavorites()
  ***************************************************************************/
 void LoadSession()
 {
-    char cookies[256];
-    snprintf(cookies, sizeof(cookies), "%s/appdata/cookie.csv", Settings.AppPath);
     history = LoadList();
 
     /* setup cookies engine */
-    curl_easy_setopt(curl_handle, CURLOPT_COOKIEFILE, cookies);
+    curl_easy_setopt(curl_handle, CURLOPT_COOKIEFILE, "");
     curl_easy_setopt(curl_handle, CURLOPT_COOKIESESSION, 1L);
 }
 
 void DeleteSession()
 {
-    char path[256];
+    FreeHistory(history);
     history = InitHistory();
 
-    snprintf(path, sizeof(path), "%s/appdata/cookie.csv", Settings.AppPath);
-    remove(path);
-    snprintf(path, sizeof(path), "%s/appdata/history.txt", Settings.AppPath);
-    remove(path);
-
     /* setup cookies engine */
-    curl_easy_setopt(curl_handle, CURLOPT_COOKIEFILE, path);
+    curl_easy_setopt(curl_handle, CURLOPT_COOKIEFILE, "");
 }
 
 /* lock callback */
@@ -2771,17 +2759,11 @@ void Unlock(CURL *handle, curl_lock_data data, void *useptr )
 
 void Init()
 {
-    if(curl_global_init(CURL_GLOBAL_ALL))
-        ExitRequested = 1;
-    LWP_MutexInit(&m_mutex, 0);
-
-    curl_share = curl_share_init();
-    curl_share_setopt(curl_share, CURLSHOPT_LOCKFUNC, Lock);
-    curl_share_setopt(curl_share, CURLSHOPT_UNLOCKFUNC, Unlock);
-    curl_share_setopt(curl_share, CURLSHOPT_SHARE, CURL_LOCK_DATA_COOKIE);
+    if(curl_global_init(CURL_GLOBAL_ALL)) { ExitAccepted = true; return; }
+    curlReady = true;
 
     curl_handle = curl_easy_init();
-    curl_easy_setopt(curl_handle, CURLOPT_SHARE, curl_share);
+    if (!curl_handle) { ExitAccepted = true; return; }
     memset(prev_page, 0, sizeof(prev_page));
 
     if (!Settings.Restore && Settings.CleanExit)
@@ -2790,6 +2772,7 @@ void Init()
         DeleteSession();
     }
     else LoadSession();
+    SessionInitialized = true;
 
 #ifdef MPLAYER
     if(!InitMPlayer())
@@ -2800,7 +2783,8 @@ void Init()
 #endif
 
     SetupGui();
-    remove("debug.txt");
+    if (!ExitAccepted && (!Settings.CanSave() || !Settings.CanSaveBookmarks()))
+        WindowPrompt("Settings recovery", "An invalid or interrupted save was preserved. Recovered state is read-only; see README before restoring files.", "OK", NULL);
 }
 
 void Cleanup()
@@ -2827,8 +2811,7 @@ void Cleanup()
 
     /* setup cookies engine */
 #ifndef WIIFLOW
-    if(curl_handle)
-        curl_easy_setopt(curl_handle, CURLOPT_COOKIEJAR, cookies);
+    // No unchecked plaintext cookie-jar writes during teardown.
 #endif
     if(curl_handle)
     {
@@ -2841,9 +2824,8 @@ void Cleanup()
         curl_share_cleanup(curl_share);
         curl_share = NULL;
     }
-    curl_global_cleanup();
-
-    LWP_MutexDestroy(m_mutex);
+    if (curlReady) curl_global_cleanup();
+    curlReady = false;
     mainWindow = NULL;
 }
 
@@ -2853,12 +2835,13 @@ void MainMenu(int menu)
     // bool exitwindow = false;
 
     Init();
+    if (ExitAccepted) return;
 #ifndef WIIFLOW
     if(!Settings.CleanExit)
         WindowPrompt("Oops... this is embarrassing", "The app didn't close correctly, the previous session has been automatically restored", "OK", NULL);
 #endif
 
-    while(currentMenu != MENU_EXIT)
+    while(currentMenu != MENU_EXIT && !App_Exiting())
     {
         switch (currentMenu)
         {

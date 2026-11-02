@@ -7,7 +7,7 @@
 
 %}
 
-%option noyywrap
+%option noyywrap noinput nounput
 
 unicode		\\[0-9a-f]{1,4}
 latin1		[�-�]

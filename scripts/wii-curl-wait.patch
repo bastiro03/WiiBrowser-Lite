@@ -1,0 +1,16 @@
+--- a/lib/curlx/wait.c
++++ b/lib/curlx/wait.c
+@@ -69,6 +69,13 @@
+     /* do not use ULONG_MAX, because that is equal to INFINITE */
+ #endif
+   Sleep((DWORD)timeout_ms);
++#elif defined(GEKKO)
++  {
++    struct timespec delay;
++    delay.tv_sec = (time_t)(timeout_ms / 1000);
++    delay.tv_nsec = (long)((timeout_ms % 1000) * 1000000);
++    r = nanosleep(&delay, NULL);
++  }
+ #else
+   /* avoid using poll() for this since it behaves incorrectly with no sockets
+      on Apple operating systems */

@@ -1,0 +1,7 @@
+FROM devkitpro/devkitppc@sha256:44cb1a920e1ec3ec7c06767493c3b85f8d643d6137cc4661f0201895ac6e4967
+
+RUN apt-get update && apt-get install -y --no-install-recommends flex bison
+COPY scripts/wii-deps.sh scripts/wii-curl-wait.patch /tmp/opencode/
+RUN bash /tmp/opencode/wii-deps.sh
+WORKDIR /work
+CMD ["make", "-j2"]

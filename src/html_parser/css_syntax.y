@@ -5,13 +5,13 @@
 #include "css_lex.h"
 #include "parser.h"
 
-#define YYPARSE_PARAM yyparam
-#define YYERROR_VERBOSE 1
 //#define YYDEBUG 1
 
 %}
 
-%pure_parser
+%define api.pure full
+%define parse.error verbose
+%parse-param {void *yyparam}
 
 %union {
 	char *lexeme;
@@ -25,7 +25,7 @@
 
 %{
 int yylex(YYSTYPE *lvalp);
-int yyerror(char *s);
+int yyerror(void *yyparam, const char *s);
 %}
 
 %token IMPORT_SYM
@@ -577,7 +577,9 @@ hexcolor
 
 %%
 
-int yyerror(char *s) {
+int yyerror(void *yyparam, const char *s) {
+    (void)yyparam;
+    (void)s;
 #if YYDEBUG
 	fprintf(stderr, "Error: %s\n", s);
 #endif

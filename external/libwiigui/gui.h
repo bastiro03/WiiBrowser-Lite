@@ -43,7 +43,7 @@
 
 #include <wiiuse/wpad.h>
 #include <wiikeyboard/keyboard.h>
-#include <utils/timer.h>
+#include "utils/timer.h"
 
 #include "FreeTypeGX.h"
 #include "video.h"
@@ -655,7 +655,7 @@ class GuiImageData
 		//!\return texture format
 		u8 GetFormat();
 	protected:
-		void LoadPNG(const u8 *i, size_t length); //!< Load a PNG
+		void LoadPNG(const u8 *i, size_t length); //!< Length is mandatory for PNG input.
 		void LoadBMP(const u8 *i, int s); //!< Load a BMP
 		void LoadJPEG(const u8 *i, int s); //!< Load a JPEG
 		void LoadGIF(const u8 *i, int s); //!< Load a GIF
@@ -838,7 +838,7 @@ class GuiText : public GuiElement, public Document
 		GXColor color; //!< Font color
 		FreeTypeGX *font; //!< Font type
 		wchar_t* text; //!< Translated Unicode text value
-		wchar_t *textDyn[MAX_LINES] = {}; //!< Text value, if max width, scrolling, or wrapping enabled
+		wchar_t *textDyn[MAX_LINES] = {}; //!< Owned dynamic line buffers
 		int textDynNum; //!< Number of text lines
 		char * origText; //!< Original text data (English)
 		int size; //!< Font size

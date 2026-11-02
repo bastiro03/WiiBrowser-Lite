@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <malloc.h>
+#include <stdint.h>
 #include <unistd.h>
 #include "mem2_manager.h"
 

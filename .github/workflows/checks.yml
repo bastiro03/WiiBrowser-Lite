@@ -1,0 +1,13 @@
+name: Source and portable safety checks
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  host:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Resource/source checks and host sanitizers
+        run: make test
+      # No package installation, unpinned Wii image, Wii executable execution,
+      # artifact publication, or automatic release is performed here.

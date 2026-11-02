@@ -1,0 +1,5 @@
+/build/
+/boot.dol
+/boot.elf
+/WiiBrowser-Lite-HBC*.zip
+__pycache__/

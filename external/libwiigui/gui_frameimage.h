@@ -17,7 +17,7 @@
 #ifndef GUI_FRAMEIMAGE_H_
 #define GUI_FRAMEIMAGE_H_
 
-#include "libwiigui/gui.h"
+#include "gui.h"
 
 class GuiFrameImage : public GuiElement
 {

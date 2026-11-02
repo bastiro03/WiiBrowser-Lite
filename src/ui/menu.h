@@ -18,7 +18,7 @@
 #include <curl/multi.h>
 
 #include <ogcsys.h>
-#include <update.h>
+#include "update.h"
 #include <string>
 
 extern "C" {

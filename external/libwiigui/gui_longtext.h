@@ -17,7 +17,7 @@
 #ifndef _LONGTEXT_HPP_
 #define _LONGTEXT_HPP_
 
-#include "libwiigui/gui.h"
+#include "gui.h"
 
 #define LIMIT(x, min, max)																	\
 	({																						\

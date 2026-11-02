@@ -31,7 +31,7 @@ GuiText::GuiText(const char * t, int s, GXColor c)
 	origText = NULL;
 	text = NULL;
 	font = NULL;
-	size = s;
+	size = s < 1 ? 1 : (s > MAX_FONT_SIZE ? MAX_FONT_SIZE : s);
 	currentSize = size;
 	color = c;
 	alpha = c.a;
@@ -81,7 +81,7 @@ GuiText::GuiText(const wchar_t * t, int s, GXColor c)
     origText = NULL;
 	text = NULL;
 	font = NULL;
-	size = s;
+	size = s < 1 ? 1 : (s > MAX_FONT_SIZE ? MAX_FONT_SIZE : s);
 	currentSize = size;
 	color = c;
 	alpha = c.a;
@@ -138,7 +138,7 @@ GuiText::GuiText(const char * t)
 	origText = NULL;
 	text = NULL;
 	font = NULL;
-	size = presetSize;
+	size = presetSize < 1 ? 20 : (presetSize > MAX_FONT_SIZE ? MAX_FONT_SIZE : presetSize);
 	currentSize = size;
 	color = presetColor;
 	alpha = presetColor.a;
@@ -207,10 +207,11 @@ GuiText::~GuiText()
 
 void GuiText::ClearDynamicText()
 {
-    for(int i=0; i < textDynNum; i++)
+    for(int i=0; i < MAX_LINES; i++)
     {
         if(textDyn[i])
             delete [] textDyn[i];
+        textDyn[i] = NULL;
     }
 
     textDynNum = 0;
@@ -267,7 +268,9 @@ void GuiText::SetWText(wchar_t * t)
 
     if(t)
 	{
-		text = wcsdup(t);
+        const size_t count = wcslen(t) + 1;
+        text = new (std::nothrow) wchar_t[count];
+        if (text) wmemcpy(text, t, count);
 
 		FreeTypeGX *fs = fontSystem[currentSize];
 		if(!fs || !fs->isValid())
@@ -325,7 +328,8 @@ int GuiText::GetMaxWidth()
 
 char * GuiText::GetText()
 {
-    return origText;
+    static char empty[] = "";
+    return origText ? origText : empty;
 }
 
 int GuiText::GetTextWidth()
@@ -514,6 +518,7 @@ void GuiText::Draw()
 	c.a = this->GetAlpha();
 
 	int newSize = size*this->GetScale();
+    if (newSize < 1) newSize = 1;
 
 	if(newSize > MAX_FONT_SIZE)
 		newSize = MAX_FONT_SIZE;
@@ -574,7 +579,7 @@ void GuiText::Draw()
 			int lastSpaceIndex = -1;
 			int currentWidth = 0;
 
-			while(ch < textlen && linenum < linestodraw)
+			while(ch < textlen && linenum < linestodraw && linenum < MAX_LINES)
 			{
 				if(n == 0)
 					textDyn[linenum] = new wchar_t[textlen + 1];
@@ -638,7 +643,9 @@ void GuiText::Draw()
 		if(textDynNum == 0)
 		{
             textDynNum = 1;
-            textDyn[0] = wcsdup(text);
+                textDyn[0] = new (std::nothrow) wchar_t[textlen + 1];
+                if (!textDyn[0]) { textDynNum = 0; return; }
+                wmemcpy(textDyn[0], text, textlen + 1);
             int len = wcslen(textDyn[0]);
             FreeTypeGX *useFont = (font && font->isValid()) ? font : fontSystem[currentSize];
             if(useFont && useFont->isValid())

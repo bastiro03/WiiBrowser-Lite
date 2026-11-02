@@ -108,9 +108,9 @@ GuiKeyboard::GuiKeyboard(char * t, u32 max, int autofill)
 	alignmentHor = ALIGN_CENTRE;
 	alignmentVert = ALIGN_MIDDLE;
 
-	strncpy(kbtextstr, t, max);
-	kbtextstr[max] = 0;
-	kbtextmaxlen = max;
+    const size_t capacity = max < sizeof(kbtextstr) ? max : sizeof(kbtextstr);
+    kbtextmaxlen = capacity ? capacity - 1 : 0;
+    snprintf(kbtextstr, sizeof(kbtextstr), "%.*s", static_cast<int>(kbtextmaxlen), t ? t : "");
 	autocomplete = autofill;
 	memset(autocmpltstr, 0, sizeof(autocmpltstr));
 
@@ -405,12 +405,12 @@ GuiKeyboard::~GuiKeyboard()
 
 void GuiKeyboard::AddChar(int pos, char Char)
 {
-    if(pos < 0)
+    if(pos < 0 || static_cast<size_t>(pos) > strlen(kbtextstr) || strlen(kbtextstr) >= kbtextmaxlen)
         return;
 
     std::string temp(kbtextstr);
     temp.insert(pos, 1, Char);
-    strcpy(kbtextstr, temp.c_str());
+    snprintf(kbtextstr, sizeof(kbtextstr), "%s", temp.c_str());
 
     FreeTypeGX* kf = GetKeyboardFont();
     int Width = kf ? kf->getCharWidth(Char, 0) : 0;
@@ -525,7 +525,7 @@ void GuiKeyboard::Update(GuiTrigger * t)
 
     if(t->chan == 0) {
         // Update only once every frame (50-60 times per second)
-		bool bKeyChangeEvent = (KEYBOARD_GetEvent(&keyboardEvent) == 1);
+        bool bKeyChangeEvent = (KEYBOARD_GetEvent(&keyboardEvent) == 1);
 		if(bKeyChangeEvent) {
 			if(keyboardEvent.type == KEYBOARD_PRESSED) {
 				keyHeldDelay.reset();

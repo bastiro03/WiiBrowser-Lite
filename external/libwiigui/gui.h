@@ -287,7 +287,7 @@ class GuiElement : public sigslot::has_slots<>
 		//!Constructor
 		GuiElement();
 		//!Destructor
-		~GuiElement();
+		virtual ~GuiElement();
 		//!Set the element's parent
 		//!\param e Pointer to parent element
 		void SetParent(GuiElement * e);
@@ -838,7 +838,7 @@ class GuiText : public GuiElement, public Document
 		GXColor color; //!< Font color
 		FreeTypeGX *font; //!< Font type
 		wchar_t* text; //!< Translated Unicode text value
-		wchar_t *textDyn[MAX_LINES]; //!< Text value, if max width, scrolling, or wrapping enabled
+		wchar_t *textDyn[MAX_LINES] = {}; //!< Text value, if max width, scrolling, or wrapping enabled
 		int textDynNum; //!< Number of text lines
 		char * origText; //!< Original text data (English)
 		int size; //!< Font size

@@ -259,7 +259,8 @@ void GuiLongText::CalcLineOffsets()
 
 	while(text[ch])
 	{
-		lineWidth +=  fontSystem[currentSize]->getCharWidth(text[ch]);
+        FreeTypeGX *face = currentSize >= 0 && currentSize <= MAX_FONT_SIZE ? fontSystem[currentSize] : NULL;
+        if (face && face->isValid()) lineWidth += face->getCharWidth(text[ch]);
 
 		if(text[ch] == '\n')
 		{
@@ -281,7 +282,6 @@ void GuiLongText::CalcLineOffsets()
 
 void GuiLongText::Draw()
 {
-    textDynNum = TextLines.size();
 	if((u32)curLineStart >= TextLines.size())
 		return;
 
@@ -292,6 +292,9 @@ void GuiLongText::Draw()
 	c.a = this->GetAlpha();
 
 	currentSize = size*GetScale();
+    if (currentSize < 1) currentSize = 1;
+    if (currentSize > MAX_FONT_SIZE) currentSize = MAX_FONT_SIZE;
+    if (!fontSystem[currentSize] || !fontSystem[currentSize]->isValid()) return;
 
 	(font ? font : fontSystem[currentSize])->drawLongText(this->GetLeft(), this->GetTop(),
 			&text[TextLines[curLineStart]], c, alignmentHor | alignmentVert, currentSize + 5,

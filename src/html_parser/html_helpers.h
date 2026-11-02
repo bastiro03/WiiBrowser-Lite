@@ -17,11 +17,17 @@ class GuiTrigger;
 
 int knownType(char type[]);
 bool nextItemIs(Lista::iterator list, Lista::iterator end, std::string item);
-bool prevItemIs(Lista::iterator list, std::string item);
+bool prevItemIs(Lista::iterator list, Lista::iterator begin, std::string item);
+
+struct ScrollResources {
+    std::vector<GuiImageData *> data;
+    std::vector<GuiImage *> images;
+    ~ScrollResources();
+};
 
 void Clear(GuiWindow* mainWindow, Indice Index, Indice *first, Indice *last, Indice ext);
 void SetFont(GuiText *text, std::vector<std::string> mode);
-void DrawScroll(GuiWindow * mainWindow, GuiButton **btndown, GuiButton **btnup, GuiSound *btnSoundOver, GuiTrigger *trigA);
+void DrawScroll(GuiWindow * mainWindow, GuiButton **btndown, GuiButton **btnup, GuiSound *btnSoundOver, GuiTrigger *trigA, ScrollResources &resources);
 void FreeMem(GuiWindow* mainWindow, ListaDiTesto text, ListaDiBottoni btn, ListaDiImg img, Indice Index);
 
 // Pagination helpers

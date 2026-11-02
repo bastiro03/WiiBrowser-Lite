@@ -6,6 +6,11 @@
 #include "html_helpers.h"
 #include "config.h"
 #include "httplib.h"
+#include "gui_lock.h"
+#include "safety.h"
+#include "file_io.h"
+#include "url_helper.h"
+#include <atomic>
 
 #define minwidth MIN(width, screenwidth-80)
 #define LEN 15
@@ -15,8 +20,7 @@ char tags [END][LEN] = {"html","head","body","base","meta","title","form","p","a
                         "br","img","h1","h2","h3","h4","h5","h6","b","big","blockquote","pre","td","dd","dt",/*"center",*/"li","cite","font"
                        };
 
-static int threadState;
-bool isRunning = false;
+static std::atomic<int> threadState(THREAD_RUN);
 
 static ListaDiImg img;
 static ListaDiBottoni btn;
@@ -24,24 +28,22 @@ static ListaDiBottoni btn;
 static GuiSound *btnSoundOver = NULL;
 static GuiTrigger *trigA = NULL;
 static GuiWindow * renderWindow = NULL;
+static bool imageCancelled(void *) { return threadState == THREAD_EXIT || App_Exiting(); }
 
 void ResumeThread(lwp_t thread)
 {
-    threadState=THREAD_RUN;
-    LWP_ResumeThread (thread);
+    (void)thread;
+    ResumeGui();
 }
 
 void HaltThread(lwp_t thread)
 {
-    threadState=THREAD_SUSPEND;
-    while(!LWP_ThreadIsSuspended(thread))   // wait for thread to finish
-        usleep(100);
+    (void)thread;
+    HaltGui();
 }
 
 static void *DownloadImage (void *arg)
 {
-    ListaDiImg lista;
-    isRunning=true;
     CURL *curl_img=curl_easy_init();
 
     // Take ownership of heap base-URL copy (strdup'd by creator).
@@ -50,72 +52,49 @@ static void *DownloadImage (void *arg)
     std::string base = baseUrl ? baseUrl : "";
     free(baseUrl);
 
-    int width, height;
-
-    while(threadState!=THREAD_EXIT)
-    {
-        if (threadState==THREAD_SUSPEND)
+    if (!curl_img) return NULL;
+    while (threadState != THREAD_EXIT && !App_Exiting()) {
+        Image *item = NULL;
+        std::string source;
         {
-            LWP_SuspendThread(LWP_GetSelf());
-        }
-        else
-        {
-            usleep(100);
-            for (lista=img; !NoImg(lista); lista=lista->prox)
-            {
-                if (threadState==THREAD_EXIT || threadState==THREAD_SUSPEND) break;
-                if (!lista->fetched && !lista->img->GetImage() && lista->tag)
-                {
-                    string tmp=adjustUrl(lista->tag->attribute, (char*)base.c_str());
-                    struct block THREAD = downloadfile(curl_img, tmp.c_str(), NULL);
-                    if(THREAD.size>0 && strstr(THREAD.type, "image"))
-                    {
-                        lista->imgdata=new GuiImageData ((u8*)THREAD.data, THREAD.size);
-                        lista->img->SetImage(lista->imgdata);
-                        width = MIN(imageSize(lista->tag, lista->img).width, screenwidth-80);
-                        height = MIN(imageSize(lista->tag, lista->img).height, screenheight);
-                        lista->img->SetScale(width, height);
-                        lista->img->SetEffect(EFFECT_FADE, 50);
-                    }
-                    lista->fetched = true;
-                    free(THREAD.data);
+            GuiScopedLock lock;
+            for (Image *candidate = img; candidate; candidate = candidate->prox) {
+                if (!candidate->fetched && candidate->tag) {
+                    candidate->fetched = true;
+                    item = candidate;
+                    source = adjustUrl(candidate->tag->attribute, base.c_str());
+                    break;
                 }
             }
         }
+        if (!item) { usleep(10000); continue; }
+        block response = downloadfile(curl_img, source.c_str(), NULL, imageCancelled, NULL);
+        if (response.size > 0 && strstr(response.type, "image")) {
+            GuiImageData *decoded = new (std::nothrow) GuiImageData(reinterpret_cast<u8 *>(response.data), response.size);
+            GuiScopedLock lock;
+            if (threadState != THREAD_EXIT && decoded && decoded->GetImage()) {
+                item->imgdata = decoded;
+                item->img->SetImage(decoded);
+                const int width = MIN(imageSize(item->tag, item->img).width, screenwidth - 80);
+                const int height = MIN(imageSize(item->tag, item->img).height, screenheight);
+                item->img->SetScale(width, height);
+                if (item->linkButton) item->linkButton->SetSize(width, height);
+                item->img->SetEffect(EFFECT_FADE, 50);
+            } else delete decoded;
+        }
+        free(response.data);
     }
-
     curl_easy_cleanup(curl_img);
-    isRunning=false;
     return NULL;
 }
 
 bool AddImage(Lista::iterator lista, char *url)
 {
-    bool ret = false;
-    string tmp = adjustUrl(lista->attribute, url);
-
-    if (imageSize(&(*lista), NULL).height < INT_MAX)    // height known
-    {
-        img = InsImg(img);
-        img->img = new GuiImage();
-        img->tag = &(*lista);
-
-        return true;
-    }
-
-    struct block IMAGE = downloadfile(curl_handle, tmp.c_str(), NULL);
-    if(IMAGE.size>0 && strstr(IMAGE.type, "image"))
-    {
-        img = InsImg(img);
-        img->imgdata = new GuiImageData((u8*)IMAGE.data, IMAGE.size);
-        img->img = new GuiImage(img->imgdata);
-        img->img->SetEffect(EFFECT_FADE, 50);
-
-        ret = true;
-    }
-
-    free(IMAGE.data);
-    return ret;
+    (void)url;
+    img = InsImg(img);
+    img->img = new GuiImage();
+    img->tag = &(*lista);
+    return true;
 }
 
 void AddButton(Lista::iterator lista, int type, GuiImage *image, void *arg)
@@ -125,7 +104,7 @@ void AddButton(Lista::iterator lista, int type, GuiImage *image, void *arg)
 
     switch (type)
     {
-        case ANCHOR:
+        case ANCHOR: {
             btn->label=new GuiText((char*)lista->value[*(int*)arg].text.c_str(), 20, (GXColor)
             {
                 0, 0, 255, 255
@@ -143,12 +122,14 @@ void AddButton(Lista::iterator lista, int type, GuiImage *image, void *arg)
             btn->btn->SetModel(ANCHOR);
             btn->url.assign(lista->attribute);
         break;
+        }
 
         case IMAGE:
             width = MIN(imageSize(&(*lista), image).width, screenwidth-80);
             height = MIN(imageSize(&(*lista), image).height, screenwidth-80);
 
             btn->btn=new GuiButton(width, height);
+            if (img) img->linkButton = btn->btn;
             btn->btn->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
             btn->btn->SetPosition(image->GetXPosition(), image->GetYPosition());
             image->SetPosition(0, 0);
@@ -161,6 +142,7 @@ void AddButton(Lista::iterator lista, int type, GuiImage *image, void *arg)
 
         case FORM:
             btn->refs=&(*lista);
+            btn->ownedImage = image;
             btn->btn=new GuiButton(image->GetWidth(), image->GetHeight());
             btn->btn->SetAlignment(ALIGN_CENTRE, ALIGN_TOP);
             btn->btn->SetImage(image);
@@ -179,6 +161,8 @@ void AddButton(Lista::iterator lista, int type, GuiImage *image, void *arg)
 
 string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainWindow, char *url)
 {
+    const std::string navigationUrl = url ? url : "";
+    std::string documentBase = navigationUrl;
     static lwp_t thread = LWP_THREAD_NULL;
     char *title = NULL;
     renderWindow = mainWindow;
@@ -190,6 +174,8 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
     int type = knownType(HTML->type);
     int offset = 0, choice = 0;
     bool done = false;
+    u64 refreshAt = 0;
+    std::string refreshUrl;
 
     GuiWindow *scrollWindow = new GuiWindow(50, screenheight-80);
     scrollWindow->SetAlignment(ALIGN_RIGHT, ALIGN_TOP);
@@ -200,6 +186,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
     GuiImage *image=NULL;
 
     GuiButton *btndown=NULL, *btnup=NULL;
+    ScrollResources scrollResources;
     Lista l1;
     Lista::iterator lista;
     ListaDiTesto text=InitText();
@@ -239,6 +226,14 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
     if (type == WEB)
     {
         l1=getTag((char*)HTML->data, url);
+        for (const Tag &tag : l1) {
+            if (tag.name == "base") {
+                const std::string resolved = parseUrl(tag.attribute, navigationUrl.c_str());
+                if (wbl::httpUrl(resolved)) documentBase = resolved;
+                break;
+            }
+        }
+        url = const_cast<char *>(documentBase.c_str()); // Borrowed, never resized.
         lista=l1.begin();
         // Pass a heap copy of the base URL: never hand the worker the
         // address of this function's stack slot (&url).
@@ -257,8 +252,9 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
         }
 
         unsigned int i;
-        while (!choice)
+        while (!choice && !App_Exiting())
         {
+            if (refreshAt && gettime() >= refreshAt) { link = refreshUrl; choice = 1; }
             Clear(renderWindow, Index, &first, &last, ext);
             if (!ext && Index)
                 ext=Index;
@@ -352,7 +348,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                         }
                         else
                         {
-                            if(prevItemIs(lista, "img"))
+                            if(prevItemIs(lista, l1.begin(), "img"))
                                 Doc.Height+=Index->screenSize;
 
                             img->img->SetPosition(offset+40, Doc.YPos+Doc.Height);
@@ -404,14 +400,18 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
 
                 else if (lista->name=="meta")
                 {
-                    if (!lista->value.empty())
-                        choice = HandleMeta(lista, &link, HTML);
+                    if (!lista->value.empty() && lista->value[0].text == "refresh") {
+                        const int delay = getTime(lista->attribute);
+                        int valid = 0;
+                        refreshUrl = getUrl(&valid, lista->attribute);
+                        if (delay >= 0 && valid)
+                            refreshAt = gettime() + secs_to_ticks(delay ? delay : 1);
+                    }
                 }
 
                 else if (lista->name=="base")
                 {
-                    url = (char*)realloc(url, lista->attribute.size()+1);
-                    strcpy(url, lista->attribute.c_str());
+                    // Already resolved before worker creation; caller owns URL.
                 }
 
                 else if (lista->name=="return")
@@ -465,7 +465,7 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                 lista++;
             }
 
-            else if (!done)
+            else if (!done && Settings.ShowThumbs)
             {
                 HaltGui();
                 DoMPlayerGuiDraw();
@@ -485,14 +485,14 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
 
             if (!btnup)
             {
-                DrawScroll (scrollWindow, &btndown, &btnup, btnSoundOver, trigA);
+                DrawScroll (scrollWindow, &btndown, &btnup, btnSoundOver, trigA, scrollResources);
                 HaltGui();
                 renderWindow->Append(scrollWindow);
                 ResumeGui();
             }
 
             HandleHtmlPad(&offset, btnup, btndown, ext, Index, renderWindow, parentWindow);
-            HandleMenuBar(&link, url, new_page, title, &choice, 0, renderWindow, parentWindow);
+            HandleMenuBar(&link, const_cast<char *>(navigationUrl.c_str()), new_page, title, &choice, 0, renderWindow, parentWindow);
 
             if (choice == 2)
             {
@@ -504,9 +504,11 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
 
                 if (GuiBrowser(renderWindow, parentWindow, path, sizeof(path), "Save page"))
                 {
-                    correctPath(path, sizeof(path), HTML->type, PAGE);
-                    file = fopen(path, "wb");
-                    save(HTML, file);
+                    if (correctPath(path, sizeof(path), HTML->type, PAGE) &&
+                        (!CheckFile(path) || WindowPrompt("Replace file?", path, "Replace", "Cancel"))) {
+                        file = fopen(path, "wb");
+                        save(HTML, file);
+                    }
                 }
                 choice=0;
             }
@@ -519,11 +521,16 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                     choice = 1;
                     if (bottone->refs)
                         choice=HandleForm(parentWindow, renderWindow, bottone);
-                    if (choice) link.assign(bottone->url);
+                    if (choice) {
+                        if (bottone->url.empty() && !bottone->refs) { choice = 0; continue; }
+                        link = parseUrl(bottone->url, url);
+                        if (bottone->post)
+                            SetNavigationPost(parseUrl(link, url), bottone->postBody);
+                    }
                 }
             }
         }
-        l1.clear();
+        // Tags and their form inputs stay alive until the image worker joins.
     }
 
     else if (type == IMAGE)
@@ -538,12 +545,12 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
         renderWindow->Append(image);
         ResumeGui();
 
-        DrawScroll (scrollWindow, &btndown, &btnup, btnSoundOver, trigA);
+        DrawScroll (scrollWindow, &btndown, &btnup, btnSoundOver, trigA, scrollResources);
         HaltGui();
         renderWindow->Append(scrollWindow);
         ResumeGui();
 
-        while (!choice)
+        while (!choice && !App_Exiting())
         {
             HandleImgPad(btnup, btndown, image);
             HandleMenuBar(&link, url, new_page, NULL, &choice, 1, renderWindow, parentWindow);
@@ -558,16 +565,18 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
 
                 if (GuiBrowser(renderWindow, parentWindow, path, sizeof(path), "Save image"))
                 {
-                    correctPath(path, sizeof(path), HTML->type, IMAGES);
-                    file = fopen(path, "wb");
-                    save(HTML, file);
+                    if (correctPath(path, sizeof(path), HTML->type, IMAGES) &&
+                        (!CheckFile(path) || WindowPrompt("Replace file?", path, "Replace", "Cancel"))) {
+                        file = fopen(path, "wb");
+                        save(HTML, file);
+                    }
                 }
                 choice = 0;
             }
         }
 
         image->SetEffect(EFFECT_FADE, -50);
-        while (image->GetEffect()>0)
+        while (!App_Exiting() && image->GetEffect()>0)
             usleep(100);
 
         HaltGui();
@@ -601,17 +610,17 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
         {
             if (GuiBrowser(NULL, parentWindow, path, sizeof(path), "Save page"))
             {
-                correctPath(path, sizeof(path), HTML->type, OTHER);
-                file = fopen(path, "wb");
-                save(HTML, file);
+                if (correctPath(path, sizeof(path), HTML->type, OTHER) &&
+                    (!CheckFile(path) || WindowPrompt("Replace file?", path, "Replace", "Cancel"))) {
+                    file = fopen(path, "wb");
+                        save(HTML, file);
+                }
             }
         }
         usleep(100*1000);
     }
 
     threadState=THREAD_EXIT;
-    while (isRunning)
-        usleep(100);
     if(thread != LWP_THREAD_NULL)
     {
         LWP_JoinThread(thread, NULL);
@@ -622,6 +631,8 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
     renderWindow->Remove(scrollWindow);
     ResumeGui();
     FreeMem(renderWindow, text, btn, img, Index);
+    for (Tag &tag : l1) DistruggiInput(tag.form.input);
+    l1.clear();
 
     if (!hidden)
         hideBar(renderWindow, parentWindow);
@@ -640,5 +651,5 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
     delete(btnSoundOver);
     delete(scrollWindow);
     delete(trigA);
-    return link;
+    return link.empty() ? link : parseUrl(link, documentBase.c_str());
 }

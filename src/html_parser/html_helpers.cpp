@@ -1,4 +1,5 @@
 #include "html_helpers.h"
+#include "main.h"
 #include "html.h"
 #include "common.h"
 #include "context.h"
@@ -23,7 +24,8 @@ bool nextItemIs(Lista::iterator list, Lista::iterator end, std::string item) {
     return ret;
 }
 
-bool prevItemIs(Lista::iterator list, std::string item) {
+bool prevItemIs(Lista::iterator list, Lista::iterator begin, std::string item) {
+    if (list == begin) return false;
     bool ret = false;
     if((--list)->name == item)
         ret = true;
@@ -52,7 +54,12 @@ void SetFont(GuiText *text, std::vector<std::string> mode) {
         text->SetFont(font_italic_ttf, font_italic_ttf_size);
 }
 
-void DrawScroll(GuiWindow * mainWindow, GuiButton **btndown, GuiButton **btnup, GuiSound *btnSoundOver, GuiTrigger *trigA) {
+ScrollResources::~ScrollResources() {
+    for (GuiImage *image : images) delete image;
+    for (GuiImageData *item : data) delete item;
+}
+
+void DrawScroll(GuiWindow * mainWindow, GuiButton **btndown, GuiButton **btnup, GuiSound *btnSoundOver, GuiTrigger *trigA, ScrollResources &resources) {
     GuiImageData *btnupOutline=new GuiImageData(scrollbar_arrowup_png, scrollbar_arrowup_png_size);
     GuiImageData *btnupOutlineOver=new GuiImageData(scrollbar_arrowup_over_png, scrollbar_arrowup_over_png_size);
     GuiImage *btnupImg=new GuiImage(btnupOutline);
@@ -72,6 +79,8 @@ void DrawScroll(GuiWindow * mainWindow, GuiButton **btndown, GuiButton **btnup, 
     GuiImageData *btnOutlineOver=new GuiImageData(scrollbar_arrowdown_over_png, scrollbar_arrowdown_over_png_size);
     GuiImage *btndownImg=new GuiImage(btnOutline);
     GuiImage *btndownImgOver=new GuiImage(btnOutlineOver);
+    resources.data = {btnupOutline, btnupOutlineOver, btnOutline, btnOutlineOver};
+    resources.images = {btnupImg, btnupImgOver, btndownImg, btndownImgOver};
 
     *btndown=new GuiButton(btnOutline->GetWidth(), btnOutline->GetHeight());
     (*btndown)->SetAlignment(ALIGN_RIGHT, ALIGN_BOTTOM);

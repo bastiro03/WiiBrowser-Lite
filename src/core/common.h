@@ -68,6 +68,7 @@ typedef struct Image
 {
     GuiImageData *imgdata;
     GuiImage *img;
+    GuiButton *linkButton;
     bool fetched;
     struct Tag *tag;
     struct Image *prox;
@@ -78,8 +79,8 @@ typedef struct Button
     GuiButton *btn;
     GuiText *label;
     GuiTooltip *tooltip;
-    GuiText *extraLabel;
     GuiImage *ownedImage;
+    GuiText *extraLabel;
     TipoElemento url;
     TipoElemento postBody;
     bool post;

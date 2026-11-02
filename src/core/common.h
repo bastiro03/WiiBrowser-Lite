@@ -78,7 +78,11 @@ typedef struct Button
     GuiButton *btn;
     GuiText *label;
     GuiTooltip *tooltip;
+    GuiText *extraLabel;
+    GuiImage *ownedImage;
     TipoElemento url;
+    TipoElemento postBody;
+    bool post;
     int outline;
     struct Tag *refs;
     struct Button *prox;

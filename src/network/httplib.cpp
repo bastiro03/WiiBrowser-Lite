@@ -1,702 +1,246 @@
 /*
-**  Created by gave92
-**
-**  Copyright (C) 2012 - 2013
-**  ==================
-**
-**  This program is free software; you can redistribute it and/or modify
-**  it under the terms of the GNU General Public License as published by
-**  the Free Software Foundation, version 2.
-**
-**  This program is distributed in the hope that it will be useful,
-**  but WITHOUT ANY WARRANTY; without even the implied warranty of
-**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-**  GNU General Public License for more details.
-**
-**  You should have received a copy of the GNU General Public License
-**  along with this program; if not, write to the Free Software
-**  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-**
-**  History:
-**   20-11-2008  Start programming
-**   30-11-2008  Added google analysic http request
-**   07-12-2008  Add user_var parameter in google analysic http request
-**   30-12-2008  Added store highscore on internet.
-**   06-01-2009  Google analysic function improved.
-**   15-01-2009  Add http chunked frame support.
-**   21-01-2009  Create one unique cookie during startup.
-**   26-01-2009  Increase internal buffersize to 8kB.
-*/
-
+ * Created by gave92. Copyright (C) 2012-2013.
+ * This program is free software: you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License, version 2, as published
+ * by the Free Software Foundation. Distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+ * PURPOSE. See the GNU General Public License for details.
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include "config.h"
+#include <cctype>
 #include "httplib.h"
-
 #include "main.h"
 #include "menu.h"
+#include "safety.h"
+#include "file_io.h"
 
-extern "C" {
-#include "urlcode.h"
+const block emptyblock = {NULL, 0, {0}};
+
+namespace {
+struct Response {
+    char *bytes = NULL;
+    size_t length = 0;
+    size_t headerBytes = 0;
+    long status = 0;
+    bool attachment = false;
+    bool stoppedForAttachment = false;
+    char type[TYPE] = {};
+    char filename[256] = {};
+    ~Response() { free(bytes); }
+};
+
+// Only the navigation thread accesses this handoff. Passive image/download
+// requests cannot interpret URL text as a command or consume form bodies.
+std::string pendingUrl;
+std::string pendingBody;
+struct Cancellation { bool (*test)(void *); void *context; };
+
+size_t receiveBody(void *contents, size_t size, size_t count, void *opaque)
+{
+    Response &response = *static_cast<Response *>(opaque);
+    if (size && count > wbl::MaxDocument / size) return 0;
+    const size_t length = size * count;
+    if (response.length >= wbl::MaxDocument ||
+        length > wbl::MaxDocument - response.length - 1) return 0;
+    char *next = static_cast<char *>(realloc(response.bytes, response.length + length + 1));
+    if (!next) return 0;
+    response.bytes = next;
+    memcpy(next + response.length, contents, length);
+    response.length += length;
+    next[response.length] = 0;
+    return length;
 }
 
-// -----------------------------------------------------------
-// VARIABLES
-// -----------------------------------------------------------
-
-enum
+size_t receiveHeader(void *contents, size_t size, size_t count, void *opaque)
 {
-    HEAD,
-    POST,
-    GET,
-    REQUESTS
-};
-
-enum
-{
-    DFOUND = -1,
-    DCOMPLETE = -2,
-    DSTOPPED = -3,
-};
-
-const char Agents[MAXAGENTS][256] =
-{
-    "",
-    "libcurl-agent/1.0",
-    "Mozilla/5.0 (Nintendo Wii; U; WiiBrowser rev37) like Gecko Firefox/4.0",
-    "Mozilla/5.0 (Windows NT 6.2; WOW64; rv:16.0.1) Gecko/20121011 Firefox/16.0.1",
-	"Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; Trident/6.0)",
-	"Mozilla/5.0 (Linux; U; Android 1.1; en-gb; dream) AppleWebKit/525.10+ (KHTML, like Gecko) Version/3.0.4 Mobile Safari/523.12.2",
-};
-
-const struct block emptyblock = {NULL, 0};
-static int firstRun = true;
-
-// -----------------------------------------------------------
-// DATA HANDLING
-// -----------------------------------------------------------
-
-struct HeaderStruct {
-    char *memory;
-    u32 size;
-    bool download;
-    char filename[256];
-};
-
-struct MemoryStruct {
-    char *memory;
-    u32 size;
-};
-
-int parseline(HeaderStruct *mem, size_t realsize);
-void fillstruct(CURL *handle, HeaderStruct *head, struct block *dest);
-bool mustdownload(char *content);
-
-int close_callback (void *clientp, curl_socket_t item) {
-	return net_close(item);
-}
-
-static const size_t MAX_HTML_CHUNK = 16 * 1024 * 1024; // 16 MB cap (M5)
-
-static size_t
-WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp)
-{
-    size_t realsize = size * nmemb;
-    struct MemoryStruct *mem = (struct MemoryStruct *)userp;
-    if(mem->size + realsize + 1 > MAX_HTML_CHUNK) {
-        Debug("WriteMemoryCallback: chunk exceeds 16MB cap\n");
-        return 0; // abort curl with CURLE_WRITE_ERROR
+    try {
+    Response &response = *static_cast<Response *>(opaque);
+    if (size && count > 65536 / size) return 0;
+    const size_t length = size * count;
+    if (length > 65536 - response.headerBytes) return 0;
+    response.headerBytes += length;
+    std::string line(static_cast<const char *>(contents), length);
+    if (line.compare(0, 5, "HTTP/") == 0) {
+        const size_t space = line.find(' ');
+        response.status = space == std::string::npos ? 0 : strtol(line.c_str() + space + 1, NULL, 10);
+        response.type[0] = response.filename[0] = 0;
+        response.attachment = response.stoppedForAttachment = false;
+        return length;
     }
-    char *tmp = (char *)realloc(mem->memory, mem->size + realsize + 1);
-    if (tmp == NULL) {
-        Debug("not enough memory (realloc returned NULL)\n");
+    const size_t colon = line.find(':');
+    std::string key = line.substr(0, colon);
+    for (char &c : key) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    if (key == "content-type") {
+        const size_t start = line.find_first_not_of(" \t", colon + 1);
+        const size_t end = line.find_first_of(";\r\n \t", start);
+        if (start != std::string::npos) {
+            std::string type = line.substr(start, end - start);
+            for (char &c : type) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+            if (!wbl::copyString(response.type, sizeof(response.type), type.c_str())) return 0;
+            response.attachment = type != "text/html" && type != "application/xhtml+xml" &&
+                                  type.compare(0, 6, "image/") != 0 && type.compare(0, 5, "text/") != 0;
+        }
+    } else if (key == "content-disposition") {
+        const size_t field = line.find("filename=");
+        if (field != std::string::npos) {
+            size_t start = field + 9;
+            const bool quoted = start < line.size() && line[start] == '"';
+            if (quoted) ++start;
+            const size_t end = line.find_first_of(quoted ? "\"\r\n" : ";\r\n", start);
+            const std::string name = line.substr(start, end - start);
+            // Invalid suggestions are not allowed to become filesystem paths.
+            if (!wbl::safeFilename(name) ||
+                !wbl::copyString(response.filename, sizeof(response.filename), name.c_str())) return 0;
+        }
+    }
+    if (line == "\r\n" && response.status >= 200 && response.status < 300 && response.attachment) {
+        response.stoppedForAttachment = true;
         return 0;
     }
-    mem->memory = tmp;
-    memcpy(&(mem->memory[mem->size]), contents, realsize);
-    mem->memory[mem->size+=realsize] = 0;
-    return realsize;
+    return length;
+    } catch (...) { return 0; } // Never unwind a C++ exception through libcurl.
 }
 
-static size_t writedata(void *ptr, size_t size, size_t nmemb, void *stream)
+int progress(void *opaque, double, double, double, double)
 {
-    int written = fwrite(ptr, size, nmemb, (FILE *)stream);
-    return written;
+    Cancellation *cancellation = static_cast<Cancellation *>(opaque);
+    return App_Exiting() || (cancellation && cancellation->test && cancellation->test(cancellation->context)) || CancelDownload();
 }
 
-static size_t parseheader(void *contents, size_t size, size_t nmemb, void *userp)
+block request(CURL *handle, const char *url, const char *body, FILE *file,
+              bool (*cancelled)(void *) = NULL, void *context = NULL)
 {
-    size_t realsize = size * nmemb;
-    struct HeaderStruct *mem = (struct HeaderStruct *)userp;
-    if(mem->size + realsize + 1 > 64 * 1024) {
-        Debug("parseheader: header exceeds 64KB cap\n");
-        return 0;
+    if (!handle || !url || !wbl::httpUrl(url) ||
+        (body && strlen(body) > wbl::MaxDocument)) return emptyblock;
+    curl_easy_reset(handle);
+    ConfigureHttp(handle, url);
+    Response response;
+    curl_easy_setopt(handle, CURLOPT_NOPROGRESS, 0L);
+    curl_easy_setopt(handle, CURLOPT_PROGRESSFUNCTION, progress);
+    Cancellation cancellation = {cancelled, context};
+    curl_easy_setopt(handle, CURLOPT_PROGRESSDATA, &cancellation);
+    if (body) {
+        curl_easy_setopt(handle, CURLOPT_POSTFIELDS, body);
+        curl_easy_setopt(handle, CURLOPT_POSTFIELDSIZE, static_cast<long>(strlen(body)));
+        // Never replay a credential-bearing body to a redirect target.
+        curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, 0L);
     }
-    char *tmp = (char *)realloc(mem->memory, mem->size + realsize + 1);
-    if (tmp == NULL) {
-        Debug("not enough memory (realloc returned NULL)\n");
-        return 0;
+    if (file) {
+        curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, WriteHttpFile);
+        curl_easy_setopt(handle, CURLOPT_WRITEDATA, file);
+    } else {
+        curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, receiveBody);
+        curl_easy_setopt(handle, CURLOPT_WRITEDATA, &response);
+        curl_easy_setopt(handle, CURLOPT_HEADERFUNCTION, receiveHeader);
+        curl_easy_setopt(handle, CURLOPT_HEADERDATA, &response);
     }
-    mem->memory = tmp;
-    memcpy(&(mem->memory[mem->size]), contents, realsize);
-    mem->memory[mem->size+=realsize] = 0;
-    return parseline(mem, realsize);
+    const CURLcode result = curl_easy_perform(handle);
+    block output = emptyblock;
+    if (result == CURLE_WRITE_ERROR && response.stoppedForAttachment && !body) {
+        output.size = -1;
+        output.data = strdup(response.filename);
+        wbl::copyString(output.type, sizeof(output.type), response.type);
+        return output;
+    }
+    if (result != CURLE_OK) return output;
+    long status = 0;
+    curl_easy_getinfo(handle, CURLINFO_RESPONSE_CODE, &status);
+    if (status < 200 || status >= 300) return output;
+    if (file) {
+        if (fflush(file) == 0 && !ferror(file)) output.size = -2;
+        return output; // Stream remains caller-owned.
+    }
+    char *type = NULL;
+    curl_easy_getinfo(handle, CURLINFO_CONTENT_TYPE, &type);
+    std::string media = type ? type : "text/plain";
+    media.erase(media.find(';') == std::string::npos ? media.size() : media.find(';'));
+    if (!wbl::copyString(output.type, sizeof(output.type), media.c_str())) return emptyblock;
+    output.data = response.bytes;
+    output.size = static_cast<int>(response.length);
+    response.bytes = NULL;
+    return output;
+}
 }
 
-int parseline(HeaderStruct *mem, size_t realsize)
+void ConfigureHttp(CURL *handle, const char *url)
 {
-    unsigned int i;
-    // < not <= : don't overwrite terminator beyond buffer
-    for(i = mem->size - realsize; i < mem->size; i++)
-        mem->memory[i] = tolower((unsigned char)mem->memory[i]);
-
-    char *line = &mem->memory[mem->size - realsize];
-    char buff[50];
-    memset(buff, 0, sizeof(buff));
-
-    if(!strncmp(line, "content-type", 12))
-    {
-        sscanf(line, "content-type: %49s", buff);
-        findChr(buff, ';');
-
-        if(mustdownload(buff))
-            mem->download = 1;
-    }
-
-    else if(!strncmp(line, "content-disposition", 19))
-    {
-        // Guard 256-byte filename buffer
-        strncpy(mem->filename, line, sizeof(mem->filename)-1);
-        mem->filename[sizeof(mem->filename)-1] = '\0';
-    }
-
-    else if(!strncmp(line, "\r\n", 2))
-        return (!mem->download) * realsize;
-    return realsize;
-}
-
-// -----------------------------------------------------------
-// SET HEADERS
-// -----------------------------------------------------------
-
-void setmainheaders(CURL *curl_handle, const char *url)
-{
-    if(!curl_handle)
-        return;
-
-    /* send all data to this function */
-    curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
-
-    /* set proxy if specified */
-    if(validProxy())
-        curl_easy_setopt(curl_handle, CURLOPT_PROXY, Settings.Proxy);
-
-    /* follow redirects */
-    curl_easy_setopt(curl_handle, CURLOPT_AUTOREFERER, 1);
-    curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
-    curl_easy_setopt(curl_handle, CURLOPT_NOPROGRESS, 1);
-
-    /* some servers don't like requests that are made without a user-agent
-    field, so we provide one */
-    curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, Agents[Settings.UserAgent]);
-    // M5: enable verification with CA bundle fallback; keep 0L only if cacert missing (legacy)
-    // Caller should set CURLOPT_CAINFO before this; we set sensible defaults here.
-    curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 1L);
-    curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 2L);
-    // Wii CA bundle location (portlibs or sd bundle)
-    curl_easy_setopt(curl_handle, CURLOPT_CAINFO, "sd:/apps/wiibrowser/cacert.pem");
-#ifdef CURL_SSLVERSION_TLSv1_2
-    curl_easy_setopt(curl_handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2);
+    std::string certificates(Settings.AppPath);
+    if (certificates.empty() || certificates.back() != '/') certificates += '/';
+    certificates += "cacert.pem";
+    curl_easy_setopt(handle, CURLOPT_URL, url);
+    curl_easy_setopt(handle, CURLOPT_USERAGENT, "WiiBrowser-Lite/0.1");
+    curl_easy_setopt(handle, CURLOPT_SSL_VERIFYPEER, 1L);
+    curl_easy_setopt(handle, CURLOPT_SSL_VERIFYHOST, 2L);
+    curl_easy_setopt(handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2);
+    curl_easy_setopt(handle, CURLOPT_CAINFO, certificates.c_str());
+    curl_easy_setopt(handle, CURLOPT_CONNECTTIMEOUT, 10L);
+    curl_easy_setopt(handle, CURLOPT_TIMEOUT, 30L);
+    curl_easy_setopt(handle, CURLOPT_LOW_SPEED_LIMIT, 32L);
+    curl_easy_setopt(handle, CURLOPT_LOW_SPEED_TIME, 10L);
+    curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, 1L);
+    curl_easy_setopt(handle, CURLOPT_MAXREDIRS, 5L);
+    curl_easy_setopt(handle, CURLOPT_AUTOREFERER, 0L);
+    curl_easy_setopt(handle, CURLOPT_FAILONERROR, 1L);
+    curl_easy_setopt(handle, CURLOPT_NOSIGNAL, 1L);
+#if LIBCURL_VERSION_NUM >= 0x075500
+    curl_easy_setopt(handle, CURLOPT_PROTOCOLS_STR, "http,https");
+    // HTTPS requests must not redirect to plaintext.
+    curl_easy_setopt(handle, CURLOPT_REDIR_PROTOCOLS_STR, strncmp(url, "https:", 6) == 0 ? "https" : "http,https");
 #else
-    curl_easy_setopt(curl_handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1);
+    curl_easy_setopt(handle, CURLOPT_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
+    curl_easy_setopt(handle, CURLOPT_REDIR_PROTOCOLS, strncmp(url, "https:", 6) == 0 ? CURLPROTO_HTTPS : CURLPROTO_HTTP | CURLPROTO_HTTPS);
 #endif
-    curl_easy_setopt(curl_handle, CURLOPT_CONNECTTIMEOUT, 10L);
-    curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, 30L);
-
-    /* proper function to close sockets */
-    curl_easy_setopt(curl_handle, CURLOPT_CLOSESOCKETFUNCTION, close_callback);
-    curl_easy_setopt(curl_handle, CURLOPT_URL, url);
+    if (validProxy()) curl_easy_setopt(handle, CURLOPT_PROXY, Settings.Proxy);
 }
 
-int showprogress(void *bar,
-                    double total, /* dltotal */
-                    double done, /* dlnow */
-                    double ultotal,
-                    double ulnow)
+size_t WriteHttpFile(void *bytes, size_t size, size_t count, void *stream)
 {
-    char msg[20];
-    snprintf(msg, sizeof(msg), "Loading...%2.2f%%", (total > 0) ? done*100.0/total : 0);
-    SetMessage(msg);
-
-    if(CancelDownload())
-        return 1;
-    return 0;
+    if (!stream || (size && count > static_cast<size_t>(-1) / size)) return 0;
+    return fwrite(bytes, 1, size * count, static_cast<FILE *>(stream));
 }
 
-void setrequestheaders(CURL *curl_handle, int request)
+block downloadfile(CURL *handle, const char *url, FILE *file, bool (*cancelled)(void *), void *context)
 {
-    if(!curl_handle)
-        return;
-
-    if(request == HEAD)
-    {
-        /* get header only */
-        curl_easy_setopt(curl_handle, CURLOPT_HEADER, 1);
-        curl_easy_setopt(curl_handle, CURLOPT_NOBODY, 1);
-    }
-
-    else if(request == GET)
-    {
-        /* reset handle to perform get */
-        curl_easy_setopt(curl_handle, CURLOPT_HTTPGET, 1);
-        curl_easy_setopt(curl_handle, CURLOPT_NOPROGRESS, 0);
-        curl_easy_setopt(curl_handle, CURLOPT_PROGRESSFUNCTION, showprogress);
-    }
-
-    else if(request == POST)
-    {
-
-    }
+    return request(handle, url, NULL, file, cancelled, context);
 }
 
-// -----------------------------------------------------------
-// REQUEST FUNCTIONS
-// -----------------------------------------------------------
-
-struct block postrequest(CURL *curl_handle, const char *url, curl_httppost *data)
+block downloadpost(CURL *handle, const char *url, const char *body)
 {
-    char *ct = NULL;
-    struct block b, h;
-    int res;
-
-    struct HeaderStruct head;
-    struct MemoryStruct chunk;
-
-    chunk.memory = (char *)malloc(1);   /* will be grown as needed by the realloc above */
-    chunk.size = 0; /* no data at this point */
-
-    head.memory = (char *)malloc(1);   /* will be grown as needed by the realloc above */
-    head.size = 0; /* no data at this point */
-    head.download = 0; /* not yet known at this point */
-
-    // Never mutate the caller's URL (it may be a string literal in .rodata).
-    // Work on a private copy to split off the '?query' part.
-    char *urlCopy = url ? strdup(url) : NULL;
-    char *post = urlCopy ? strrchr(urlCopy, '?') : NULL;
-
-    setmainheaders(curl_handle, url);
-    setrequestheaders(curl_handle, POST);
-
-    if(curl_handle) {
-        /* we pass our 'chunk' struct to the callback function */
-        curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, parseheader);
-        curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&chunk);
-        curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, (void *)&head);
-
-        if (data == NULL)
-            curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, post ? post+1 : "");
-        else curl_easy_setopt(curl_handle, CURLOPT_HTTPPOST, data);
-
-        if ((res = curl_easy_perform(curl_handle)) != 0)      /*error!*/
-        {
-            if (data)
-                curl_formfree(data);
-
-            if (res == CURLE_WRITE_ERROR)
-            {
-                fillstruct(curl_handle, &head, &h);
-                free(head.memory);
-                free(chunk.memory);
-                free(urlCopy);
-                return h;
-            }
-
-            Debug(curl_easy_strerror((CURLcode)res));
-            free(chunk.memory);
-            free(head.memory);
-            free(urlCopy);
-            return emptyblock;
-        }
-
-        if (data)
-            curl_formfree(data);
-
-        if(CURLE_OK != curl_easy_getinfo(curl_handle, CURLINFO_CONTENT_TYPE, &ct) || !ct)
-        {
-            free(chunk.memory);
-            free(head.memory);
-            free(urlCopy);
-            return emptyblock;
-        }
-    }
-    else
-    {
-        free(chunk.memory);
-        free(head.memory);
-        free(urlCopy);
-        return emptyblock;
-    }
-
-	b.data = chunk.memory;
-	b.size = chunk.size;
-	free(head.memory);
-	free(urlCopy);
-
-    // Copy ct safely without mutating curl's internal string
-    if(ct) {
-        char ctCopy[64];
-        strncpy(ctCopy, ct, sizeof(ctCopy)-1);
-        ctCopy[sizeof(ctCopy)-1] = '\0';
-        findChr(ctCopy, ';');
-        strncpy(b.type, ctCopy, sizeof(b.type)-1);
-        b.type[sizeof(b.type)-1] = '\0';
-    } else {
-        b.type[0] = '\0';
-    }
-	return b;
+    return request(handle, url, body ? body : "", NULL);
 }
 
-bool postcomment(CURL *curl_handle, char *name, char *content)
+void SetNavigationPost(const std::string &url, const std::string &body)
 {
-    char request[512];
-    char *r = request;
-
-    r += sprintf(r, "http://www.htmlcommentbox.com/post?");
-    r += sprintf(r, "ajax=true&page=http%%3A%%2F%%2Fwiibrowser.altervista.org%%2Fmainsite%%2Ftracker.php");
-    r += sprintf(r, "&refer=http%%3A%%2F%%2Fwiibrowser.altervista.org%%2Fmainsite%%2Ftracker.php%%23HCB_comment_box&opts=16862");
-    r += sprintf(r, "&mod=%%241%%24wq1rdBcg%%249ZNKlgbkqbvBdR6hqvyy91&replies_to=&name=%s //%s&content=%s", name, Settings.Uuid, content);
-
-    struct block html = postrequest(curl_handle, request, NULL);
-    free(html.data);
-    return (html.size > 0);
+    pendingUrl = url;
+    pendingBody = body;
 }
 
-struct block getrequest(CURL *curl_handle, const char *url, FILE *hfile)
+bool TakeNavigationPost(const char *url, std::string &body)
 {
-    char *ct = NULL;
-    struct block b = emptyblock, h = emptyblock;
-    int res;
-
-    struct HeaderStruct head;
-    struct MemoryStruct chunk;
-
-    chunk.memory = (char *)malloc(1);   /* will be grown as needed by the realloc above */
-    chunk.size = 0; /* no data at this point */
-
-    head.memory = (char *)malloc(1);   /* will be grown as needed by the realloc above */
-    head.size = 0; /* no data at this point */
-    head.download = 0; /* not yet known at this point */
-
-    setmainheaders(curl_handle, url);
-    setrequestheaders(curl_handle, GET);
-
-    if(curl_handle) {
-        /* we pass our 'chunk' struct or 'hfile' to the callback function */
-        if(hfile)
-        {
-            /* send all data to this function */
-            curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, writedata);
-            curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)hfile);
-        }
-        else
-        {
-            curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, parseheader);
-            curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&chunk);
-            curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, (void *)&head);
-        }
-
-        if ((res = curl_easy_perform(curl_handle)) != 0)      /*error!*/
-        {
-            if (res == CURLE_ABORTED_BY_CALLBACK)
-            {
-                h.size = DSTOPPED;
-                free(chunk.memory);
-                free(head.memory);
-                return h;
-            }
-
-            if (res == CURLE_WRITE_ERROR)
-            {
-                fillstruct(curl_handle, &head, &h);
-                free(head.memory);
-                free(chunk.memory);
-                return h;
-            }
-
-            Debug(curl_easy_strerror((CURLcode)res));
-            free(chunk.memory);
-            free(head.memory);
-            return emptyblock;
-        }
-
-        if(CURLE_OK != curl_easy_getinfo(curl_handle, CURLINFO_CONTENT_TYPE, &ct) || !ct)
-        {
-            free(chunk.memory);
-            free(head.memory);
-            return emptyblock;
-        }
-    }
-    else
-    {
-        free(chunk.memory);
-        free(head.memory);
-        return emptyblock;
-    }
-
-	b.data = chunk.memory;
-	b.size = chunk.size;
-
-    if(ct) {
-        char ctCopy[64];
-        strncpy(ctCopy, ct, sizeof(ctCopy)-1);
-        ctCopy[sizeof(ctCopy)-1] = '\0';
-        findChr(ctCopy, ';');
-        strncpy(b.type, ctCopy, sizeof(b.type)-1);
-        b.type[sizeof(b.type)-1] = '\0';
-    } else {
-        b.type[0] = '\0';
-    }
-    free(head.memory);
-
-    if(hfile)
-    {
-        // Caller owns hfile: flush here, close in the caller. (Closing here
-        // caused double-fclose when callers also closed on all paths.)
-        fflush(hfile);
-        h.size = DCOMPLETE;
-        free(chunk.memory);
-        return h;
-    }
-	return b;
+    const bool match = url && pendingUrl == url;
+    if (match) body.swap(pendingBody);
+    pendingUrl.clear();
+    pendingBody.clear();
+    return match;
 }
 
-struct curl_httppost *multipartform(const char *url)
+bool postcomment(CURL *, char *, char *)
 {
-    struct curl_httppost *formpost = NULL;
-    struct curl_httppost *lastptr = NULL;
-
-    char *temp = strrchr(url, '?');
-    if(!temp) return NULL;
-    char *decodedBase = url_decode(temp);
-    if(!decodedBase) return NULL;
-    char *begin = decodedBase;
-    char *mid = NULL;
-
-    char *name, *value;
-    char *file, *path;
-
-    /* Fill in the filename field */
-    do
-    {
-        mid = strchr(begin, '=');
-        if(!mid) break;
-        begin++;
-        name = strndup(begin, (size_t)(mid - begin));
-        if(!name) break;
-
-        begin = strchr(begin, '&');
-        mid++;
-
-        if (!begin)
-            value = strdup(mid);
-        else value = strndup(mid, (size_t)(begin - mid));
-        if(!value) { free(name); break; }
-
-        if(strstr(value, "_UPLOAD"))
-        {
-            path = strrchr(value, '_');
-            if(path)
-                file = strndup(value, (size_t)(path - value));
-            else
-                file = strdup(value);
-
-            curl_formadd(&formpost,
-                &lastptr,
-                CURLFORM_COPYNAME, name,
-                CURLFORM_FILE, file,
-                CURLFORM_END);
-
-            free(file);
-        }
-        else
-        {
-            curl_formadd(&formpost,
-                &lastptr,
-                CURLFORM_COPYNAME, name,
-                CURLFORM_COPYCONTENTS, value,
-                CURLFORM_END);
-        }
-
-        free(name);
-        free(value);
-    }
-    while (begin);
-
-    free(decodedBase);
-    return formpost;
-}
-
-struct block downloadfile(CURL *curl_handle, const char *url, FILE *hfile)
-{
-    if(!url)
-        return emptyblock;
-
-    // Work on a private mutable copy: the '\\post' / '\\multipart' suffix
-    // split must never write into the caller's (possibly .rodata) string.
-    char *urlCopy = strdup(url);
-    if(!urlCopy)
-        return emptyblock;
-
-    char *mode = strrchr(urlCopy, '\\');
-    // Strip the "\post" / "\multipart" directive suffix before dispatch,
-    // mirroring the old in-place findRchr(url,'\\') truncation — but on our
-    // private copy, never on the caller's string.
-    if(mode)
-        *mode = '\0';
-
-    if (firstRun)
-        firstRun = false;
-    else curl_easy_reset(curl_handle);
-
-    struct block res;
-    if (!mode)
-        res = getrequest(curl_handle, urlCopy, hfile);
-    else if (strcasestr(mode + 1, "post"))
-        res = postrequest(curl_handle, urlCopy, NULL);
-    else if (strcasestr(mode + 1, "multipart"))
-    {
-        curl_httppost *data = multipartform(urlCopy);
-        res = postrequest(curl_handle, urlCopy, data);
-    }
-    else
-        res = getrequest(curl_handle, urlCopy, hfile);
-
-    free(urlCopy);
-    return res;
-}
-
-// -----------------------------------------------------------
-// DEBUG METHODES
-// -----------------------------------------------------------
-
-void Debug(const char *msg)
-{
-    #ifdef DEBUG_LEVEL
-        FILE *f = fopen ("debug.txt", "a");
-        if (!f) return;
-        fputs (msg ,f);
-        fputs ("\r\n" ,f);
-        fclose(f);
-    #endif
-}
-
-void DebugInt(u32 msg)
-{
-    #ifdef DEBUG_LEVEL
-        FILE *f = fopen ("debug.txt", "a");
-        if (!f) return;
-        fprintf (f, "%d", msg);
-        fputs ("\r\n" ,f);
-        fclose(f);
-    #endif
-}
-
-void save(struct block *b, FILE *hfile)
-{
-    FILE *f = hfile;
-    bool needClose = false;
-    if (!f) {
-        f = fopen ("page.wbr", "wb");
-        if (!f) return;
-        needClose = true;
-    }
-    if (b && b->data) fwrite (b->data, b->size, 1, f);
-    if (needClose) fclose(f);
-}
-
-// -----------------------------------------------------------
-// EXTENSIONS METHODES
-// -----------------------------------------------------------
-
-bool mustdownload(char content[])
-{
-    if (strstr(content, "text/html") || strstr(content, "application/xhtml")
-           /* || strstr(content, "text") */ || strstr(content, "image")
-#ifdef MPLAYER
-                || strstr(content, "video")
-#endif
-        )
-        return false;
-    return true;
-}
-
-char *findChr (char *str, char chr)
-{
-    char *c = strchr(str, chr);
-    if (c != NULL)
-        *c = '\0';
-    return c;
-}
-
-char *findRchr (char *str, char chr)
-{
-    char *c = strrchr(str, chr);
-    if (c != NULL)
-        *c = '\0';
-    return c;
-}
-
-bool validProxy()
-{
-    if(strlen(Settings.Proxy))
-        return true;
-
+    // The inherited third-party HTTP comment endpoint is not a release bug
+    // reporting service. Do not transmit reports or console identifiers to it.
     return false;
 }
 
-void trimline(char *init, struct block *dest)
+bool save(block *data, FILE *file)
 {
-    int len = strlen(init);
-    while (len > 0 && strchr(" \r\n", init[len-1]))
-        len--;
-
-    dest->data = (char *)malloc(256);
-    if(!dest->data) return;
-    init[len] = 0;
-
-    if(init[0] == '"')
-    {
-        findChr(init+1, '"');
-        strncpy(dest->data, init+1, 255);
-        dest->data[255] = '\0';
-    }
-    else {
-        strncpy(dest->data, init, 255);
-        dest->data[255] = '\0';
-    }
+    return wbl::writeStreamAndClose(file, data ? data->data : NULL,
+                                    data && data->size > 0 ? data->size : 0);
 }
 
-void fillstruct(CURL *handle, HeaderStruct *head, struct block *dest)
-{
-    char *ct = NULL;
-    char *ft;
-    dest->size = DFOUND;
-
-    if(CURLE_OK == curl_easy_getinfo(curl_handle, CURLINFO_CONTENT_TYPE, &ct) && ct)
-    {
-        char ctCopy[64];
-        strncpy(ctCopy, ct, sizeof(ctCopy)-1);
-        ctCopy[sizeof(ctCopy)-1] = '\0';
-        findChr(ctCopy, ';');
-        strncpy(dest->type, ctCopy, sizeof(dest->type)-1);
-        dest->type[sizeof(dest->type)-1] = '\0';
-    }
-
-    if((ft = strstr(head->filename, "filename=")))
-    {
-        trimline(ft+9, dest);
-    }
-    else dest->data = NULL;
-}
+bool validProxy() { return Settings.Proxy[0] != 0; }
+char *findChr(char *text, char character) { char *p = text ? strchr(text, character) : NULL; if (p) *p = 0; return p; }
+char *findRchr(char *text, char character) { char *p = text ? strrchr(text, character) : NULL; if (p) *p = 0; return p; }
+void Debug(const char *) {}
+void DebugInt(u32) {}

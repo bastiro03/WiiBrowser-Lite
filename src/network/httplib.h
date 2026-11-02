@@ -22,6 +22,7 @@
 #include <network.h>
 #include <string.h>
 #include <curl/curl.h>
+#include <string>
 
 // -----------------------------------------------------------
 // DEFINES
@@ -29,7 +30,6 @@
 
 #define MAX_LEN         256
 #define TYPE            50
-#define DEBUG_LEVEL
 #define APPNAME         "WiiBrowser"
 
 struct block
@@ -40,10 +40,16 @@ struct block
 };
 
 extern const struct block emptyblock;
-struct block downloadfile(CURL *curl_handle, const char *url, FILE *hfile);
+struct block downloadfile(CURL *curl_handle, const char *url, FILE *hfile,
+                         bool (*cancelled)(void *) = NULL, void *context = NULL);
+block downloadpost(CURL *handle, const char *url, const char *body);
+void ConfigureHttp(CURL *handle, const char *url);
+size_t WriteHttpFile(void *bytes, size_t size, size_t count, void *stream);
+void SetNavigationPost(const std::string &url, const std::string &body);
+bool TakeNavigationPost(const char *url, std::string &body);
 bool postcomment(CURL *curl_handle, char *name, char *content);
 
-void save(struct block *b, FILE *hfile);
+bool save(struct block *b, FILE *hfile); // Takes ownership of a non-null stream.
 bool validProxy();
 
 // NOTE: these truncate the (mutable) input in place at the found char.

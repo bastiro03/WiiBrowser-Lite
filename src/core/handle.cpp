@@ -1,4 +1,5 @@
 #include "menu.h"
+#include "safety.h"
 #include "handle.h"
 
 GuiToolbar *Toolbar = NULL;
@@ -20,6 +21,10 @@ int y = 0;
 
 int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni btn)
 {
+    if (!btn || !btn->refs || btn->refs->form.method == "disabled") {
+        WindowPrompt("Form unavailable", "This form exceeds the development build's limits.", "OK", NULL);
+        return 0;
+    }
     GuiImageData Textbox (keyboard_textbox_png, keyboard_textbox_png_size);
     GuiImageData TextboxImgData (bg_options_png, bg_options_png_size);
     GuiImageData Button (button_png, button_png_size);
@@ -39,8 +44,9 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
     parentWindow->ChangeFocus(&Form);
     ResumeGui();
 
-    btn->url.assign(btn->refs->form.action);
-    btn->url.append("?");
+    btn->url.clear();
+    btn->postBody.clear();
+    btn->post = false;
 
     ListaDiInput lista=btn->refs->form.input;
     ListaDiBottoni bottone, choice=NULL, button=NULL;
@@ -54,6 +60,7 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
         {
             button=InsButton(button, BUTTON);
             GuiImage *ButtonImg=new GuiImage(&Button);
+            button->ownedImage = ButtonImg;
             button->btn=new GuiButton(ButtonImg->GetWidth(), ButtonImg->GetHeight());
             button->label=new GuiText((char*)lista->value.c_str(), 20, (GXColor)
             {
@@ -85,6 +92,7 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
         {
             button=InsButton(button, UPLOAD);
             GuiImage *TextboxImg=new GuiImage(&Textbox);
+            button->ownedImage = TextboxImg;
             button->btn=new GuiButton(TextboxImg->GetWidth(), TextboxImg->GetHeight());
             button->label=new GuiText("", 20, (GXColor)
             {
@@ -98,6 +106,7 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
             {
                 0, 0, 255, 255
             });
+            button->extraLabel = label;
             label->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
             label->SetPosition(0,-25);
             label->SetMaxWidth(TextboxImg->GetWidth()-5);
@@ -122,6 +131,7 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
         {
             button=InsButton(button, TEXT);
             GuiImage *TextboxImg=new GuiImage(&Textbox);
+            button->ownedImage = TextboxImg;
             button->btn=new GuiButton(TextboxImg->GetWidth(), TextboxImg->GetHeight());
             button->label=new GuiText("", 20, (GXColor)
             {
@@ -137,6 +147,7 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
                 {
                     0, 0, 255, 255
                 });
+                button->extraLabel = label;
                 label->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
                 label->SetPosition(0,-25);
                 label->SetMaxWidth(TextboxImg->GetWidth()-5);
@@ -172,6 +183,7 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
         {
             button=InsButton(button, TEXT);
             GuiImage *TextboxImg = new GuiImage(&TextboxImgData);
+            button->ownedImage = TextboxImg;
             TextboxImg->SetScale(0.86);
             button->btn=new GuiButton(TextboxImg->GetRealWidth(), TextboxImg->GetRealHeight());
             button->label=new GuiLongText("", 20, (GXColor)
@@ -188,6 +200,7 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
                 {
                     0, 0, 255, 255
                 });
+                button->extraLabel = label;
                 label->SetAlignment(ALIGN_LEFT, ALIGN_TOP);
                 label->SetPosition(0,-25);
                 label->SetMaxWidth(TextboxImg->GetRealWidth()-5);
@@ -212,12 +225,14 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
             button=InsButton(button, UNKNOWN);
             button->btn=NULL;
         }
-        button->url.assign(lista->name);
+        encode = url_encode((char *)lista->name.c_str());
+        button->url.assign(encode ? encode : "");
+        free(encode);
         button->url.append("=");
         if (button->url.length()>1 && lista->value.length()>0)
         {
             encode=url_encode((char*)lista->value.c_str());
-            button->url.append(encode);
+            if (encode) button->url.append(encode);
             free(encode);
         }
     }
@@ -227,7 +242,7 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
 
     if (button)
     {
-        while (!(userInput[0].wpad->btns_d & WPAD_BUTTON_B) && !choice)
+        while (!(userInput[0].wpad->btns_d & WPAD_BUTTON_B) && !choice && !App_Exiting())
         {
             HandleFormPad(NULL, NULL, &Form);
             usleep(100);
@@ -240,25 +255,16 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
                         size_t found=bottone->url.find("=")+1;
                         if (found!=string::npos)
                             bottone->url.erase(found);
-                        sprintf(save, bottone->label->GetText());
+                        snprintf(save, sizeof(save), "%s", bottone->label->GetText());
                         OnScreenKeyboard(parentWindow, save, MAXLEN);
                         bottone->label->SetText(save);
                         encode=url_encode(save);
-                        bottone->url.append(encode);
+                        if (encode) bottone->url.append(encode);
                         free(encode);
                     }
                     else if(bottone->outline==UPLOAD)
                     {
-                        size_t found=bottone->url.find("=")+1;
-                        if (found!=string::npos)
-                            bottone->url.erase(found);
-                        if(GuiBrowser(&Form, parentWindow, save, sizeof(save), "Upload"))
-                        {
-                            bottone->label->SetText(save);
-                            bottone->url.append(save);
-                            bottone->url.append("_UPLOAD");
-                        }
-                        else bottone->label->SetText("");
+                        WindowPrompt("Upload unavailable", "Local-file uploads are disabled in this release.", "OK", NULL);
                     }
                     else
                         choice=bottone;
@@ -282,10 +288,14 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
         }
     }
 
-    btn->url.append("\\");
-    if (strcasestr(btn->refs->form.enctype.c_str(), "multipart/form-data"))
-        btn->url.append(btn->refs->form.enctype);
-    else btn->url.append(btn->refs->form.method);
+    const std::string fields = btn->url;
+    btn->url = btn->refs->form.action;
+    btn->post = !strcasecmp(btn->refs->form.method.c_str(), "post");
+    if (btn->post) btn->postBody = fields;
+    else {
+        btn->url += btn->url.find('?') == std::string::npos ? "?" : "&";
+        btn->url += fields;
+    }
 
     HaltGui();
     parentWindow->Remove(&Form);
@@ -296,7 +306,7 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
     DistruggiButton(button);
     delete(btnSoundOver);
     delete(trigA);
-    if (choice || noSubmit(btn))
+    if (!App_Exiting() && (choice || noSubmit(btn)))
         return 1;
     return 0;
 }

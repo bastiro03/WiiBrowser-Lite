@@ -40,7 +40,7 @@ int NoButton( ListaDiBottoni lista ) {
 
 ListaDiBottoni InsButton( ListaDiBottoni lista, int outline ) {
 	ListaDiBottoni punt;
-    punt=new Button;
+    punt=new Button{};
     punt->refs=NULL;
     punt->label=NULL;
     punt->outline=outline;

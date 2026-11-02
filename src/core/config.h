@@ -10,4 +10,6 @@
 
 #define WBL_ENABLE_UPLOADS 0
 
+#define WBL_ENABLE_ARCHIVES 0
+
 #endif // WIIBROWSER_CONFIG_H

@@ -122,24 +122,8 @@ void CompleteDownload(CURLMsg *msg)
             name = strrchr(data->save.name, '.');
             retval = COMPLETE;
 
-            if(Settings.ZipFile && !strtokcmp(name, ArchiveFiles, ","))
-            {
-                if(Settings.ZipFile == UNZIP ||
-                        WindowPrompt("Download complete", "You downloaded a zip archive. Unzip it?", "Yes", "No"))
-                {
-#ifdef WIIFLOW
-                    ShowAction("Extracting files...");
-#endif
-                    if(UnzipArchive(data->save.name))
-                    {
-                        App->SaveTooltip->SetTimeout("File unzipped", 2);
-                        remove(data->save.name);
-                    }
-                    else App->SaveTooltip->SetTimeout("Error unzipping file", 2);
+            // Extraction and automatic source deletion are quarantined.
 
-                    CancelAction();
-                }
-            }
         break;
 
         case CURLE_ABORTED_BY_CALLBACK:

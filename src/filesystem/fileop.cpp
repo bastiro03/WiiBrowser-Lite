@@ -4,7 +4,7 @@
 
 #include "fileop.h"
 #include "filebrowser.h"
-#include "Archive.h"
+#include "config.h"
 
 bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, size_t capacity, const char *label)
 {
@@ -269,16 +269,10 @@ bool AutoDownloader(char *path, size_t capacity)
 
 bool UnzipArchive(char *origfile)
 {
-    char zipfilepath[512];
-    strcpy(zipfilepath, origfile);
-
-    ArchiveHandle archive(zipfilepath);
-
-    char *unzipfolder = strrchr(zipfilepath, '/');
-    if(unzipfolder)
-        unzipfolder[1] = 0;
-
-    return (archive.ExtractAll(zipfilepath) > 0);
+    (void)origfile;
+    // Extraction is unavailable until member containment and all output/CRC
+    // checks have been hardened. Never claim success for unsupported formats.
+    return false;
 }
 
 bool isValidPath(char *name)

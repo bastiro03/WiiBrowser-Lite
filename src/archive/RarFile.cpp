@@ -92,5 +92,5 @@ int RarFile::ExtractFile(int fileindex, const char * outpath, bool withpath)
 int RarFile::ExtractAll(const char * destpath)
 {
     (void)destpath;
-    return 1;
+    return -1;
 }

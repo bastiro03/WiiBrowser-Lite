@@ -4,8 +4,8 @@
 // Sprint 4.3: MPLAYER disabled by default (external/mplayer submodule placeholder).
 // Enable by defining MPLAYER in Makefile CFLAGS (-DMPLAYER) and populating external/mplayer.
 #undef  MPLAYER
-#define DOCWRITE
-#define IFRAME
+#undef DOCWRITE
+#undef IFRAME
 #define WIIFLOW
 
 #define WBL_ENABLE_UPLOADS 0

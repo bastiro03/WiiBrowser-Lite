@@ -19,6 +19,10 @@
 #include "input.h"
 #include "menu.h"
 #include "utils/pngu.h"
+#include "utils/file_io.h"
+#include "utils/safety.h"
+#include "gui_lock.h"
+#include <fcntl.h>
 
 extern "C" {
 
@@ -26,6 +30,7 @@ extern "C" {
 #define DEFAULT_FIFO_SIZE 384 * 1024
 
 static unsigned char *gp_fifo; // must be in MEM1
+static bool gxReady = false;
 static Mtx GXmodelView2D;
 
 unsigned int *xfb[2] = { NULL, NULL }; // Double buffered
@@ -46,6 +51,7 @@ bool drawGui = false;
  ***************************************************************************/
 u8* TakeScreenshot(bool global)
 {
+    if (!gxReady) return NULL;
     u8 *video = videoScreenshot;
     if(!global)
         video = (u8 *)memalign(32, vmode->fbWidth * vmode->efbHeight * 4);
@@ -58,23 +64,30 @@ u8* TakeScreenshot(bool global)
 	DCInvalidateRange(video, vmode->fbWidth * vmode->efbHeight * 4);
 	GX_CopyTex(video, GX_FALSE);
 	GX_PixModeSync();
+    GX_DrawDone();
 
 	// if(global)
         // EnableVideoImg();
 	return video;
 }
 
-void SaveScreenshot(char *path)
+bool SaveScreenshot(char *path)
 {
-    IMGCTX  pngContext;
-
-    if ((pngContext = PNGU_SelectImageFromDevice(path)))
-    {
-        int ret = PNGU_EncodeFromEFB(pngContext,
-                                     vmode->fbWidth, vmode->efbHeight,
-                                     0);
-        PNGU_ReleaseImageContext(pngContext);
-    }
+    if (!path || !wbl::storagePath(path)) return false;
+    GuiScopedLock lock;
+    u8 *texture = TakeScreenshot(false);
+    if (!texture) return false;
+    const std::string pending = std::string(path) + ".new";
+    const int fd = open(pending.c_str(), O_WRONLY | O_CREAT | O_EXCL, 0666);
+    if (fd < 0) { free(texture); return false; }
+    FILE *file = fdopen(fd, "wb");
+    if (!file) { close(fd); remove(pending.c_str()); free(texture); return false; }
+    bool ok = WritePNG(file, vmode->fbWidth, vmode->efbHeight, texture) != 0;
+    if (fflush(file) != 0 || ferror(file)) ok = false;
+    if (fclose(file) != 0) ok = false;
+    free(texture);
+    if (!ok) { remove(pending.c_str()); return false; }
+    return wbl::commitStagedFile(path, pending.c_str(), true);
 }
 
 void ResetVideo_Menu()
@@ -133,8 +146,12 @@ void ResetVideo_Menu()
  ***************************************************************************/
 void StopGX()
 {
-	GX_AbortFrame();
-	GX_Flush();
+    if (gxReady) {
+        GX_DrawDone();
+        GX_AbortFrame();
+        GX_Flush();
+        gxReady = false;
+    }
 
 	VIDEO_SetBlack(TRUE);
 	VIDEO_Flush();
@@ -323,7 +340,7 @@ static GXRModeObj vmodeStorage;
 
 	bool pal = false;
 
-	if (vmode->viTVMode == VI_PAL || vmode->viTVMode == (VI_PAL | VI_PROGRESSIVE))
+    if ((vmode->viTVMode >> 2) == VI_PAL)
 		pal = true;
 
 	if (CONF_GetAspectRatio() == CONF_ASPECT_16_9)
@@ -347,21 +364,18 @@ static GXRModeObj vmodeStorage;
 		vmode->viYOrigin = (VI_MAX_HEIGHT_NTSC - vmode->viHeight) / 2;
 	}
 
-	s8 hoffset = 0;
-
-	if (CONF_GetDisplayOffsetH(&hoffset) == 0)
-		vmode->viXOrigin += hoffset;
+    // libogc applies the configured horizontal display offset itself.
 
 	VIDEO_Configure (vmode);
 }
 
-void
+bool
 InitVideo2 ()
 {
 	if(!vmode)
 	{
 	    printf("InitVideo2: vmode is NULL\n");
-	    return;
+	    return false;
 	}
 	// Allocate framebuffers
 	xfb[0] = (u32 *) SYS_AllocateFramebuffer (vmode);
@@ -369,7 +383,9 @@ InitVideo2 ()
 	if(!xfb[0] || !xfb[1])
 	{
 	    printf("InitVideo2: SYS_AllocateFramebuffer failed (%p, %p)\n", xfb[0], xfb[1]);
-	    return;
+        free(xfb[0]); free(xfb[1]);
+        xfb[0] = xfb[1] = NULL;
+	    return false;
 	}
 	DCInvalidateRange(xfb[0], VIDEO_GetFrameBufferSize(vmode));
 	DCInvalidateRange(xfb[1], VIDEO_GetFrameBufferSize(vmode));
@@ -397,11 +413,12 @@ InitVideo2 ()
 	{
 	    printf("InitVideo2: gp_fifo memalign failed (%d bytes)\n", DEFAULT_FIFO_SIZE);
 	    // Do not call GX_Init with NULL; leave GX uninitialized and return early
-	    return;
+	    return false;
 	}
 	memset (gp_fifo, 0, DEFAULT_FIFO_SIZE);
 	DCFlushRange(gp_fifo, DEFAULT_FIFO_SIZE);
 	GX_Init (gp_fifo, DEFAULT_FIFO_SIZE);
+    gxReady = true;
 	GX_SetCopyClear (background, 0x00ffffff);
 	GX_SetDispCopyGamma (GX_GM_1_0);
 	GX_SetCullMode (GX_CULL_NONE);
@@ -425,6 +442,7 @@ InitVideo2 ()
 	    printf("InitVideo2: videoScreenshot memalign failed (%d bytes)\n", vmode->fbWidth * vmode->efbHeight * 4);
 	    // Non-fatal: screenshot feature will be disabled, but GX remains valid
 	}
+    return true;
 }
 
 }

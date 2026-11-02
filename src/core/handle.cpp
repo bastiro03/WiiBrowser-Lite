@@ -370,11 +370,15 @@ void HandleHtmlPad(int *offset, GuiButton *btnup, GuiButton *btndown, Indice ext
 
         if (GuiBrowser(mainWindow, parentWindow, path, sizeof(path), "Take screenshot"))
         {
-            HaltGui();
-            DoMPlayerGuiDraw();
-            correctPath(path, sizeof(path), "image/png", SCREENSHOT);
-            SaveScreenshot(path);
-            ResumeGui();
+            if (correctPath(path, sizeof(path), "image/png", SCREENSHOT) &&
+                (!CheckFile(path) || WindowPrompt("Replace screenshot?", path, "Replace", "Cancel"))) {
+                HaltGui();
+                DoMPlayerGuiDraw();
+                const bool saved = SaveScreenshot(path);
+                ResumeGui();
+                if (!saved)
+                    WindowPrompt("Screenshot not saved", "Check storage and existing .new/.bak files.", "OK", NULL);
+            }
         }
     }
 

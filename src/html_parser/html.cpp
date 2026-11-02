@@ -502,9 +502,9 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                 if (!hidden)
                     hideBar(renderWindow, parentWindow);
 
-                if (GuiBrowser(renderWindow, parentWindow, path, "Save page"))
+                if (GuiBrowser(renderWindow, parentWindow, path, sizeof(path), "Save page"))
                 {
-                    correctPath(path, HTML->type, PAGE);
+                    correctPath(path, sizeof(path), HTML->type, PAGE);
                     file = fopen(path, "wb");
                     save(HTML, file);
                 }
@@ -556,9 +556,9 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                 if (!hidden)
                     hideBar(renderWindow, parentWindow);
 
-                if (GuiBrowser(renderWindow, parentWindow, path, "Save image"))
+                if (GuiBrowser(renderWindow, parentWindow, path, sizeof(path), "Save image"))
                 {
-                    correctPath(path, HTML->type, IMAGES);
+                    correctPath(path, sizeof(path), HTML->type, IMAGES);
                     file = fopen(path, "wb");
                     save(HTML, file);
                 }
@@ -599,9 +599,9 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
 
         if (choice)
         {
-            if (GuiBrowser(NULL, parentWindow, path, "Save page"))
+            if (GuiBrowser(NULL, parentWindow, path, sizeof(path), "Save page"))
             {
-                correctPath(path, HTML->type, OTHER);
+                correctPath(path, sizeof(path), HTML->type, OTHER);
                 file = fopen(path, "wb");
                 save(HTML, file);
             }

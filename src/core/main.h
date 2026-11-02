@@ -22,6 +22,8 @@ extern SSettings Settings;
 
 extern volatile int ExitRequested;
 extern volatile int ExitAccepted;
+extern volatile u8 HWButton;
+inline bool App_Exiting() { return ExitRequested || ExitAccepted || HWButton; }
 
 extern "C" {
     extern int controlledbygui;

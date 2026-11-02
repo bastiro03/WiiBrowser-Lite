@@ -8,6 +8,7 @@
  ***************************************************************************/
 
 #include <gccore.h>
+#include "safety.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -53,6 +54,7 @@ void ResetBrowser()
  ***************************************************************************/
 int UpdateDirName()
 {
+    if (!browserList || browser.selIndex < 0 || browser.selIndex >= browser.numEntries) return -1;
 	int size=0;
 	char * test;
 	char temp[1024];
@@ -76,7 +78,8 @@ int UpdateDirName()
 
 		/* remove last subdirectory name */
 		size = strlen(browser.dir) - size - 1;
-		browser.dir[size] = 0;
+        if (size < 1) size = 1;
+        browser.dir[size] = 0;
 
 		return 1;
 	}
@@ -84,12 +87,13 @@ int UpdateDirName()
 	else
 	{
 		/* test new directory namelength */
-		if ((strlen(browser.dir)+1+strlen(browserList[browser.selIndex].filename)) < MAXPATHLEN)
+        if ((strlen(rootdir)+strlen(browser.dir)+1+strlen(browserList[browser.selIndex].filename)) < MAXPATHLEN)
 		{
 			/* update current directory name */
 			if(strlen(browser.dir) > 1)
-                sprintf(browser.dir, "%s/%s",browser.dir, browserList[browser.selIndex].filename);
-            else sprintf(browser.dir, "/%s",browserList[browser.selIndex].filename);
+                snprintf(temp, sizeof(temp), "%s/%s",browser.dir, browserList[browser.selIndex].filename);
+            else snprintf(temp, sizeof(temp), "/%s",browserList[browser.selIndex].filename);
+            if (!wbl::copyString(browser.dir, sizeof(browser.dir), temp)) return -1;
 
 			return 1;
 		}

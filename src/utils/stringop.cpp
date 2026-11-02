@@ -2,179 +2,84 @@
 #include <string.h>
 #include <limits.h>
 #include "stringop.h"
+#include "safety.h"
 
-static void safe_strcat(char *dst, const char *src, size_t dstSize) {
-    size_t dlen = strlen(dst);
-    size_t slen = src ? strlen(src) : 0;
-    if(dlen >= dstSize) return;
-    size_t avail = dstSize - dlen - 1;
-    if(slen > avail) slen = avail;
-    if(slen) {
-        memcpy(dst + dlen, src, slen);
-        dst[dlen + slen] = '\0';
-    }
+static std::string suggestedName(const block *html, const char *url)
+{
+    if (html && html->data && html->data[0]) return html->data;
+    if (!url) return "";
+    std::string name(url);
+    name.erase(name.find_first_of("?#") == std::string::npos ? name.size() :
+               name.find_first_of("?#"));
+    const size_t slash = name.rfind('/');
+    return slash == std::string::npos ? "" : name.substr(slash + 1);
 }
 
-void addname(struct block *html, char *url, char *path, const char *phold)
+static bool completePath(block *html, const char *url, char *path,
+                         size_t capacity, const char *placeholder)
 {
-    char *c = NULL;
-    if (url)
-        c = strrchr(url, '/');
-
-    /* content-disposition */
-    if (html->data && strrchr(html->data, '.'))
-        safe_strcat(path, html->data, 512);
-
-    /* find in url */
-    else if (c && strchr(c, '.'))
-        safe_strcat(path, c+1, 512);
-
-    /* content-type */
-    else if ((c = (char *)mime2ext(html->type)))
-    {
-        safe_strcat(path, phold, 512);
-        safe_strcat(path, c, 512);
+    if (!path || !capacity || strnlen(path, capacity) == capacity ||
+        !wbl::storagePath(path)) return false;
+    const char *slash = strrchr(path, '/');
+    if (!slash) return false;
+    std::string suggestion = suggestedName(html, url);
+    // A server suggestion is a single component, never a relative path. Reject
+    // suspicious names instead of silently flattening them into another name.
+    if (!suggestion.empty() && !wbl::safeFilename(suggestion)) return false;
+    const char *extension = html ? mime2ext(html->type) : NULL;
+    if (!slash[1]) {
+        if (suggestion.empty()) suggestion = std::string(placeholder) + (extension ? extension : "");
+        if (!wbl::safeFilename(suggestion) ||
+            !wbl::appendString(path, capacity, suggestion.c_str())) return false;
+    } else if (!strchr(slash + 1, '.') && extension) {
+        if (!wbl::appendString(path, capacity, extension)) return false;
     }
+    return wbl::storagePath(path);
 }
 
-void addformat(struct block *html, char *url, char *path)
+bool downloadPath(block *html, const char *url, char *path, size_t capacity)
 {
-    char *c = NULL;
-    if (url)
-        c = strrchr(url, '/');
-    char *p;
-
-    /* content-disposition */
-    if (html->data && (p = strrchr(html->data, '.')))
-        safe_strcat(path, p, 512);
-
-    /* find in url */
-    else if (c && (c = strchr(c, '.')))
-        safe_strcat(path, c, 512);
-
-    /* content-type */
-    else if ((c = (char *)mime2ext(html->type)))
-        safe_strcat(path, c, 512);
+    return completePath(html, url, path, capacity, "download");
 }
 
-void downloadPath(struct block *html, char *url, char *path)
+bool correctPath(char *path, size_t capacity, const char *type, int which)
 {
-    char *c = strrchr(path, '/');
-    if(!c) return;
-
-    if(c[1] == '\0')
-        addname(html, url, path, "filename");
-    else if(strchr(c, '.') == NULL)
-        addformat(html, url, path);
+    block html = {};
+    if (type && !wbl::copyString(html.type, sizeof(html.type), type)) return false;
+    const char *names[] = {"page", "image", "screenshot", "download"};
+    if (which < PAGE || which > OTHER) return false;
+    return completePath(&html, NULL, path, capacity, names[which]);
 }
 
-void correctPath(char *path, char *arg, int which)
+int strtokcmp(const char *value, const char *compare, const char *separator)
 {
-    char *c = strrchr(path, '/');
-    if(!c) return;
-    struct block html;
-    char phold[20];
-
-    html.data = NULL;
-    if(arg) {
-        strncpy(html.type, arg, sizeof(html.type)-1);
-        html.type[sizeof(html.type)-1] = '\0';
-    } else {
-        html.type[0] = '\0';
+    if (!value || !compare || !separator) return -1;
+    std::string remaining(compare);
+    size_t start = 0;
+    while (start < remaining.size()) {
+        const size_t end = remaining.find_first_of(separator, start);
+        if (!strcasecmp(value, remaining.substr(start, end - start).c_str())) return 0;
+        if (end == std::string::npos) break;
+        start = end + 1;
     }
-
-    switch(which)
-    {
-    case PAGE:
-        strcpy(phold, "page");
-        break;
-    case IMAGES:
-        strcpy(phold, "image");
-        break;
-    case SCREENSHOT:
-        strcpy(phold, "screenshot");
-        break;
-    case OTHER:
-        strcpy(phold, "filename");
-        break;
-    }
-
-    if(c[1] == '\0')
-        addname(&html, NULL, path, phold);
-    else if(strchr(c, '.') == NULL)
-        addformat(&html, NULL, path);
+    return -1;
 }
 
-int strtokcmp(const char *string, const char *compare, const char *separator)
+struct Size imageSize(Tag *tag, GuiImage *img)
 {
-	if(!string || !compare)
-		return -1;
-
-	char TokCopy[512];
-	strncpy(TokCopy, compare, sizeof(TokCopy));
-	TokCopy[511] = '\0';
-
-	char * strTok = strtok(TokCopy, separator);
-
-	while (strTok != NULL)
-	{
-		if (strcasecmp(string, strTok) == 0)
-		{
-			return 0;
-		}
-		strTok = strtok(NULL,separator);
-	}
-
-	return -1;
-}
-
-struct Size imageSize(Tag *lista, GuiImage *img)
-{
-    int attrWidth = INT_MAX, attrHeight = INT_MAX;
-    int listWidth, listHeight;
-
-    if(img && img->GetImage())
-    {
-        attrWidth = img->GetWidth();
-        attrHeight = img->GetHeight();
-
-        if(lista->value[0].text.length())
-        {
-            listWidth = atoi(lista->value[0].text.c_str());
-
-            if(!strchr(lista->value[0].text.c_str(), '%'))
-                attrWidth = listWidth;
-            else attrWidth = listWidth*attrWidth/100;
-        }
-
-        if(lista->value[1].text.length())
-        {
-            listHeight = atoi(lista->value[1].text.c_str());
-
-            if(!strchr(lista->value[1].text.c_str(), '%'))
-                attrHeight = listHeight;
-            else attrHeight = listHeight*attrHeight/100;
-        }
+    Size result = {INT_MAX, INT_MAX};
+    if (img && img->GetImage()) result = {img->GetWidth(), img->GetHeight()};
+    if (!tag) return result;
+    int *dimensions[] = {&result.width, &result.height};
+    for (size_t i = 0; i < 2 && i < tag->value.size(); ++i) {
+        std::string text = tag->value[i].text;
+        const bool percent = !text.empty() && text.back() == '%';
+        if (percent) text.pop_back();
+        int value;
+        if (!wbl::parseInteger(text.c_str(), 1, 4096, value)) continue;
+        if (!percent) *dimensions[i] = value;
+        else if (*dimensions[i] != INT_MAX)
+            *dimensions[i] = static_cast<int>(static_cast<long long>(*dimensions[i]) * value / 100);
     }
-
-    else
-    {
-        if(lista->value[0].text.length())
-        {
-            listWidth = atoi(lista->value[0].text.c_str());
-
-            if(!strchr(lista->value[0].text.c_str(), '%'))
-                attrWidth = listWidth;
-        }
-
-        if(lista->value[1].text.length())
-        {
-            listHeight = atoi(lista->value[1].text.c_str());
-
-            if(!strchr(lista->value[1].text.c_str(), '%'))
-                attrHeight = listHeight;
-        }
-    }
-
-    return {attrWidth, attrHeight};
+    return result;
 }

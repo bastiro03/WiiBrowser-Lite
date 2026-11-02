@@ -9,6 +9,7 @@
  ***************************************************************************/
 
 #include <gccore.h>
+#include "safety.h"
 #include <ogcsys.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -179,15 +180,15 @@ bool performDownload(file *hfile, char *url, struct block *html)
     if (choice)
     {
 #ifdef WIIFLOW
-        select = AutoDownloader(path);
+        select = AutoDownloader(path, sizeof(path));
         if(!select)
 #endif
-        select = GuiBrowser(NULL, mainWindow, path, "Download!");
+        select = GuiBrowser(NULL, mainWindow, path, sizeof(path), "Download!");
     }
 
     if (select)
     {
-        downloadPath(html, url, path);
+        downloadPath(html, url, path, sizeof(path));
         hfile->file = fopen(path, "wb");
         strcpy(hfile->name, path);
     }

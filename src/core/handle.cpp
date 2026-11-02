@@ -252,7 +252,7 @@ int HandleForm(GuiWindow* parentWindow, GuiWindow* mainWindow, ListaDiBottoni bt
                         size_t found=bottone->url.find("=")+1;
                         if (found!=string::npos)
                             bottone->url.erase(found);
-                        if(GuiBrowser(&Form, parentWindow, save, "Upload"))
+                        if(GuiBrowser(&Form, parentWindow, save, sizeof(save), "Upload"))
                         {
                             bottone->label->SetText(save);
                             bottone->url.append(save);
@@ -358,11 +358,11 @@ void HandleHtmlPad(int *offset, GuiButton *btnup, GuiButton *btndown, Indice ext
     {
         char path[256];
 
-        if (GuiBrowser(mainWindow, parentWindow, path, "Take screenshot"))
+        if (GuiBrowser(mainWindow, parentWindow, path, sizeof(path), "Take screenshot"))
         {
             HaltGui();
             DoMPlayerGuiDraw();
-            correctPath(path, "image/png", SCREENSHOT);
+            correctPath(path, sizeof(path), "image/png", SCREENSHOT);
             SaveScreenshot(path);
             ResumeGui();
         }

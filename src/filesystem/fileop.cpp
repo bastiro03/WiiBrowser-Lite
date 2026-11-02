@@ -1,20 +1,23 @@
 #include <stdio.h>
+#include "safety.h"
 #include <stdlib.h>
 
 #include "fileop.h"
 #include "filebrowser.h"
 #include "Archive.h"
 
-bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, const char *label)
+bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, size_t capacity, const char *label)
 {
-    char temp[256];
+    if (!path || !capacity) return false;
+    path[0] = 0;
+    char temp[512] = {};
     char title[100];
 	int i;
 
 	ShutoffRumble();
 
 	// populate initial directory listing
-	if(BrowseDevice() <= 0)
+	if(BrowseDevice(SD) < 0 && BrowseDevice(USB) < 0)
 	{
 		WindowPrompt(
 		"Error",
@@ -26,7 +29,7 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, cons
 	}
 
 	int menu = MENU_NONE;
-	int dev = 0;
+	int dev = !strcmp(rootdir, "usb:/") ? USB : SD;
 	char mount[2][5] = {"SD", "USB"};
 
     GuiTrigger trigA;
@@ -34,13 +37,14 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, cons
 
     if(OpenDefaultFolder() <= 0)
     {
-        BrowseDevice();
-        memset(temp, 0, sizeof(temp));
+        BrowseDevice(dev);
+        snprintf(temp, sizeof(temp), "%s", rootdir);
     }
     else snprintf(temp, sizeof(temp), "%s/", Settings.UserFolder);
+    dev = !strcmp(rootdir, "usb:/") ? USB : SD;
 
     snprintf(title, sizeof(title), "%s", "Browse files");
-    memset(path, 0, sizeof(path));
+    path[0] = 0;
 
     GuiSound btnSoundOver(button_over_pcm, button_over_pcm_size, SOUND_PCM);
     GuiImageData Textbox(textbox_end_png);
@@ -52,7 +56,7 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, cons
     GuiButton InsertDEV(DeviceImg.GetWidth(), DeviceImg.GetHeight());
 
     GuiText URL(strchr(temp, '/'), 20, (GXColor){0, 0, 0, 255});
-    GuiText DEV("SD", 20, (GXColor){0, 0, 0, 255});
+    GuiText DEV(mount[dev], 20, (GXColor){0, 0, 0, 255});
 
     URL.SetMaxWidth(TextboxImg.GetWidth()-20);
     URL.SetAlignment(ALIGN_LEFT, ALIGN_MIDDLE);
@@ -120,7 +124,7 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, cons
     if (mainWindow)
     {
         mainWindow->SetEffect(EFFECT_SLIDE_TOP | EFFECT_SLIDE_OUT, 50);
-        while(mainWindow->GetEffect() > 0)
+        while(!App_Exiting() && mainWindow->GetEffect() > 0)
             usleep(100);
     }
 
@@ -131,7 +135,7 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, cons
     parentWindow->Append(&fileBrowser);
     ResumeGui();
 
-	while(menu == MENU_NONE)
+	while(menu == MENU_NONE && !App_Exiting())
 	{
 		usleep(100);
 		if(!strlen(URL.GetText()) || URL.GetText()[0] != '/')
@@ -143,7 +147,8 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, cons
         if(InsertURL.GetState() == STATE_CLICKED)
         {
             URL.SetScroll(SCROLL_NONE);
-            OnScreenKeyboard(parentWindow, strchr(temp, '/'), 256);
+            char *editable = strchr(temp, '/');
+            if (editable) OnScreenKeyboard(parentWindow, editable, sizeof(temp) - (editable - temp));
             URL.SetText(strchr(temp, '/'));
             URL.SetScroll(SCROLL_HORIZONTAL);
 
@@ -155,7 +160,7 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, cons
             InsertDEV.ResetState();
             dev ^= 1;
 
-            if(BrowseDevice(dev) <= 0)
+            if(BrowseDevice(dev) < 0)
             {
                 BrowseDevice();
                 dev = 0;
@@ -185,7 +190,7 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, cons
                             sprintf(fullpath, "%s%s/", rootdir, browser.dir+1); // print current path
                         else sprintf(fullpath, "%s", rootdir); // print current path
 
-                        sprintf(temp, fullpath);
+                        if (!wbl::copyString(temp, sizeof(temp), fullpath)) temp[0] = 0;
                         URL.SetText(strchr(temp, '/'));
 					}
 					else
@@ -202,7 +207,7 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, cons
                         sprintf(fullpath, "%s%s/%s", rootdir, browser.dir+1, browserList[browser.selIndex].filename); // print current path
                     else sprintf(fullpath, "%s%s", rootdir, browserList[browser.selIndex].filename); // print current path
 
-                    sprintf(temp, fullpath);
+                    if (!wbl::copyString(temp, sizeof(temp), fullpath)) temp[0] = 0;
                     URL.SetText(strchr(temp, '/'));
 				}
 			}
@@ -210,7 +215,10 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, cons
 
 		if(okBtn.GetState() == STATE_CLICKED)
 		{
-		    sprintf(path, temp);
+		    if (!wbl::copyString(path, capacity, temp)) {
+                WindowPrompt("Path too long", "Choose a shorter destination.", "OK", NULL);
+                continue;
+            }
 		    menu = MENU_HOME;
 		}
         if(cancelBtn.GetState() == STATE_CLICKED)
@@ -219,7 +227,7 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, cons
 
     fileBrowser.SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_OUT, 50);
     buttonWindow.SetEffect(EFFECT_SLIDE_BOTTOM | EFFECT_SLIDE_OUT, 50);
-    while(buttonWindow.GetEffect() > 0)
+    while(!App_Exiting() && buttonWindow.GetEffect() > 0)
         usleep(100);
 
     fileBrowser.SetVisible(false);
@@ -229,7 +237,7 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, cons
     {
         mainWindow->SetEffect(EFFECT_SLIDE_TOP | EFFECT_SLIDE_IN, 30);
         parentWindow->Append(mainWindow);
-        while(mainWindow->GetEffect() > 0)
+        while(!App_Exiting() && mainWindow->GetEffect() > 0)
             usleep(100);
     }
 
@@ -243,14 +251,16 @@ bool GuiBrowser(GuiWindow *mainWindow, GuiWindow *parentWindow, char *path, cons
     return false;
 }
 
-bool AutoDownloader(char *path)
+bool AutoDownloader(char *path, size_t capacity)
 {
+    if (!path || !capacity) return false;
+    path[0] = 0;
     int AbsolutePath = CheckFolder(Settings.DownloadFolder);
 
     if(AbsolutePath == RELATIVE)
-        sprintf(path, "%s%s", Settings.BootDevice, Settings.DownloadFolder);
+        snprintf(path, capacity, "%s%s", Settings.BootDevice, Settings.DownloadFolder);
     else if(AbsolutePath == ABSOLUTE)
-        sprintf(path, Settings.DownloadFolder);
+        wbl::copyString(path, capacity, Settings.DownloadFolder);
 
     if (isValidPath(path))
         return true;

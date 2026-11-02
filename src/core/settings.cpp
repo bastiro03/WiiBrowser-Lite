@@ -230,7 +230,7 @@ bool SSettings::Load()
 
     if(!CheckIntegrity(filepath))
     {
-        this->Save(0);
+        // Never repair config by saving unrelated, not-yet-loaded bookmarks.
         return false;
     }
 
@@ -664,6 +664,7 @@ void SSettings::DelFavorite(char *url)
 
 bool SSettings::SaveFavorites()
 {
+    if (!xml) return false; // Refuse to truncate an unloaded bookmark file.
     // save favorites
     char filedest[100];
     snprintf(filedest, sizeof(filedest), "%s/appdata", AppPath);

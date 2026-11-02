@@ -506,8 +506,8 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                 {
                     if (correctPath(path, sizeof(path), HTML->type, PAGE) &&
                         (!CheckFile(path) || WindowPrompt("Replace file?", path, "Replace", "Cancel"))) {
-                        file = fopen(path, "wb");
-                        save(HTML, file);
+                        if (!wbl::writeUserFile(path, HTML->data, HTML->size, true))
+                            WindowPrompt("Save failed", "No existing backup was overwritten; check .new/.bak files.", "OK", NULL);
                     }
                 }
                 choice=0;
@@ -567,8 +567,8 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
                 {
                     if (correctPath(path, sizeof(path), HTML->type, IMAGES) &&
                         (!CheckFile(path) || WindowPrompt("Replace file?", path, "Replace", "Cancel"))) {
-                        file = fopen(path, "wb");
-                        save(HTML, file);
+                        if (!wbl::writeUserFile(path, HTML->data, HTML->size, true))
+                            WindowPrompt("Save failed", "No existing backup was overwritten; check .new/.bak files.", "OK", NULL);
                     }
                 }
                 choice = 0;
@@ -612,8 +612,8 @@ string DisplayHTML(struct block *HTML, GuiWindow *parentWindow, GuiWindow *mainW
             {
                 if (correctPath(path, sizeof(path), HTML->type, OTHER) &&
                     (!CheckFile(path) || WindowPrompt("Replace file?", path, "Replace", "Cancel"))) {
-                    file = fopen(path, "wb");
-                        save(HTML, file);
+                    if (!wbl::writeUserFile(path, HTML->data, HTML->size, true))
+                        WindowPrompt("Save failed", "No existing backup was overwritten; check .new/.bak files.", "OK", NULL);
                 }
             }
         }

@@ -201,19 +201,14 @@ void FreeHistory( History lista ) {
 }
 
 void DumpList ( History lista, const char * file ) {
-    char path[256];
-    snprintf(path, 256, "%s/appdata/history.txt", Settings.AppPath);
-    FILE * fp=fopen(path, "w");
-    if (!fp)
-        return;
-
-    lista=RewindHistory(lista);
-    while (!NoUrls(lista)) {
-        fprintf(fp, "%s\r\n", lista->url.c_str());
-        lista=lista->prox;
-    }
-    fprintf(fp, "# End List");
-    fclose(fp);
+    (void)file;
+    if (!Settings.CanSave() || !historyWritable) return;
+    const std::string path = std::string(Settings.AppPath) + "appdata/history.txt";
+    std::string data;
+    for (lista = RewindHistory(lista); lista; lista = lista->prox)
+        if (wbl::httpUrl(lista->url)) data += lista->url + "\n";
+    data += "# End List\n";
+    wbl::writeRecoverable(path.c_str(), data.data(), data.size());
 }
 
 History LoadList ( const char * file ) {

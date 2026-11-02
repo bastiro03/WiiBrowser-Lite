@@ -12,4 +12,6 @@
 
 #define WBL_ENABLE_ARCHIVES 0
 
+#define WBL_ENABLE_UPDATER 0
+
 #endif // WIIBROWSER_CONFIG_H

@@ -729,6 +729,9 @@ static void *UpdateThread (void *arg)
 
 void ResumeUpdateThread()
 {
+#if !WBL_ENABLE_UPDATER
+    return;
+#endif
     if(updatethread == LWP_THREAD_NULL || ExitRequested)
         return;
 
@@ -821,8 +824,10 @@ InitGUIThreads()
 {
     if(LWP_CreateThread(&guithread, UpdateGUI, NULL, guistack, GUITH_STACK, 70) != 0)
         guithread = LWP_THREAD_NULL;
+#if WBL_ENABLE_UPDATER
     if(LWP_CreateThread(&updatethread, UpdateThread, NULL, updatestack, GUITH_STACK, 70) != 0)
         updatethread = LWP_THREAD_NULL;
+#endif
     if(LWP_CreateThread(&loadthread, LoadingThread, NULL, loadstack, GUITH_STACK, 70) != 0)
         loadthread = LWP_THREAD_NULL;
     if(LWP_CreateThread(&downloadthread, DownloadThread, NULL, downloadstack, GUITH_STACK, 70) != 0)

@@ -1,133 +1,55 @@
-/****************************************************************************
- * libwiigui
- * WiiBrowser
- *
- * Tantric 2009
- * modified by gave92
- *
- * gui_imagedata.cpp
- *
- * GUI class definitions
- ***************************************************************************/
-
+/* libwiigui / WiiBrowser integration; Tantric 2009, modified by gave92.
+ * Bounded image integration and explicit replacement ownership, 2026.
+ */
+#include "gui.h"
+#include "gui_lock.h"
+#include "embedded_assets.h"
 #include "utils/pngu.h"
 #include "utils/jmemsrc.h"
-#include "utils/easybmp.h"
-#include "utils/giflib.h"
-// #include "../utils/mem2_manager.h"
+#include "utils/texture.h"
 
-#include "gui.h"
-
-/**
- * Constructor for the GuiImageData class.
- */
-GuiImageData::GuiImageData(const u8 * i)
+GuiImageData::GuiImageData(const u8 *source)
+    : data(NULL), width(0), height(0), format(GX_TF_RGBA8)
 {
-	data = NULL;
-	width = 0;
-	height = 0;
-	format = GX_TF_RGBA8;
-
-	if(i)
-		LoadPNG(i);
+    const size_t length = EmbeddedPngSize(source);
+    if (length) LoadPNG(source, length);
 }
-
-GuiImageData::GuiImageData(const u8 * i, int s, u8 f)
+GuiImageData::GuiImageData(const u8 *source, int length, u8 textureFormat)
+    : data(NULL), width(0), height(0), format(textureFormat)
 {
-	data = NULL;
-	width = 0;
-	height = 0;
-	format = f;
-
-	if(!i || s < 8)
-		return;
-
-	if (i[0] == 0xFF && i[1] == 0xD8)
-		LoadJPEG(i, s);
-	else if (i[0] == 'B' && i[1] == 'M')
-		LoadBMP(i, s);
-	else if (i[0] == 'G' && i[1] == 'I' && i[2] == 'F')
-		LoadGIF(i, s);
-	else if (i[0] == 0x89 && i[1] == 'P' && i[2] == 'N' && i[3] == 'G')
-		LoadPNG(i);
+    SetImage(source, length);
 }
-
-/**
- * Destructor for the GuiImageData class.
- *
- * INVARIANT: all decoders (PNG/JPEG/BMP/GIF) return MEM1 buffers allocated
- * with memalign(), so free() is the correct pairing. If any decoder is ever
- * switched to mem2_memalign(), this destructor must route MEM2 pointers
- * (0x90000000+) to mem2_free() with the matching area instead.
- */
-GuiImageData::~GuiImageData()
+GuiImageData::~GuiImageData() { free(data); }
+void GuiImageData::SetData(u8 *source) { GuiScopedLock lock; if (data != source) free(data); data = source; }
+void GuiImageData::SetImage(const u8 *source, int length)
 {
-	if(data)
-	{
-        free(data);
-		data = NULL;
-	}
+    if (!source || length < 8 || static_cast<size_t>(length) > wbl::MaxImageBytes) return;
+    if (source[0] == 0xff && source[1] == 0xd8) LoadJPEG(source, length);
+    else if (source[0] == 0x89 && source[1] == 'P' && source[2] == 'N' && source[3] == 'G') LoadPNG(source, length);
+    // GIF/BMP remain quarantined until their legacy parsers pass safety tests.
 }
-
-void GuiImageData::SetData(u8 * i)
+void GuiImageData::LoadPNG(const u8 *source, size_t length)
 {
-	data = i;
+    unsigned rawWidth = 0, rawHeight = 0;
+    u8 *pixels = ReadPNG(source, length, &rawWidth, &rawHeight);
+    int nextWidth = 0, nextHeight = 0;
+    u8 *texture = pixels ? TilePixels(pixels, rawWidth, rawHeight, 4, &nextWidth, &nextHeight) : NULL;
+    free(pixels);
+    if (!texture) return;
+    GuiScopedLock lock;
+    free(data); data = texture; width = nextWidth; height = nextHeight;
 }
-
-void GuiImageData::SetImage(const u8 * i, int s)
+void GuiImageData::LoadJPEG(const u8 *source, int length)
 {
-	if(!i)
-		return;
-
-	width = 0;
-	height = 0;
-
-	if (i[0] == 0xFF && i[1] == 0xD8)
-		LoadJPEG(i, s);
-	else if (i[0] == 'B' && i[1] == 'M')
-		LoadBMP(i, s);
-	else if (i[0] == 'G' && i[1] == 'I' && i[2] == 'F')
-		LoadGIF(i, s);
-	else if (i[0] == 0x89 && i[1] == 'P' && i[2] == 'N' && i[3] == 'G')
-		LoadPNG(i);
+    int nextWidth = 0, nextHeight = 0;
+    u8 *texture = DecodeJPEG(source, length, &nextWidth, &nextHeight, NULL);
+    if (!texture) return;
+    GuiScopedLock lock;
+    free(data); data = texture; width = nextWidth; height = nextHeight;
 }
-
-void GuiImageData::LoadPNG(const u8 *i)
-{
-	data = DecodePNG(i, &width, &height, data);
-}
-
-void GuiImageData::LoadJPEG(const u8 *i, int s)
-{
-	data = DecodeJPEG(i, s, &width, &height, data);
-}
-
-void GuiImageData::LoadBMP(const u8 *i, int s)
-{
-	data = DecodeBMP(i, s, &width, &height, data);
-}
-
-void GuiImageData::LoadGIF(const u8 *i, int s)
-{
-	data = DecodeGIF(i, s, &width, &height, data);
-}
-
-u8 * GuiImageData::GetImage()
-{
-	return data;
-}
-
-int GuiImageData::GetWidth()
-{
-	return width;
-}
-
-int GuiImageData::GetHeight()
-{
-	return height;
-}
-
-u8 GuiImageData::GetFormat()
-{
-	return format;
-}
+void GuiImageData::LoadBMP(const u8 *, int) {}
+void GuiImageData::LoadGIF(const u8 *, int) {}
+u8 *GuiImageData::GetImage() { return data; }
+int GuiImageData::GetWidth() { return width; }
+int GuiImageData::GetHeight() { return height; }
+u8 GuiImageData::GetFormat() { return format; }

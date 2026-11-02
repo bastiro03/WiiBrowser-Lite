@@ -21,6 +21,8 @@
  */
 
 #include "FreeTypeGX.h"
+#include "gui_lock.h"
+#include "safety.h"
 #include "filelist.h"
 #include <ogc/system.h>
 #include <stdio.h>
@@ -84,6 +86,7 @@ void InitFreeType()
 
 void ClearFontData()
 {
+    GuiScopedLock lock;
     for(int i=0; i<=MAX_FONT_SIZE; i++)
     {
         if(fontSystem[i])
@@ -150,6 +153,7 @@ FreeTypeGX::FreeTypeGX(FT_UInt pixelSize, const uint8_t* fontBuffer, FT_Long buf
     : ftLibrary(nullptr), ftFace(nullptr), ftSlot(nullptr), ftPointSize(pixelSize),
       ftKerningEnabled(false), ftValid(false), vertexIndex(GX_VTXFMT1), compatibilityMode(0)
 {
+    GuiScopedLock lock;
     FT_Error err = FT_Init_FreeType(&ftLibrary);
     if(err)
     {
@@ -250,6 +254,7 @@ FreeTypeGX::FreeTypeGX(FT_UInt pixelSize, const uint8_t* fontBuffer, FT_Long buf
  */
 FreeTypeGX::~FreeTypeGX()
 {
+    GuiScopedLock lock;
     unloadFont();
     if(ftFace)
         FT_Done_Face(ftFace);
@@ -351,13 +356,16 @@ void FreeTypeGX::setDefaultMode()
  */
 void FreeTypeGX::unloadFont()
 {
+    GuiScopedLock lock;
     if(this->fontData.size() == 0)
         return;
 
     std::map<wchar_t, ftgxCharData>::iterator itr;
 
     for(itr = fontData.begin(); itr != fontData.end(); itr++)
-        free(itr->second.glyphDataTexture);
+        if (itr->second.glyphDataTexture) {
+            free(itr->second.glyphDataTexture);
+        }
 
     this->fontData.clear();
 }
@@ -367,11 +375,13 @@ void FreeTypeGX::unloadFont()
 */
 void FreeTypeGX::ChangeFontSize(FT_UInt pixelSize)
 {
+    GuiScopedLock lock;
     if(!ftValid || !ftFace)
         return;
     FT_Error err = FT_Set_Pixel_Sizes(ftFace, 0, pixelSize);
     if(err)
         return;
+    if (ftPointSize != pixelSize) unloadFont();
     ftPointSize = pixelSize;
 }
 
@@ -386,6 +396,7 @@ void FreeTypeGX::ChangeFontSize(FT_UInt pixelSize)
  */
 ftgxCharData *FreeTypeGX::cacheGlyphData(wchar_t charCode)
 {
+    GuiScopedLock lock;
     if(!ftValid || !ftFace || !ftSlot)
         return NULL;
 
@@ -606,8 +617,10 @@ uint16_t FreeTypeGX::drawText(int16_t x, int16_t y, const wchar_t *text, GXColor
                 x_pos += pairDelta.x >> 6;
             }
 
-            GX_InitTexObj(&glyphTexture, glyphData->glyphDataTexture, glyphData->textureWidth, glyphData->textureHeight, GX_TF_RGBA8, GX_CLAMP, GX_CLAMP, GX_FALSE);
-            copyTextureToFramebuffer(&glyphTexture, glyphData->textureWidth, glyphData->textureHeight, x_pos + glyphData->renderOffsetX + x_offset, y - glyphData->renderOffsetY + y_offset, 0, color);
+            if (glyphData->glyphDataTexture) {
+                GX_InitTexObj(&glyphTexture, glyphData->glyphDataTexture, glyphData->textureWidth, glyphData->textureHeight, GX_TF_RGBA8, GX_CLAMP, GX_CLAMP, GX_FALSE);
+                copyTextureToFramebuffer(&glyphTexture, glyphData->textureWidth, glyphData->textureHeight, x_pos + glyphData->renderOffsetX + x_offset, y - glyphData->renderOffsetY + y_offset, 0, color);
+            }
 
             x_pos += glyphData->glyphAdvanceX;
             ++printed;
@@ -704,7 +717,7 @@ uint16_t FreeTypeGX::drawLongText(int16_t x, int16_t y, const wchar_t *text, GXC
 				x_pos += pairDelta.x >> 6;
 			}
 
-			if((startWidth == 0) || (x_pos + glyphData->glyphAdvanceX > startWidth)) {
+            if(glyphData->glyphDataTexture && ((startWidth == 0) || (x_pos + glyphData->glyphAdvanceX > startWidth))) {
 				GX_InitTexObj(&glyphTexture, glyphData->glyphDataTexture, glyphData->textureWidth, glyphData->textureHeight, GX_TF_RGBA8, GX_CLAMP, GX_CLAMP, GX_FALSE);
 				copyTextureToFramebuffer(&glyphTexture, glyphData->textureWidth, glyphData->textureHeight, x + x_pos + glyphData->renderOffsetX + x_offset, y - glyphData->renderOffsetY + y_offset, 0, color);
 			}
@@ -742,6 +755,7 @@ void FreeTypeGX::drawTextFeature(int16_t x, int16_t y, uint16_t width, ftgxDataO
  */
 uint16_t FreeTypeGX::getWidth(const wchar_t *text)
 {
+    GuiScopedLock lock;
     if(!text || !ftValid || !ftFace)
         return 0;
 
@@ -784,6 +798,7 @@ uint16_t FreeTypeGX::getWidth(const wchar_t *text)
 */
 uint16_t FreeTypeGX::getCharWidth(const wchar_t wChar, const wchar_t prevChar)
 {
+    GuiScopedLock lock;
     if(!ftValid || !ftFace)
         return 0;
     uint16_t strWidth = 0;

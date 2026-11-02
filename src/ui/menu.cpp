@@ -9,6 +9,7 @@
  ***************************************************************************/
 
 #include <gccore.h>
+#include "devmount.h"
 #include "gui_lock.h"
 #include "safety.h"
 #include <ogcsys.h>
@@ -16,6 +17,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <atomic>
 #include <wiiuse/wpad.h>
 
 #include "httplib.h"
@@ -94,7 +96,14 @@ static bool toggleManager = false;
 
 static volatile int updateThreadHalt = 0;
 static volatile int loadThreadHalt = 1;
-static int s_haltDepth = 0;
+static mutex_t guiMutex;
+static bool guiMutexReady = false;
+static std::atomic<lwp_t> guiOwner(LWP_THREAD_NULL);
+static unsigned guiDepth = 0;
+static std::atomic<bool> guiReady(false);
+static std::atomic<bool> guiStop(false);
+static bool curlReady = false;
+
 
 // Non-blocking font error overlay (Q1/Q2: explicit but non-blocking, uses fallback fonts)
 static bool fontErrorOverlayShown = false;
@@ -237,16 +246,11 @@ bool VideoImgVisible()
  ***************************************************************************/
 void ResumeGui()
 {
-    if (guithread == LWP_THREAD_NULL)
-        return;
-    if (s_haltDepth > 1)
-    {
-        s_haltDepth--;
-        return;
+    if (!guiMutexReady) return;
+    if (guiOwner == LWP_GetSelf() && guiDepth) {
+        if (--guiDepth == 0) guiOwner = LWP_THREAD_NULL;
+        LWP_MutexUnlock(guiMutex);
     }
-    s_haltDepth = 0;
-    guiHalt = false;
-    LWP_ResumeThread (guithread);
 }
 
 /****************************************************************************
@@ -259,34 +263,24 @@ void ResumeGui()
  ***************************************************************************/
 extern "C" bool HaltGuiEx(int timeoutMs)
 {
-    if (guithread == LWP_THREAD_NULL)
-        return true;
-    if (s_haltDepth > 0)
-    {
-        s_haltDepth++;
-        return true;
+    if (!guiMutexReady) return true;
+    for (int elapsed = 0; elapsed <= timeoutMs; ++elapsed) {
+        if (LWP_MutexTryLock(guiMutex) == 0) {
+            guiOwner = LWP_GetSelf();
+            ++guiDepth;
+            return true;
+        }
+        usleep(1000);
     }
-    guiHalt = true;
-    int tries = 0;
-    int maxTries = (timeoutMs > 0 ? timeoutMs * 1000 / THREAD_SLEEP : 500);
-    if (maxTries < 50) maxTries = 50;
-    while (!LWP_ThreadIsSuspended(guithread) && tries < maxTries)
-    {
-        usleep(THREAD_SLEEP);
-        tries++;
-    }
-    if (tries >= maxTries)
-    {
-        printf("HaltGui: timeout waiting for GUI thread (%d ms)\n", timeoutMs);
-        return false;
-    }
-    s_haltDepth = 1;
-    return true;
+    return false;
 }
 
 extern "C" void HaltGui()
 {
-    HaltGuiEx(200);
+    if (!guiMutexReady) return;
+    LWP_MutexLock(guiMutex);
+    guiOwner = LWP_GetSelf();
+    ++guiDepth;
 }
 
 static void ResumeGuiEx()
@@ -756,17 +750,20 @@ void StopUpdateThread()
  ***************************************************************************/
 static void *UpdateGUI (void *arg)
 {
-    int i, guiRun = 1;
+    int i;
 
-    while(guiRun)
+    while(!guiStop)
     {
-        if(guiHalt)
+        if(!guiReady)
         {
-            LWP_SuspendThread(guithread);
+            usleep(1000);
         }
         else
         {
+            GuiScopedLock frameLock;
+            if (!mainWindow) continue;
             UpdatePads();
+            if (FrameTimer % 30 == 0) MountManager_Poll();
             mainWindow->Draw();
             mainWindow->DrawTooltip();
             DrawFontErrorOverlay();
@@ -786,31 +783,16 @@ static void *UpdateGUI (void *arg)
                 mainWindow->Update(&userInput[i]);
                 if(userInput[i].wpad && (userInput[i].wpad->btns_d & (WPAD_BUTTON_HOME | WPAD_CLASSIC_BUTTON_HOME)))
                     ExitRequested = true; // exit program
+                if (userInput[i].pad.btns_d & PAD_BUTTON_MENU) ExitRequested = true;
             }
 
             if(HWButton)
                 ExitRequested = true; // exit program
             Menu_Render();
 
-            if(ExitRequested)
-                LWP_ResumeThread(downloadthread);
-
-            if(ExitAccepted)
-            {
-                for(i = guiRun = 0; i <= 255; i += 15)
-                {
-                    mainWindow->Draw();
-                    Menu_DrawRectangle(0,0,screenwidth,screenheight,(GXColor)
-                    {
-                        0, 0, 0, (u8)i
-                    },1);
-                    Menu_Render();
-                }
-            }
-
-            if(ExitAccepted)
-                ExitApp();
+            if (ExitRequested || HWButton) ExitAccepted = true;
         }
+        usleep(1000); // Let lower-priority menu/worker mutex owners run.
     }
     return NULL;
 }
@@ -823,6 +805,9 @@ static void *UpdateGUI (void *arg)
 void
 InitGUIThreads()
 {
+    if (LWP_MutexInit(&guiMutex, true) != 0) { ExitAccepted = true; return; }
+    guiMutexReady = true;
+    guiStop = false;
     if(LWP_CreateThread(&guithread, UpdateGUI, NULL, guistack, GUITH_STACK, 70) != 0)
         guithread = LWP_THREAD_NULL;
 #if WBL_ENABLE_UPDATER
@@ -833,6 +818,8 @@ InitGUIThreads()
         loadthread = LWP_THREAD_NULL;
     if(LWP_CreateThread(&downloadthread, DownloadThread, NULL, downloadstack, GUITH_STACK, 70) != 0)
         downloadthread = LWP_THREAD_NULL;
+    if (guithread == LWP_THREAD_NULL || loadthread == LWP_THREAD_NULL || downloadthread == LWP_THREAD_NULL)
+        ExitAccepted = true;
 }
 
 void

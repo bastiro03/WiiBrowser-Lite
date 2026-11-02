@@ -16,6 +16,7 @@
  ****************************************************************************/
 #include "gui_longtext.h"
 #include "FreeTypeGX.h"
+#include "gui_lock.h"
 
 extern FreeTypeGX * fontSystem[];
 
@@ -51,6 +52,7 @@ GuiLongText::~GuiLongText()
 
 void GuiLongText::SetText(const char * t)
 {
+    GuiScopedLock lock;
 	GuiText::SetText(t);
 
 	if(text) {
@@ -60,6 +62,7 @@ void GuiLongText::SetText(const char * t)
 
 void GuiLongText::SetText(const wchar_t * t)
 {
+    GuiScopedLock lock;
 	GuiText::SetWText((wchar_t *)t);
 
 	if(text) {
@@ -250,6 +253,7 @@ void GuiLongText::PreviousLine()
 
 void GuiLongText::CalcLineOffsets()
 {
+    GuiScopedLock lock;
 	TextLines.clear();
 	TextLines.push_back(0);
 
@@ -282,6 +286,7 @@ void GuiLongText::CalcLineOffsets()
 
 void GuiLongText::Draw()
 {
+    GuiScopedLock lock;
 	if((u32)curLineStart >= TextLines.size())
 		return;
 

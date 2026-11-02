@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include "gui_lock.h"
 #include "safety.h"
 #include <stdlib.h>
 

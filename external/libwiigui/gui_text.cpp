@@ -11,6 +11,7 @@
  ***************************************************************************/
 
 #include "gui.h"
+#include "gui_lock.h"
 #include "gettext.h"
 
 static GXColor presetColor = (GXColor){255, 255, 255, 255};
@@ -28,6 +29,7 @@ static u16 presetStyle = 0;
  */
 GuiText::GuiText(const char * t, int s, GXColor c)
 {
+    GuiScopedLock lock;
 	origText = NULL;
 	text = NULL;
 	font = NULL;
@@ -78,6 +80,7 @@ GuiText::GuiText(const char * t, int s, GXColor c)
 
 GuiText::GuiText(const wchar_t * t, int s, GXColor c)
 {
+    GuiScopedLock lock;
     origText = NULL;
 	text = NULL;
 	font = NULL;
@@ -135,6 +138,7 @@ GuiText::GuiText(const wchar_t * t, int s, GXColor c)
  */
 GuiText::GuiText(const char * t)
 {
+    GuiScopedLock lock;
 	origText = NULL;
 	text = NULL;
 	font = NULL;
@@ -191,6 +195,7 @@ GuiText::GuiText(const char * t)
  */
 GuiText::~GuiText()
 {
+    GuiScopedLock lock;
 	if(origText)
 		free(origText);
 	if(text)
@@ -207,6 +212,7 @@ GuiText::~GuiText()
 
 void GuiText::ClearDynamicText()
 {
+    GuiScopedLock lock;
     for(int i=0; i < MAX_LINES; i++)
     {
         if(textDyn[i])
@@ -219,6 +225,7 @@ void GuiText::ClearDynamicText()
 
 void GuiText::SetText(const char * t)
 {
+    GuiScopedLock lock;
 	if(origText)
 		free(origText);
 	if(text)
@@ -254,6 +261,7 @@ void GuiText::SetText(const char * t)
 
 void GuiText::SetWText(wchar_t * t)
 {
+    GuiScopedLock lock;
 	if(origText)
 		free(origText);
 	if(text)
@@ -316,6 +324,7 @@ void GuiText::SetSpace(bool space)
 
 void GuiText::SetMaxWidth(int width)
 {
+    GuiScopedLock lock;
 	maxWidth = width;
 
 	ClearDynamicText();
@@ -344,6 +353,7 @@ int GuiText::GetTextWidth()
 
 void GuiText::SetWrap(bool w, int width)
 {
+    GuiScopedLock lock;
 	wrap = w;
 	maxWidth = width;
 
@@ -352,6 +362,7 @@ void GuiText::SetWrap(bool w, int width)
 
 void GuiText::SetScroll(int s)
 {
+    GuiScopedLock lock;
 	if(textScroll == s)
 		return;
 
@@ -412,6 +423,7 @@ void GuiText::SetAlignment(int hor, int vert)
  */
 bool GuiText::SetFont(const u8 *fontbuffer, const u32 filesize)
 {
+    GuiScopedLock lock;
     if(!fontbuffer || !filesize)
         return false;
 
@@ -437,6 +449,7 @@ bool GuiText::SetFont(const u8 *fontbuffer, const u32 filesize)
 
 void GuiText::ResetText()
 {
+    GuiScopedLock lock;
 	if(!origText)
 		return;
 	if(text)
@@ -508,6 +521,7 @@ const wchar_t * GuiText::GetDynText(int ind)
  */
 void GuiText::Draw()
 {
+    GuiScopedLock lock;
 	if(!text)
 		return;
 

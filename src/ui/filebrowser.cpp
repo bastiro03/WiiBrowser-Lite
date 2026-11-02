@@ -8,6 +8,7 @@
  ***************************************************************************/
 
 #include <gccore.h>
+#include "gui_lock.h"
 #include "safety.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,6 +34,7 @@ char fullpath[MAXPATHLEN];
  ***************************************************************************/
 void ResetBrowser()
 {
+    GuiScopedLock lock;
 	browser.numEntries = 0;
 	browser.selIndex = 0;
 	browser.pageIndex = 0;
@@ -45,7 +47,7 @@ void ResetBrowser()
 	}
 	// set aside space for 1 entry
 	browserList = (BROWSERENTRY *)malloc(sizeof(BROWSERENTRY));
-	memset(browserList, 0, sizeof(BROWSERENTRY));
+    if (browserList) memset(browserList, 0, sizeof(BROWSERENTRY));
 }
 
 /****************************************************************************
@@ -137,12 +139,14 @@ int FileSortCallback(const void *f1, const void *f2)
 int
 ParseDirectory()
 {
+    GuiScopedLock lock;
 	DIR *dir = NULL;
 	char fulldir[MAXPATHLEN];
 	struct dirent *entry;
 
 	// reset browser
-	ResetBrowser();
+    ResetBrowser();
+    if (!browserList) return -1;
 
 	// open the directory
 	sprintf(fulldir, "%s%s", rootdir, browser.dir); // add currentDevice to path
@@ -162,8 +166,9 @@ ParseDirectory()
 	// index files/folders
 	int entryNum = 0;
 
-	while((entry = readdir(dir)))
-	{
+    while((entry = readdir(dir)))
+    {
+        if (entryNum >= 1024) break;
 		if(strcmp(entry->d_name,".") == 0)
 			continue;
 
